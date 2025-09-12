@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import Footer from './Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -102,6 +103,9 @@ export default function Layout({ children }: LayoutProps) {
           <main className="flex-1 p-4 md:p-6 overflow-auto">
             {children}
           </main>
+
+          {/* Footer */}
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
