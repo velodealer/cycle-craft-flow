@@ -19,12 +19,12 @@ const bikeSchema = z.object({
   year: z.number().optional(),
   size: z.string().optional(),
   colour: z.string().optional(),
-  frame_number: z.string().optional(),
+  frame_number: z.string().min(1, 'Frame number is required'),
   condition: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
   fulfillment_type: z.enum(['fulfilled_by_bps', 'stocked_by_me']).default('fulfilled_by_bps'),
-  status: z.enum(['pending_intake', 'in_stock', 'intake', 'cleaning', 'inspection', 'pending_approval', 'repair', 'ready', 'listed', 'sold']),
+  
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
   sale_price: z.number().optional(),
@@ -56,7 +56,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
       fulfillment_type: bike?.fulfillment_type || 'fulfilled_by_bps',
-      status: bike?.status || (bike?.fulfillment_type === 'stocked_by_me' ? 'in_stock' : 'pending_intake'),
+      
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
       sale_price: bike?.sale_price || undefined,
@@ -195,7 +195,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 name="frame_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Frame Number</FormLabel>
+                    <FormLabel>Frame Number *</FormLabel>
                     <FormControl>
                       <Input placeholder="Serial number" {...field} />
                     </FormControl>
@@ -281,58 +281,27 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 )}
               />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="source"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Source</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select source" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="owned">Owned by us</SelectItem>
-                          <SelectItem value="customer_consignment">Customer consignment</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending_intake">Pending Intake</SelectItem>
-                          <SelectItem value="in_stock">In Stock</SelectItem>
-                          <SelectItem value="intake">Intake</SelectItem>
-                          <SelectItem value="cleaning">Cleaning</SelectItem>
-                          <SelectItem value="inspection">Inspection</SelectItem>
-                          <SelectItem value="pending_approval">Awaiting Owner Approval</SelectItem>
-                          <SelectItem value="repair">Repair</SelectItem>
-                          <SelectItem value="ready">Ready for Sale</SelectItem>
-                          <SelectItem value="listed">Listed</SelectItem>
-                          <SelectItem value="sold">Sold</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Source</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="owned">Owned by us</SelectItem>
+                        <SelectItem value="customer_consignment">Customer consignment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
