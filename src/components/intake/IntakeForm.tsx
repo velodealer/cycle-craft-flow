@@ -45,6 +45,8 @@ interface Bike {
 
 export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
+  const [serialPhotos, setSerialPhotos] = useState<string[]>([]);
+  const [registerPhotos, setRegisterPhotos] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
@@ -56,6 +58,8 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
     photosTaken: false,
     accessoriesLogged: false,
     frameNumberRecorded: false,
+    serialPhotoTaken: false,
+    registerPhotoTaken: false,
   });
 
   const { profile } = useAuth();
@@ -122,8 +126,10 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
       photosTaken: photos.length > 0,
       accessoriesLogged: Boolean(accessories && accessories.trim()),
       frameNumberRecorded: Boolean(frameNumber && frameNumber.trim()),
+      serialPhotoTaken: serialPhotos.length > 0,
+      registerPhotoTaken: registerPhotos.length > 0,
     }));
-  }, [photos, form.watch('frame_number'), form.watch('accessories_included')]);
+  }, [photos, serialPhotos, registerPhotos, form.watch('frame_number'), form.watch('accessories_included')]);
 
   // Update form when bike is selected
   useEffect(() => {
@@ -193,7 +199,7 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
       const updateData = {
         frame_number: values.frame_number,
         accessories_included: values.accessories_included,
-        photos: [...(selectedBike.photos || []), ...photos],
+        photos: [...(selectedBike.photos || []), ...photos, ...serialPhotos, ...registerPhotos],
         status: 'intake' as const,
         intake_date: new Date().toISOString(),
       };
@@ -211,7 +217,7 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
         .insert({
           bike_id: values.bike_id,
           stage: 'intake',
-          notes: `Bike intake completed. Frame number: ${values.frame_number}. Label ${labelGenerated ? 'generated' : 'pending'}.`,
+          notes: `Bike intake completed. Frame number: ${values.frame_number}. Serial photos: ${serialPhotos.length}, Register check photos: ${registerPhotos.length}. Label ${labelGenerated ? 'generated' : 'pending'}.`,
           performed_by: profile?.id,
         });
 
@@ -430,6 +436,44 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
             </CardContent>
           </Card>
 
+          {/* Serial Number Photo */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Serial Number Verification</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Take a clear photo of the bike's serial number for verification
+              </p>
+            </CardHeader>
+            <CardContent>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`serial-${selectedBike.id}`}
+                photos={serialPhotos}
+                onChange={setSerialPhotos}
+                maxPhotos={3}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Bike Register Check */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Bike Register Check</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Upload photo to check against stolen bike register
+              </p>
+            </CardHeader>
+            <CardContent>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`register-check-${selectedBike.id}`}
+                photos={registerPhotos}
+                onChange={setRegisterPhotos}
+                maxPhotos={2}
+              />
+            </CardContent>
+          </Card>
+
           {/* Intake Checklist */}
           <Card>
             <CardHeader>
@@ -471,6 +515,30 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
                     Frame number recorded
                   </label>
                   {checklist.frameNumberRecorded && <Badge variant="secondary">✓</Badge>}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    checked={checklist.serialPhotoTaken} 
+                    disabled
+                    id="serial"
+                  />
+                  <label htmlFor="serial" className="text-sm font-medium">
+                    Serial number photo taken ({serialPhotos.length} photos)
+                  </label>
+                  {checklist.serialPhotoTaken && <Badge variant="secondary">✓</Badge>}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    checked={checklist.registerPhotoTaken} 
+                    disabled
+                    id="register"
+                  />
+                  <label htmlFor="register" className="text-sm font-medium">
+                    Bike register check photo ({registerPhotos.length} photos)
+                  </label>
+                  {checklist.registerPhotoTaken && <Badge variant="secondary">✓</Badge>}
                 </div>
               </div>
 

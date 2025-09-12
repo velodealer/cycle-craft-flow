@@ -19,7 +19,6 @@ const bikeSchema = z.object({
   year: z.number().optional(),
   size: z.string().optional(),
   colour: z.string().optional(),
-  frame_number: z.string().min(1, 'Frame number is required'),
   condition: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
@@ -51,7 +50,6 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       year: bike?.year || undefined,
       size: bike?.size || '',
       colour: bike?.colour || '',
-      frame_number: bike?.frame_number || '',
       condition: bike?.condition || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
@@ -189,20 +187,6 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="frame_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Frame Number *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Serial number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
