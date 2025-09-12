@@ -14,7 +14,407 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bikes: {
+        Row: {
+          asking_price: number | null
+          condition_notes: string | null
+          created_at: string
+          description: string | null
+          external_owner_id: string | null
+          finance_scheme: Database["public"]["Enums"]["finance_scheme"]
+          frame_number: string | null
+          id: string
+          intake_date: string
+          make: string
+          model: string
+          owner_id: string | null
+          photos: string[] | null
+          purchase_price: number | null
+          sale_price: number | null
+          source: Database["public"]["Enums"]["bike_source"]
+          status: Database["public"]["Enums"]["bike_status"]
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          asking_price?: number | null
+          condition_notes?: string | null
+          created_at?: string
+          description?: string | null
+          external_owner_id?: string | null
+          finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
+          frame_number?: string | null
+          id?: string
+          intake_date?: string
+          make: string
+          model: string
+          owner_id?: string | null
+          photos?: string[] | null
+          purchase_price?: number | null
+          sale_price?: number | null
+          source?: Database["public"]["Enums"]["bike_source"]
+          status?: Database["public"]["Enums"]["bike_status"]
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          asking_price?: number | null
+          condition_notes?: string | null
+          created_at?: string
+          description?: string | null
+          external_owner_id?: string | null
+          finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
+          frame_number?: string | null
+          id?: string
+          intake_date?: string
+          make?: string
+          model?: string
+          owner_id?: string | null
+          photos?: string[] | null
+          purchase_price?: number | null
+          sale_price?: number | null
+          source?: Database["public"]["Enums"]["bike_source"]
+          status?: Database["public"]["Enums"]["bike_status"]
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bikes_external_owner_id_fkey"
+            columns: ["external_owner_id"]
+            isOneToOne: false
+            referencedRelation: "external_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bikes_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_owners: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fulfilment_events: {
+        Row: {
+          bike_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          performed_by: string
+          stage: Database["public"]["Enums"]["fulfilment_stage"]
+          timestamp: string
+        }
+        Insert: {
+          bike_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          performed_by: string
+          stage: Database["public"]["Enums"]["fulfilment_stage"]
+          timestamp?: string
+        }
+        Update: {
+          bike_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          performed_by?: string
+          stage?: Database["public"]["Enums"]["fulfilment_stage"]
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fulfilment_events_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fulfilment_events_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          bike_id: string | null
+          created_at: string
+          customer_id: string | null
+          due_date: string | null
+          external_customer_id: string | null
+          gross: number
+          id: string
+          invoice_number: string
+          issued_at: string | null
+          job_id: string | null
+          net: number
+          paid_at: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          total: number
+          type: Database["public"]["Enums"]["invoice_type"]
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          bike_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_date?: string | null
+          external_customer_id?: string | null
+          gross: number
+          id?: string
+          invoice_number: string
+          issued_at?: string | null
+          job_id?: string | null
+          net: number
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total: number
+          type: Database["public"]["Enums"]["invoice_type"]
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          bike_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          due_date?: string | null
+          external_customer_id?: string | null
+          gross?: number
+          id?: string
+          invoice_number?: string
+          issued_at?: string | null
+          job_id?: string | null
+          net?: number
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total?: number
+          type?: Database["public"]["Enums"]["invoice_type"]
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_external_customer_id_fkey"
+            columns: ["external_customer_id"]
+            isOneToOne: false
+            referencedRelation: "external_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          bike_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          estimated_cost: number | null
+          id: string
+          started_at: string | null
+          status: string
+          title: string
+          type: Database["public"]["Enums"]["job_type"]
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          bike_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          title: string
+          type: Database["public"]["Enums"]["job_type"]
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          bike_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          type?: Database["public"]["Enums"]["job_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parts: {
+        Row: {
+          bike_id: string | null
+          brand: string | null
+          cost_price: number | null
+          created_at: string
+          description: string
+          id: string
+          part_number: string | null
+          quantity: number
+          sale_price: number | null
+          stock_status: Database["public"]["Enums"]["stock_status"]
+          stripped_from_bike_id: string | null
+          type: Database["public"]["Enums"]["part_type"]
+          updated_at: string
+        }
+        Insert: {
+          bike_id?: string | null
+          brand?: string | null
+          cost_price?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          part_number?: string | null
+          quantity?: number
+          sale_price?: number | null
+          stock_status?: Database["public"]["Enums"]["stock_status"]
+          stripped_from_bike_id?: string | null
+          type: Database["public"]["Enums"]["part_type"]
+          updated_at?: string
+        }
+        Update: {
+          bike_id?: string | null
+          brand?: string | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          part_number?: string | null
+          quantity?: number
+          sale_price?: number | null
+          stock_status?: Database["public"]["Enums"]["stock_status"]
+          stripped_from_bike_id?: string | null
+          type?: Database["public"]["Enums"]["part_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parts_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parts_stripped_from_bike_id_fkey"
+            columns: ["stripped_from_bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +423,33 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      bike_source: "owned" | "customer_consignment"
+      bike_status:
+        | "intake"
+        | "cleaning"
+        | "inspection"
+        | "pending_approval"
+        | "repair"
+        | "ready"
+        | "listed"
+        | "sold"
+      finance_scheme: "vat_qualifying" | "margin_scheme" | "commercial_vat"
+      fulfilment_stage:
+        | "intake"
+        | "cleaning"
+        | "inspection"
+        | "repair"
+        | "ready"
+      invoice_status: "draft" | "issued" | "paid" | "overdue" | "cancelled"
+      invoice_type: "sale" | "service" | "detailing"
+      job_type: "workshop" | "detailing"
+      part_type:
+        | "secondhand_bought"
+        | "secondhand_stripped"
+        | "new_resale"
+        | "new_fitted"
+      stock_status: "in_stock" | "reserved" | "sold" | "damaged"
+      user_role: "admin" | "mechanic" | "detailer" | "owner" | "accountant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +576,31 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      bike_source: ["owned", "customer_consignment"],
+      bike_status: [
+        "intake",
+        "cleaning",
+        "inspection",
+        "pending_approval",
+        "repair",
+        "ready",
+        "listed",
+        "sold",
+      ],
+      finance_scheme: ["vat_qualifying", "margin_scheme", "commercial_vat"],
+      fulfilment_stage: ["intake", "cleaning", "inspection", "repair", "ready"],
+      invoice_status: ["draft", "issued", "paid", "overdue", "cancelled"],
+      invoice_type: ["sale", "service", "detailing"],
+      job_type: ["workshop", "detailing"],
+      part_type: [
+        "secondhand_bought",
+        "secondhand_stripped",
+        "new_resale",
+        "new_fitted",
+      ],
+      stock_status: ["in_stock", "reserved", "sold", "damaged"],
+      user_role: ["admin", "mechanic", "detailer", "owner", "accountant"],
+    },
   },
 } as const
