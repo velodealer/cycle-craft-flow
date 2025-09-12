@@ -208,7 +208,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                           size="sm"
                           onClick={() => onEdit(bike)}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

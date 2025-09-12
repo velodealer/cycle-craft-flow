@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import BikeList from '@/components/management/BikeList';
 import BikeForm from '@/components/management/BikeForm';
+import BikeDetailView from '@/components/bike/BikeDetailView';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function BikesPage() {
   const [selectedBike, setSelectedBike] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleEdit = (bike: any) => {
     setSelectedBike(bike);
+    setShowDetail(false);
     setShowForm(true);
+  };
+
+  const handleView = (bike: any) => {
+    setSelectedBike(bike);
+    setShowDetail(true);
   };
 
   const handleAdd = () => {
@@ -20,6 +28,7 @@ export default function BikesPage() {
 
   const handleSuccess = () => {
     setShowForm(false);
+    setShowDetail(false);
     setSelectedBike(null);
     setRefreshKey(prev => prev + 1);
   };
@@ -29,6 +38,32 @@ export default function BikesPage() {
     setSelectedBike(null);
   };
 
+  const handleBackToList = () => {
+    setShowDetail(false);
+    setSelectedBike(null);
+  };
+
+  const handleUpdate = () => {
+    setRefreshKey(prev => prev + 1);
+    // Refresh the selected bike data
+    if (selectedBike) {
+      // Could add logic to refetch the bike data here
+    }
+  };
+
+  if (showDetail && selectedBike) {
+    return (
+      <div className="container mx-auto py-6">
+        <BikeDetailView
+          bike={selectedBike}
+          onEdit={() => handleEdit(selectedBike)}
+          onBack={handleBackToList}
+          onUpdate={handleUpdate}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
@@ -36,7 +71,11 @@ export default function BikesPage() {
         <p className="text-muted-foreground">Manage your bicycle inventory and tracking</p>
       </div>
 
-      <BikeList key={refreshKey} onEdit={handleEdit} onAdd={handleAdd} />
+      <BikeList 
+        key={refreshKey} 
+        onEdit={handleView} 
+        onAdd={handleAdd} 
+      />
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
