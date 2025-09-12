@@ -420,7 +420,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      has_any_role: {
+        Args: { roles: Database["public"]["Enums"]["user_role"][] }
+        Returns: boolean
+      }
+      has_role: {
+        Args: { required_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
     }
     Enums: {
       bike_source: "owned" | "customer_consignment"
