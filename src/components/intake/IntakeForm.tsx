@@ -10,19 +10,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import PhotoUpload from '@/components/PhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { QrCode, Plus, User } from 'lucide-react';
+import { QrCode, ArrowRight, Search } from 'lucide-react';
 
 const intakeSchema = z.object({
-  make: z.string().min(1, 'Make is required'),
-  model: z.string().min(1, 'Model is required'),
+  bike_id: z.string().min(1, 'Bike selection is required'),
   frame_number: z.string().min(1, 'Frame number is required'),
-  external_owner_id: z.string().min(1, 'Owner is required'),
   accessories_included: z.string().optional(),
-  source: z.enum(['owned', 'customer_consignment']).default('customer_consignment'),
 });
 
 interface IntakeFormProps {
@@ -30,18 +28,27 @@ interface IntakeFormProps {
   onCancel: () => void;
 }
 
-interface Owner {
+interface Bike {
   id: string;
-  name: string;
-  email: string | null;
+  make: string;
+  model: string;
+  year?: number;
+  frame_number?: string;
+  status: string;
+  photos?: string[];
+  owner_name?: string;
+  external_owner?: {
+    name: string;
+    email?: string;
+  };
 }
 
 export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [owners, setOwners] = useState<Owner[]>([]);
-  const [showNewOwnerForm, setShowNewOwnerForm] = useState(false);
-  const [newOwner, setNewOwner] = useState({ name: '', email: '', phone: '' });
+  const [bikes, setBikes] = useState<Bike[]>([]);
+  const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [labelGenerated, setLabelGenerated] = useState(false);
   
   // Checklist state
@@ -56,39 +63,55 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
   const form = useForm<z.infer<typeof intakeSchema>>({
     resolver: zodResolver(intakeSchema),
     defaultValues: {
-      make: '',
-      model: '',
+      bike_id: '',
       frame_number: '',
-      external_owner_id: '',
       accessories_included: '',
-      source: 'customer_consignment',
     },
   });
 
-  // Load owners
+  // Load bikes that are ready for intake
   useEffect(() => {
-    const loadOwners = async () => {
+    const loadBikes = async () => {
       try {
         const { data, error } = await supabase
-          .from('external_owners')
-          .select('id, name, email')
-          .order('name');
+          .from('bikes')
+          .select(`
+            id,
+            make,
+            model,
+            year,
+            frame_number,
+            status,
+            photos,
+            external_owners!bikes_external_owner_id_fkey (
+              name,
+              email
+            )
+          `)
+          .neq('status', 'intake')
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setOwners(data || []);
+        
+        const formattedBikes = (data || []).map(bike => ({
+          ...bike,
+          external_owner: bike.external_owners,
+        }));
+        
+        setBikes(formattedBikes);
       } catch (error: any) {
         toast({
-          title: 'Error loading owners',
+          title: 'Error loading bikes',
           description: error.message,
           variant: 'destructive',
         });
       }
     };
 
-    loadOwners();
+    loadBikes();
   }, []);
 
-  // Update checklist based on form data
+  // Update checklist based on form data and selected bike
   useEffect(() => {
     const frameNumber = form.watch('frame_number');
     const accessories = form.watch('accessories_included');
@@ -101,54 +124,37 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
     }));
   }, [photos, form.watch('frame_number'), form.watch('accessories_included')]);
 
-  const handleAddOwner = async () => {
-    if (!newOwner.name.trim()) {
+  // Update form when bike is selected
+  useEffect(() => {
+    if (selectedBike) {
+      form.setValue('bike_id', selectedBike.id);
+      form.setValue('frame_number', selectedBike.frame_number || '');
+    }
+  }, [selectedBike, form]);
+
+  const filteredBikes = bikes.filter(bike =>
+    searchTerm === '' ||
+    bike.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bike.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (bike.frame_number && bike.frame_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (bike.external_owner?.name && bike.external_owner.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const generateLabel = () => {
+    if (!selectedBike) {
       toast({
-        title: 'Error',
-        description: 'Owner name is required',
+        title: 'Select a bike',
+        description: 'Please select a bike before generating a label',
         variant: 'destructive',
       });
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('external_owners')
-        .insert({
-          name: newOwner.name,
-          email: newOwner.email || null,
-          phone: newOwner.phone || null,
-          preferred_contact: 'email',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setOwners(prev => [...prev, data]);
-      form.setValue('external_owner_id', data.id);
-      setNewOwner({ name: '', email: '', phone: '' });
-      setShowNewOwnerForm(false);
-      
-      toast({ title: 'Owner added successfully' });
-    } catch (error: any) {
-      toast({
-        title: 'Error adding owner',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const generateLabel = () => {
-    const make = form.getValues('make');
-    const model = form.getValues('model');
     const frameNumber = form.getValues('frame_number');
-    
-    if (!make || !model || !frameNumber) {
+    if (!frameNumber) {
       toast({
-        title: 'Complete required fields',
-        description: 'Make, model, and frame number are required to generate a label',
+        title: 'Frame number required',
+        description: 'Frame number must be recorded to generate a label',
         variant: 'destructive',
       });
       return;
@@ -160,6 +166,15 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
   };
 
   const onSubmit = async (values: z.infer<typeof intakeSchema>) => {
+    if (!selectedBike) {
+      toast({
+        title: 'Select a bike',
+        description: 'Please select a bike to perform intake on',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Check if all checklist items are completed
     const allChecked = Object.values(checklist).every(Boolean);
     if (!allChecked) {
@@ -173,24 +188,19 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
 
     setSubmitting(true);
     try {
-      // Create the bike with intake status
-      const bikeData = {
-        make: values.make,
-        model: values.model,
+      // Update the bike with intake status and new information
+      const updateData = {
         frame_number: values.frame_number,
-        external_owner_id: values.external_owner_id,
         accessories_included: values.accessories_included,
-        source: values.source,
-        photos,
+        photos: [...(selectedBike.photos || []), ...photos],
         status: 'intake' as const,
         intake_date: new Date().toISOString(),
       };
 
-      const { data: bike, error: bikeError } = await supabase
+      const { error: bikeError } = await supabase
         .from('bikes')
-        .insert(bikeData)
-        .select()
-        .single();
+        .update(updateData)
+        .eq('id', values.bike_id);
 
       if (bikeError) throw bikeError;
 
@@ -198,9 +208,9 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
       const { error: eventError } = await supabase
         .from('fulfilment_events')
         .insert({
-          bike_id: bike.id,
+          bike_id: values.bike_id,
           stage: 'intake',
-          notes: `Bike intake completed. Label ${labelGenerated ? 'generated' : 'pending'}.`,
+          notes: `Bike intake completed. Frame number: ${values.frame_number}. Label ${labelGenerated ? 'generated' : 'pending'}.`,
           performed_by: profile?.id,
         });
 
@@ -221,150 +231,155 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
 
   const isChecklistComplete = Object.values(checklist).every(Boolean);
 
+  // If no bike is selected, show bike selection
+  if (!selectedBike) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Bike for Intake</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Choose a bike to perform the intake process on
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search bikes by make, model, frame number, or owner..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bike</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Frame Number</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBikes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        No bikes available for intake
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredBikes.map((bike) => (
+                      <TableRow key={bike.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{bike.make} {bike.model}</div>
+                            {bike.year && <div className="text-sm text-muted-foreground">{bike.year}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {bike.external_owner?.name || 'No owner assigned'}
+                          </div>
+                          {bike.external_owner?.email && (
+                            <div className="text-sm text-muted-foreground">
+                              {bike.external_owner.email}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {bike.frame_number || 'Not recorded'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {bike.status.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedBike(bike)}
+                            className="flex items-center gap-2"
+                          >
+                            Select
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show intake form for selected bike
   return (
     <div className="space-y-6">
+      <Card className="border-primary/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Selected Bike</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Performing intake on: {selectedBike.make} {selectedBike.model}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedBike(null)}
+            >
+              Change Bike
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Owner:</span>
+              <div className="text-muted-foreground">
+                {selectedBike.external_owner?.name || 'Not assigned'}
+              </div>
+            </div>
+            <div>
+              <span className="font-medium">Year:</span>
+              <div className="text-muted-foreground">{selectedBike.year || 'Not recorded'}</div>
+            </div>
+            <div>
+              <span className="font-medium">Current Status:</span>
+              <div>
+                <Badge variant="outline">
+                  {selectedBike.status.replace('_', ' ')}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <span className="font-medium">Frame Number:</span>
+              <div className="text-muted-foreground">
+                {selectedBike.frame_number || 'Not recorded'}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Owner Selection */}
+          {/* Frame Number */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Owner Information
-              </CardTitle>
+              <CardTitle>Intake Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="external_owner_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Owner *</FormLabel>
-                    <div className="flex gap-2">
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select owner" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {owners.map((owner) => (
-                            <SelectItem key={owner.id} value={owner.id}>
-                              {owner.name} {owner.email && `(${owner.email})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowNewOwnerForm(!showNewOwnerForm)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {showNewOwnerForm && (
-                <Card className="border-dashed">
-                  <CardContent className="pt-6">
-                    <div className="space-y-3">
-                      <Input
-                        placeholder="Owner name *"
-                        value={newOwner.name}
-                        onChange={(e) => setNewOwner(prev => ({ ...prev, name: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Email"
-                        type="email"
-                        value={newOwner.email}
-                        onChange={(e) => setNewOwner(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Phone"
-                        value={newOwner.phone}
-                        onChange={(e) => setNewOwner(prev => ({ ...prev, phone: e.target.value }))}
-                      />
-                      <div className="flex gap-2">
-                        <Button type="button" onClick={handleAddOwner} size="sm">
-                          Add Owner
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setShowNewOwnerForm(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <FormField
-                control={form.control}
-                name="source"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="customer_consignment">Customer Consignment</SelectItem>
-                        <SelectItem value="owned">Owned by Us</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Bike Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Bike Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="make"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Make *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Trek, Specialized" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="model"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Model *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Domane, Tarmac" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
                 name="frame_number"
@@ -401,12 +416,12 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
           {/* Photos */}
           <Card>
             <CardHeader>
-              <CardTitle>Photos</CardTitle>
+              <CardTitle>Intake Photos</CardTitle>
             </CardHeader>
             <CardContent>
               <PhotoUpload
                 bucket="bike-photos"
-                path="intake"
+                path={`intake-${selectedBike.id}`}
                 photos={photos}
                 onChange={setPhotos}
                 maxPhotos={10}
