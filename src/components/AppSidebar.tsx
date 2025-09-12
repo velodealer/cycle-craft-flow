@@ -38,7 +38,7 @@ const navigationItems = [
 ];
 
 export function AppSidebar() {
-  const { state, setOpen } = useSidebar();
+  const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
   const location = useLocation();
   const { profile } = useAuth();
   const currentPath = location.pathname;
@@ -56,7 +56,11 @@ export function AppSidebar() {
 
   const handleNavItemClick = () => {
     // Close sidebar on mobile after navigation
-    setOpen(false);
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
   };
 
   return (
