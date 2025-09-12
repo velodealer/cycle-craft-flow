@@ -38,7 +38,7 @@ const navigationItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const location = useLocation();
   const { profile } = useAuth();
   const currentPath = location.pathname;
@@ -54,7 +54,10 @@ export function AppSidebar() {
     !profile?.role || item.roles.includes(profile.role)
   );
 
-  const collapsed = state === "collapsed";
+  const handleNavItemClick = () => {
+    // Close sidebar on mobile after navigation
+    setOpen(false);
+  };
 
   return (
     <Sidebar className="border-r">
@@ -75,6 +78,7 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url} 
                         end={item.url === "/"} 
+                        onClick={handleNavItemClick}
                         className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full ${
                           active 
                             ? "bg-accent text-accent-foreground" 
