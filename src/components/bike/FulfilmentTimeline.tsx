@@ -58,11 +58,11 @@ export default function FulfilmentTimeline({ bikeId }: FulfilmentTimelineProps) 
 
   const getStageLabel = (stage: string) => {
     const labels: Record<string, string> = {
-      'intake': 'Intake',
-      'cleaning': 'Cleaning',
-      'inspection': 'Inspection',
+      'intake': 'Intake Complete',
+      'cleaning': 'Cleaning Complete',
+      'inspection': 'Inspection Complete',
       'pending_approval': 'Awaiting Owner Approval',
-      'repair': 'Repair',
+      'repair': 'Repair Complete',
       'ready': 'Ready for Sale',
       'listed': 'Listed',
       'sold': 'Sold'

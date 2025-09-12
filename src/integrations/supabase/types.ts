@@ -285,6 +285,7 @@ export type Database = {
           actual_cost: number | null
           assigned_to: string | null
           bike_id: string
+          checklist: Json | null
           completed_at: string | null
           created_at: string
           description: string | null
@@ -302,6 +303,7 @@ export type Database = {
           actual_cost?: number | null
           assigned_to?: string | null
           bike_id: string
+          checklist?: Json | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -319,6 +321,7 @@ export type Database = {
           actual_cost?: number | null
           assigned_to?: string | null
           bike_id?: string
+          checklist?: Json | null
           completed_at?: string | null
           created_at?: string
           description?: string | null

@@ -7,6 +7,7 @@ import { ArrowRight, Edit, ChevronLeft } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import FulfilmentTimeline from './FulfilmentTimeline';
+import CleaningTask from './CleaningTask';
 
 interface BikeDetailViewProps {
   bike: any;
@@ -237,8 +238,12 @@ export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeD
           )}
         </div>
 
-        {/* Timeline */}
+        {/* Tasks & Timeline */}
         <div className="space-y-6">
+          {/* Show cleaning task if bike is in detailing or cleaning status */}
+          {(['detailing', 'cleaning'].includes(bike.status)) && (
+            <CleaningTask bike={bike} onUpdate={onUpdate} />
+          )}
           <FulfilmentTimeline bikeId={bike.id} />
         </div>
       </div>
