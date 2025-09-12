@@ -4,8 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
+import Layout from "@/components/Layout";
+import BPSDashboard from "@/components/BPSDashboard";
 import Auth from "./pages/Auth";
+import BikesPage from "./pages/BikesPage";
+import PartsPage from "./pages/PartsPage";
+import JobsPage from "./pages/JobsPage";
+import FulfilmentPage from "./pages/FulfilmentPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import OwnersPage from "./pages/OwnersPage";
+import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,8 +27,16 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<Layout><BPSDashboard /></Layout>} />
+            <Route path="/bikes" element={<Layout><BikesPage /></Layout>} />
+            <Route path="/parts" element={<Layout><PartsPage /></Layout>} />
+            <Route path="/jobs" element={<Layout><JobsPage /></Layout>} />
+            <Route path="/fulfilment" element={<Layout><FulfilmentPage /></Layout>} />
+            <Route path="/invoices" element={<Layout><InvoicesPage /></Layout>} />
+            <Route path="/owners" element={<Layout><OwnersPage /></Layout>} />
+            <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
+            <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
