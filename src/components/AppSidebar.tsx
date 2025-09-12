@@ -50,9 +50,6 @@ export function AppSidebar() {
     return currentPath.startsWith(path);
   };
 
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-accent text-accent-foreground font-medium" : "hover:bg-accent/50";
-
   const userAccessibleItems = navigationItems.filter(item => 
     !profile?.role || item.roles.includes(profile.role)
   );
@@ -60,24 +57,37 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar className={collapsed ? "w-16" : "w-60"} collapsible="icon">
-      <SidebarContent>
+    <Sidebar className="border-r">
+      <SidebarContent className="bg-background">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
             BPS Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {userAccessibleItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end={item.url === "/"} className={getNavCls}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="space-y-1 px-2">
+              {userAccessibleItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.url);
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild className="w-full">
+                      <NavLink 
+                        to={item.url} 
+                        end={item.url === "/"} 
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full ${
+                          active 
+                            ? "bg-accent text-accent-foreground" 
+                            : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -58,21 +58,30 @@ export default function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Top Header */}
-          <header className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30">
-            <div className="flex h-16 items-center gap-4 px-6">
-              <SidebarTrigger className="-ml-1" />
+          <header className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 sticky top-0 z-40">
+            <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+              <SidebarTrigger className="md:-ml-1" />
               
-              <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                 <div className="font-semibold text-lg">BPS</div>
-                <SearchBar />
+                <div className="hidden sm:block flex-1">
+                  <SearchBar />
+                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="hidden md:flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{profile?.name || user.email}</span>
+                  <span className="text-sm font-medium truncate max-w-32">
+                    {profile?.name || user.email}
+                  </span>
+                  <Badge variant={getRoleBadgeVariant(profile?.role || 'mechanic')}>
+                    {profile?.role || 'mechanic'}
+                  </Badge>
+                </div>
+                <div className="md:hidden">
                   <Badge variant={getRoleBadgeVariant(profile?.role || 'mechanic')}>
                     {profile?.role || 'mechanic'}
                   </Badge>
@@ -82,10 +91,15 @@ export default function Layout({ children }: LayoutProps) {
                 </Button>
               </div>
             </div>
+            
+            {/* Mobile Search Bar */}
+            <div className="sm:hidden px-4 pb-4">
+              <SearchBar />
+            </div>
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-6 overflow-auto">
             {children}
           </main>
         </div>
