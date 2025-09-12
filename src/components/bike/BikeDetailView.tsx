@@ -187,7 +187,7 @@ export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeD
               
               <div className="mt-4">
                 <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
-                <p className="text-base capitalize">{bike.finance_scheme.replace('_', ' ')}</p>
+                <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
               </div>
             </CardContent>
           </Card>
