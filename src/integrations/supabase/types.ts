@@ -26,6 +26,7 @@ export type Database = {
           external_owner_id: string | null
           finance_scheme: Database["public"]["Enums"]["finance_scheme"]
           frame_number: string | null
+          fulfillment_type: string
           id: string
           intake_date: string
           listing_description: string | null
@@ -52,6 +53,7 @@ export type Database = {
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
           frame_number?: string | null
+          fulfillment_type?: string
           id?: string
           intake_date?: string
           listing_description?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
           frame_number?: string | null
+          fulfillment_type?: string
           id?: string
           intake_date?: string
           listing_description?: string | null
@@ -468,6 +471,8 @@ export type Database = {
         | "ready"
         | "listed"
         | "sold"
+        | "pending_intake"
+        | "in_stock"
       finance_scheme: "vat_qualifying" | "margin_scheme" | "commercial_vat"
       fulfilment_stage:
         | "intake"
@@ -622,6 +627,8 @@ export const Constants = {
         "ready",
         "listed",
         "sold",
+        "pending_intake",
+        "in_stock",
       ],
       finance_scheme: ["vat_qualifying", "margin_scheme", "commercial_vat"],
       fulfilment_stage: ["intake", "cleaning", "inspection", "repair", "ready"],

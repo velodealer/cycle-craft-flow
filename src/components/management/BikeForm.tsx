@@ -67,17 +67,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   });
 
   const onSubmit = async (values: z.infer<typeof bikeSchema>) => {
+    // Update status based on fulfillment type
+    const finalStatus = values.fulfillment_type === 'stocked_by_me' ? 'in_stock' : 'pending_intake';
+    
     setSubmitting(true);
     try {
       const bikeData = {
         ...values,
+        status: finalStatus,
         photos,
       };
 
       if (bike) {
         const { error } = await supabase
           .from('bikes')
-          .update(bikeData)
+          .update(bikeData as any)
           .eq('id', bike.id);
         if (error) throw error;
         toast({ title: 'Bike updated successfully' });
@@ -246,9 +250,37 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Status & Source</CardTitle>
+              <CardTitle>Fulfillment & Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="fulfillment_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fulfillment Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select fulfillment type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="fulfilled_by_bps">Fulfilled by BPS</SelectItem>
+                        <SelectItem value="stocked_by_me">Stocked by me</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      {field.value === 'fulfilled_by_bps' 
+                        ? 'Bike will go through BPS processing workflow and appear in intake'
+                        : 'Bike will be managed in your stock system for invoicing'
+                      }
+                    </p>
+                  </FormItem>
+                )}
+              />
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -284,6 +316,8 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="pending_intake">Pending Intake</SelectItem>
+                          <SelectItem value="in_stock">In Stock</SelectItem>
                           <SelectItem value="intake">Intake</SelectItem>
                           <SelectItem value="cleaning">Cleaning</SelectItem>
                           <SelectItem value="inspection">Inspection</SelectItem>

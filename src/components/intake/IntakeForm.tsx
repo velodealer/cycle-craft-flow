@@ -88,7 +88,8 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
               email
             )
           `)
-          .neq('status', 'intake')
+          .eq('fulfillment_type', 'fulfilled_by_bps')
+          .in('status', ['pending_intake'])
           .order('created_at', { ascending: false });
 
         if (error) throw error;
