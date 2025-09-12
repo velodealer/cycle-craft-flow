@@ -16,7 +16,10 @@ export type Database = {
     Tables: {
       bikes: {
         Row: {
+          accessories_included: string | null
           asking_price: number | null
+          colour: string | null
+          condition: string | null
           condition_notes: string | null
           created_at: string
           description: string | null
@@ -25,19 +28,24 @@ export type Database = {
           frame_number: string | null
           id: string
           intake_date: string
+          listing_description: string | null
           make: string
           model: string
           owner_id: string | null
           photos: string[] | null
           purchase_price: number | null
           sale_price: number | null
+          size: string | null
           source: Database["public"]["Enums"]["bike_source"]
           status: Database["public"]["Enums"]["bike_status"]
           updated_at: string
           year: number | null
         }
         Insert: {
+          accessories_included?: string | null
           asking_price?: number | null
+          colour?: string | null
+          condition?: string | null
           condition_notes?: string | null
           created_at?: string
           description?: string | null
@@ -46,19 +54,24 @@ export type Database = {
           frame_number?: string | null
           id?: string
           intake_date?: string
+          listing_description?: string | null
           make: string
           model: string
           owner_id?: string | null
           photos?: string[] | null
           purchase_price?: number | null
           sale_price?: number | null
+          size?: string | null
           source?: Database["public"]["Enums"]["bike_source"]
           status?: Database["public"]["Enums"]["bike_status"]
           updated_at?: string
           year?: number | null
         }
         Update: {
+          accessories_included?: string | null
           asking_price?: number | null
+          colour?: string | null
+          condition?: string | null
           condition_notes?: string | null
           created_at?: string
           description?: string | null
@@ -67,12 +80,14 @@ export type Database = {
           frame_number?: string | null
           id?: string
           intake_date?: string
+          listing_description?: string | null
           make?: string
           model?: string
           owner_id?: string | null
           photos?: string[] | null
           purchase_price?: number | null
           sale_price?: number | null
+          size?: string | null
           source?: Database["public"]["Enums"]["bike_source"]
           status?: Database["public"]["Enums"]["bike_status"]
           updated_at?: string
@@ -103,6 +118,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          preferred_contact: string | null
           updated_at: string
         }
         Insert: {
@@ -112,6 +128,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          preferred_contact?: string | null
           updated_at?: string
         }
         Update: {
@@ -121,6 +138,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          preferred_contact?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -269,6 +287,8 @@ export type Database = {
           description: string | null
           estimated_cost: number | null
           id: string
+          photos_after: string[] | null
+          photos_before: string[] | null
           started_at: string | null
           status: string
           title: string
@@ -284,6 +304,8 @@ export type Database = {
           description?: string | null
           estimated_cost?: number | null
           id?: string
+          photos_after?: string[] | null
+          photos_before?: string[] | null
           started_at?: string | null
           status?: string
           title: string
@@ -299,6 +321,8 @@ export type Database = {
           description?: string | null
           estimated_cost?: number | null
           id?: string
+          photos_after?: string[] | null
+          photos_before?: string[] | null
           started_at?: string | null
           status?: string
           title?: string

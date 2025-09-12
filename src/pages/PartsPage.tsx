@@ -1,23 +1,57 @@
-import PlaceholderPage from '@/components/PlaceholderPage';
-import { Package } from 'lucide-react';
+import { useState } from 'react';
+import PartList from '@/components/management/PartList';
+import PartForm from '@/components/management/PartForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function PartsPage() {
-  const features = [
-    'Manage parts inventory',
-    'Track part types (secondhand, new, stripped, fitted)',
-    'Set cost and sale prices',
-    'Assign parts to specific bikes',
-    'Monitor stock levels',
-    'Generate parts reports',
-    'Handle supplier relationships'
-  ];
+  const [selectedPart, setSelectedPart] = useState<any>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleEdit = (part: any) => {
+    setSelectedPart(part);
+    setShowForm(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedPart(null);
+    setShowForm(true);
+  };
+
+  const handleSuccess = () => {
+    setShowForm(false);
+    setSelectedPart(null);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setSelectedPart(null);
+  };
 
   return (
-    <PlaceholderPage
-      title="Parts"
-      description="Track parts inventory and pricing"
-      icon={Package}
-      features={features}
-    />
+    <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Parts Management</h1>
+        <p className="text-muted-foreground">Track parts inventory and pricing</p>
+      </div>
+
+      <PartList key={refreshKey} onEdit={handleEdit} onAdd={handleAdd} />
+
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedPart ? 'Edit Part' : 'Add New Part'}
+            </DialogTitle>
+          </DialogHeader>
+          <PartForm
+            part={selectedPart}
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
