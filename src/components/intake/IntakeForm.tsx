@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { QrCode, ArrowRight, Search } from 'lucide-react';
+import BikeLabel from '@/components/bike/BikeLabel';
 
 const intakeSchema = z.object({
   bike_id: z.string().min(1, 'Bike selection is required'),
@@ -52,6 +53,7 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [labelGenerated, setLabelGenerated] = useState(false);
+  const [showLabel, setShowLabel] = useState(false);
   
   // Checklist state
   const [checklist, setChecklist] = useState({
@@ -166,9 +168,8 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
       return;
     }
 
-    // Simulate label generation
     setLabelGenerated(true);
-    toast({ title: 'Label generated successfully' });
+    setShowLabel(true);
   };
 
   const onSubmit = async (values: z.infer<typeof intakeSchema>) => {
@@ -565,6 +566,20 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
           </div>
         </form>
       </Form>
+
+      {/* Label Preview/Print */}
+      {showLabel && selectedBike && (
+        <BikeLabel
+          bike={{
+            id: selectedBike.id,
+            make: selectedBike.make,
+            model: selectedBike.model,
+            frame_number: form.getValues('frame_number'),
+            year: selectedBike.year,
+          }}
+          onClose={() => setShowLabel(false)}
+        />
+      )}
     </div>
   );
 }
