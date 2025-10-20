@@ -146,7 +146,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                         <Input 
                           type="number" 
                           placeholder="2023" 
-                          {...field} 
+                          value={field.value ?? ''}
                           onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                         />
                       </FormControl>
@@ -265,7 +265,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                           type="number" 
                           step="0.01" 
                           placeholder="0.00" 
-                          {...field} 
+                          value={field.value ?? ''}
                           onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                         />
                       </FormControl>
@@ -285,7 +285,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                           type="number" 
                           step="0.01" 
                           placeholder="0.00" 
-                          {...field} 
+                          value={field.value ?? ''}
                           onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                         />
                       </FormControl>
