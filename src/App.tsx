@@ -9,6 +9,7 @@ import BPSDashboard from "@/components/BPSDashboard";
 import Auth from "./pages/Auth";
 import BikesPage from "./pages/BikesPage";
 import IntakePage from "./pages/IntakePage";
+import CleaningPage from "./pages/CleaningPage";
 import PartsPage from "./pages/PartsPage";
 import JobsPage from "./pages/JobsPage";
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/" element={<Layout><BPSDashboard /></Layout>} />
             <Route path="/bikes" element={<Layout><BikesPage /></Layout>} />
             <Route path="/intake" element={<Layout><IntakePage /></Layout>} />
+            <Route path="/cleaning" element={<Layout><CleaningPage /></Layout>} />
             <Route path="/parts" element={<Layout><PartsPage /></Layout>} />
             <Route path="/jobs" element={<Layout><JobsPage /></Layout>} />
             

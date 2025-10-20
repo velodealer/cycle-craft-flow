@@ -195,12 +195,12 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
 
     setSubmitting(true);
     try {
-      // Update the bike with intake status and new information
+      // Update the bike with cleaning status and new information
       const updateData = {
         frame_number: values.frame_number,
         accessories_included: values.accessories_included,
         photos: [...(selectedBike.photos || []), ...photos, ...serialPhotos, ...registerPhotos],
-        status: 'intake' as const,
+        status: 'cleaning' as const,
         intake_date: new Date().toISOString(),
       };
 
@@ -211,7 +211,7 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
 
       if (bikeError) throw bikeError;
 
-      toast({ title: 'Bike intake completed successfully' });
+      toast({ title: 'Bike intake completed - moved to cleaning' });
       onSuccess();
     } catch (error: any) {
       toast({
