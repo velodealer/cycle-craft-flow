@@ -70,7 +70,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-background">
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
-            BPS Navigation
+            VeloDealer Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1 px-2">

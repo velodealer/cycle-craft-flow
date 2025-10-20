@@ -185,7 +185,7 @@ export default function Dashboard() {
                 <Bike className="h-6 w-6 text-accent-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">BPS Fulfillment</h1>
+                <h1 className="text-xl font-bold">VeloDealer</h1>
                 <p className="text-sm text-muted-foreground">Bicycle Dealer Management System</p>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function Dashboard() {
 
           <TabsContent value="overview" className="space-y-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-2">Welcome to BPS</h2>
+              <h2 className="text-2xl font-bold mb-2">Welcome to VeloDealer</h2>
               <p className="text-muted-foreground">
                 Manage your bicycle dealership operations from one central dashboard.
               </p>
@@ -410,7 +410,7 @@ export default function Dashboard() {
                       <div className="space-y-3">
                         <div className="bg-muted p-3 rounded-lg">
                           <p className="text-sm font-medium mb-1">Suggested email:</p>
-                          <code className="text-sm">{role}@bpstest.com</code>
+                          <code className="text-sm">{role}@velodealer.com</code>
                         </div>
                         <div>
                           <p className="text-sm font-medium mb-2">Key Capabilities:</p>

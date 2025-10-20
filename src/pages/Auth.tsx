@@ -71,7 +71,7 @@ export default function Auth() {
               <Bike className="h-8 w-8 text-accent-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">BPS Fulfillment</CardTitle>
+          <CardTitle className="text-2xl">VeloDealer</CardTitle>
           <CardDescription>
             Bicycle Dealer Management System
           </CardDescription>
@@ -155,7 +155,7 @@ export default function Auth() {
               <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-medium">Demo System</p>
-                <p>This is a demo of the BPS system. Default role is mechanic, contact admin to change roles.</p>
+                <p>This is a demo of the VeloDealer system. Default role is mechanic, contact admin to change roles.</p>
               </div>
             </div>
           </div>

@@ -11,8 +11,8 @@ export default function Footer() {
           {/* Brand */}
           <div className="flex items-center space-x-2">
             <Bike className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-foreground">BPS</span>
-            <span className="text-sm text-muted-foreground">Bike Processing System</span>
+            <span className="font-semibold text-foreground">VeloDealer</span>
+            <span className="text-sm text-muted-foreground">Bicycle Dealer Management System</span>
           </div>
 
           {/* Links */}
@@ -48,7 +48,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-center text-sm text-muted-foreground">
-          © {currentYear} BPS - Bike Processing System. All rights reserved.
+          © {currentYear} VeloDealer. All rights reserved.
         </div>
       </div>
     </footer>

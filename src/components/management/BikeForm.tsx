@@ -22,7 +22,7 @@ const bikeSchema = z.object({
   condition: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
-  fulfillment_type: z.enum(['fulfilled_by_bps', 'stocked_by_me']).default('fulfilled_by_bps'),
+  fulfillment_type: z.enum(['fulfilled_by_velodealer', 'stocked_by_me']).default('fulfilled_by_velodealer'),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
@@ -53,7 +53,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       condition: bike?.condition || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
-      fulfillment_type: bike?.fulfillment_type || 'fulfilled_by_bps',
+      fulfillment_type: bike?.fulfillment_type || 'fulfilled_by_velodealer',
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
@@ -250,14 +250,14 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="fulfilled_by_bps">Fulfilled by BPS</SelectItem>
+                        <SelectItem value="fulfilled_by_velodealer">Fulfilled by VeloDealer</SelectItem>
                         <SelectItem value="stocked_by_me">Stocked by me</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                     <p className="text-xs text-muted-foreground">
-                      {field.value === 'fulfilled_by_bps' 
-                        ? 'Bike will go through BPS processing workflow and appear in intake'
+                      {field.value === 'fulfilled_by_velodealer' 
+                        ? 'Bike will go through VeloDealer processing workflow and appear in intake'
                         : 'Bike will be managed in your stock system for invoicing'
                       }
                     </p>

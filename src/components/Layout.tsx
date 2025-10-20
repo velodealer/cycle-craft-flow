@@ -22,7 +22,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading BPS...</p>
+          <p className="text-muted-foreground">Loading VeloDealer...</p>
         </div>
       </div>
     );
@@ -66,7 +66,7 @@ export default function Layout({ children }: LayoutProps) {
               <SidebarTrigger className="md:-ml-1" />
               
               <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-                <div className="font-semibold text-lg">BPS</div>
+                <div className="font-semibold text-lg">VeloDealer</div>
                 <div className="hidden sm:block flex-1">
                   <SearchBar />
                 </div>

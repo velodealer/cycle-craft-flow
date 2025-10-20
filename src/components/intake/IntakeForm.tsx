@@ -92,7 +92,7 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
               email
             )
           `)
-          .eq('fulfillment_type', 'fulfilled_by_bps')
+          .eq('fulfillment_type', 'fulfilled_by_velodealer')
           .in('status', ['pending_intake'])
           .order('created_at', { ascending: false });
 
