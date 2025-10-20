@@ -3,14 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import PhotoUpload from '@/components/PhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Sparkles, CheckCircle, Clock, PlayCircle } from 'lucide-react';
+import { Sparkles, CheckCircle } from 'lucide-react';
 
 interface CleaningTaskProps {
   bike: any;
@@ -28,9 +25,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
   const [cleaningJob, setCleaningJob] = useState<any>(null);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
-  const [photosBefore, setPhotosBefore] = useState<string[]>([]);
-  const [photosAfter, setPhotosAfter] = useState<string[]>([]);
-  const [status, setStatus] = useState<'pending' | 'in_progress' | 'complete'>('pending');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -59,9 +53,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
         setCleaningJob(data);
         setChecklist((data.checklist as Record<string, boolean>) || {});
         setNotes(data.description || '');
-        setPhotosBefore(data.photos_before || []);
-        setPhotosAfter(data.photos_after || []);
-        setStatus(data.status as 'pending' | 'in_progress' | 'complete');
       } else {
         // Auto-create cleaning job if it doesn't exist
         await createCleaningJobOnLoad();
@@ -87,11 +78,9 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
           type: 'detailing',
           title: `Cleaning - ${bike.make} ${bike.model}`,
           description: '',
-          status: 'pending',
+          status: 'in_progress',
           assigned_to: profile?.id,
           checklist: {},
-          photos_before: [],
-          photos_after: []
         })
         .select()
         .single();
@@ -114,11 +103,9 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
           type: 'detailing',
           title: `Cleaning - ${bike.make} ${bike.model}`,
           description: notes,
-          status: 'pending',
+          status: 'in_progress',
           assigned_to: profile?.id,
           checklist: checklist,
-          photos_before: photosBefore,
-          photos_after: photosAfter
         })
         .select()
         .single();
@@ -145,30 +132,31 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
   const updateCleaningJob = async () => {
     if (!cleaningJob) return;
 
+    // Check if all checklist items are complete
+    const allComplete = CLEANING_CHECKLIST.every(item => checklist[item.key]);
+
     setSaving(true);
     try {
       const { error } = await supabase
         .from('jobs')
         .update({
           description: notes,
-          status,
+          status: allComplete ? 'complete' : 'in_progress',
           checklist: checklist,
-          photos_before: photosBefore,
-          photos_after: photosAfter,
-          completed_at: status === 'complete' ? new Date().toISOString() : null
+          completed_at: allComplete ? new Date().toISOString() : null
         })
         .eq('id', cleaningJob.id);
 
       if (error) throw error;
 
-      // If marking as complete, move bike to inspection and create fulfilment event
-      if (status === 'complete') {
+      // If all items complete, move bike to inspection
+      if (allComplete) {
         await handleCompletion();
       }
 
       toast({
         title: 'Success', 
-        description: 'Cleaning task updated'
+        description: allComplete ? 'Cleaning completed - bike moved to inspection' : 'Cleaning task updated'
       });
       
       onUpdate();
@@ -204,32 +192,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
     setChecklist(prev => ({ ...prev, [key]: checked }));
   };
 
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="h-4 w-4" />;
-      case 'in_progress':
-        return <PlayCircle className="h-4 w-4" />;
-      case 'complete':
-        return <CheckCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case 'pending':
-        return 'outline';
-      case 'in_progress':
-        return 'secondary';
-      case 'complete':
-        return 'default';
-      default:
-        return 'outline';
-    }
-  };
-
   if (loading) {
     return (
       <Card>
@@ -243,17 +205,9 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="h-5 w-5" />
-            <CardTitle>Cleaning Task</CardTitle>
-          </div>
-          {cleaningJob && (
-            <Badge variant={getStatusColor()}>
-              {getStatusIcon()}
-              <span className="ml-1 capitalize">{status.replace('_', ' ')}</span>
-            </Badge>
-          )}
+        <div className="flex items-center space-x-2">
+          <Sparkles className="h-5 w-5" />
+          <CardTitle>Cleaning Task</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -266,23 +220,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
           </div>
         ) : (
           <>
-            {/* Status Selection */}
-            <div>
-              <label className="text-sm font-medium">Status</label>
-              <Select value={status} onValueChange={(value: any) => setStatus(value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Not Started</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="complete">Complete</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Separator />
-
             {/* Cleaning Checklist */}
             <div>
               <h4 className="font-medium mb-3">Cleaning Checklist</h4>
@@ -315,7 +252,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
 
             <Separator />
 
-            {/* Save Button */}
             <Button 
               onClick={updateCleaningJob} 
               disabled={saving}
@@ -324,9 +260,9 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
 
-            {status === 'complete' && (
+            {CLEANING_CHECKLIST.every(item => checklist[item.key]) && (
               <div className="text-sm text-muted-foreground text-center">
-                Marking as complete will automatically move the bike to Inspection stage
+                All tasks complete! Saving will automatically move the bike to Inspection stage
               </div>
             )}
           </>
