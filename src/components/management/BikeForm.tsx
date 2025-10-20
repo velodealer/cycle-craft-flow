@@ -22,11 +22,9 @@ const bikeSchema = z.object({
   condition: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
-  fulfillment_type: z.enum(['fulfilled_by_velodealer', 'stocked_by_me']).default('fulfilled_by_velodealer'),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
-  sale_price: z.number().optional(),
   finance_scheme: z.enum(['vat_qualifying', 'margin_scheme', 'commercial_vat']),
   description: z.string().optional(),
   listing_description: z.string().optional(),
@@ -53,11 +51,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       condition: bike?.condition || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
-      fulfillment_type: bike?.fulfillment_type || 'fulfilled_by_velodealer',
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
-      sale_price: bike?.sale_price || undefined,
       finance_scheme: bike?.finance_scheme || 'margin_scheme',
       description: bike?.description || '',
       listing_description: bike?.listing_description || '',
@@ -65,14 +61,12 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   });
 
   const onSubmit = async (values: z.infer<typeof bikeSchema>) => {
-    // Update status based on fulfillment type
-    const finalStatus = values.fulfillment_type === 'stocked_by_me' ? 'in_stock' : 'pending_intake';
-    
     setSubmitting(true);
     try {
       const bikeData = {
         ...values,
-        status: finalStatus,
+        fulfillment_type: 'fulfilled_by_velodealer',
+        status: 'pending_intake',
         photos,
       };
 
@@ -229,42 +223,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Fulfillment & Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="fulfillment_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fulfillment Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select fulfillment type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="fulfilled_by_velodealer">Fulfilled by VeloDealer</SelectItem>
-                        <SelectItem value="stocked_by_me">Stocked by me</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground">
-                      {field.value === 'fulfilled_by_velodealer' 
-                        ? 'Bike will go through VeloDealer processing workflow and appear in intake'
-                        : 'Bike will be managed in your stock system for invoicing'
-                      }
-                    </p>
-                  </FormItem>
-                )}
-              />
-              
               <FormField
                 control={form.control}
                 name="source"
@@ -294,7 +253,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               <CardTitle>Pricing & Finance</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="purchase_price"
@@ -331,26 +290,6 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                         />
                       </FormControl>
                       <FormDescription>Listed sale price</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="sale_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Final Sale Price</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          placeholder="0.00" 
-                          {...field} 
-                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormDescription>Actual sale price</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
