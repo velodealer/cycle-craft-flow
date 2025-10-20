@@ -20,6 +20,7 @@ export default function PhotoUpload({
   maxPhotos = 5
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -62,9 +63,9 @@ export default function PhotoUpload({
           onChange={handleUpload}
           disabled={uploading || photos.length >= maxPhotos}
           className="hidden"
-          id="photo-upload"
+          id={uploadId}
         />
-        <label htmlFor="photo-upload">
+        <label htmlFor={uploadId}>
           <Button
             type="button"
             variant="outline"
