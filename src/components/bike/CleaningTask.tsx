@@ -19,8 +19,7 @@ interface CleaningTaskProps {
 
 const CLEANING_CHECKLIST = [
   { key: 'wash', label: 'Wash' },
-  { key: 'degrease', label: 'Degrease' },
-  { key: 'drivetrain_clean', label: 'Drivetrain Clean' },
+  { key: 'degrease_drivetrain', label: 'Degrease & Drivetrain Clean' },
   { key: 'polish_detail', label: 'Polish/Detail' }
 ];
 
@@ -312,36 +311,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
                 className="mt-1"
                 rows={3}
               />
-            </div>
-
-            <Separator />
-
-            {/* Before Photos */}
-            <div>
-              <label className="text-sm font-medium">Before Photos</label>
-              <div className="mt-2">
-                <PhotoUpload
-                  bucket="job-photos"
-                  path={`cleaning/${bike.id}/before`}
-                  photos={photosBefore}
-                  onChange={setPhotosBefore}
-                  maxPhotos={10}
-                />
-              </div>
-            </div>
-
-            {/* After Photos */}
-            <div>
-              <label className="text-sm font-medium">After Photos</label>
-              <div className="mt-2">
-                <PhotoUpload
-                  bucket="job-photos"
-                  path={`cleaning/${bike.id}/after`}
-                  photos={photosAfter}
-                  onChange={setPhotosAfter}
-                  maxPhotos={10}
-                />
-              </div>
             </div>
 
             <Separator />

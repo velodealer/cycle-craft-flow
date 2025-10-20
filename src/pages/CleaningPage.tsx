@@ -86,6 +86,9 @@ export default function CleaningPage() {
         onEdit={() => {}}
         onBack={handleBackToList}
         onUpdate={handleUpdate}
+        showPhotos={false}
+        showPricing={false}
+        showDescriptions={false}
       />
     );
   }

@@ -14,9 +14,20 @@ interface BikeDetailViewProps {
   onEdit: () => void;
   onBack: () => void;
   onUpdate: () => void;
+  showPhotos?: boolean;
+  showPricing?: boolean;
+  showDescriptions?: boolean;
 }
 
-export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeDetailViewProps) {
+export default function BikeDetailView({ 
+  bike, 
+  onEdit, 
+  onBack, 
+  onUpdate,
+  showPhotos = true,
+  showPricing = true,
+  showDescriptions = true
+}: BikeDetailViewProps) {
   const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
 
   const getNextStage = (currentStatus: string) => {
@@ -166,35 +177,37 @@ export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeD
           </Card>
 
           {/* Pricing Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing & Finance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Purchase Price</label>
-                  <p className="text-lg font-semibold">{formatCurrency(bike.purchase_price)}</p>
+          {showPricing && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing & Finance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Purchase Price</label>
+                    <p className="text-lg font-semibold">{formatCurrency(bike.purchase_price)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Asking Price</label>
+                    <p className="text-lg font-semibold">{formatCurrency(bike.asking_price)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Sale Price</label>
+                    <p className="text-lg font-semibold">{formatCurrency(bike.sale_price)}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Asking Price</label>
-                  <p className="text-lg font-semibold">{formatCurrency(bike.asking_price)}</p>
+                
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
+                  <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Sale Price</label>
-                  <p className="text-lg font-semibold">{formatCurrency(bike.sale_price)}</p>
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
-                <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Photos */}
-          {bike.photos && bike.photos.length > 0 && (
+          {showPhotos && bike.photos && bike.photos.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Photos</CardTitle>
@@ -215,7 +228,7 @@ export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeD
           )}
 
           {/* Descriptions */}
-          {(bike.description || bike.listing_description) && (
+          {showDescriptions && (bike.description || bike.listing_description) && (
             <Card>
               <CardHeader>
                 <CardTitle>Descriptions</CardTitle>
