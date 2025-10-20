@@ -166,21 +166,6 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
 
       if (bikeError) throw bikeError;
 
-      // Create fulfilment event
-      const { error: eventError } = await supabase
-        .from('fulfilment_events')
-        .insert({
-          bike_id: bike.id,
-          stage: 'cleaning',
-          notes: `Cleaning completed. Checklist: ${Object.entries(checklist)
-            .filter(([_, completed]) => completed)
-            .map(([key, _]) => CLEANING_CHECKLIST.find(item => item.key === key)?.label)
-            .join(', ')}. Notes: ${notes}`,
-          performed_by: profile?.id
-        });
-
-      if (eventError) throw eventError;
-
     } catch (error) {
       console.error('Error handling completion:', error);
       throw error;

@@ -11,7 +11,7 @@ import BikesPage from "./pages/BikesPage";
 import IntakePage from "./pages/IntakePage";
 import PartsPage from "./pages/PartsPage";
 import JobsPage from "./pages/JobsPage";
-import FulfilmentPage from "./pages/FulfilmentPage";
+
 import InvoicesPage from "./pages/InvoicesPage";
 import OwnersPage from "./pages/OwnersPage";
 import ReportsPage from "./pages/ReportsPage";
@@ -34,7 +34,7 @@ const App = () => (
             <Route path="/intake" element={<Layout><IntakePage /></Layout>} />
             <Route path="/parts" element={<Layout><PartsPage /></Layout>} />
             <Route path="/jobs" element={<Layout><JobsPage /></Layout>} />
-            <Route path="/fulfilment" element={<Layout><FulfilmentPage /></Layout>} />
+            
             <Route path="/invoices" element={<Layout><InvoicesPage /></Layout>} />
             <Route path="/owners" element={<Layout><OwnersPage /></Layout>} />
             <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />

@@ -210,18 +210,6 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
 
       if (bikeError) throw bikeError;
 
-      // Create fulfilment event
-      const { error: eventError } = await supabase
-        .from('fulfilment_events')
-        .insert({
-          bike_id: values.bike_id,
-          stage: 'intake',
-          notes: `Bike intake completed. Frame number: ${values.frame_number}. Serial photos: ${serialPhotos.length}, Register check photos: ${registerPhotos.length}. Label ${labelGenerated ? 'generated' : 'pending'}.`,
-          performed_by: profile?.id,
-        });
-
-      if (eventError) throw eventError;
-
       toast({ title: 'Bike intake completed successfully' });
       onSuccess();
     } catch (error: any) {

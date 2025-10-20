@@ -3,7 +3,6 @@ import {
   Bike, 
   Package, 
   Wrench, 
-  ClipboardList, 
   ClipboardCheck,
   FileText, 
   Users, 
@@ -32,7 +31,7 @@ const navigationItems = [
   { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
   { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
-  { title: "Fulfilment", url: "/fulfilment", icon: ClipboardList, roles: ['admin', 'mechanic', 'detailer'] },
+  
   { title: "Invoices", url: "/invoices", icon: FileText, roles: ['admin', 'accountant'] },
   { title: "Owners", url: "/owners", icon: Users, roles: ['admin', 'accountant'] },
   { title: "Reports", url: "/reports", icon: BarChart3, roles: ['admin', 'accountant'] },

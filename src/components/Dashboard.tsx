@@ -49,14 +49,14 @@ const roleConfigs: Record<UserRole, RoleConfig> = {
     icon: Wrench,
     color: 'default',
     description: 'Workshop operations and bike maintenance',
-    permissions: ['Bikes (read/write)', 'Workshop jobs', 'Fulfilment updates', 'Parts (read)', 'Invoices (read)']
+    permissions: ['Bikes (read/write)', 'Workshop jobs', 'Parts (read)', 'Invoices (read)']
   },
   detailer: {
     label: 'Detailer',
     icon: Sparkles,
     color: 'secondary',
     description: 'Detailing and finishing operations',
-    permissions: ['Bikes (read)', 'Detailing jobs', 'Fulfilment (detailing stages)', 'Invoices (read)']
+    permissions: ['Bikes (read)', 'Detailing jobs', 'Invoices (read)']
   },
   accountant: {
     label: 'Accountant',

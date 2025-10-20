@@ -63,19 +63,6 @@ export default function AdvanceStageDialog({
 
       if (bikeError) throw bikeError;
 
-      // Create fulfilment event  
-      const { error: eventError } = await supabase
-        .from('fulfilment_events')
-        .insert({
-          bike_id: bike.id,
-          stage: nextStage as any,
-          performed_by: profile.user_id,
-          notes: values.notes || null,
-          timestamp: new Date().toISOString(),
-        });
-
-      if (eventError) throw eventError;
-
       toast({
         title: 'Stage Updated',
         description: `Bike moved to ${nextStageLabel}`,
@@ -130,7 +117,7 @@ export default function AdvanceStageDialog({
             <div>
               <FormLabel>Photos (Optional)</FormLabel>
               <PhotoUpload
-                bucket="fulfilment-photos"
+                bucket="bike-photos"
                 path={`bike-${bike.id}/stage-${nextStage}`}
                 photos={photos}
                 onChange={setPhotos}

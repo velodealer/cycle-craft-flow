@@ -65,7 +65,6 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
     try {
       const bikeData = {
         ...values,
-        fulfillment_type: 'fulfilled_by_velodealer',
         status: 'pending_intake',
         photos,
       };
