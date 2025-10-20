@@ -63,29 +63,29 @@ export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeD
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <Button variant="ghost" size="sm" onClick={onBack} className="w-fit">
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to List
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-2xl sm:text-3xl font-bold">
               {bike.make} {bike.model}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {bike.year && `${bike.year} • `}
               ID: {bike.id.slice(0, 8)}
             </p>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={onEdit}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+          <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
           {nextStage && (
-            <Button onClick={() => setShowAdvanceDialog(true)}>
+            <Button onClick={() => setShowAdvanceDialog(true)} className="w-full sm:w-auto">
               <ArrowRight className="h-4 w-4 mr-2" />
               Move to {getStageLabel(nextStage)}
             </Button>
