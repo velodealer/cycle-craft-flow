@@ -240,8 +240,8 @@ export default function BikeDetailView({ bike, onEdit, onBack, onUpdate }: BikeD
 
         {/* Tasks & Timeline */}
         <div className="space-y-6">
-          {/* Show cleaning task if bike is in detailing or cleaning status */}
-          {(['detailing', 'cleaning'].includes(bike.status)) && (
+          {/* Show cleaning task if bike is in cleaning status */}
+          {bike.status === 'cleaning' && (
             <CleaningTask bike={bike} onUpdate={onUpdate} />
           )}
         </div>

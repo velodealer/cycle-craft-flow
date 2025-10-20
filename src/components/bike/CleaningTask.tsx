@@ -63,6 +63,9 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
         setPhotosBefore(data.photos_before || []);
         setPhotosAfter(data.photos_after || []);
         setStatus(data.status as 'pending' | 'in_progress' | 'complete');
+      } else {
+        // Auto-create cleaning job if it doesn't exist
+        await createCleaningJobOnLoad();
       }
     } catch (error) {
       console.error('Error loading cleaning job:', error);
@@ -73,6 +76,32 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createCleaningJobOnLoad = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert({
+          bike_id: bike.id,
+          type: 'detailing',
+          title: `Cleaning - ${bike.make} ${bike.model}`,
+          description: '',
+          status: 'pending',
+          assigned_to: profile?.id,
+          checklist: {},
+          photos_before: [],
+          photos_after: []
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCleaningJob(data);
+    } catch (error) {
+      console.error('Error auto-creating cleaning job:', error);
     }
   };
 
@@ -229,13 +258,12 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!cleaningJob ? (
+        {loading ? (
+          <div className="text-center py-8">Loading cleaning task...</div>
+        ) : !cleaningJob ? (
           <div className="text-center py-8">
             <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">No cleaning task has been created for this bike.</p>
-            <Button onClick={createCleaningJob} disabled={saving}>
-              {saving ? 'Creating...' : 'Create Cleaning Task'}
-            </Button>
+            <p className="text-muted-foreground">Creating cleaning task...</p>
           </div>
         ) : (
           <>

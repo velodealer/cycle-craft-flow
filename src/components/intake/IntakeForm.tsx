@@ -211,6 +211,26 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
 
       if (bikeError) throw bikeError;
 
+      // Automatically create cleaning job
+      const { error: jobError } = await supabase
+        .from('jobs')
+        .insert({
+          bike_id: values.bike_id,
+          type: 'detailing',
+          title: `Cleaning - ${selectedBike.make} ${selectedBike.model}`,
+          description: 'Cleaning task created automatically from intake',
+          status: 'pending',
+          assigned_to: profile?.id,
+          checklist: {},
+          photos_before: [],
+          photos_after: []
+        });
+
+      if (jobError) {
+        console.error('Error creating cleaning job:', jobError);
+        // Don't throw - intake was successful even if job creation fails
+      }
+
       toast({ title: 'Bike intake completed - moved to cleaning' });
       onSuccess();
     } catch (error: any) {
