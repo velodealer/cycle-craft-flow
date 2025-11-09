@@ -8,7 +8,8 @@ import {
   FileText, 
   Users, 
   BarChart3, 
-  Settings 
+  Settings,
+  Truck
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +32,7 @@ const navigationItems = [
   { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
   { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
   { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
+  { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
   
