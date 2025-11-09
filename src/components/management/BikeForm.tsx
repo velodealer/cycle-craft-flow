@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import PhotoUpload from '@/components/PhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -28,7 +29,35 @@ const bikeSchema = z.object({
   finance_scheme: z.enum(['vat_qualifying', 'margin_scheme', 'commercial_vat']),
   description: z.string().optional(),
   listing_description: z.string().optional(),
-});
+
+  // Collection fields
+  arrange_collection: z.boolean().default(false),
+  collection_sender_name: z.string().optional(),
+  collection_sender_email: z.string().email().optional().or(z.literal('')),
+  collection_sender_phone: z.string().optional(),
+  collection_address_street: z.string().optional(),
+  collection_address_city: z.string().optional(),
+  collection_address_postcode: z.string().optional(),
+  collection_instructions: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.arrange_collection) {
+      return (
+        data.collection_sender_name &&
+        data.collection_sender_email &&
+        data.collection_sender_phone &&
+        data.collection_address_street &&
+        data.collection_address_city &&
+        data.collection_address_postcode
+      );
+    }
+    return true;
+  },
+  {
+    message: 'All collection details are required when arranging collection',
+    path: ['arrange_collection']
+  }
+);
 
 interface BikeFormProps {
   bike?: any;
@@ -57,18 +86,33 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       finance_scheme: bike?.finance_scheme || 'margin_scheme',
       description: bike?.description || '',
       listing_description: bike?.listing_description || '',
+
+      arrange_collection: false,
+      collection_sender_name: '',
+      collection_sender_email: '',
+      collection_sender_phone: '',
+      collection_address_street: '',
+      collection_address_city: '',
+      collection_address_postcode: '',
+      collection_instructions: '',
     },
   });
 
   const onSubmit = async (values: z.infer<typeof bikeSchema>) => {
     setSubmitting(true);
     try {
+      const { arrange_collection, collection_sender_name, collection_sender_email, 
+              collection_sender_phone, collection_address_street, collection_address_city,
+              collection_address_postcode, collection_instructions, ...bikeFields } = values;
+
       const bikeData = {
-        ...values,
+        ...bikeFields,
         fulfillment_type: 'stocked_by_me',
-        status: 'pending_intake',
+        status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
         photos,
       };
+
+      let bikeId = bike?.id;
 
       if (bike) {
         const { error } = await supabase
@@ -78,11 +122,43 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         if (error) throw error;
         toast({ title: 'Bike updated successfully' });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('bikes')
-          .insert(bikeData as any);
+          .insert(bikeData as any)
+          .select('id')
+          .single();
         if (error) throw error;
+        bikeId = data.id;
         toast({ title: 'Bike created successfully' });
+      }
+
+      // Arrange collection if requested
+      if (arrange_collection && bikeId) {
+        const { data: collectionData, error: collectionError } = await supabase.functions.invoke('create-collection-order', {
+          body: {
+            bike_id: bikeId,
+            sender_name: collection_sender_name,
+            sender_email: collection_sender_email,
+            sender_phone: collection_sender_phone,
+            address_street: collection_address_street,
+            address_city: collection_address_city,
+            address_postcode: collection_address_postcode,
+            delivery_instructions: collection_instructions
+          }
+        });
+
+        if (collectionError) {
+          toast({
+            title: 'Collection booking failed',
+            description: 'Bike saved but collection not arranged. You can retry from bike details.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Collection arranged',
+            description: collectionData.tracking_number ? `Tracking: ${collectionData.tracking_number}` : 'Collection order created successfully'
+          });
+        }
       }
       
       onSuccess();
@@ -318,6 +394,147 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   </FormItem>
                 )}
               />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Bike Collection (Optional)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="arrange_collection"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Arrange bike collection via Cycle Courier Co
+                      </FormLabel>
+                      <FormDescription>
+                        We'll automatically book collection from the owner's address
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch('arrange_collection') && (
+                <div className="space-y-4 pl-6 border-l-2 border-muted">
+                  <h4 className="text-sm font-medium">Sender Details</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="collection_sender_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sender Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Smith" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="collection_sender_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+44 7700 900000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="collection_sender_email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email *</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="john@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <h4 className="text-sm font-medium pt-2">Pickup Address</h4>
+
+                  <FormField
+                    control={form.control}
+                    name="collection_address_street"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Street Address *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123 Main Street" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="collection_address_city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Brighton" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="collection_address_postcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Postcode *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="BN1 1AA" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="collection_instructions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Instructions</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Any special instructions for the courier..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 

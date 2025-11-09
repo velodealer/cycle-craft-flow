@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      bike_collections: {
+        Row: {
+          address_city: string
+          address_country: string
+          address_postcode: string
+          address_street: string
+          bike_id: string
+          completed_at: string | null
+          created_at: string
+          delivery_instructions: string | null
+          error_message: string | null
+          id: string
+          order_id: string | null
+          retry_count: number | null
+          scheduled_date: string | null
+          sender_email: string
+          sender_name: string
+          sender_phone: string
+          status: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_city: string
+          address_country?: string
+          address_postcode: string
+          address_street: string
+          bike_id: string
+          completed_at?: string | null
+          created_at?: string
+          delivery_instructions?: string | null
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          retry_count?: number | null
+          scheduled_date?: string | null
+          sender_email: string
+          sender_name: string
+          sender_phone: string
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_city?: string
+          address_country?: string
+          address_postcode?: string
+          address_street?: string
+          bike_id?: string
+          completed_at?: string | null
+          created_at?: string
+          delivery_instructions?: string | null
+          error_message?: string | null
+          id?: string
+          order_id?: string | null
+          retry_count?: number | null
+          scheduled_date?: string | null
+          sender_email?: string
+          sender_name?: string
+          sender_phone?: string
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bike_collections_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bikes: {
         Row: {
           accessories_included: string | null
@@ -509,6 +583,9 @@ export type Database = {
         | "sold"
         | "pending_intake"
         | "in_stock"
+        | "awaiting_collection"
+        | "collection_in_progress"
+        | "in_transit"
       finance_scheme: "vat_qualifying" | "margin_scheme" | "commercial_vat"
       fulfilment_stage:
         | "intake"
@@ -665,6 +742,9 @@ export const Constants = {
         "sold",
         "pending_intake",
         "in_stock",
+        "awaiting_collection",
+        "collection_in_progress",
+        "in_transit",
       ],
       finance_scheme: ["vat_qualifying", "margin_scheme", "commercial_vat"],
       fulfilment_stage: ["intake", "cleaning", "inspection", "repair", "ready"],

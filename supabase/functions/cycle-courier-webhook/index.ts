@@ -110,51 +110,127 @@ serve(async (req) => {
     const payload = JSON.parse(rawBody);
     console.log('Received webhook payload:', JSON.stringify(payload));
 
-    // Process webhook based on event type
-    // This is a placeholder - customize based on actual Cycle Courier Co webhook structure
-    const { 
-      event_type, 
-      delivery_id, 
-      bike_id, 
-      status, 
-      tracking_number,
-      timestamp 
-    } = payload;
+    // Extract order data from payload
+    const order = payload.data?.order;
+    const orderId = order?.id;
 
-    if (!event_type) {
+    if (!orderId) {
+      console.error('No order ID in webhook payload');
       return new Response(
-        JSON.stringify({ error: 'Invalid payload: event_type is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'No order ID provided' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Handle different event types
-    switch (event_type) {
+    // Find the collection record by order_id
+    const { data: collection, error: collectionError } = await supabase
+      .from('bike_collections')
+      .select('*')
+      .eq('order_id', orderId)
+      .single();
+
+    if (collectionError || !collection) {
+      console.error('Collection not found for order:', orderId, collectionError);
+      return new Response(
+        JSON.stringify({ error: 'Collection not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Processing event for collection:', collection.id);
+
+    // Process the payload based on event type
+    switch (payload.event_type) {
+      case 'order.created':
       case 'delivery.created':
-        console.log(`Delivery created: ${delivery_id} for bike: ${bike_id}`);
-        // TODO: Update bike record with delivery information
+        console.log('New delivery created:', payload.data);
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: order.status || 'scheduled',
+            scheduled_date: order.scheduledDate || null
+          })
+          .eq('id', collection.id);
         break;
-
+        
+      case 'order.status.updated':
       case 'delivery.status_updated':
-        console.log(`Delivery status updated: ${delivery_id} - ${status}`);
-        // TODO: Update delivery status in database
+        console.log('Delivery status updated:', order.status);
+        
+        // Update collection status
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: order.status,
+            scheduled_date: order.scheduledDate || null
+          })
+          .eq('id', collection.id);
+        
+        // Map Cycle Courier status to bike status
+        let bikeStatus = null;
+        switch (order.status) {
+          case 'scheduled':
+            bikeStatus = 'awaiting_collection';
+            break;
+          case 'driver_to_collection':
+            bikeStatus = 'collection_in_progress';
+            break;
+          case 'collected':
+            bikeStatus = 'in_transit';
+            break;
+          case 'driver_to_delivery':
+            bikeStatus = 'in_transit';
+            break;
+          case 'delivered':
+            bikeStatus = 'pending_intake';
+            await supabase
+              .from('bike_collections')
+              .update({ completed_at: new Date().toISOString() })
+              .eq('id', collection.id);
+            break;
+        }
+        
+        if (bikeStatus) {
+          await supabase
+            .from('bikes')
+            .update({ status: bikeStatus })
+            .eq('id', collection.bike_id);
+        }
         break;
-
+        
       case 'delivery.completed':
-        console.log(`Delivery completed: ${delivery_id}`);
-        // TODO: Mark delivery as completed
+      case 'order.delivery.completed':
+        console.log('Delivery completed:', payload.data);
+        
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: 'delivered',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', collection.id);
+        
+        await supabase
+          .from('bikes')
+          .update({ status: 'pending_intake' })
+          .eq('id', collection.bike_id);
         break;
-
+        
       case 'delivery.failed':
-        console.log(`Delivery failed: ${delivery_id}`);
-        // TODO: Handle failed delivery
+      case 'order.cancelled':
+        console.log('Delivery failed or cancelled:', payload.data);
+        
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: 'cancelled',
+            error_message: order.cancellationReason || 'Order was cancelled'
+          })
+          .eq('id', collection.id);
         break;
-
+        
       default:
-        console.log(`Unknown event type: ${event_type}`);
+        console.log('Unhandled event type:', payload.event_type);
     }
 
     // Log webhook event (optional - create webhook_logs table if needed)

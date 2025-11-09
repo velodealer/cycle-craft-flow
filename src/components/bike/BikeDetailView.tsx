@@ -6,8 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowRight, Edit, ChevronLeft } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import AdvanceStageDialog from './AdvanceStageDialog';
-
 import CleaningTask from './CleaningTask';
+import { CollectionStatus } from './CollectionStatus';
 
 interface BikeDetailViewProps {
   bike: any;
@@ -253,6 +253,9 @@ export default function BikeDetailView({
 
         {/* Tasks & Timeline */}
         <div className="space-y-6">
+          {/* Show collection status if bike has collection */}
+          <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />
+          
           {/* Show cleaning task if bike is in cleaning status */}
           {bike.status === 'cleaning' && (
             <CleaningTask bike={bike} onUpdate={onUpdate} />
