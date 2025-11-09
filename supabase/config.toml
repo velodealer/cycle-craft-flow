@@ -1,1 +1,4 @@
 project_id = "hgztcymscgyuekgsyyfe"
+
+[functions.cycle-courier-webhook]
+verify_jwt = false
