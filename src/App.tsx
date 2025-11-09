@@ -6,13 +6,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import BPSDashboard from "@/components/BPSDashboard";
+import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import BikesPage from "./pages/BikesPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
 import PartsPage from "./pages/PartsPage";
 import JobsPage from "./pages/JobsPage";
-
 import InvoicesPage from "./pages/InvoicesPage";
 import OwnersPage from "./pages/OwnersPage";
 import ReportsPage from "./pages/ReportsPage";
@@ -29,8 +29,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Layout><BPSDashboard /></Layout>} />
+            <Route path="/dashboard" element={<Layout><BPSDashboard /></Layout>} />
             <Route path="/bikes" element={<Layout><BikesPage /></Layout>} />
             <Route path="/intake" element={<Layout><IntakePage /></Layout>} />
             <Route path="/cleaning" element={<Layout><CleaningPage /></Layout>} />
