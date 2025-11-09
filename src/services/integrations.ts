@@ -30,10 +30,23 @@ export const getCycleCourierIntegration = async (): Promise<Integration | null> 
   return data;
 };
 
+export interface BpsReceiverSettings {
+  name: string;
+  email: string;
+  phone: string;
+  address: {
+    street: string;
+    city: string;
+    postcode: string;
+    country: string;
+  };
+}
+
 // Save or update Cycle Courier Co API key
 export const saveCycleCourierApiKey = async (
   apiKey: string,
   webhookSecret: string,
+  bpsReceiver: BpsReceiverSettings,
   existingIntegration?: Integration | null
 ): Promise<Integration> => {
 
@@ -45,6 +58,7 @@ export const saveCycleCourierApiKey = async (
         api_key: apiKey,
         webhook_secret: webhookSecret,
         is_active: true,
+        settings: { bps_receiver: bpsReceiver } as unknown as Json,
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingIntegration.id)
@@ -67,6 +81,7 @@ export const saveCycleCourierApiKey = async (
         api_key: apiKey,
         webhook_secret: webhookSecret,
         is_active: true,
+        settings: { bps_receiver: bpsReceiver } as unknown as Json,
       })
       .select()
       .single();

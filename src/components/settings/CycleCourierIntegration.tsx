@@ -13,6 +13,7 @@ import {
   deactivateCycleCourierIntegration,
   getWebhookUrl,
   type Integration,
+  type BpsReceiverSettings,
 } from '@/services/integrations';
 
 export default function CycleCourierIntegration() {
@@ -24,6 +25,15 @@ export default function CycleCourierIntegration() {
   const [webhookSecret, setWebhookSecret] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
+  
+  // BPS Receiver Address fields
+  const [bpsName, setBpsName] = useState('Brighton Premium Storage');
+  const [bpsEmail, setBpsEmail] = useState('');
+  const [bpsPhone, setBpsPhone] = useState('');
+  const [bpsStreet, setBpsStreet] = useState('');
+  const [bpsCity, setBpsCity] = useState('');
+  const [bpsPostcode, setBpsPostcode] = useState('');
+  const [bpsCountry, setBpsCountry] = useState('UK');
 
   const webhookUrl = getWebhookUrl();
 
@@ -41,6 +51,17 @@ export default function CycleCourierIntegration() {
       }
       if (data?.webhook_secret) {
         setWebhookSecret(data.webhook_secret);
+      }
+      // Load BPS receiver settings if available
+      if (data?.settings && typeof data.settings === 'object' && 'bps_receiver' in data.settings) {
+        const bpsReceiver = data.settings.bps_receiver as unknown as BpsReceiverSettings;
+        setBpsName(bpsReceiver.name || 'Brighton Premium Storage');
+        setBpsEmail(bpsReceiver.email || '');
+        setBpsPhone(bpsReceiver.phone || '');
+        setBpsStreet(bpsReceiver.address?.street || '');
+        setBpsCity(bpsReceiver.address?.city || '');
+        setBpsPostcode(bpsReceiver.address?.postcode || '');
+        setBpsCountry(bpsReceiver.address?.country || 'UK');
       }
     } catch (error) {
       console.error('Error loading integration:', error);
@@ -73,9 +94,30 @@ export default function CycleCourierIntegration() {
       return;
     }
 
+    if (!bpsName.trim() || !bpsEmail.trim() || !bpsPhone.trim() || 
+        !bpsStreet.trim() || !bpsCity.trim() || !bpsPostcode.trim() || !bpsCountry.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all BPS delivery address fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setSaving(true);
-      const updated = await saveCycleCourierApiKey(apiKey, webhookSecret, integration);
+      const bpsReceiver: BpsReceiverSettings = {
+        name: bpsName,
+        email: bpsEmail,
+        phone: bpsPhone,
+        address: {
+          street: bpsStreet,
+          city: bpsCity,
+          postcode: bpsPostcode,
+          country: bpsCountry,
+        },
+      };
+      const updated = await saveCycleCourierApiKey(apiKey, webhookSecret, bpsReceiver, integration);
       setIntegration(updated);
       toast({
         title: 'Success',
@@ -270,7 +312,94 @@ export default function CycleCourierIntegration() {
                 Provided by Cycle Courier Co for webhook signature verification
               </p>
             </div>
+          </div>
 
+          {/* BPS Delivery Address Section */}
+          <div className="space-y-4 pt-4 border-t">
+            <div>
+              <h4 className="font-medium mb-1">Delivery Address Configuration</h4>
+              <p className="text-sm text-muted-foreground">
+                Configure the BPS warehouse address where bikes will be delivered
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="bpsName">Recipient Name</Label>
+                <Input
+                  id="bpsName"
+                  value={bpsName}
+                  onChange={(e) => setBpsName(e.target.value)}
+                  placeholder="e.g., Brighton Premium Storage"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bpsEmail">Email</Label>
+                <Input
+                  id="bpsEmail"
+                  type="email"
+                  value={bpsEmail}
+                  onChange={(e) => setBpsEmail(e.target.value)}
+                  placeholder="delivery@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bpsPhone">Phone</Label>
+                <Input
+                  id="bpsPhone"
+                  type="tel"
+                  value={bpsPhone}
+                  onChange={(e) => setBpsPhone(e.target.value)}
+                  placeholder="+44 1234 567890"
+                />
+              </div>
+
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="bpsStreet">Street Address</Label>
+                <Input
+                  id="bpsStreet"
+                  value={bpsStreet}
+                  onChange={(e) => setBpsStreet(e.target.value)}
+                  placeholder="123 Storage Lane"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bpsCity">City</Label>
+                <Input
+                  id="bpsCity"
+                  value={bpsCity}
+                  onChange={(e) => setBpsCity(e.target.value)}
+                  placeholder="Brighton"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bpsPostcode">Postcode</Label>
+                <Input
+                  id="bpsPostcode"
+                  value={bpsPostcode}
+                  onChange={(e) => setBpsPostcode(e.target.value)}
+                  placeholder="BN1 1AA"
+                />
+              </div>
+
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="bpsCountry">Country</Label>
+                <Input
+                  id="bpsCountry"
+                  value={bpsCountry}
+                  onChange={(e) => setBpsCountry(e.target.value)}
+                  placeholder="UK"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-4 pt-4 border-t">
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : 'Save'}
