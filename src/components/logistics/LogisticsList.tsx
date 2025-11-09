@@ -44,7 +44,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
       setLoading(true);
       
       const statuses = status === "active" 
-        ? ["pending", "scheduled", "driver_to_collection", "collected", "driver_to_delivery"]
+        ? ["created", "pending", "scheduled", "driver_to_collection", "collected", "driver_to_delivery"]
         : ["delivered", "cancelled", "failed"];
 
       const { data, error } = await supabase
@@ -79,6 +79,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
+      created: { variant: "secondary", label: "Created" },
       pending: { variant: "secondary", label: "Pending" },
       scheduled: { variant: "default", label: "Scheduled" },
       driver_to_collection: { variant: "default", label: "Driver En Route" },
