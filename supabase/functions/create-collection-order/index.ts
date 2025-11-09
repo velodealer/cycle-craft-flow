@@ -29,7 +29,24 @@ serve(async (req) => {
 
     console.log('Creating collection order for bike:', bike_id);
 
-    // 1. Get Cycle Courier integration
+    // 1. Get bike details
+    const { data: bike, error: bikeError } = await supabase
+      .from('bikes')
+      .select('id, make, model, frame_number, year, sale_price, asking_price')
+      .eq('id', bike_id)
+      .single();
+
+    if (bikeError || !bike) {
+      console.error('Bike not found:', bikeError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Bike not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Bike details:', { make: bike.make, model: bike.model, year: bike.year });
+
+    // 2. Get Cycle Courier integration
     const { data: integration, error: integrationError } = await supabase
       .from('integrations')
       .select('*')
@@ -93,6 +110,7 @@ serve(async (req) => {
     };
 
     // 4. Prepare order payload for Cycle Courier API
+    const bikeValue = bike.sale_price || bike.asking_price || 1000;
     const orderPayload = {
       customerOrderNumber: bike_id,
       sender: {
@@ -112,11 +130,20 @@ serve(async (req) => {
         phone: bpsReceiver.phone,
         address: bpsReceiver.address
       },
+      bikes: [
+        {
+          brand: bike.make,
+          model: bike.model,
+          frameNumber: bike.frame_number || 'N/A',
+          year: bike.year || new Date().getFullYear(),
+          value: bikeValue
+        }
+      ],
       deliveryInstructions: delivery_instructions || '',
-      itemDescription: 'Bicycle',
-      itemValue: 1000,
       requiresSignature: true
     };
+
+    console.log('Sending bike data to API:', JSON.stringify(orderPayload.bikes));
 
     console.log('Calling Cycle Courier API...');
 
