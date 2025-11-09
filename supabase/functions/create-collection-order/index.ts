@@ -121,12 +121,11 @@ serve(async (req) => {
     console.log('Calling Cycle Courier API...');
 
     // 5. Call Cycle Courier API
-    const response = await fetch('https://booking.cyclecourierco.com/api/v1/orders', {
+    const response = await fetch('https://api.cyclecourierco.com/functions/v1/orders', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${integration.api_key}`,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': `bike_${bike_id}_${Date.now()}`
+        'X-API-Key': integration.api_key,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(orderPayload)
     });
