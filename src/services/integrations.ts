@@ -13,11 +13,6 @@ export interface Integration {
   updated_at: string;
 }
 
-// Generate a secure webhook secret
-export const generateWebhookSecret = (): string => {
-  const randomString = crypto.randomUUID().replace(/-/g, '');
-  return `ccc_webhook_${randomString}`;
-};
 
 // Get Cycle Courier Co integration
 export const getCycleCourierIntegration = async (): Promise<Integration | null> => {
@@ -38,10 +33,9 @@ export const getCycleCourierIntegration = async (): Promise<Integration | null> 
 // Save or update Cycle Courier Co API key
 export const saveCycleCourierApiKey = async (
   apiKey: string,
+  webhookSecret: string,
   existingIntegration?: Integration | null
 ): Promise<Integration> => {
-  // Auto-generate webhook secret if creating new integration
-  const webhookSecret = existingIntegration?.webhook_secret || generateWebhookSecret();
 
   if (existingIntegration) {
     // Update existing integration
@@ -49,6 +43,7 @@ export const saveCycleCourierApiKey = async (
       .from('integrations')
       .update({
         api_key: apiKey,
+        webhook_secret: webhookSecret,
         is_active: true,
         updated_at: new Date().toISOString(),
       })
@@ -104,29 +99,6 @@ export const testCycleCourierConnection = async (apiKey: string): Promise<boolea
   }
 };
 
-// Regenerate webhook secret
-export const regenerateWebhookSecret = async (
-  integrationId: string
-): Promise<string> => {
-  const newSecret = generateWebhookSecret();
-
-  const { data, error } = await supabase
-    .from('integrations')
-    .update({
-      webhook_secret: newSecret,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', integrationId)
-    .select('webhook_secret')
-    .single();
-
-  if (error) {
-    console.error('Error regenerating webhook secret:', error);
-    throw error;
-  }
-
-  return data.webhook_secret;
-};
 
 // Deactivate Cycle Courier Co integration
 export const deactivateCycleCourierIntegration = async (

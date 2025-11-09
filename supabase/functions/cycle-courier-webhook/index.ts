@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature',
 };
 
 serve(async (req) => {
@@ -17,19 +17,22 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // Get webhook secret from headers
-    const receivedSecret = req.headers.get('x-webhook-secret');
+    // Get HMAC signature from headers
+    const signature = req.headers.get('x-webhook-signature');
     
-    if (!receivedSecret) {
-      console.error('Webhook authentication failed: No secret provided');
+    if (!signature) {
+      console.error('Webhook authentication failed: No signature provided');
       return new Response(
-        JSON.stringify({ error: 'Webhook secret is required' }),
+        JSON.stringify({ error: 'Webhook signature is required' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
+
+    // Get the raw body text (must be raw for signature verification)
+    const rawBody = await req.text();
 
     // Validate webhook secret against stored integration
     const { data: integration, error: integrationError } = await supabase
@@ -60,10 +63,42 @@ serve(async (req) => {
       );
     }
 
-    if (receivedSecret !== integration.webhook_secret) {
-      console.error('Webhook authentication failed: Invalid secret');
+    if (!integration.webhook_secret) {
+      console.error('Webhook secret not configured');
       return new Response(
-        JSON.stringify({ error: 'Invalid webhook secret' }),
+        JSON.stringify({ error: 'Webhook secret not configured' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Compute HMAC SHA-256 signature
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(integration.webhook_secret);
+    const messageData = encoder.encode(rawBody);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const hashArray = Array.from(new Uint8Array(signatureBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const expectedSignature = `sha256=${hashHex}`;
+
+    // Compare signatures
+    if (signature !== expectedSignature) {
+      console.error('Webhook authentication failed: Invalid signature');
+      console.error('Received:', signature);
+      console.error('Expected:', expectedSignature);
+      return new Response(
+        JSON.stringify({ error: 'Invalid webhook signature' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -71,8 +106,8 @@ serve(async (req) => {
       );
     }
 
-    // Parse webhook payload
-    const payload = await req.json();
+    // Parse webhook payload (after signature verification)
+    const payload = JSON.parse(rawBody);
     console.log('Received webhook payload:', JSON.stringify(payload));
 
     // Process webhook based on event type

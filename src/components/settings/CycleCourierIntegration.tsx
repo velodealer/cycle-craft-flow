@@ -4,27 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Truck, Eye, EyeOff, Copy, RefreshCw, ExternalLink } from 'lucide-react';
+import { Truck, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   getCycleCourierIntegration,
   saveCycleCourierApiKey,
   testCycleCourierConnection,
-  regenerateWebhookSecret,
   deactivateCycleCourierIntegration,
   getWebhookUrl,
   type Integration,
 } from '@/services/integrations';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 export default function CycleCourierIntegration() {
   const [integration, setIntegration] = useState<Integration | null>(null);
@@ -32,8 +21,9 @@ export default function CycleCourierIntegration() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [apiKey, setApiKey] = useState('');
+  const [webhookSecret, setWebhookSecret] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
   const webhookUrl = getWebhookUrl();
 
@@ -48,6 +38,9 @@ export default function CycleCourierIntegration() {
       setIntegration(data);
       if (data?.api_key) {
         setApiKey(data.api_key);
+      }
+      if (data?.webhook_secret) {
+        setWebhookSecret(data.webhook_secret);
       }
     } catch (error) {
       console.error('Error loading integration:', error);
@@ -71,9 +64,18 @@ export default function CycleCourierIntegration() {
       return;
     }
 
+    if (!webhookSecret.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a webhook secret',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setSaving(true);
-      const updated = await saveCycleCourierApiKey(apiKey, integration);
+      const updated = await saveCycleCourierApiKey(apiKey, webhookSecret, integration);
       setIntegration(updated);
       toast({
         title: 'Success',
@@ -146,26 +148,6 @@ export default function CycleCourierIntegration() {
     }
   };
 
-  const handleRegenerateSecret = async () => {
-    if (!integration) return;
-
-    try {
-      const newSecret = await regenerateWebhookSecret(integration.id);
-      setIntegration({ ...integration, webhook_secret: newSecret });
-      setShowRegenerateDialog(false);
-      toast({
-        title: 'Success',
-        description: 'Webhook secret regenerated successfully',
-      });
-    } catch (error) {
-      console.error('Error regenerating webhook secret:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to regenerate webhook secret',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleDisconnect = async () => {
     if (!integration) return;
@@ -253,6 +235,40 @@ export default function CycleCourierIntegration() {
                   </Button>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Used for making API calls to Cycle Courier Co
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="webhookSecret">Webhook Secret</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="webhookSecret"
+                    type={showWebhookSecret ? 'text' : 'password'}
+                    value={webhookSecret}
+                    onChange={(e) => setWebhookSecret(e.target.value)}
+                    placeholder="Enter webhook secret from Cycle Courier Co"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3"
+                    onClick={() => setShowWebhookSecret(!showWebhookSecret)}
+                  >
+                    {showWebhookSecret ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Provided by Cycle Courier Co for webhook signature verification
+              </p>
             </div>
 
             <div className="flex gap-2">
@@ -274,13 +290,13 @@ export default function CycleCourierIntegration() {
             </div>
           </div>
 
-          {/* Webhook Configuration Section */}
-          {integration?.webhook_secret && (
+          {/* Webhook URL Section */}
+          {integration?.is_active && (
             <div className="space-y-4 pt-4 border-t">
               <div>
                 <h4 className="font-medium mb-1">Webhook Configuration</h4>
                 <p className="text-sm text-muted-foreground">
-                  Provide these details to Cycle Courier Co to receive delivery updates
+                  Provide this URL to Cycle Courier Co to receive delivery updates
                 </p>
               </div>
 
@@ -301,38 +317,8 @@ export default function CycleCourierIntegration() {
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="webhookSecret">Webhook Secret</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="webhookSecret"
-                    value={integration.webhook_secret}
-                    readOnly
-                    type="password"
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() =>
-                      handleCopyToClipboard(integration.webhook_secret!, 'Webhook Secret')
-                    }
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowRegenerateDialog(true)}
-                    title="Regenerate webhook secret"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </div>
                 <p className="text-xs text-muted-foreground">
-                  Include this secret in the X-Webhook-Secret header when calling the webhook
+                  Configure this webhook endpoint in your Cycle Courier Co dashboard
                 </p>
               </div>
             </div>
@@ -360,26 +346,6 @@ export default function CycleCourierIntegration() {
           )}
         </CardContent>
       </Card>
-
-      {/* Regenerate Webhook Secret Confirmation Dialog */}
-      <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Regenerate Webhook Secret?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will generate a new webhook secret. You'll need to update the secret in
-              your Cycle Courier Co configuration. The old secret will stop working
-              immediately.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRegenerateSecret}>
-              Regenerate
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
