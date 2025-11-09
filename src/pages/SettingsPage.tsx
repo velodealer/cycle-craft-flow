@@ -1,5 +1,6 @@
 import PlaceholderPage from '@/components/PlaceholderPage';
 import UserManagement from '@/components/UserManagement';
+import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -80,15 +81,17 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>External Integrations</CardTitle>
-              <CardDescription>
-                Manage connections to external services and APIs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <CycleCourierIntegration />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>More Integrations</CardTitle>
+                <CardDescription>
+                  Additional integrations coming soon
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium">Shopify Integration</h4>
@@ -99,9 +102,9 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground">Coming soon...</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4">

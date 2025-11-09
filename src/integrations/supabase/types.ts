@@ -191,6 +191,42 @@ export type Database = {
           },
         ]
       }
+      integrations: {
+        Row: {
+          api_key: string | null
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          name: string
+          settings: Json | null
+          updated_at: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          name: string
+          settings?: Json | null
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          settings?: Json | null
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           bike_id: string | null
@@ -450,10 +486,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role: { Args: never; Returns: string }
       has_any_role: {
         Args: { roles: Database["public"]["Enums"]["user_role"][] }
         Returns: boolean
