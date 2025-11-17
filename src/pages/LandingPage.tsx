@@ -2,6 +2,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Bike,
   ClipboardList,
@@ -13,10 +23,17 @@ import {
   Shield,
   ArrowRight,
   CheckCircle2,
+  User,
+  LogOut,
 } from "lucide-react";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const features = [
     {
@@ -71,12 +88,50 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-foreground">VeloDealer</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => navigate("/auth")}>
-                Sign In
-              </Button>
-              <Button onClick={() => navigate("/auth")}>
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {user ? (
+                <>
+                  <Button onClick={() => navigate("/")}>
+                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="rounded-full">
+                        <Avatar>
+                          <AvatarFallback>
+                            {profile?.name?.charAt(0)?.toUpperCase() || <User className="h-4 w-4" />}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium">{profile?.name}</p>
+                          <p className="text-xs text-muted-foreground">{profile?.email}</p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate("/")}>
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => navigate("/auth")}>
+                    Sign In
+                  </Button>
+                  <Button onClick={() => navigate("/auth")}>
+                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
