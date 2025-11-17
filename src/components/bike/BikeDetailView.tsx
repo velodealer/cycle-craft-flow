@@ -31,6 +31,20 @@ export default function BikeDetailView({
   const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
 
   const getNextStage = (currentStatus: string) => {
+    // Collection stages flow
+    const collectionStages = ['awaiting_collection', 'in_transit', 'pending_intake'];
+    const collectionIndex = collectionStages.indexOf(currentStatus);
+    
+    if (collectionIndex >= 0 && collectionIndex < collectionStages.length - 1) {
+      return collectionStages[collectionIndex + 1];
+    }
+    
+    // If at pending_intake, next is intake
+    if (currentStatus === 'pending_intake') {
+      return 'intake';
+    }
+    
+    // Standard workflow stages
     const stageOrder = [
       'intake', 'cleaning', 'inspection', 'pending_approval', 
       'repair', 'ready', 'listed', 'sold'
@@ -45,6 +59,9 @@ export default function BikeDetailView({
 
   const getStageLabel = (stage: string) => {
     const labels: Record<string, string> = {
+      'awaiting_collection': 'Awaiting Collection',
+      'in_transit': 'Collected',
+      'pending_intake': 'Delivered',
       'intake': 'Intake',
       'cleaning': 'Cleaning', 
       'inspection': 'Inspection',
@@ -105,7 +122,7 @@ export default function BikeDetailView({
       </div>
 
       {/* Status Progress */}
-      <StatusProgressBar currentStatus={bike.status} />
+      <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
 
       <Separator />
 
