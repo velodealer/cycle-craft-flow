@@ -117,7 +117,7 @@ serve(async (req) => {
     console.log('Received webhook payload:', JSON.stringify(payload));
 
     // Extract order data from payload
-    const order = payload.data?.order;
+    const order = payload.data;
     const orderId = order?.id;
 
     if (!orderId) {
