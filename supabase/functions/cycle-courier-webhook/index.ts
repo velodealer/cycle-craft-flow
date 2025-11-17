@@ -116,7 +116,8 @@ serve(async (req) => {
     const payload = JSON.parse(rawBody);
     console.log('Received webhook payload:', JSON.stringify(payload));
 
-    // Extract order data from payload
+    // Extract event type and order data from payload
+    const eventType = payload.event;
     const order = payload.data;
     const orderId = order?.id;
 
@@ -146,17 +147,70 @@ serve(async (req) => {
     console.log('Processing event for collection:', collection.id);
 
     // Process the payload based on event type
-    switch (payload.event_type) {
+    switch (eventType) {
       case 'order.created':
       case 'delivery.created':
-        console.log('New delivery created:', payload.data);
+        console.log('New order created:', order.status);
         await supabase
           .from('bike_collections')
           .update({ 
             status: order.status || 'scheduled',
-            scheduled_date: order.scheduledDate || null
+            scheduled_date: order.scheduled_pickup_date || null
           })
           .eq('id', collection.id);
+        
+        await supabase
+          .from('bikes')
+          .update({ status: 'awaiting_collection' })
+          .eq('id', collection.bike_id);
+        break;
+      
+      case 'order.collection.started':
+        console.log('Collection started - driver en route to pickup');
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: 'collection_in_progress',
+            scheduled_date: order.scheduled_pickup_date || null
+          })
+          .eq('id', collection.id);
+        
+        await supabase
+          .from('bikes')
+          .update({ status: 'collection_in_progress' })
+          .eq('id', collection.bike_id);
+        break;
+      
+      case 'order.collection.completed':
+        console.log('Collection completed - bike picked up');
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: 'collected',
+            scheduled_date: order.scheduled_delivery_date || null
+          })
+          .eq('id', collection.id);
+        
+        await supabase
+          .from('bikes')
+          .update({ status: 'in_transit' })
+          .eq('id', collection.bike_id);
+        break;
+      
+      case 'order.delivery.started':
+        console.log('Delivery started - driver en route to delivery');
+        await supabase
+          .from('bike_collections')
+          .update({ 
+            status: 'in_transit',
+            scheduled_date: order.scheduled_delivery_date || null
+          })
+          .eq('id', collection.id);
+        
+        await supabase
+          .from('bikes')
+          .update({ status: 'in_transit' })
+          .eq('id', collection.bike_id);
         break;
         
       case 'order.status.updated':
@@ -236,7 +290,7 @@ serve(async (req) => {
         break;
         
       default:
-        console.log('Unhandled event type:', payload.event_type);
+        console.log('Unhandled event type:', eventType);
     }
 
     // Log webhook event (optional - create webhook_logs table if needed)
@@ -252,7 +306,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: 'Webhook processed successfully',
-        event_type 
+        event_type: eventType 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
