@@ -90,13 +90,17 @@ serve(async (req) => {
     const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
     const hashArray = Array.from(new Uint8Array(signatureBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    const expectedSignature = `sha256=${hashHex}`;
+    
+    // Handle both signature formats: with or without 'sha256=' prefix
+    const receivedHash = signature.startsWith('sha256=') 
+      ? signature.substring(7) 
+      : signature;
 
-    // Compare signatures
-    if (signature !== expectedSignature) {
+    // Compare just the hash values
+    if (receivedHash !== hashHex) {
       console.error('Webhook authentication failed: Invalid signature');
-      console.error('Received:', signature);
-      console.error('Expected:', expectedSignature);
+      console.error('Received hash:', receivedHash);
+      console.error('Expected hash:', hashHex);
       return new Response(
         JSON.stringify({ error: 'Invalid webhook signature' }),
         { 
@@ -105,6 +109,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log('Webhook signature validated successfully');
 
     // Parse webhook payload (after signature verification)
     const payload = JSON.parse(rawBody);
