@@ -90,7 +90,7 @@ export default function LandingPage() {
             <div className="flex items-center space-x-4">
               {user ? (
                 <>
-                  <Button onClick={() => navigate("/")}>
+                  <Button onClick={() => navigate("/dashboard")}>
                     Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <DropdownMenu>
@@ -111,7 +111,7 @@ export default function LandingPage() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate("/")}>
+                      <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                         <User className="mr-2 h-4 w-4" />
                         Dashboard
                       </DropdownMenuItem>
