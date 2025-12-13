@@ -104,7 +104,7 @@ serve(async (req) => {
       address: {
         street: '123 BPS Street',
         city: 'Brighton',
-        zipcode: 'BN1 1AA',
+        zipCode: 'BN1 1AA',
         country: 'UK'
       }
     };
@@ -120,7 +120,7 @@ serve(async (req) => {
         address: {
           street: address_street,
           city: address_city,
-          zipcode: address_postcode,
+          zipCode: address_postcode,
           country: 'UK'
         }
       },
@@ -128,7 +128,12 @@ serve(async (req) => {
         name: bpsReceiver.name,
         email: bpsReceiver.email,
         phone: bpsReceiver.phone,
-        address: bpsReceiver.address
+        address: {
+          street: bpsReceiver.address.street,
+          city: bpsReceiver.address.city,
+          zipCode: bpsReceiver.address.postcode || bpsReceiver.address.zipcode || bpsReceiver.address.zipCode,
+          country: bpsReceiver.address.country
+        }
       },
       bikes: [
         {
