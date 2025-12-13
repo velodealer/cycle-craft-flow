@@ -193,7 +193,7 @@ serve(async (req) => {
         
         await supabase
           .from('bikes')
-          .update({ status: 'in_transit' })
+          .update({ status: 'pending_intake' })
           .eq('id', collection.bike_id);
         break;
       
@@ -272,7 +272,7 @@ serve(async (req) => {
         
         await supabase
           .from('bikes')
-          .update({ status: 'pending_intake' })
+          .update({ status: 'intake' })
           .eq('id', collection.bike_id);
         break;
         
