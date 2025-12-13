@@ -104,7 +104,7 @@ serve(async (req) => {
       address: {
         street: '123 BPS Street',
         city: 'Brighton',
-        postcode: 'BN1 1AA',
+        zipcode: 'BN1 1AA',
         country: 'UK'
       }
     };
@@ -120,7 +120,7 @@ serve(async (req) => {
         address: {
           street: address_street,
           city: address_city,
-          postcode: address_postcode,
+          zipcode: address_postcode,
           country: 'UK'
         }
       },
