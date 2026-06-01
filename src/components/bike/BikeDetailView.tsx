@@ -30,30 +30,27 @@ export default function BikeDetailView({
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
 
-  const getNextStage = (currentStatus: string) => {
-    // Collection stages flow
-    const collectionStages = ['awaiting_collection', 'in_transit', 'pending_intake'];
-    const collectionIndex = collectionStages.indexOf(currentStatus);
-    
-    if (collectionIndex >= 0 && collectionIndex < collectionStages.length - 1) {
-      return collectionStages[collectionIndex + 1];
-    }
-    
-    // If at pending_intake, next is intake
-    if (currentStatus === 'pending_intake') {
-      return 'intake';
-    }
-    
-    // Standard workflow stages
-    const stageOrder = [
-      'intake', 'cleaning', 'inspection', 'pending_approval', 
-      'repair', 'ready', 'listed', 'sold'
+  const allStages = (hasCollection: boolean = true) => {
+    // Build a single ordered list; we don't know if a collection exists here without a query,
+    // but status values are unique across both lists so reverse-lookup works on the union.
+    return [
+      'awaiting_collection', 'in_transit', 'pending_intake',
+      'intake', 'cleaning', 'inspection', 'pending_approval',
+      'repair', 'ready', 'listed', 'sold',
     ];
-    
-    const currentIndex = stageOrder.indexOf(currentStatus);
-    if (currentIndex >= 0 && currentIndex < stageOrder.length - 1) {
-      return stageOrder[currentIndex + 1];
-    }
+  };
+
+  const getNextStage = (currentStatus: string) => {
+    const stages = allStages();
+    const i = stages.indexOf(currentStatus);
+    if (i >= 0 && i < stages.length - 1) return stages[i + 1];
+    return null;
+  };
+
+  const getPreviousStage = (currentStatus: string) => {
+    const stages = allStages();
+    const i = stages.indexOf(currentStatus);
+    if (i > 0) return stages[i - 1];
     return null;
   };
 
