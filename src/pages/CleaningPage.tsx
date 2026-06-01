@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import BikeDetailView from '@/components/bike/BikeDetailView';
@@ -22,7 +23,6 @@ export default function CleaningPage() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBike, setSelectedBike] = useState<any>(null);
-  const [showDetail, setShowDetail] = useState(false);
 
   const loadCleaningBikes = async () => {
     try {
@@ -59,7 +59,6 @@ export default function CleaningPage() {
 
       if (error) throw error;
       setSelectedBike(data);
-      setShowDetail(true);
     } catch (error: any) {
       toast({
         title: 'Error loading bike details',
@@ -69,29 +68,10 @@ export default function CleaningPage() {
     }
   };
 
-  const handleBackToList = () => {
-    setShowDetail(false);
+  const handleClose = () => {
     setSelectedBike(null);
     loadCleaningBikes();
   };
-
-  const handleUpdate = () => {
-    loadCleaningBikes();
-  };
-
-  if (showDetail && selectedBike) {
-    return (
-      <BikeDetailView
-        bike={selectedBike}
-        onEdit={() => {}}
-        onBack={handleBackToList}
-        onUpdate={handleUpdate}
-        showPhotos={false}
-        showPricing={false}
-        showDescriptions={false}
-      />
-    );
-  }
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading bikes...</div>;
@@ -176,6 +156,25 @@ export default function CleaningPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedBike} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Clean Bike</DialogTitle>
+          </DialogHeader>
+          {selectedBike && (
+            <BikeDetailView
+              bike={selectedBike}
+              onEdit={() => {}}
+              onBack={handleClose}
+              onUpdate={loadCleaningBikes}
+              showPhotos={false}
+              showPricing={false}
+              showDescriptions={false}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
