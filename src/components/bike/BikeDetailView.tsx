@@ -296,14 +296,18 @@ export default function BikeDetailView({
         </div>
       </div>
 
-      {/* Advance Stage Dialog */}
-      {nextStage && (
+      {/* Advance/Revert Stage Dialog */}
+      {dialogDirection && (dialogDirection === 'forward' ? nextStage : previousStage) && (
         <AdvanceStageDialog
-          isOpen={showAdvanceDialog}
-          onClose={() => setShowAdvanceDialog(false)}
+          isOpen={true}
+          onClose={() => setDialogDirection(null)}
           bike={bike}
-          nextStage={nextStage}
-          nextStageLabel={getStageLabel(nextStage)}
+          nextStage={(dialogDirection === 'forward' ? nextStage : previousStage) as string}
+          nextStageLabel={
+            dialogDirection === 'forward'
+              ? getStageLabel(nextStage as string)
+              : `${getStageLabel(previousStage as string)} (revert)`
+          }
           onSuccess={onUpdate}
         />
       )}
