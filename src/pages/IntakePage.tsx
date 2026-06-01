@@ -20,10 +20,10 @@ interface PendingBike {
 
 export default function IntakePage() {
   const [showForm, setShowForm] = useState(false);
+  const [processBikeId, setProcessBikeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<PendingBike[]>([]);
   const [stats, setStats] = useState({ today: 0, week: 0, pending: 0 });
-  const navigate = useNavigate();
 
   const load = async () => {
     setLoading(true);
