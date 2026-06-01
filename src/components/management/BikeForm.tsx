@@ -295,6 +295,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
 
               <FormField
                 control={form.control}
+                name="frame_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Frame Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., WTU123456789" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+
+              <FormField
+                control={form.control}
                 name="accessories_included"
                 render={({ field }) => (
                   <FormItem>
