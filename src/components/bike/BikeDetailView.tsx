@@ -72,6 +72,7 @@ export default function BikeDetailView({
   };
 
   const nextStage = getNextStage(bike.status);
+  const previousStage = getPreviousStage(bike.status);
 
   const formatCurrency = (amount: number | null) => {
     return amount ? `£${amount.toFixed(2)}` : '-';
