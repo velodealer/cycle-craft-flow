@@ -215,9 +215,17 @@ export default function BikeDetailView({
                   </div>
                 </div>
                 
-                <div className="mt-4">
-                  <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
-                  <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
+                    <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
+                  </div>
+                  {bike.purchase_date && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Purchase Date</label>
+                      <p className="text-base">{new Date(bike.purchase_date).toLocaleDateString()}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

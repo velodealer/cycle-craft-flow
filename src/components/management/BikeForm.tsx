@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import PhotoUpload from '@/components/PhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -21,11 +26,13 @@ const bikeSchema = z.object({
   size: z.string().optional(),
   colour: z.string().optional(),
   condition: z.string().optional(),
+  frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
+  purchase_date: z.date().optional(),
   finance_scheme: z.enum(['vat_qualifying', 'margin_scheme', 'commercial_vat']),
   description: z.string().optional(),
   listing_description: z.string().optional(),
@@ -78,11 +85,13 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       size: bike?.size || '',
       colour: bike?.colour || '',
       condition: bike?.condition || '',
+      frame_number: bike?.frame_number || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
+      purchase_date: bike?.purchase_date ? new Date(bike.purchase_date) : undefined,
       finance_scheme: bike?.finance_scheme || 'margin_scheme',
       description: bike?.description || '',
       listing_description: bike?.listing_description || '',
@@ -103,10 +112,11 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
     try {
       const { arrange_collection, collection_sender_name, collection_sender_email, 
               collection_sender_phone, collection_address_street, collection_address_city,
-              collection_address_postcode, collection_instructions, ...bikeFields } = values;
+              collection_address_postcode, collection_instructions, purchase_date, ...bikeFields } = values;
 
       const bikeData = {
         ...bikeFields,
+        purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
         photos,
@@ -285,6 +295,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
 
               <FormField
                 control={form.control}
+                name="frame_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Frame Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., WTU123456789" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+
+              <FormField
+                control={form.control}
                 name="accessories_included"
                 render={({ field }) => (
                   <FormItem>
@@ -371,6 +396,45 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="purchase_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Purchase Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-[240px] pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>When the bike was acquired (optional, for retrospective entries)</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
 
               <FormField
                 control={form.control}

@@ -9,6 +9,7 @@ import BPSDashboard from "@/components/BPSDashboard";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import BikesPage from "./pages/BikesPage";
+import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
 import PartsPage from "./pages/PartsPage";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Layout><BPSDashboard /></Layout>} />
             <Route path="/bikes" element={<Layout><BikesPage /></Layout>} />
+            <Route path="/bikes/:id" element={<Layout><BikeDetailPage /></Layout>} />
             <Route path="/intake" element={<Layout><IntakePage /></Layout>} />
             <Route path="/cleaning" element={<Layout><CleaningPage /></Layout>} />
             <Route path="/logistics" element={<Layout><LogisticsPage /></Layout>} />

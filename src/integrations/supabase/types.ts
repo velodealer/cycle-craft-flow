@@ -108,6 +108,7 @@ export type Database = {
           model: string
           owner_id: string | null
           photos: string[] | null
+          purchase_date: string | null
           purchase_price: number | null
           sale_price: number | null
           size: string | null
@@ -135,6 +136,7 @@ export type Database = {
           model: string
           owner_id?: string | null
           photos?: string[] | null
+          purchase_date?: string | null
           purchase_price?: number | null
           sale_price?: number | null
           size?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           model?: string
           owner_id?: string | null
           photos?: string[] | null
+          purchase_date?: string | null
           purchase_price?: number | null
           sale_price?: number | null
           size?: string | null
