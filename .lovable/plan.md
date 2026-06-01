@@ -1,14 +1,18 @@
-## Cleaning page: open bike in a dialog instead of inline view
+# Fix: "owner_check" constraint error on consignment bikes
 
-Mirror the intake page pattern on `/cleaning` so clicking "View & Clean" opens the bike in a popup instead of replacing the page with `BikeDetailView`.
+## Root cause
 
-### Changes
+The `bikes.owner_check` DB constraint requires that any bike with `source = 'customer_consignment'` has either `owner_id` or `external_owner_id` set. `BikeForm` never captures an owner, so the insert fails.
 
-**`src/pages/CleaningPage.tsx`**
-- Remove the `showDetail` full-page swap. Keep `selectedBike` state but render the list at all times.
-- Add a Shadcn `Dialog` controlled by `!!selectedBike`. Inside `DialogContent` (wide, scrollable: `max-w-4xl max-h-[90vh] overflow-y-auto`) with a `DialogHeader` titled "Clean Bike", render the existing `<BikeDetailView ... showPhotos={false} showPricing={false} showDescriptions={false} />`.
-- `onBack` and `onUpdate` close the dialog (set `selectedBike` to `null`) and call `loadCleaningBikes()` to refresh the queue.
-- "View & Clean" button still calls `handleView(bike)` which fetches the full bike row and sets `selectedBike` — now that just opens the dialog.
+## Changes (frontend only)
 
-### Out of scope
-- No changes to `BikeDetailView`, no DB changes, no workflow changes.
+**`src/components/management/BikeForm.tsx`**
+- Add `external_owner_id: z.string().uuid().optional()` to the schema, plus a `superRefine` that errors when `source === 'customer_consignment'` and no owner is selected.
+- Load the list of `external_owners` (id, name, email) on mount.
+- When `source === 'customer_consignment'`, render an "Owner" section below the Source field:
+  - A `Select` listing existing external owners (name + email).
+  - A "+ New owner" button that opens a nested `Dialog` containing the existing `OwnerForm`. On success, refresh the list and auto-select the new owner.
+- Include `external_owner_id` in the `bikeData` insert/update payload. Pass `null` when source is `owned`.
+- If the user toggles "Arrange collection", prefill the collection sender fields from the selected owner (name/email/phone/address) as a convenience — still editable.
+
+No DB changes, no changes to other pages, no workflow changes.

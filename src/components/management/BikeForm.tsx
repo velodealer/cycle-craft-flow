@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,9 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PhotoUpload from '@/components/PhotoUpload';
+import OwnerForm from '@/components/management/OwnerForm';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -29,6 +31,7 @@ const bikeSchema = z.object({
   frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
+  external_owner_id: z.string().uuid().optional(),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
@@ -64,6 +67,12 @@ const bikeSchema = z.object({
     message: 'All collection details are required when arranging collection',
     path: ['arrange_collection']
   }
+).refine(
+  (data) => data.source !== 'customer_consignment' || !!data.external_owner_id,
+  {
+    message: 'Please select an owner for a customer consignment bike',
+    path: ['external_owner_id'],
+  }
 );
 
 interface BikeFormProps {
@@ -75,12 +84,27 @@ interface BikeFormProps {
 export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [submitting, setSubmitting] = useState(false);
+  const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
+  const [showOwnerDialog, setShowOwnerDialog] = useState(false);
+
+  const loadOwners = async () => {
+    const { data, error } = await supabase
+      .from('external_owners')
+      .select('id, name, email, phone, address')
+      .order('name');
+    if (!error && data) setOwners(data as any);
+  };
+
+  useEffect(() => {
+    loadOwners();
+  }, []);
 
   const form = useForm<z.infer<typeof bikeSchema>>({
     resolver: zodResolver(bikeSchema),
     defaultValues: {
       make: bike?.make || '',
       model: bike?.model || '',
+
       year: bike?.year || undefined,
       size: bike?.size || '',
       colour: bike?.colour || '',
@@ -88,6 +112,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       frame_number: bike?.frame_number || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
+      external_owner_id: bike?.external_owner_id || undefined,
+      
+
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
@@ -116,6 +143,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
 
       const bikeData = {
         ...bikeFields,
+        external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
         purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
@@ -346,6 +374,50 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   </FormItem>
                 )}
               />
+
+              {form.watch('source') === 'customer_consignment' && (
+                <FormField
+                  control={form.control}
+                  name="external_owner_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner *</FormLabel>
+                      <div className="flex gap-2">
+                        <Select
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            const o = owners.find((x) => x.id === val);
+                            if (o && form.getValues('arrange_collection')) {
+                              if (!form.getValues('collection_sender_name')) form.setValue('collection_sender_name', o.name);
+                              if (!form.getValues('collection_sender_email') && o.email) form.setValue('collection_sender_email', o.email);
+                              if (!form.getValues('collection_sender_phone') && o.phone) form.setValue('collection_sender_phone', o.phone);
+                            }
+                          }}
+                          value={field.value || ''}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={owners.length ? 'Select owner' : 'No owners yet — add one'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {owners.map((o) => (
+                              <SelectItem key={o.id} value={o.id}>
+                                {o.name}{o.email ? ` — ${o.email}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button type="button" variant="outline" size="icon" onClick={() => setShowOwnerDialog(true)}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <FormDescription>Customer who owns this consigned bike</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -665,6 +737,29 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           </div>
         </form>
       </Form>
+
+      <Dialog open={showOwnerDialog} onOpenChange={setShowOwnerDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Owner</DialogTitle>
+          </DialogHeader>
+          <OwnerForm
+            onSuccess={async () => {
+              setShowOwnerDialog(false);
+              const { data } = await supabase
+                .from('external_owners')
+                .select('id, name, email, phone, address')
+                .order('created_at', { ascending: false })
+                .limit(1);
+              await loadOwners();
+              if (data && data[0]) {
+                form.setValue('external_owner_id', data[0].id, { shouldValidate: true });
+              }
+            }}
+            onCancel={() => setShowOwnerDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
