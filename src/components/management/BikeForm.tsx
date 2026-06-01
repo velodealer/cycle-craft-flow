@@ -374,6 +374,50 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   </FormItem>
                 )}
               />
+
+              {form.watch('source') === 'customer_consignment' && (
+                <FormField
+                  control={form.control}
+                  name="external_owner_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner *</FormLabel>
+                      <div className="flex gap-2">
+                        <Select
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            const o = owners.find((x) => x.id === val);
+                            if (o && form.getValues('arrange_collection')) {
+                              if (!form.getValues('collection_sender_name')) form.setValue('collection_sender_name', o.name);
+                              if (!form.getValues('collection_sender_email') && o.email) form.setValue('collection_sender_email', o.email);
+                              if (!form.getValues('collection_sender_phone') && o.phone) form.setValue('collection_sender_phone', o.phone);
+                            }
+                          }}
+                          value={field.value || ''}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={owners.length ? 'Select owner' : 'No owners yet — add one'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {owners.map((o) => (
+                              <SelectItem key={o.id} value={o.id}>
+                                {o.name}{o.email ? ` — ${o.email}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button type="button" variant="outline" size="icon" onClick={() => setShowOwnerDialog(true)}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <FormDescription>Customer who owns this consigned bike</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </CardContent>
           </Card>
 
