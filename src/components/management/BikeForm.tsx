@@ -112,6 +112,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       frame_number: bike?.frame_number || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
+      external_owner_id: bike?.external_owner_id || undefined,
+      
+
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
