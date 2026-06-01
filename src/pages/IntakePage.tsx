@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import IntakeForm from '@/components/intake/IntakeForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ClipboardCheck, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,10 +20,10 @@ interface PendingBike {
 
 export default function IntakePage() {
   const [showForm, setShowForm] = useState(false);
+  const [processBikeId, setProcessBikeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<PendingBike[]>([]);
   const [stats, setStats] = useState({ today: 0, week: 0, pending: 0 });
-  const navigate = useNavigate();
 
   const load = async () => {
     setLoading(true);
@@ -174,7 +174,7 @@ export default function IntakePage() {
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => navigate(`/bikes/${bike.id}`)}
+                    onClick={() => setProcessBikeId(bike.id)}
                     className="w-full sm:w-auto"
                   >
                     Process intake
@@ -186,6 +186,24 @@ export default function IntakePage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!processBikeId} onOpenChange={(open) => !open && setProcessBikeId(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Process Intake</DialogTitle>
+          </DialogHeader>
+          {processBikeId && (
+            <IntakeForm
+              preselectedBikeId={processBikeId}
+              onSuccess={() => {
+                setProcessBikeId(null);
+                load();
+              }}
+              onCancel={() => setProcessBikeId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

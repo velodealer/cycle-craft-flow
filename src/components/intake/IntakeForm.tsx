@@ -27,6 +27,7 @@ const intakeSchema = z.object({
 interface IntakeFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  preselectedBikeId?: string;
 }
 
 interface Bike {
@@ -44,7 +45,7 @@ interface Bike {
   };
 }
 
-export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
+export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: IntakeFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [serialPhotos, setSerialPhotos] = useState<string[]>([]);
   const [registerPhotos, setRegisterPhotos] = useState<string[]>([]);
@@ -94,7 +95,7 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
               email
             )
           `)
-          .in('status', ['pending_intake'])
+          .in('status', ['pending_intake', 'intake'])
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -105,6 +106,10 @@ export default function IntakeForm({ onSuccess, onCancel }: IntakeFormProps) {
         }));
         
         setBikes(formattedBikes);
+        if (preselectedBikeId) {
+          const match = formattedBikes.find((b) => b.id === preselectedBikeId);
+          if (match) setSelectedBike(match);
+        }
       } catch (error: any) {
         toast({
           title: 'Error loading bikes',
