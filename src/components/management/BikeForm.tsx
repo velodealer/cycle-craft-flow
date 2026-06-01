@@ -737,6 +737,29 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           </div>
         </form>
       </Form>
+
+      <Dialog open={showOwnerDialog} onOpenChange={setShowOwnerDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Owner</DialogTitle>
+          </DialogHeader>
+          <OwnerForm
+            onSuccess={async () => {
+              setShowOwnerDialog(false);
+              const { data } = await supabase
+                .from('external_owners')
+                .select('id, name, email, phone, address')
+                .order('created_at', { ascending: false })
+                .limit(1);
+              await loadOwners();
+              if (data && data[0]) {
+                form.setValue('external_owner_id', data[0].id, { shouldValidate: true });
+              }
+            }}
+            onCancel={() => setShowOwnerDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
