@@ -107,10 +107,11 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
     try {
       const { arrange_collection, collection_sender_name, collection_sender_email, 
               collection_sender_phone, collection_address_street, collection_address_city,
-              collection_address_postcode, collection_instructions, ...bikeFields } = values;
+              collection_address_postcode, collection_instructions, purchase_date, ...bikeFields } = values;
 
       const bikeData = {
         ...bikeFields,
+        purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
         photos,
