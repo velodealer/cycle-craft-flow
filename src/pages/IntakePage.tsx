@@ -186,6 +186,24 @@ export default function IntakePage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!processBikeId} onOpenChange={(open) => !open && setProcessBikeId(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Process Intake</DialogTitle>
+          </DialogHeader>
+          {processBikeId && (
+            <IntakeForm
+              preselectedBikeId={processBikeId}
+              onSuccess={() => {
+                setProcessBikeId(null);
+                load();
+              }}
+              onCancel={() => setProcessBikeId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
