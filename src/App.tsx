@@ -9,6 +9,7 @@ import BPSDashboard from "@/components/BPSDashboard";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import BikesPage from "./pages/BikesPage";
+import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
 import PartsPage from "./pages/PartsPage";
