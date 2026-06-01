@@ -110,8 +110,18 @@ export default function BikeDetailView({
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
+          {previousStage && (
+            <Button
+              variant="outline"
+              onClick={() => setDialogDirection('back')}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Move back to {getStageLabel(previousStage)}
+            </Button>
+          )}
           {nextStage && (
-            <Button onClick={() => setShowAdvanceDialog(true)} className="w-full sm:w-auto">
+            <Button onClick={() => setDialogDirection('forward')} className="w-full sm:w-auto">
               <ArrowRight className="h-4 w-4 mr-2" />
               Move to {getStageLabel(nextStage)}
             </Button>
