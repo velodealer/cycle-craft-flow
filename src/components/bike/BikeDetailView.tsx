@@ -28,7 +28,7 @@ export default function BikeDetailView({
   showPricing = true,
   showDescriptions = true
 }: BikeDetailViewProps) {
-  const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
+  const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
 
   const getNextStage = (currentStatus: string) => {
     // Collection stages flow
