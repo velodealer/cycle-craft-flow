@@ -27,6 +27,7 @@ const intakeSchema = z.object({
 interface IntakeFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  preselectedBikeId?: string;
 }
 
 interface Bike {
