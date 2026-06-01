@@ -31,6 +31,7 @@ const bikeSchema = z.object({
   frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
+  external_owner_id: z.string().uuid().optional(),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
@@ -65,6 +66,12 @@ const bikeSchema = z.object({
   {
     message: 'All collection details are required when arranging collection',
     path: ['arrange_collection']
+  }
+).refine(
+  (data) => data.source !== 'customer_consignment' || !!data.external_owner_id,
+  {
+    message: 'Please select an owner for a customer consignment bike',
+    path: ['external_owner_id'],
   }
 );
 
