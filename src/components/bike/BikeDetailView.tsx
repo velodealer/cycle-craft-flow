@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, Edit, ChevronLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
@@ -28,32 +28,29 @@ export default function BikeDetailView({
   showPricing = true,
   showDescriptions = true
 }: BikeDetailViewProps) {
-  const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
+  const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
+
+  const allStages = (hasCollection: boolean = true) => {
+    // Build a single ordered list; we don't know if a collection exists here without a query,
+    // but status values are unique across both lists so reverse-lookup works on the union.
+    return [
+      'awaiting_collection', 'in_transit', 'pending_intake',
+      'intake', 'cleaning', 'inspection', 'pending_approval',
+      'repair', 'ready', 'listed', 'sold',
+    ];
+  };
 
   const getNextStage = (currentStatus: string) => {
-    // Collection stages flow
-    const collectionStages = ['awaiting_collection', 'in_transit', 'pending_intake'];
-    const collectionIndex = collectionStages.indexOf(currentStatus);
-    
-    if (collectionIndex >= 0 && collectionIndex < collectionStages.length - 1) {
-      return collectionStages[collectionIndex + 1];
-    }
-    
-    // If at pending_intake, next is intake
-    if (currentStatus === 'pending_intake') {
-      return 'intake';
-    }
-    
-    // Standard workflow stages
-    const stageOrder = [
-      'intake', 'cleaning', 'inspection', 'pending_approval', 
-      'repair', 'ready', 'listed', 'sold'
-    ];
-    
-    const currentIndex = stageOrder.indexOf(currentStatus);
-    if (currentIndex >= 0 && currentIndex < stageOrder.length - 1) {
-      return stageOrder[currentIndex + 1];
-    }
+    const stages = allStages();
+    const i = stages.indexOf(currentStatus);
+    if (i >= 0 && i < stages.length - 1) return stages[i + 1];
+    return null;
+  };
+
+  const getPreviousStage = (currentStatus: string) => {
+    const stages = allStages();
+    const i = stages.indexOf(currentStatus);
+    if (i > 0) return stages[i - 1];
     return null;
   };
 
@@ -75,6 +72,7 @@ export default function BikeDetailView({
   };
 
   const nextStage = getNextStage(bike.status);
+  const previousStage = getPreviousStage(bike.status);
 
   const formatCurrency = (amount: number | null) => {
     return amount ? `£${amount.toFixed(2)}` : '-';
@@ -112,8 +110,18 @@ export default function BikeDetailView({
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
+          {previousStage && (
+            <Button
+              variant="outline"
+              onClick={() => setDialogDirection('back')}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Move back to {getStageLabel(previousStage)}
+            </Button>
+          )}
           {nextStage && (
-            <Button onClick={() => setShowAdvanceDialog(true)} className="w-full sm:w-auto">
+            <Button onClick={() => setDialogDirection('forward')} className="w-full sm:w-auto">
               <ArrowRight className="h-4 w-4 mr-2" />
               Move to {getStageLabel(nextStage)}
             </Button>
@@ -288,14 +296,18 @@ export default function BikeDetailView({
         </div>
       </div>
 
-      {/* Advance Stage Dialog */}
-      {nextStage && (
+      {/* Advance/Revert Stage Dialog */}
+      {dialogDirection && (dialogDirection === 'forward' ? nextStage : previousStage) && (
         <AdvanceStageDialog
-          isOpen={showAdvanceDialog}
-          onClose={() => setShowAdvanceDialog(false)}
+          isOpen={true}
+          onClose={() => setDialogDirection(null)}
           bike={bike}
-          nextStage={nextStage}
-          nextStageLabel={getStageLabel(nextStage)}
+          nextStage={(dialogDirection === 'forward' ? nextStage : previousStage) as string}
+          nextStageLabel={
+            dialogDirection === 'forward'
+              ? getStageLabel(nextStage as string)
+              : `${getStageLabel(previousStage as string)} (revert)`
+          }
           onSuccess={onUpdate}
         />
       )}
