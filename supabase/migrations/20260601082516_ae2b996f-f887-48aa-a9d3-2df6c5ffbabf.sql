@@ -1,0 +1,1 @@
+ALTER TABLE public.bikes ADD COLUMN purchase_date timestamptz NULL;
