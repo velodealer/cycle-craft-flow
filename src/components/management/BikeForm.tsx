@@ -21,11 +21,13 @@ const bikeSchema = z.object({
   size: z.string().optional(),
   colour: z.string().optional(),
   condition: z.string().optional(),
+  frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment']),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
+  purchase_date: z.date().optional(),
   finance_scheme: z.enum(['vat_qualifying', 'margin_scheme', 'commercial_vat']),
   description: z.string().optional(),
   listing_description: z.string().optional(),
