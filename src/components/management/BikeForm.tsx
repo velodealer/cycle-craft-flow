@@ -84,11 +84,21 @@ interface BikeFormProps {
 export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [submitting, setSubmitting] = useState(false);
+  const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
+  const [showOwnerDialog, setShowOwnerDialog] = useState(false);
 
-  const form = useForm<z.infer<typeof bikeSchema>>({
-    resolver: zodResolver(bikeSchema),
-    defaultValues: {
-      make: bike?.make || '',
+  const loadOwners = async () => {
+    const { data, error } = await supabase
+      .from('external_owners')
+      .select('id, name, email, phone, address')
+      .order('name');
+    if (!error && data) setOwners(data as any);
+  };
+
+  useEffect(() => {
+    loadOwners();
+  }, []);
+
       model: bike?.model || '',
       year: bike?.year || undefined,
       size: bike?.size || '',
