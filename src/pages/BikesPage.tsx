@@ -44,11 +44,17 @@ export default function BikesPage() {
     setSelectedBike(null);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     setRefreshKey(prev => prev + 1);
-    // Refresh the selected bike data
-    if (selectedBike) {
-      // Could add logic to refetch the bike data here
+    if (selectedBike?.id) {
+      const { data, error } = await supabase
+        .from('bikes')
+        .select('*')
+        .eq('id', selectedBike.id)
+        .maybeSingle();
+      if (!error && data) {
+        setSelectedBike(data);
+      }
     }
   };
 
