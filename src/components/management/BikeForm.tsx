@@ -80,11 +80,13 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       size: bike?.size || '',
       colour: bike?.colour || '',
       condition: bike?.condition || '',
+      frame_number: bike?.frame_number || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
+      purchase_date: bike?.purchase_date ? new Date(bike.purchase_date) : undefined,
       finance_scheme: bike?.finance_scheme || 'margin_scheme',
       description: bike?.description || '',
       listing_description: bike?.listing_description || '',
