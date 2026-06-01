@@ -143,6 +143,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
 
       const bikeData = {
         ...bikeFields,
+        external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
         purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
