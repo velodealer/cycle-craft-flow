@@ -3,6 +3,7 @@ import BikeList from '@/components/management/BikeList';
 import BikeForm from '@/components/management/BikeForm';
 import BikeDetailView from '@/components/bike/BikeDetailView';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function BikesPage() {
   const [selectedBike, setSelectedBike] = useState<any>(null);
