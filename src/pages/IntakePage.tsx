@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import IntakeForm from '@/components/intake/IntakeForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ClipboardCheck, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
