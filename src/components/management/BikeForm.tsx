@@ -99,7 +99,12 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
     loadOwners();
   }, []);
 
+  const form = useForm<z.infer<typeof bikeSchema>>({
+    resolver: zodResolver(bikeSchema),
+    defaultValues: {
+      make: bike?.make || '',
       model: bike?.model || '',
+
       year: bike?.year || undefined,
       size: bike?.size || '',
       colour: bike?.colour || '',
