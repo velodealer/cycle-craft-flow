@@ -95,7 +95,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
               email
             )
           `)
-          .in('status', ['pending_intake'])
+          .in('status', ['pending_intake', 'intake'])
           .order('created_at', { ascending: false });
 
         if (error) throw error;
