@@ -174,7 +174,7 @@ export default function IntakePage() {
                   </div>
                   <Button
                     size="sm"
-                    onClick={() => navigate(`/bikes/${bike.id}`)}
+                    onClick={() => setProcessBikeId(bike.id)}
                     className="w-full sm:w-auto"
                   >
                     Process intake
