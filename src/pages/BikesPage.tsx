@@ -3,6 +3,7 @@ import BikeList from '@/components/management/BikeList';
 import BikeForm from '@/components/management/BikeForm';
 import BikeDetailView from '@/components/bike/BikeDetailView';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function BikesPage() {
   const [selectedBike, setSelectedBike] = useState<any>(null);
@@ -43,11 +44,17 @@ export default function BikesPage() {
     setSelectedBike(null);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     setRefreshKey(prev => prev + 1);
-    // Refresh the selected bike data
-    if (selectedBike) {
-      // Could add logic to refetch the bike data here
+    if (selectedBike?.id) {
+      const { data, error } = await supabase
+        .from('bikes')
+        .select('*')
+        .eq('id', selectedBike.id)
+        .maybeSingle();
+      if (!error && data) {
+        setSelectedBike(data);
+      }
     }
   };
 
