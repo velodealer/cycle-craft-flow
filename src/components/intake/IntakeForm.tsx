@@ -106,7 +106,10 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
         }));
         
         setBikes(formattedBikes);
-      } catch (error: any) {
+        if (preselectedBikeId) {
+          const match = formattedBikes.find((b) => b.id === preselectedBikeId);
+          if (match) setSelectedBike(match);
+        }
         toast({
           title: 'Error loading bikes',
           description: error.message,
