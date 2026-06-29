@@ -30,6 +30,9 @@ export default function BikeDetailView({
   showDescriptions = true
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
+  const { profile } = useAuth();
+  const isMechanic = profile?.role === 'mechanic';
+  const canSeePricing = showPricing && !isMechanic;
 
   const allStages = (hasCollection: boolean = true) => {
     // Build a single ordered list; we don't know if a collection exists here without a query,
