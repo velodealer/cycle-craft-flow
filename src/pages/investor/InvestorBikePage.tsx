@@ -50,8 +50,8 @@ export default function InvestorBikePage() {
     return <div className="container mx-auto py-6"><h1 className="text-2xl font-bold">Not authorised</h1></div>;
   }
 
-  const partsCost = parts.reduce((s, p) => s + Number(p.cost || 0), 0);
-  const jobsCost = jobs.reduce((s, j) => s + Number(j.cost || 0), 0);
+  const partsCost = parts.reduce((s, p) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0);
+  const jobsCost = jobs.reduce((s, j) => s + Number(j.actual_cost ?? j.estimated_cost ?? 0), 0);
   const basis = bike.status === 'sold' ? bike.sale_price : bike.asking_price;
   const net = Number(basis || 0) - Number(bike.purchase_cost || 0) - partsCost - jobsCost;
   const myReturn = Math.max(0, net) * (Number(bike.profit_share_pct || 0) / 100);
@@ -60,9 +60,7 @@ export default function InvestorBikePage() {
   if (bike.intake_date) timeline.push({ date: bike.intake_date, label: 'Acquired' });
   collections.forEach((c) => c.created_at && timeline.push({ date: c.created_at, label: `Collection ${c.status || 'booked'}` }));
   jobs.forEach((j) => j.completed_at && timeline.push({ date: j.completed_at, label: `Job complete: ${j.title || j.type || ''}` }));
-  if (bike.listed_at) timeline.push({ date: bike.listed_at, label: 'Listed for sale' });
-  if (bike.sold_at) timeline.push({ date: bike.sold_at, label: 'Sold' });
-  fulfilment.forEach((e) => e.created_at && timeline.push({ date: e.created_at, label: e.event_type || 'Fulfilment event' }));
+  fulfilment.forEach((e) => (e.timestamp || e.created_at) && timeline.push({ date: e.timestamp || e.created_at, label: e.stage ? `Stage: ${e.stage}` : 'Fulfilment event' }));
   timeline.sort((a, b) => +new Date(a.date) - +new Date(b.date));
 
   return (
