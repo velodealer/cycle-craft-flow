@@ -40,7 +40,7 @@ export default function InvestorDashboardPage() {
       setLoading(true);
       const { data: bikeData } = await supabase
         .from('bikes')
-        .select('id, make, model, year, status, purchase_cost, sale_price, asking_price, profit_share_pct, intake_date, photos')
+        .select('id, make, model, year, status, purchase_cost, purchase_price, collection_cost, delivery_cost, sale_price, asking_price, profit_share_pct, finance_scheme, intake_date, photos')
         .eq('investor_id', profile.user_id)
         .order('intake_date', { ascending: false });
 
@@ -62,17 +62,24 @@ export default function InvestorDashboardPage() {
     })();
   }, [profile?.user_id]);
 
-  const totalInvested = bikes.reduce((s, b) => s + Number(b.purchase_cost || 0), 0);
+  const computeBike = (b: InvestorBike) => {
+    const acquisition = Number(b.purchase_cost ?? b.purchase_price ?? 0);
+    const extras = Number(b.collection_cost ?? 0) + Number(b.delivery_cost ?? 0) + (costsByBike[b.id] || 0);
+    const totalCosts = acquisition + extras;
+    const isSold = b.status === 'sold';
+    const revenue = Number((isSold ? b.sale_price : b.asking_price) || 0);
+    const gross = revenue - totalCosts;
+    const vat = b.finance_scheme === 'margin_scheme' ? Math.max(0, gross) * 20 / 120 : 0;
+    const net = gross - vat;
+    const myReturn = Math.max(0, net) * (Number(b.profit_share_pct || 0) / 100);
+    return { acquisition, totalCosts, revenue, gross, vat, net, myReturn, isSold };
+  };
+
+  const totalInvested = bikes.reduce((s, b) => s + Number(b.purchase_cost ?? b.purchase_price ?? 0), 0);
   const sold = bikes.filter((b) => b.status === 'sold');
   const active = bikes.filter((b) => b.status !== 'sold');
-  const realisedReturn = sold.reduce((s, b) => {
-    const net = Number(b.sale_price || 0) - Number(b.purchase_cost || 0) - (costsByBike[b.id] || 0);
-    return s + Math.max(0, net) * (Number(b.profit_share_pct || 0) / 100);
-  }, 0);
-  const unrealisedReturn = active.reduce((s, b) => {
-    const est = Number(b.asking_price || 0) - Number(b.purchase_cost || 0) - (costsByBike[b.id] || 0);
-    return s + Math.max(0, est) * (Number(b.profit_share_pct || 0) / 100);
-  }, 0);
+  const realisedReturn = sold.reduce((s, b) => s + computeBike(b).myReturn, 0);
+  const unrealisedReturn = active.reduce((s, b) => s + computeBike(b).myReturn, 0);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -91,6 +98,7 @@ export default function InvestorDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Your bikes</CardTitle>
+          <p className="text-xs text-muted-foreground">All costs (acquisition, collection, delivery, parts, labour) and margin-scheme VAT are deducted before your share is calculated.</p>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -104,19 +112,22 @@ export default function InvestorDashboardPage() {
                   <TableRow>
                     <TableHead>Bike</TableHead>
                     <TableHead>Stage</TableHead>
-                    <TableHead>Purchase</TableHead>
-                    <TableHead>Costs to date</TableHead>
+                    <TableHead>Acquisition</TableHead>
+                    <TableHead>Collection</TableHead>
+                    <TableHead>Delivery</TableHead>
+                    <TableHead>Parts + Jobs</TableHead>
+                    <TableHead>Total costs</TableHead>
                     <TableHead>Sale / Listed</TableHead>
+                    <TableHead>VAT (margin)</TableHead>
+                    <TableHead>Net profit</TableHead>
                     <TableHead>Your share</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {bikes.map((b) => {
-                    const costs = costsByBike[b.id] || 0;
-                    const basis = b.status === 'sold' ? b.sale_price : b.asking_price;
-                    const net = Number(basis || 0) - Number(b.purchase_cost || 0) - costs;
-                    const myReturn = Math.max(0, net) * (Number(b.profit_share_pct || 0) / 100);
+                    const c = computeBike(b);
+                    const partsJobs = costsByBike[b.id] || 0;
                     return (
                       <TableRow key={b.id}>
                         <TableCell>
@@ -124,12 +135,17 @@ export default function InvestorDashboardPage() {
                           {b.year && <div className="text-xs text-muted-foreground">{b.year}</div>}
                         </TableCell>
                         <TableCell><Badge variant="outline">{b.status.replace(/_/g, ' ')}</Badge></TableCell>
-                        <TableCell>{fmt(b.purchase_cost)}</TableCell>
-                        <TableCell>{fmt(costs)}</TableCell>
-                        <TableCell>{fmt(basis)}</TableCell>
+                        <TableCell>{fmt(c.acquisition)}</TableCell>
+                        <TableCell>{fmt(b.collection_cost)}</TableCell>
+                        <TableCell>{fmt(b.delivery_cost)}</TableCell>
+                        <TableCell>{fmt(partsJobs)}</TableCell>
+                        <TableCell className="font-medium">{fmt(c.totalCosts)}</TableCell>
+                        <TableCell>{fmt(c.revenue)}</TableCell>
+                        <TableCell>{c.vat > 0 ? fmt(c.vat) : '-'}</TableCell>
+                        <TableCell className={c.net < 0 ? 'text-destructive' : ''}>{fmt(c.net)}</TableCell>
                         <TableCell>
-                          <div className="font-medium">{fmt(myReturn)}</div>
-                          <div className="text-xs text-muted-foreground">{b.profit_share_pct ?? 0}% {b.status === 'sold' ? 'realised' : 'est.'}</div>
+                          <div className="font-medium">{fmt(c.myReturn)}</div>
+                          <div className="text-xs text-muted-foreground">{b.profit_share_pct ?? 0}% {c.isSold ? 'realised' : 'est.'}</div>
                         </TableCell>
                         <TableCell>
                           <Link to={`/investor/bikes/${b.id}`} className="text-sm text-primary hover:underline">View</Link>
