@@ -398,6 +398,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                       <SelectContent>
                         <SelectItem value="owned">Owned by us</SelectItem>
                         <SelectItem value="customer_consignment">Customer consignment</SelectItem>
+                        <SelectItem value="investor">Investor bike</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
