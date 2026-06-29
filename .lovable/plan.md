@@ -1,18 +1,25 @@
-## Changes for mechanic role
+## Restrict investor access
 
-**1. Remove Social Planner from sidebar for mechanics**
-In `src/components/AppSidebar.tsx`, remove `'mechanic'` from the `socialRoles` array so the entire Social Planner group is hidden for mechanics.
+**Goal:** Investors only ever see their Investor Portal (list of their bikes + bike detail pages for bikes they're invested in). No dashboard, no sidebar items for anything else, no direct-URL access to other pages.
 
-**2. Hide pricing & finance from mechanics**
-- `src/components/bike/BikeDetailView.tsx`: When the current user's role is `mechanic`, force `showPricing={false}` (hides the Pricing & Finance card) and also hide the Investor card (which exposes purchase cost / profit share / estimated return).
-- `src/pages/BikeDetailPage.tsx` (caller): pass `showPricing={false}` when role is mechanic, OR do the gating inside `BikeDetailView` using `useAuth()` directly — simpler, single place. I'll do it inside `BikeDetailView`.
-- `src/components/management/BikeForm.tsx`: hide pricing/finance fields (purchase price, asking price, sale price, VAT scheme, purchase date, and investor cost/profit share inputs) when role is `mechanic`. Form still submits without those fields populated by the mechanic.
+### 1. Sidebar (`src/components/AppSidebar.tsx`)
+- When `profile.role === 'investor'`, render ONLY the Investor Portal group. Skip the main "VeloDealer Navigation" group and the Social Planner group entirely.
+- Currently `'investor'` isn't in any `navigationItems.roles` array, so the main group already hides — but explicitly short-circuit to be safe and future-proof.
 
-**3. Out of scope (not changing)**
-- Mechanic still sees the Bikes list, Jobs, Intake, Cleaning, Parts, Logistics, Dashboard (already configured).
-- Invoices/Owners/Reports already excluded for mechanics.
+### 2. Default landing for investors
+- The current "Dashboard" sidebar entry points to `/` (LandingPage). Investors signing in should land on `/investor`, not the landing page or `/dashboard`.
+- In `src/pages/Auth.tsx` (post sign-in redirect) and in `src/pages/LandingPage.tsx` (authenticated visitor redirect), if `profile.role === 'investor'` redirect to `/investor` instead of `/dashboard`.
 
-### Technical notes
-- Role source: `useAuth().profile.role`.
-- Pricing card in `BikeDetailView` is already gated by `showPricing`; just add a role check.
-- Investor card is currently always shown when `bike.source === 'investor'` — add `&& role !== 'mechanic'`.
+### 3. Route guard
+- Add a small `<RoleGuard>` wrapper in `src/App.tsx` (or a new `src/components/RoleGuard.tsx`) that:
+  - Reads `profile` from `useAuth`.
+  - If `profile.role === 'investor'` and the current path is NOT `/investor`, `/investor/bikes/:id`, or `/auth`, redirect to `/investor`.
+- Wrap all non-investor routes with it. Investor routes render normally. This blocks direct-URL access to `/dashboard`, `/bikes`, `/jobs`, `/settings`, etc.
+
+### 4. Investor bike detail
+- `/investor/bikes/:id` (`InvestorBikePage`) already exists and is the investor-scoped detail view — keep using it. Investors will not be routed to the general `/bikes/:id` page.
+
+### Out of scope
+- No changes to RLS / Supabase policies (already scoped by `investor_id` on bikes).
+- No changes to other roles' visibility.
+- No changes to the investor dashboard content itself.

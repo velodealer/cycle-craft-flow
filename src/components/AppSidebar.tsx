@@ -73,7 +73,9 @@ export function AppSidebar() {
     return currentPath.startsWith(path);
   };
 
-  const userAccessibleItems = navigationItems.filter(item => 
+  const isInvestor = profile?.role === 'investor';
+
+  const userAccessibleItems = isInvestor ? [] : navigationItems.filter(item =>
     !profile?.role || item.roles.includes(profile.role)
   );
 
@@ -125,7 +127,7 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {(!profile?.role || socialRoles.includes(profile.role)) && (
+        {!isInvestor && (!profile?.role || socialRoles.includes(profile.role)) && (
           <SidebarGroup>
             <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
               Social Planner

@@ -10,12 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Bike } from 'lucide-react';
 
 export default function Auth() {
-  const { user, signIn, signUp } = useAuth();
+  const { user, profile, signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={profile?.role === "investor" ? "/investor" : "/dashboard"} replace />;
   }
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -35,6 +35,8 @@ export default function LandingPage() {
     await signOut();
   };
 
+  const homePath = profile?.role === "investor" ? "/investor" : "/dashboard";
+
   const features = [
     {
       icon: ClipboardList,
@@ -90,7 +92,7 @@ export default function LandingPage() {
             <div className="flex items-center space-x-4">
               {user ? (
                 <>
-                  <Button onClick={() => navigate("/dashboard")}>
+                  <Button onClick={() => navigate(homePath)}>
                     Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <DropdownMenu>
@@ -111,7 +113,7 @@ export default function LandingPage() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                      <DropdownMenuItem onClick={() => navigate(homePath)}>
                         <User className="mr-2 h-4 w-4" />
                         Dashboard
                       </DropdownMenuItem>
