@@ -1,33 +1,28 @@
-## Mirror the investor cost & profit breakdown on the admin Bike Detail
+## Add Stand-In Value (SIV) to the cost & profit breakdown
 
-In `src/components/bike/BikeDetailView.tsx`, replace the current Pricing & Finance card's metrics section (Profit / Margin / Markup / ROI + VAT block + separate Investor card return) with the same itemized breakdown investors see on `InvestorBikePage.tsx`.
+Add an SIV row + small explainer block at the bottom of the breakdown on:
+- `src/components/bike/BikeDetailView.tsx` (admin Pricing & Finance card)
+- `src/pages/investor/InvestorBikePage.tsx` (investor breakdown card)
 
-### Data
-The view doesn't currently fetch jobs/parts. Add a `useEffect` inside `BikeDetailView` that, when `canSeePricing` is true and `bike.id` is set, fetches:
-- `jobs` (bike_id, actual_cost, estimated_cost)
-- `parts` (bike_id, cost_price, quantity)
-Sum into `partsCost` and `jobsCost`.
+### Formula
 
-### Card content (admin Pricing & Finance)
-Keep the existing price/date/VAT-scheme rows at the top. Replace the metrics block below with:
+Let `acquisition` = purchase price, `prep` = collection + delivery + parts + jobs, `totalCost` = acquisition + prep.
 
-- Revenue (Sale price if sold, else Asking price — labelled accordingly)
-- − Acquisition cost (purchase_price; fallback purchase_cost)
-- − Collection cost
-- − Delivery cost
-- − Parts
-- − Labour / jobs
-- **Total costs**
-- **Gross profit** (red if negative)
-- − VAT (margin scheme) — only when `finance_scheme === 'margin_scheme'`, computed `max(0, gross) * 20/120`, with subtitle "20% VAT on gross margin paid to HMRC"
-- **Net profit** (red if negative)
-- Margin / Markup / ROI — keep as a small footer row using net profit & total cost (margin = net/revenue, markup = roi = net/totalCost)
-- Footnote: realised vs estimated
+- **Margin scheme** (`finance_scheme === 'margin_scheme'`):
+  `SIV = acquisition + prep / (1 − 1/6) = acquisition + prep × 1.2`
+  At this price, margin VAT = `(SIV − acquisition) × 20/120` exactly equals `prep × 0.2`, so net retained = totalCost (break-even).
+- **VAT qualifying** (`vat_qualifying`):
+  `SIV = totalCost × 1.2` (output VAT added on top of full cost).
+- **Commercial / other**:
+  `SIV = totalCost`.
 
-### Investor card update
-The "Investor" card already shows investor share. Replace its `Estimated investor return` math with the shared net-after-VAT formula (already wired in last turn) and additionally show `Net profit` and `Your share %`. Keep Investor ID, profit share %, purchase cost rows.
+### UI
+A highlighted row beneath "Net profit" / above investor share:
+- Label: **Stand-In Value (break-even price)**
+- Value: formatted SIV
+- Sub: short explanation ("Lowest sale price that covers all costs and VAT liabilities under the {scheme} scheme.")
+- If `revenue > 0`, also show **Headroom vs SIV** = `revenue − SIV` (red if negative, green-ish/default if positive).
 
 ### Out of scope
-- No DB changes.
-- No changes to the form.
-- Doesn't apply to investor-side pages (already done).
+- No DB or form changes — SIV is purely derived.
+- No changes to dashboard table (kept compact); SIV only on detail views.
