@@ -1,25 +1,15 @@
-## Restrict investor access
+## Add Profit, Margin, Markup, ROI to Pricing & Finance
 
-**Goal:** Investors only ever see their Investor Portal (list of their bikes + bike detail pages for bikes they're invested in). No dashboard, no sidebar items for anything else, no direct-URL access to other pages.
+In `src/components/bike/BikeDetailView.tsx`, extend the Pricing & Finance card with a metrics row below the existing prices.
 
-### 1. Sidebar (`src/components/AppSidebar.tsx`)
-- When `profile.role === 'investor'`, render ONLY the Investor Portal group. Skip the main "VeloDealer Navigation" group and the Social Planner group entirely.
-- Currently `'investor'` isn't in any `navigationItems.roles` array, so the main group already hides — but explicitly short-circuit to be safe and future-proof.
+**Basis** (uses sale price if sold/available, otherwise asking price):
+- `revenue = bike.sale_price ?? bike.asking_price`
+- `cost = bike.purchase_price`
+- `profit = revenue - cost`
+- `margin % = profit / revenue * 100` (revenue-based)
+- `markup % = profit / cost * 100` (cost-based)
+- `roi % = profit / cost * 100` (same formula as markup but labeled separately for clarity, computed on total invested cost = purchase price)
 
-### 2. Default landing for investors
-- The current "Dashboard" sidebar entry points to `/` (LandingPage). Investors signing in should land on `/investor`, not the landing page or `/dashboard`.
-- In `src/pages/Auth.tsx` (post sign-in redirect) and in `src/pages/LandingPage.tsx` (authenticated visitor redirect), if `profile.role === 'investor'` redirect to `/investor` instead of `/dashboard`.
+Render a 4-column grid (2 on mobile) showing Profit, Margin, Markup, ROI. Each value formatted via `formatCurrency` or `X.X%`. Show `-` when revenue or cost is missing. Label notes "Based on sale price" or "Based on asking price" depending on which was used.
 
-### 3. Route guard
-- Add a small `<RoleGuard>` wrapper in `src/App.tsx` (or a new `src/components/RoleGuard.tsx`) that:
-  - Reads `profile` from `useAuth`.
-  - If `profile.role === 'investor'` and the current path is NOT `/investor`, `/investor/bikes/:id`, or `/auth`, redirect to `/investor`.
-- Wrap all non-investor routes with it. Investor routes render normally. This blocks direct-URL access to `/dashboard`, `/bikes`, `/jobs`, `/settings`, etc.
-
-### 4. Investor bike detail
-- `/investor/bikes/:id` (`InvestorBikePage`) already exists and is the investor-scoped detail view — keep using it. Investors will not be routed to the general `/bikes/:id` page.
-
-### Out of scope
-- No changes to RLS / Supabase policies (already scoped by `investor_id` on bikes).
-- No changes to other roles' visibility.
-- No changes to the investor dashboard content itself.
+**Out of scope:** Does not include parts/jobs costs in profit (matches existing investor card behavior). No DB changes.
