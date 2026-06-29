@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
+import InvestorGuard from "@/components/InvestorGuard";
 import BPSDashboard from "@/components/BPSDashboard";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
@@ -30,6 +31,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const guarded = (node: React.ReactNode) => <InvestorGuard>{node}</InvestorGuard>;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -38,26 +41,26 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={guarded(<LandingPage />)} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Layout><BPSDashboard /></Layout>} />
-            <Route path="/bikes" element={<Layout><BikesPage /></Layout>} />
-            <Route path="/bikes/:id" element={<Layout><BikeDetailPage /></Layout>} />
-            <Route path="/intake" element={<Layout><IntakePage /></Layout>} />
-            <Route path="/cleaning" element={<Layout><CleaningPage /></Layout>} />
-            <Route path="/logistics" element={<Layout><LogisticsPage /></Layout>} />
-            <Route path="/parts" element={<Layout><PartsPage /></Layout>} />
-            <Route path="/jobs" element={<Layout><JobsPage /></Layout>} />
-            
-            <Route path="/invoices" element={<Layout><InvoicesPage /></Layout>} />
-            <Route path="/owners" element={<Layout><OwnersPage /></Layout>} />
-            <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
-            <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
-            <Route path="/social" element={<Layout><SocialDashboardPage /></Layout>} />
-            <Route path="/social/calendar" element={<Layout><SocialCalendarPage /></Layout>} />
-            <Route path="/social/posts" element={<Layout><SocialPostsPage /></Layout>} />
-            <Route path="/social/scripts" element={<Layout><SocialScriptsPage /></Layout>} />
-            <Route path="/social/analytics" element={<Layout><SocialAnalyticsPage /></Layout>} />
+            <Route path="/dashboard" element={guarded(<Layout><BPSDashboard /></Layout>)} />
+            <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
+            <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />
+            <Route path="/intake" element={guarded(<Layout><IntakePage /></Layout>)} />
+            <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
+            <Route path="/logistics" element={guarded(<Layout><LogisticsPage /></Layout>)} />
+            <Route path="/parts" element={guarded(<Layout><PartsPage /></Layout>)} />
+            <Route path="/jobs" element={guarded(<Layout><JobsPage /></Layout>)} />
+
+            <Route path="/invoices" element={guarded(<Layout><InvoicesPage /></Layout>)} />
+            <Route path="/owners" element={guarded(<Layout><OwnersPage /></Layout>)} />
+            <Route path="/reports" element={guarded(<Layout><ReportsPage /></Layout>)} />
+            <Route path="/settings" element={guarded(<Layout><SettingsPage /></Layout>)} />
+            <Route path="/social" element={guarded(<Layout><SocialDashboardPage /></Layout>)} />
+            <Route path="/social/calendar" element={guarded(<Layout><SocialCalendarPage /></Layout>)} />
+            <Route path="/social/posts" element={guarded(<Layout><SocialPostsPage /></Layout>)} />
+            <Route path="/social/scripts" element={guarded(<Layout><SocialScriptsPage /></Layout>)} />
+            <Route path="/social/analytics" element={guarded(<Layout><SocialAnalyticsPage /></Layout>)} />
             <Route path="/investor" element={<Layout><InvestorDashboardPage /></Layout>} />
             <Route path="/investor/bikes/:id" element={<Layout><InvestorBikePage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

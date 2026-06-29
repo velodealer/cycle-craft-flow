@@ -73,7 +73,9 @@ export function AppSidebar() {
     return currentPath.startsWith(path);
   };
 
-  const userAccessibleItems = navigationItems.filter(item => 
+  const isInvestor = profile?.role === 'investor';
+
+  const userAccessibleItems = isInvestor ? [] : navigationItems.filter(item =>
     !profile?.role || item.roles.includes(profile.role)
   );
 
