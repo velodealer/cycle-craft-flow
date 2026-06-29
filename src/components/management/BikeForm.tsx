@@ -30,8 +30,11 @@ const bikeSchema = z.object({
   condition: z.string().optional(),
   frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
-  source: z.enum(['owned', 'customer_consignment']),
+  source: z.enum(['owned', 'customer_consignment', 'investor']),
   external_owner_id: z.string().uuid().optional(),
+  investor_id: z.string().uuid().optional(),
+  profit_share_pct: z.number().min(0).max(100).optional(),
+  purchase_cost: z.number().optional(),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
@@ -73,6 +76,18 @@ const bikeSchema = z.object({
     message: 'Please select an owner for a customer consignment bike',
     path: ['external_owner_id'],
   }
+).refine(
+  (data) => data.source !== 'investor' || !!data.investor_id,
+  {
+    message: 'Please select an investor for an investor bike',
+    path: ['investor_id'],
+  }
+).refine(
+  (data) => data.source !== 'investor' || (data.profit_share_pct !== undefined && data.profit_share_pct >= 0 && data.profit_share_pct <= 100),
+  {
+    message: 'Profit share % is required for investor bikes (0-100)',
+    path: ['profit_share_pct'],
+  }
 );
 
 interface BikeFormProps {
@@ -85,6 +100,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [submitting, setSubmitting] = useState(false);
   const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
+  const [investors, setInvestors] = useState<Array<{ user_id: string; name: string; email: string }>>([]);
   const [showOwnerDialog, setShowOwnerDialog] = useState(false);
 
   const loadOwners = async () => {
@@ -95,8 +111,18 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
     if (!error && data) setOwners(data as any);
   };
 
+  const loadInvestors = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, name, email')
+      .eq('role', 'investor' as any)
+      .order('name');
+    if (!error && data) setInvestors(data as any);
+  };
+
   useEffect(() => {
     loadOwners();
+    loadInvestors();
   }, []);
 
   const form = useForm<z.infer<typeof bikeSchema>>({
@@ -113,8 +139,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
       external_owner_id: bike?.external_owner_id || undefined,
-      
-
+      investor_id: bike?.investor_id || undefined,
+      profit_share_pct: bike?.profit_share_pct ?? undefined,
+      purchase_cost: bike?.purchase_cost ?? undefined,
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
@@ -144,6 +171,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       const bikeData = {
         ...bikeFields,
         external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
+        investor_id: bikeFields.source === 'investor' ? bikeFields.investor_id : null,
+        profit_share_pct: bikeFields.source === 'investor' ? bikeFields.profit_share_pct : null,
+        purchase_cost: bikeFields.source === 'investor' ? bikeFields.purchase_cost : (bikeFields as any).purchase_cost ?? null,
         purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
@@ -368,6 +398,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                       <SelectContent>
                         <SelectItem value="owned">Owned by us</SelectItem>
                         <SelectItem value="customer_consignment">Customer consignment</SelectItem>
+                        <SelectItem value="investor">Investor bike</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -417,6 +448,80 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                     </FormItem>
                   )}
                 />
+              )}
+
+              {form.watch('source') === 'investor' && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <FormField
+                    control={form.control}
+                    name="investor_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investor *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={investors.length ? 'Select investor' : 'No investor users yet — add one in Settings → Users'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {investors.map((i) => (
+                              <SelectItem key={i.user_id} value={i.user_id}>
+                                {i.name} — {i.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>Investor who funded this bike</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="profit_share_pct"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profit share % *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              placeholder="50"
+                              value={field.value ?? ''}
+                              onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormDescription>Investor's share of net profit (0–100)</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="purchase_cost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Purchase cost</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={field.value ?? ''}
+                              onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormDescription>Investor's cost basis for net profit calc</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

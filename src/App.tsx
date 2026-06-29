@@ -24,6 +24,8 @@ import SocialCalendarPage from "./pages/social/SocialCalendarPage";
 import SocialPostsPage from "./pages/social/SocialPostsPage";
 import SocialScriptsPage from "./pages/social/SocialScriptsPage";
 import SocialAnalyticsPage from "./pages/social/SocialAnalyticsPage";
+import InvestorDashboardPage from "./pages/investor/InvestorDashboardPage";
+import InvestorBikePage from "./pages/investor/InvestorBikePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,8 @@ const App = () => (
             <Route path="/social/posts" element={<Layout><SocialPostsPage /></Layout>} />
             <Route path="/social/scripts" element={<Layout><SocialScriptsPage /></Layout>} />
             <Route path="/social/analytics" element={<Layout><SocialAnalyticsPage /></Layout>} />
+            <Route path="/investor" element={<Layout><InvestorDashboardPage /></Layout>} />
+            <Route path="/investor/bikes/:id" element={<Layout><InvestorBikePage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

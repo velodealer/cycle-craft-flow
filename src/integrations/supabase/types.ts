@@ -103,11 +103,14 @@ export type Database = {
           fulfillment_type: string
           id: string
           intake_date: string
+          investor_id: string | null
           listing_description: string | null
           make: string
           model: string
           owner_id: string | null
           photos: string[] | null
+          profit_share_pct: number | null
+          purchase_cost: number | null
           purchase_date: string | null
           purchase_price: number | null
           sale_price: number | null
@@ -131,11 +134,14 @@ export type Database = {
           fulfillment_type?: string
           id?: string
           intake_date?: string
+          investor_id?: string | null
           listing_description?: string | null
           make: string
           model: string
           owner_id?: string | null
           photos?: string[] | null
+          profit_share_pct?: number | null
+          purchase_cost?: number | null
           purchase_date?: string | null
           purchase_price?: number | null
           sale_price?: number | null
@@ -159,11 +165,14 @@ export type Database = {
           fulfillment_type?: string
           id?: string
           intake_date?: string
+          investor_id?: string | null
           listing_description?: string | null
           make?: string
           model?: string
           owner_id?: string | null
           photos?: string[] | null
+          profit_share_pct?: number | null
+          purchase_cost?: number | null
           purchase_date?: string | null
           purchase_price?: number | null
           sale_price?: number | null
@@ -180,6 +189,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "external_owners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bikes_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "bikes_owner_id_fkey"
@@ -812,6 +828,7 @@ export type Database = {
         Args: { required_role: Database["public"]["Enums"]["user_role"] }
         Returns: boolean
       }
+      is_investor_for_bike: { Args: { _bike_id: string }; Returns: boolean }
     }
     Enums: {
       bike_source: "owned" | "customer_consignment" | "investor"

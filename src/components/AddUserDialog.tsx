@@ -13,7 +13,9 @@ const roles = [
   { value: 'mechanic', label: 'Mechanic' },
   { value: 'detailer', label: 'Detailer' },
   { value: 'accountant', label: 'Accountant' },
-  { value: 'owner', label: 'Bike Owner' }
+  { value: 'owner', label: 'Bike Owner' },
+  { value: 'investor', label: 'Investor' },
+  { value: 'social_manager', label: 'Social Manager' }
 ];
 
 interface AddUserDialogProps {

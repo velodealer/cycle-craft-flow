@@ -7,7 +7,7 @@ interface Profile {
   user_id: string;
   name: string;
   email: string;
-  role: 'admin' | 'mechanic' | 'detailer' | 'owner' | 'accountant' | 'social_manager';
+  role: 'admin' | 'mechanic' | 'detailer' | 'owner' | 'accountant' | 'social_manager' | 'investor';
 }
 
 interface AuthContextType {
