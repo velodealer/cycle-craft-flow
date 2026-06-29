@@ -55,15 +55,26 @@ export default function InvestorBikePage() {
   const collectionCost = Number(bike.collection_cost ?? 0);
   const deliveryCost = Number(bike.delivery_cost ?? 0);
   const acquisition = Number(bike.purchase_cost ?? bike.purchase_price ?? 0);
-  const totalCosts = acquisition + collectionCost + deliveryCost + partsCost + jobsCost;
+  const prep = collectionCost + deliveryCost + partsCost + jobsCost;
+  const totalCosts = acquisition + prep;
   const isSold = bike.status === 'sold';
   const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
   const grossProfit = revenue - totalCosts;
   const isMargin = bike.finance_scheme === 'margin_scheme';
+  const isVatQualifying = bike.finance_scheme === 'vat_qualifying';
   const vatOnMargin = isMargin ? Math.max(0, grossProfit) * 20 / 120 : 0;
   const netProfit = grossProfit - vatOnMargin;
   const sharePct = Number(bike.profit_share_pct || 0);
   const myReturn = Math.max(0, netProfit) * (sharePct / 100);
+  const siv = isMargin ? acquisition + prep * 1.2
+            : isVatQualifying ? totalCosts * 1.2
+            : totalCosts;
+  const sivExplain = isMargin
+    ? 'Lowest sale price that covers all costs including margin-scheme VAT (1/6 of gross margin).'
+    : isVatQualifying
+      ? 'Lowest sale price that covers all costs plus 20% output VAT (VAT-qualifying scheme).'
+      : 'Lowest sale price that covers all costs.';
+  const headroom = revenue - siv;
 
   const Row = ({ label, value, negative, bold, muted, sub }: { label: string; value: string; negative?: boolean; bold?: boolean; muted?: boolean; sub?: string }) => (
     <div className="flex justify-between items-baseline py-1.5 border-b last:border-b-0 text-sm">
@@ -114,6 +125,22 @@ export default function InvestorBikePage() {
             )}
             <Row label="Net profit" value={fmt(netProfit)} bold negative={netProfit < 0} />
             <Row label={`Your share (${sharePct}%)`} value={fmt(myReturn)} bold />
+          </div>
+
+          <div className="mt-4 p-3 rounded-md border bg-muted/30 space-y-1">
+            <div className="flex justify-between items-baseline">
+              <div>
+                <div className="text-sm font-semibold">Stand-In Value (break-even price)</div>
+                <div className="text-xs text-muted-foreground">{sivExplain}</div>
+              </div>
+              <div className="text-lg font-semibold">{fmt(siv)}</div>
+            </div>
+            {revenue > 0 && (
+              <div className="flex justify-between items-baseline text-sm pt-2 border-t">
+                <span className="text-muted-foreground">Headroom vs SIV ({isSold ? 'sale' : 'asking'})</span>
+                <span className={`font-medium ${headroom < 0 ? 'text-destructive' : ''}`}>{headroom >= 0 ? '+' : ''}{fmt(headroom)}</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
