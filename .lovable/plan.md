@@ -1,32 +1,33 @@
-## Full-transparency cost breakdown on investor pages
+## Mirror the investor cost & profit breakdown on the admin Bike Detail
 
-### 1. Investor bike detail page (`src/pages/investor/InvestorBikePage.tsx`)
-Replace the current minimal summary with a full cost breakdown card:
+In `src/components/bike/BikeDetailView.tsx`, replace the current Pricing & Finance card's metrics section (Profit / Margin / Markup / ROI + VAT block + separate Investor card return) with the same itemized breakdown investors see on `InvestorBikePage.tsx`.
 
-- **Revenue:** sale price (if sold) else asking price (labelled "Listed").
-- **Acquisition cost:** purchase price (paid to original seller).
-- **Collection cost** (inbound shipping).
-- **Delivery cost** (outbound shipping).
-- **Parts cost:** sum of `parts.cost_price * quantity` for this bike.
-- **Labour / job cost:** sum of `jobs.actual_cost ?? estimated_cost` for this bike.
-- **Total costs:** sum of the above.
-- **Gross profit:** revenue − total costs.
-- **VAT (margin scheme):** when `finance_scheme = 'margin_scheme'`, `max(0, gross_profit) * 20/120`. Shown as a deducted line.
-- **Net profit (after VAT):** gross_profit − vat_on_margin.
-- **Investor share %:** `profit_share_pct`.
-- **Your return:** `max(0, net_profit) * profit_share_pct/100`.
-- Footnote clarifying "realised" vs "estimated" based on sold/listed status.
+### Data
+The view doesn't currently fetch jobs/parts. Add a `useEffect` inside `BikeDetailView` that, when `canSeePricing` is true and `bike.id` is set, fetches:
+- `jobs` (bike_id, actual_cost, estimated_cost)
+- `parts` (bike_id, cost_price, quantity)
+Sum into `partsCost` and `jobsCost`.
 
-### 2. Investor dashboard (`src/pages/investor/InvestorDashboardPage.tsx`)
-Update the returns calculation to use the same formula (subtract collection/delivery/parts/jobs AND VAT-on-margin before applying profit_share_pct). Add a small "Costs to date" column already shown — expand it so it now includes collection + delivery in addition to parts + jobs. Totals (realised / unrealised) reflect the corrected, post-VAT net.
+### Card content (admin Pricing & Finance)
+Keep the existing price/date/VAT-scheme rows at the top. Replace the metrics block below with:
 
-### 3. Apply same logic to admin Bike Detail's Investor card
-In `src/components/bike/BikeDetailView.tsx`, the existing "Estimated investor return" line uses `(sale_price - purchase_cost) * share`. Update it to use the same net-after-all-costs-and-VAT formula so admin and investor views agree.
+- Revenue (Sale price if sold, else Asking price — labelled accordingly)
+- − Acquisition cost (purchase_price; fallback purchase_cost)
+- − Collection cost
+- − Delivery cost
+- − Parts
+- − Labour / jobs
+- **Total costs**
+- **Gross profit** (red if negative)
+- − VAT (margin scheme) — only when `finance_scheme === 'margin_scheme'`, computed `max(0, gross) * 20/120`, with subtitle "20% VAT on gross margin paid to HMRC"
+- **Net profit** (red if negative)
+- Margin / Markup / ROI — keep as a small footer row using net profit & total cost (margin = net/revenue, markup = roi = net/totalCost)
+- Footnote: realised vs estimated
 
-### Data fetching
-- Already fetching bikes + jobs + parts on the dashboard. Add `collection_cost`, `delivery_cost` to the bike `select`.
-- On the investor bike page, fetch jobs + parts for that single bike.
+### Investor card update
+The "Investor" card already shows investor share. Replace its `Estimated investor return` math with the shared net-after-VAT formula (already wired in last turn) and additionally show `Net profit` and `Your share %`. Keep Investor ID, profit share %, purchase cost rows.
 
 ### Out of scope
-- VAT for `vat_qualifying` / `commercial_vat` schemes (only margin scheme is deducted; for the others, VAT is recovered/passed through differently — leave net profit = gross profit).
 - No DB changes.
+- No changes to the form.
+- Doesn't apply to investor-side pages (already done).
