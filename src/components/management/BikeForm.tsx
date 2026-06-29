@@ -30,8 +30,11 @@ const bikeSchema = z.object({
   condition: z.string().optional(),
   frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
-  source: z.enum(['owned', 'customer_consignment']),
+  source: z.enum(['owned', 'customer_consignment', 'investor']),
   external_owner_id: z.string().uuid().optional(),
+  investor_id: z.string().uuid().optional(),
+  profit_share_pct: z.number().min(0).max(100).optional(),
+  purchase_cost: z.number().optional(),
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
@@ -72,6 +75,18 @@ const bikeSchema = z.object({
   {
     message: 'Please select an owner for a customer consignment bike',
     path: ['external_owner_id'],
+  }
+).refine(
+  (data) => data.source !== 'investor' || !!data.investor_id,
+  {
+    message: 'Please select an investor for an investor bike',
+    path: ['investor_id'],
+  }
+).refine(
+  (data) => data.source !== 'investor' || (data.profit_share_pct !== undefined && data.profit_share_pct >= 0 && data.profit_share_pct <= 100),
+  {
+    message: 'Profit share % is required for investor bikes (0-100)',
+    path: ['profit_share_pct'],
   }
 );
 
