@@ -88,10 +88,57 @@ export type Database = {
           },
         ]
       }
+      bike_components: {
+        Row: {
+          bike_id: string
+          component_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          position: string | null
+          slot: string
+        }
+        Insert: {
+          bike_id: string
+          component_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          position?: string | null
+          slot: string
+        }
+        Update: {
+          bike_id?: string
+          component_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          position?: string | null
+          slot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bike_components_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bike_components_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bikes: {
         Row: {
           accessories_included: string | null
           asking_price: number | null
+          barcode: string | null
+          bike_type: string | null
           collection_cost: number | null
           colour: string | null
           condition: string | null
@@ -101,11 +148,18 @@ export type Database = {
           description: string | null
           external_owner_id: string | null
           finance_scheme: Database["public"]["Enums"]["finance_scheme"]
+          frame_material: string | null
           frame_number: string | null
           fulfillment_type: string
+          gender: string | null
+          has_accessories: boolean
+          has_dropper: boolean
+          has_rear_shock: boolean
+          has_suspension_fork: boolean
           id: string
           intake_date: string
           investor_id: string | null
+          is_electric: boolean
           listing_description: string | null
           make: string
           model: string
@@ -116,15 +170,21 @@ export type Database = {
           purchase_date: string | null
           purchase_price: number | null
           sale_price: number | null
+          serial_number: string | null
           size: string | null
+          sku: string | null
           source: Database["public"]["Enums"]["bike_source"]
+          spec_values: Json
           status: Database["public"]["Enums"]["bike_status"]
           updated_at: string
+          weight_kg: number | null
           year: number | null
         }
         Insert: {
           accessories_included?: string | null
           asking_price?: number | null
+          barcode?: string | null
+          bike_type?: string | null
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
@@ -134,11 +194,18 @@ export type Database = {
           description?: string | null
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
+          frame_material?: string | null
           frame_number?: string | null
           fulfillment_type?: string
+          gender?: string | null
+          has_accessories?: boolean
+          has_dropper?: boolean
+          has_rear_shock?: boolean
+          has_suspension_fork?: boolean
           id?: string
           intake_date?: string
           investor_id?: string | null
+          is_electric?: boolean
           listing_description?: string | null
           make: string
           model: string
@@ -149,15 +216,21 @@ export type Database = {
           purchase_date?: string | null
           purchase_price?: number | null
           sale_price?: number | null
+          serial_number?: string | null
           size?: string | null
+          sku?: string | null
           source?: Database["public"]["Enums"]["bike_source"]
+          spec_values?: Json
           status?: Database["public"]["Enums"]["bike_status"]
           updated_at?: string
+          weight_kg?: number | null
           year?: number | null
         }
         Update: {
           accessories_included?: string | null
           asking_price?: number | null
+          barcode?: string | null
+          bike_type?: string | null
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
@@ -167,11 +240,18 @@ export type Database = {
           description?: string | null
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
+          frame_material?: string | null
           frame_number?: string | null
           fulfillment_type?: string
+          gender?: string | null
+          has_accessories?: boolean
+          has_dropper?: boolean
+          has_rear_shock?: boolean
+          has_suspension_fork?: boolean
           id?: string
           intake_date?: string
           investor_id?: string | null
+          is_electric?: boolean
           listing_description?: string | null
           make?: string
           model?: string
@@ -182,10 +262,14 @@ export type Database = {
           purchase_date?: string | null
           purchase_price?: number | null
           sale_price?: number | null
+          serial_number?: string | null
           size?: string | null
+          sku?: string | null
           source?: Database["public"]["Enums"]["bike_source"]
+          spec_values?: Json
           status?: Database["public"]["Enums"]["bike_status"]
           updated_at?: string
+          weight_kg?: number | null
           year?: number | null
         }
         Relationships: [
@@ -208,6 +292,77 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      components: {
+        Row: {
+          attributes: Json
+          brand: string
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          model: string
+          mpn: string | null
+          updated_at: string
+          weight_g: number | null
+        }
+        Insert: {
+          attributes?: Json
+          brand: string
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          model: string
+          mpn?: string | null
+          updated_at?: string
+          weight_g?: number | null
+        }
+        Update: {
+          attributes?: Json
+          brand?: string
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          model?: string
+          mpn?: string | null
+          updated_at?: string
+          weight_g?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "components_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "component_categories"
             referencedColumns: ["id"]
           },
         ]
