@@ -449,6 +449,80 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   )}
                 />
               )}
+
+              {form.watch('source') === 'investor' && (
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                  <FormField
+                    control={form.control}
+                    name="investor_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investor *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={investors.length ? 'Select investor' : 'No investor users yet — add one in Settings → Users'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {investors.map((i) => (
+                              <SelectItem key={i.user_id} value={i.user_id}>
+                                {i.name} — {i.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>Investor who funded this bike</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="profit_share_pct"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profit share % *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              placeholder="50"
+                              value={field.value ?? ''}
+                              onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormDescription>Investor's share of net profit (0–100)</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="purchase_cost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Purchase cost</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={field.value ?? ''}
+                              onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormDescription>Investor's cost basis for net profit calc</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
