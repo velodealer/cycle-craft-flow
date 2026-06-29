@@ -92,10 +92,12 @@ export type Database = {
         Row: {
           accessories_included: string | null
           asking_price: number | null
+          collection_cost: number | null
           colour: string | null
           condition: string | null
           condition_notes: string | null
           created_at: string
+          delivery_cost: number | null
           description: string | null
           external_owner_id: string | null
           finance_scheme: Database["public"]["Enums"]["finance_scheme"]
@@ -123,10 +125,12 @@ export type Database = {
         Insert: {
           accessories_included?: string | null
           asking_price?: number | null
+          collection_cost?: number | null
           colour?: string | null
           condition?: string | null
           condition_notes?: string | null
           created_at?: string
+          delivery_cost?: number | null
           description?: string | null
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
@@ -154,10 +158,12 @@ export type Database = {
         Update: {
           accessories_included?: string | null
           asking_price?: number | null
+          collection_cost?: number | null
           colour?: string | null
           condition?: string | null
           condition_notes?: string | null
           created_at?: string
+          delivery_cost?: number | null
           description?: string | null
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]

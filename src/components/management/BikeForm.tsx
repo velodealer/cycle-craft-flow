@@ -40,6 +40,8 @@ const bikeSchema = z.object({
   
   purchase_price: z.number().optional(),
   asking_price: z.number().optional(),
+  collection_cost: z.number().optional(),
+  delivery_cost: z.number().optional(),
   purchase_date: z.date().optional(),
   finance_scheme: z.enum(['vat_qualifying', 'margin_scheme', 'commercial_vat']),
   description: z.string().optional(),
@@ -150,6 +152,8 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
+      collection_cost: bike?.collection_cost ?? undefined,
+      delivery_cost: bike?.delivery_cost ?? undefined,
       purchase_date: bike?.purchase_date ? new Date(bike.purchase_date) : undefined,
       finance_scheme: bike?.finance_scheme || 'margin_scheme',
       description: bike?.description || '',
@@ -581,6 +585,49 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                         />
                       </FormControl>
                       <FormDescription>Listed sale price</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="collection_cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Collection Cost</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={field.value ?? ''}
+                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormDescription>Cost to collect the bike (inbound shipping)</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="delivery_cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Cost</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={field.value ?? ''}
+                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormDescription>Cost to deliver to buyer (outbound shipping)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

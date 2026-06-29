@@ -1,0 +1,1 @@
+ALTER TABLE public.bikes ADD COLUMN IF NOT EXISTS collection_cost numeric, ADD COLUMN IF NOT EXISTS delivery_cost numeric;
