@@ -259,14 +259,25 @@ export default function BikeDetailView({
                   const acquisition = Number(bike.purchase_price ?? bike.purchase_cost ?? 0);
                   const collectionCost = Number(bike.collection_cost ?? 0);
                   const deliveryCost = Number(bike.delivery_cost ?? 0);
-                  const totalCost = acquisition + collectionCost + deliveryCost + partsCost + jobsCost;
+                  const prep = collectionCost + deliveryCost + partsCost + jobsCost;
+                  const totalCost = acquisition + prep;
                   const gross = revenue - totalCost;
                   const isMargin = bike.finance_scheme === 'margin_scheme';
+                  const isVatQualifying = bike.finance_scheme === 'vat_qualifying';
                   const vat = isMargin ? Math.max(0, gross) * 20 / 120 : 0;
                   const net = gross - vat;
                   const margin = revenue > 0 ? (net / revenue) * 100 : null;
                   const markupRoi = totalCost > 0 ? (net / totalCost) * 100 : null;
                   const pct = (v: number | null) => v == null ? '-' : `${v.toFixed(1)}%`;
+                  const siv = isMargin ? acquisition + prep * 1.2
+                            : isVatQualifying ? totalCost * 1.2
+                            : totalCost;
+                  const sivExplain = isMargin
+                    ? 'Lowest sale price that covers all costs including margin-scheme VAT (1/6 of gross margin).'
+                    : isVatQualifying
+                      ? 'Lowest sale price that covers all costs plus 20% output VAT (VAT-qualifying scheme).'
+                      : 'Lowest sale price that covers all costs.';
+                  const headroom = revenue - siv;
                   const investorShare = bike.source === 'investor' && bike.profit_share_pct != null
                     ? Math.max(0, net) * (Number(bike.profit_share_pct) / 100)
                     : null;
@@ -297,6 +308,22 @@ export default function BikeDetailView({
                         <Row label="Net profit" value={formatCurrency(net)} bold negative={net < 0} />
                         {investorShare != null && (
                           <Row label={`Investor share (${bike.profit_share_pct}%)`} value={formatCurrency(investorShare)} bold />
+                        )}
+                      </div>
+
+                      <div className="mt-4 p-3 rounded-md border bg-muted/30 space-y-1">
+                        <div className="flex justify-between items-baseline">
+                          <div>
+                            <div className="text-sm font-semibold">Stand-In Value (break-even price)</div>
+                            <div className="text-xs text-muted-foreground">{sivExplain}</div>
+                          </div>
+                          <div className="text-lg font-semibold">{formatCurrency(siv)}</div>
+                        </div>
+                        {revenue > 0 && (
+                          <div className="flex justify-between items-baseline text-sm pt-2 border-t">
+                            <span className="text-muted-foreground">Headroom vs SIV ({isSold ? 'sale' : 'asking'})</span>
+                            <span className={`font-medium ${headroom < 0 ? 'text-destructive' : ''}`}>{headroom >= 0 ? '+' : ''}{formatCurrency(headroom)}</span>
+                          </div>
                         )}
                       </div>
 
