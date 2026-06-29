@@ -19,6 +19,11 @@ import OwnersPage from "./pages/OwnersPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LogisticsPage from "./pages/LogisticsPage";
+import SocialDashboardPage from "./pages/social/SocialDashboardPage";
+import SocialCalendarPage from "./pages/social/SocialCalendarPage";
+import SocialPostsPage from "./pages/social/SocialPostsPage";
+import SocialScriptsPage from "./pages/social/SocialScriptsPage";
+import SocialAnalyticsPage from "./pages/social/SocialAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
