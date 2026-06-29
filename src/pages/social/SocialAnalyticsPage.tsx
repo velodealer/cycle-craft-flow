@@ -25,14 +25,17 @@ export default function SocialAnalyticsPage() {
         .limit(10);
       setTopPosts(scores || []);
 
-      const { data: posts } = await supabase.from('social_posts')
-        .select('assigned_to, status, profiles:profiles!social_posts_assigned_to_fkey(name, email)');
+      const [{ data: posts }, { data: profiles }] = await Promise.all([
+        supabase.from('social_posts').select('assigned_to, status'),
+        supabase.from('profiles').select('user_id, name, email'),
+      ]);
       if (posts) {
+        const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p.name || p.email || 'Unknown']));
         const byUser: Record<string, { name: string; total: number; posted: number }> = {};
         for (const p of posts as any[]) {
           if (!p.assigned_to) continue;
           const key = p.assigned_to;
-          if (!byUser[key]) byUser[key] = { name: p.profiles?.name || p.profiles?.email || 'Unknown', total: 0, posted: 0 };
+          if (!byUser[key]) byUser[key] = { name: profMap.get(key) || 'Unknown', total: 0, posted: 0 };
           byUser[key].total++;
           if (p.status === 'posted') byUser[key].posted++;
         }
