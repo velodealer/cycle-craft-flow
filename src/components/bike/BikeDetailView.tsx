@@ -8,6 +8,7 @@ import StatusProgressBar from './StatusProgressBar';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import { CollectionStatus } from './CollectionStatus';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BikeDetailViewProps {
   bike: any;
