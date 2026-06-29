@@ -814,7 +814,7 @@ export type Database = {
       }
     }
     Enums: {
-      bike_source: "owned" | "customer_consignment"
+      bike_source: "owned" | "customer_consignment" | "investor"
       bike_status:
         | "intake"
         | "cleaning"
@@ -852,6 +852,7 @@ export type Database = {
         | "owner"
         | "accountant"
         | "social_manager"
+        | "investor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -979,7 +980,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      bike_source: ["owned", "customer_consignment"],
+      bike_source: ["owned", "customer_consignment", "investor"],
       bike_status: [
         "intake",
         "cleaning",
@@ -1014,6 +1015,7 @@ export const Constants = {
         "owner",
         "accountant",
         "social_manager",
+        "investor",
       ],
     },
   },
