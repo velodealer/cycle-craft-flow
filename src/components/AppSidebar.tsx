@@ -14,6 +14,7 @@ import {
   CalendarDays,
   FileVideo,
   TrendingUp,
+  Briefcase,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +55,10 @@ const socialItems = [
   { title: "Performance", url: "/social/analytics", icon: TrendingUp },
 ];
 const socialRoles = ['admin', 'social_manager', 'mechanic', 'detailer', 'accountant', 'owner'];
+
+const investorItems = [
+  { title: "My Investments", url: "/investor", icon: Briefcase, exact: true },
+];
 
 export function AppSidebar() {
   const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
