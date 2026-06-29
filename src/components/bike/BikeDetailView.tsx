@@ -204,7 +204,7 @@ export default function BikeDetailView({
           </Card>
 
           {/* Pricing Information */}
-          {showPricing && (
+          {canSeePricing && (
             <Card>
               <CardHeader>
                 <CardTitle>Pricing & Finance</CardTitle>
@@ -241,7 +241,7 @@ export default function BikeDetailView({
             </Card>
           )}
 
-          {bike.source === 'investor' && (
+          {bike.source === 'investor' && !isMechanic && (
             <Card>
               <CardHeader>
                 <CardTitle>Investor</CardTitle>
