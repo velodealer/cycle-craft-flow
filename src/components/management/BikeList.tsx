@@ -98,11 +98,9 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   };
 
   const getSourceBadge = (source: string) => {
-    return (
-      <Badge variant={source === 'owned' ? 'default' : 'outline'}>
-        {source === 'owned' ? 'Owned' : 'Consignment'}
-      </Badge>
-    );
+    const label = source === 'owned' ? 'Owned' : source === 'investor' ? 'Investor' : 'Consignment';
+    const variant: 'default' | 'outline' | 'secondary' = source === 'owned' ? 'default' : source === 'investor' ? 'secondary' : 'outline';
+    return <Badge variant={variant}>{label}</Badge>;
   };
 
   if (loading) {
