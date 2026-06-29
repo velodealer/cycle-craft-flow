@@ -872,6 +872,15 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           />
         </DialogContent>
       </Dialog>
+
+      <AddInvestorDialog
+        open={showInvestorDialog}
+        onOpenChange={setShowInvestorDialog}
+        onCreated={async (inv) => {
+          await loadInvestors();
+          form.setValue('investor_id', inv.user_id, { shouldValidate: true });
+        }}
+      />
     </div>
   );
 }
