@@ -79,11 +79,9 @@ export default function BikeDetailView({
   };
 
   const getSourceBadge = (source: string) => {
-    return (
-      <Badge variant={source === 'owned' ? 'default' : 'outline'}>
-        {source === 'owned' ? 'Owned by us' : 'Customer consignment'}
-      </Badge>
-    );
+    const label = source === 'owned' ? 'Owned by us' : source === 'investor' ? 'Investor bike' : 'Customer consignment';
+    const variant: 'default' | 'outline' | 'secondary' = source === 'owned' ? 'default' : source === 'investor' ? 'secondary' : 'outline';
+    return <Badge variant={variant}>{label}</Badge>;
   };
 
   return (
