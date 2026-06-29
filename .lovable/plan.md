@@ -1,19 +1,28 @@
-## Add Investor (similar to Add Consigneer)
+## Fix: "new row violates row-level security policy for table bikes" when creating an investor bike
 
-When the bike source is set to "Investor bike" in the Bike form, the investor dropdown will gain an "Add new investor" action — mirroring how owners/consigneers are added inline.
+### Root cause
+`AddInvestorDialog` creates the new investor with `supabase.auth.signUp`. `signUp` replaces the current session — the logged-in admin is silently swapped for the brand-new investor account. When the admin then clicks **Create Bike**, the insert runs as the investor, who is not covered by any insert/manage policy on `bikes`, so Postgres rejects it with the RLS error.
 
-### Flow
-1. In `BikeForm.tsx`, when `source = 'investor'`, the investor selector shows existing investors (profiles with `role = 'investor'`) plus an "+ Add new investor" item at the bottom.
-2. Clicking it opens an `AddInvestorDialog` modal (new component, modeled on `AddUserDialog`).
-3. The dialog collects: Name, Email, Temporary Password (with Generate button) — role is locked to `investor`.
-4. On submit it creates the auth user via `supabase.auth.signUp`, then updates the new profile's `role` to `'investor'`.
-5. On success, the dialog closes, the investor list refetches, and the newly created investor is auto-selected in the BikeForm.
+The user-management `AddUserDialog` has the same flaw, but it isn't hit in normal flow because nobody immediately performs an admin-only write right after.
+
+### Fix
+Create the investor via a Supabase Edge Function that uses the service-role key, so the admin's session is never disturbed.
+
+**1. New edge function `supabase/functions/create-investor/index.ts`**
+- `verify_jwt = true` (default) — only signed-in users can call it.
+- Verify the caller is an admin: read the JWT, look up their profile role, reject if not `admin`.
+- Use the service-role client to:
+  - `auth.admin.createUser({ email, password, email_confirm: true, user_data: { name } })`
+  - `profiles.update({ role: 'investor', name }).eq('user_id', newUser.id)` (the `handle_new_user` trigger already inserts the profile row).
+- Return `{ user_id, name, email }`.
+
+**2. Edit `src/components/management/AddInvestorDialog.tsx`**
+- Replace the `supabase.auth.signUp` + profile-update block with `supabase.functions.invoke('create-investor', { body: { name, email, password } })`.
+- Keep the same `onCreated({ user_id, name, email })` contract so `BikeForm` auto-select keeps working.
+- Update the success toast (email is auto-confirmed; no verification step needed).
+
+No DB migration is required (the `investor` role already exists; RLS on `bikes` is correct — the admin was simply no longer the caller).
 
 ### Files
-- **New:** `src/components/management/AddInvestorDialog.tsx` — focused dialog (no role picker; investor only).
-- **Edit:** `src/components/management/BikeForm.tsx` — fetch investors from `profiles` where `role = 'investor'`, render the dropdown with the "+ Add new investor" trigger, wire dialog + auto-select.
-
-### Notes
-- Reuses the existing signup pattern from `AddUserDialog` (no service-role required client-side).
-- No DB migration needed — `investor` role already exists in the `user_role` enum.
-- The new investor will need to confirm their email before they can sign in to the investor portal (same as other user types created this way).
+- **New:** `supabase/functions/create-investor/index.ts`
+- **Edit:** `src/components/management/AddInvestorDialog.tsx`
