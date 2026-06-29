@@ -460,20 +460,25 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Investor *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={investors.length ? 'Select investor' : 'No investor users yet — add one in Settings → Users'} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {investors.map((i) => (
-                              <SelectItem key={i.user_id} value={i.user_id}>
-                                {i.name} — {i.email}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={investors.length ? 'Select investor' : 'No investors yet — add one'} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {investors.map((i) => (
+                                <SelectItem key={i.user_id} value={i.user_id}>
+                                  {i.name} — {i.email}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button type="button" variant="outline" size="icon" onClick={() => setShowInvestorDialog(true)}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <FormDescription>Investor who funded this bike</FormDescription>
                         <FormMessage />
                       </FormItem>
