@@ -1,55 +1,68 @@
-## Social Media Planner Module
 
-A new top-level section in the app (sidebar entry: "Social Planner") for dealership staff to plan, script, score, and track social content across TikTok / Facebook / Instagram / YouTube Shorts / Reels. Plan-only for now — posts are tracked internally, not published to external APIs.
+# Investor Bikes & Investor Portal
 
-### Routes & pages
-- `/social` — Planner dashboard (overview cards + today's queue)
-- `/social/calendar` — Weekly/monthly calendar of scheduled posts
-- `/social/posts` — List view of all posts with filters (platform, status, vehicle, assignee)
-- `/social/posts/new` and `/social/posts/:id` — Create/edit post (dialog-based, matching the intake/cleaning pattern)
-- `/social/scripts` — Library of walkaround scripts (template + per-vehicle)
-- `/social/analytics` — Performance tracking + AI scoring leaderboard
-- `/social/team` — Team accountability view (posts per user, completion rate)
+## 1. Database changes
 
-### Sidebar
-Add "Social Planner" group in `AppSidebar.tsx` with sub-items: Dashboard, Calendar, Posts, Scripts, Analytics, Team. Gated by role (admin + new `social_manager` role, plus any user can see their own assigned posts).
+**Enums**
+- Extend `bike_source` enum with `'investor'`.
+- Extend `user_role` enum with `'investor'`.
 
-### Database (new tables, all in `public` with grants + RLS)
+**`bikes` table — add columns**
+- `investor_id uuid` — FK to `profiles.user_id` (nullable; required when `source = 'investor'`).
+- `profit_share_pct numeric(5,2)` — investor's share of net profit (0–100).
+- `purchase_cost numeric(10,2)` — cost basis for net profit calc (nullable, defaults to existing purchase fields if present).
 
-1. **`social_posts`** — id, vehicle_id (nullable FK to `bikes` — repurposed as "stock item"; nullable so generic posts allowed), title, caption, hook, hashtags (text[]), platforms (text[] — tiktok/facebook/instagram/youtube/reels), status (`draft|scheduled|posted|archived`), scheduled_at, posted_at, assigned_to (FK profiles), created_by, video_url (nullable, uses existing storage), thumbnail_url, script_id (nullable FK), created_at, updated_at.
-2. **`social_scripts`** — id, name, category (`walkaround|feature|testimonial|promo`), body (markdown), variables (jsonb — placeholders like `{make}`, `{model}`), is_template (bool), created_by, created_at, updated_at.
-3. **`social_post_scores`** — id, post_id FK, hook_score (0-10), retention_score, cta_score, production_score, overall_score (generated), notes, scored_by, scored_at. Allows manual scoring now; AI scoring stub can populate later via edge function.
-4. **`social_post_metrics`** — id, post_id FK, platform, views, likes, comments, shares, saves, recorded_at. Manually entered for now (or via future platform integrations).
-5. **`social_post_checklist`** — id, post_id FK, item (`filmed|edited|caption_written|approved|posted`), done (bool), done_by, done_at. Drives the "daily posting system" progress bar.
+A `CHECK` is avoided; a small trigger validates that when `source = 'investor'`, both `investor_id` and `profit_share_pct` are set.
 
-RLS: any authenticated user can read/insert; only assignee, creator, or admin/social_manager can update/delete. Add `social_manager` to existing `user_role` enum.
+**RLS additions**
+- Investors can `SELECT` from `bikes` where `investor_id = auth.uid()`.
+- Investors can `SELECT` related `jobs`, `parts`, `bike_collections`, `invoices`, `fulfilment_events`, and bike photos for those bikes (read-only, scoped by bike_id).
+- No write access for investors anywhere.
 
-### Components
-- `SocialSidebarSection` (added to `AppSidebar.tsx`)
-- `pages/social/SocialDashboard.tsx` — KPI cards (posts this week, completion rate, top-scoring post, untouched vehicles)
-- `pages/social/SocialCalendar.tsx` — month/week grid, click day to schedule
-- `pages/social/SocialPostsPage.tsx` — list + filters
-- `components/social/PostForm.tsx` — dialog form (vehicle select, platforms multi-select, scheduled_at, script picker, video upload, hashtags, caption)
-- `components/social/PostDetailView.tsx` — opened in dialog from list/calendar (matches intake/cleaning UX)
-- `components/social/ScriptLibrary.tsx` + `ScriptForm.tsx`
-- `components/social/ScoreCard.tsx` — manual scoring form with sliders
-- `components/social/MetricsForm.tsx` — manual entry per platform
-- `components/social/PostChecklist.tsx` — checklist toggles
-- `components/social/AnalyticsView.tsx` — recharts: posts over time, avg score per user, top posts
+**Net profit / returns** (computed in the app, not stored):
+```
+net_profit = sale_price - purchase_cost - sum(parts.cost) - sum(jobs.cost)
+investor_return = net_profit * profit_share_pct / 100
+```
 
-### Storage
-Reuse the existing pattern; add a new public bucket `social-media` for video/thumbnail uploads (via migration).
+## 2. Bike form / management UI
 
-### Out of scope (explicit)
-- Real publishing to TikTok / Meta / YouTube APIs
-- Automated AI video scoring (stub the table; AI scoring can be added later via Lovable AI Gateway)
-- Real-time metric pulls from platforms
+`src/components/management/BikeForm.tsx` and `BikeList.tsx`:
+- Add **Investor Bike** option to the Source select.
+- When source = investor, reveal:
+  - **Investor** dropdown (lists profiles where `role = 'investor'`).
+  - **Profit share %** numeric input (0–100).
+  - **Purchase cost** numeric input.
+- `BikeList` filter dropdown gets the new source; badge shows "Investor".
+- `BikeDetailView` shows investor name, split %, and a small "Investor return (est.)" card using the formula above.
 
-### Implementation order
-1. Migration: enum value + 5 tables + bucket + RLS + grants
-2. Sidebar entry + routes wired in `App.tsx`
-3. Posts list + PostForm + PostDetailView (dialog)
-4. Calendar
-5. Scripts library
-6. Dashboard, Analytics, Team views
-7. Scoring + checklist + metrics sub-components
+## 3. User management
+- `AddUserDialog` / `EditUserDialog`: add `investor` to the role select.
+- `useAuth` Profile type already extended pattern — add `'investor'`.
+
+## 4. Investor portal
+
+New route `/investor` (visible in sidebar only when `profile.role === 'investor'`; other staff roles do not see it; investors do not see the rest of the ops sidebar).
+
+Pages under `src/pages/investor/`:
+
+- **`InvestorDashboardPage.tsx`** (`/investor`)
+  - Summary cards: # bikes invested in, # active, # sold, total invested, total returns to date, est. unrealised return.
+  - Table of their bikes with current stage badge (intake → cleaning → inspection → repair → ready → listed → sold).
+
+- **`InvestorBikePage.tsx`** (`/investor/bikes/:id`)
+  - **Status pipeline** — reuse `StatusProgressBar`.
+  - **Financials & returns** — purchase cost, costs to date (parts + jobs), sale price (if sold), their share %, their return.
+  - **Activity timeline** — bought date (intake_date), jobs completed (with dates), listed date, sold date, key collection/fulfilment events.
+  - **Photos & listing** — gallery from `bike-photos` bucket + asking price / listing notes.
+
+Routing in `src/App.tsx`; sidebar entry in `AppSidebar.tsx` gated on role.
+
+## 5. Out of scope (call out)
+- No payouts/ledger table — returns are computed read-only.
+- No investor invitations flow; admin creates investor users via existing AddUserDialog.
+
+## Technical notes
+- Two migrations are required (enum value commit before use): (1) add `'investor'` to `bike_source` and `'investor'` to `user_role`; (2) add columns, validation trigger, and RLS policies.
+- All investor RLS uses `auth.uid() = bikes.investor_id` via a `SECURITY DEFINER` helper `public.is_investor_for_bike(_bike_id uuid)` to keep policies on related tables simple and recursion-free.
+- Grants: `GRANT SELECT` to `authenticated` is already in place on the read tables; no new grants needed beyond the new columns being covered by existing table grants.
