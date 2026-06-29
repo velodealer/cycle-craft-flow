@@ -139,8 +139,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
       external_owner_id: bike?.external_owner_id || undefined,
-      
-
+      investor_id: bike?.investor_id || undefined,
+      profit_share_pct: bike?.profit_share_pct ?? undefined,
+      purchase_cost: bike?.purchase_cost ?? undefined,
       
       purchase_price: bike?.purchase_price || undefined,
       asking_price: bike?.asking_price || undefined,
@@ -170,6 +171,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       const bikeData = {
         ...bikeFields,
         external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
+        investor_id: bikeFields.source === 'investor' ? bikeFields.investor_id : null,
+        profit_share_pct: bikeFields.source === 'investor' ? bikeFields.profit_share_pct : null,
+        purchase_cost: bikeFields.source === 'investor' ? bikeFields.purchase_cost : (bikeFields as any).purchase_cost ?? null,
         purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
