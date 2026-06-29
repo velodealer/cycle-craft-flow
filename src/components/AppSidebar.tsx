@@ -54,7 +54,7 @@ const socialItems = [
   { title: "Scripts", url: "/social/scripts", icon: FileText },
   { title: "Performance", url: "/social/analytics", icon: TrendingUp },
 ];
-const socialRoles = ['admin', 'social_manager', 'mechanic', 'detailer', 'accountant', 'owner'];
+const socialRoles = ['admin', 'social_manager', 'detailer', 'accountant', 'owner'];
 
 const investorItems = [
   { title: "My Investments", url: "/investor", icon: Briefcase, exact: true },

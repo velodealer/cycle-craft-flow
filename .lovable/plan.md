@@ -1,17 +1,18 @@
-## Fix `owner_check` constraint to allow investor bikes
+## Changes for mechanic role
 
-The `bikes.owner_check` constraint currently allows both `owner_id` and `external_owner_id` to be null **only when `source = 'owned'`**. Investor bikes have no owner either, but `source = 'investor'`, so the insert fails.
+**1. Remove Social Planner from sidebar for mechanics**
+In `src/components/AppSidebar.tsx`, remove `'mechanic'` from the `socialRoles` array so the entire Social Planner group is hidden for mechanics.
 
-### Migration
-Drop and re-add `owner_check` to also permit `source = 'investor'` with both owner fields null:
+**2. Hide pricing & finance from mechanics**
+- `src/components/bike/BikeDetailView.tsx`: When the current user's role is `mechanic`, force `showPricing={false}` (hides the Pricing & Finance card) and also hide the Investor card (which exposes purchase cost / profit share / estimated return).
+- `src/pages/BikeDetailPage.tsx` (caller): pass `showPricing={false}` when role is mechanic, OR do the gating inside `BikeDetailView` using `useAuth()` directly — simpler, single place. I'll do it inside `BikeDetailView`.
+- `src/components/management/BikeForm.tsx`: hide pricing/finance fields (purchase price, asking price, sale price, VAT scheme, purchase date, and investor cost/profit share inputs) when role is `mechanic`. Form still submits without those fields populated by the mechanic.
 
-```sql
-ALTER TABLE public.bikes DROP CONSTRAINT owner_check;
-ALTER TABLE public.bikes ADD CONSTRAINT owner_check CHECK (
-  (owner_id IS NOT NULL AND external_owner_id IS NULL)
-  OR (owner_id IS NULL AND external_owner_id IS NOT NULL)
-  OR (owner_id IS NULL AND external_owner_id IS NULL AND source IN ('owned', 'investor'))
-);
-```
+**3. Out of scope (not changing)**
+- Mechanic still sees the Bikes list, Jobs, Intake, Cleaning, Parts, Logistics, Dashboard (already configured).
+- Invoices/Owners/Reports already excluded for mechanics.
 
-No code changes needed.
+### Technical notes
+- Role source: `useAuth().profile.role`.
+- Pricing card in `BikeDetailView` is already gated by `showPricing`; just add a role check.
+- Investor card is currently always shown when `bike.source === 'investor'` — add `&& role !== 'mechanic'`.

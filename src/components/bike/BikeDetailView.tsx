@@ -8,6 +8,7 @@ import StatusProgressBar from './StatusProgressBar';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import { CollectionStatus } from './CollectionStatus';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BikeDetailViewProps {
   bike: any;
@@ -29,6 +30,9 @@ export default function BikeDetailView({
   showDescriptions = true
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
+  const { profile } = useAuth();
+  const isMechanic = profile?.role === 'mechanic';
+  const canSeePricing = showPricing && !isMechanic;
 
   const allStages = (hasCollection: boolean = true) => {
     // Build a single ordered list; we don't know if a collection exists here without a query,
@@ -200,7 +204,7 @@ export default function BikeDetailView({
           </Card>
 
           {/* Pricing Information */}
-          {showPricing && (
+          {canSeePricing && (
             <Card>
               <CardHeader>
                 <CardTitle>Pricing & Finance</CardTitle>
@@ -237,7 +241,7 @@ export default function BikeDetailView({
             </Card>
           )}
 
-          {bike.source === 'investor' && (
+          {bike.source === 'investor' && !isMechanic && (
             <Card>
               <CardHeader>
                 <CardTitle>Investor</CardTitle>
