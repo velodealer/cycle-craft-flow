@@ -9,7 +9,11 @@ import {
   Users, 
   BarChart3, 
   Settings,
-  Truck
+  Truck,
+  Megaphone,
+  CalendarDays,
+  FileVideo,
+  TrendingUp,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,7 +32,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const navigationItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner'] },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'social_manager'] },
   { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
   { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
   { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
@@ -41,6 +45,15 @@ const navigationItems = [
   { title: "Reports", url: "/reports", icon: BarChart3, roles: ['admin', 'accountant'] },
   { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
 ];
+
+const socialItems = [
+  { title: "Planner", url: "/social", icon: Megaphone, exact: true },
+  { title: "Calendar", url: "/social/calendar", icon: CalendarDays },
+  { title: "Posts", url: "/social/posts", icon: FileVideo },
+  { title: "Scripts", url: "/social/scripts", icon: FileText },
+  { title: "Performance", url: "/social/analytics", icon: TrendingUp },
+];
+const socialRoles = ['admin', 'social_manager', 'mechanic', 'detailer', 'accountant', 'owner'];
 
 export function AppSidebar() {
   const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
