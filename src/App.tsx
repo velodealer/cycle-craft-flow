@@ -19,6 +19,11 @@ import OwnersPage from "./pages/OwnersPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LogisticsPage from "./pages/LogisticsPage";
+import SocialDashboardPage from "./pages/social/SocialDashboardPage";
+import SocialCalendarPage from "./pages/social/SocialCalendarPage";
+import SocialPostsPage from "./pages/social/SocialPostsPage";
+import SocialScriptsPage from "./pages/social/SocialScriptsPage";
+import SocialAnalyticsPage from "./pages/social/SocialAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +51,11 @@ const App = () => (
             <Route path="/owners" element={<Layout><OwnersPage /></Layout>} />
             <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
             <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+            <Route path="/social" element={<Layout><SocialDashboardPage /></Layout>} />
+            <Route path="/social/calendar" element={<Layout><SocialCalendarPage /></Layout>} />
+            <Route path="/social/posts" element={<Layout><SocialPostsPage /></Layout>} />
+            <Route path="/social/scripts" element={<Layout><SocialScriptsPage /></Layout>} />
+            <Route path="/social/analytics" element={<Layout><SocialAnalyticsPage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
