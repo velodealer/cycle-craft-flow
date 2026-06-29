@@ -46,12 +46,12 @@ export default function InvestorDashboardPage() {
       if (list.length > 0) {
         const ids = list.map((b) => b.id);
         const [{ data: jobs }, { data: parts }] = await Promise.all([
-          supabase.from('jobs').select('bike_id, cost').in('bike_id', ids),
-          supabase.from('parts').select('bike_id, cost').in('bike_id', ids),
+          supabase.from('jobs').select('bike_id, actual_cost, estimated_cost').in('bike_id', ids),
+          supabase.from('parts').select('bike_id, cost_price, quantity').in('bike_id', ids),
         ]);
         const totals: Record<string, number> = {};
-        (jobs || []).forEach((j: any) => { if (j.bike_id) totals[j.bike_id] = (totals[j.bike_id] || 0) + Number(j.cost || 0); });
-        (parts || []).forEach((p: any) => { if (p.bike_id) totals[p.bike_id] = (totals[p.bike_id] || 0) + Number(p.cost || 0); });
+        (jobs || []).forEach((j: any) => { if (j.bike_id) totals[j.bike_id] = (totals[j.bike_id] || 0) + Number(j.actual_cost ?? j.estimated_cost ?? 0); });
+        (parts || []).forEach((p: any) => { if (p.bike_id) totals[p.bike_id] = (totals[p.bike_id] || 0) + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1); });
         setCostsByBike(totals);
       }
       setLoading(false);
