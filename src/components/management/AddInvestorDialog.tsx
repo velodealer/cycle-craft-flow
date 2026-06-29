@@ -29,31 +29,19 @@ export default function AddInvestorDialog({ open, onOpenChange, onCreated }: Add
     e.preventDefault();
     setLoading(true);
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: { name: formData.name },
-        },
+      const { data, error } = await supabase.functions.invoke('create-investor', {
+        body: { name: formData.name, email: formData.email, password: formData.password },
       });
-      if (authError) throw authError;
+      if (error) throw error;
+      if (!data?.user_id) throw new Error(data?.error ?? 'Failed to create investor');
 
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ role: 'investor' as any, name: formData.name })
-          .eq('user_id', authData.user.id);
-        if (profileError) throw profileError;
-
-        toast({
-          title: 'Investor created',
-          description: `${formData.name} has been added. They must verify their email to sign in.`,
-        });
-        onCreated({ user_id: authData.user.id, name: formData.name, email: formData.email });
-        setFormData({ name: '', email: '', password: '' });
-        onOpenChange(false);
-      }
+      toast({
+        title: 'Investor created',
+        description: `${formData.name} has been added and can sign in to the investor portal.`,
+      });
+      onCreated({ user_id: data.user_id, name: formData.name, email: formData.email });
+      setFormData({ name: '', email: '', password: '' });
+      onOpenChange(false);
     } catch (error: any) {
       toast({ title: 'Error creating investor', description: error.message, variant: 'destructive' });
     } finally {
