@@ -100,6 +100,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [submitting, setSubmitting] = useState(false);
   const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
+  const [investors, setInvestors] = useState<Array<{ user_id: string; name: string; email: string }>>([]);
   const [showOwnerDialog, setShowOwnerDialog] = useState(false);
 
   const loadOwners = async () => {
@@ -110,8 +111,18 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
     if (!error && data) setOwners(data as any);
   };
 
+  const loadInvestors = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, name, email')
+      .eq('role', 'investor' as any)
+      .order('name');
+    if (!error && data) setInvestors(data as any);
+  };
+
   useEffect(() => {
     loadOwners();
+    loadInvestors();
   }, []);
 
   const form = useForm<z.infer<typeof bikeSchema>>({
