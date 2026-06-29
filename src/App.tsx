@@ -51,6 +51,11 @@ const App = () => (
             <Route path="/owners" element={<Layout><OwnersPage /></Layout>} />
             <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
             <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+            <Route path="/social" element={<Layout><SocialDashboardPage /></Layout>} />
+            <Route path="/social/calendar" element={<Layout><SocialCalendarPage /></Layout>} />
+            <Route path="/social/posts" element={<Layout><SocialPostsPage /></Layout>} />
+            <Route path="/social/scripts" element={<Layout><SocialScriptsPage /></Layout>} />
+            <Route path="/social/analytics" element={<Layout><SocialAnalyticsPage /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
