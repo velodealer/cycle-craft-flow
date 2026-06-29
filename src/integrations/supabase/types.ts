@@ -605,7 +605,13 @@ export type Database = {
         | "new_resale"
         | "new_fitted"
       stock_status: "in_stock" | "reserved" | "sold" | "damaged"
-      user_role: "admin" | "mechanic" | "detailer" | "owner" | "accountant"
+      user_role:
+        | "admin"
+        | "mechanic"
+        | "detailer"
+        | "owner"
+        | "accountant"
+        | "social_manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -761,7 +767,14 @@ export const Constants = {
         "new_fitted",
       ],
       stock_status: ["in_stock", "reserved", "sold", "damaged"],
-      user_role: ["admin", "mechanic", "detailer", "owner", "accountant"],
+      user_role: [
+        "admin",
+        "mechanic",
+        "detailer",
+        "owner",
+        "accountant",
+        "social_manager",
+      ],
     },
   },
 } as const
