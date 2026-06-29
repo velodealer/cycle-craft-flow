@@ -155,6 +155,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
               <SelectItem value="all">All Sources</SelectItem>
               <SelectItem value="owned">Owned</SelectItem>
               <SelectItem value="customer_consignment">Consignment</SelectItem>
+              <SelectItem value="investor">Investor</SelectItem>
             </SelectContent>
           </Select>
         </div>
