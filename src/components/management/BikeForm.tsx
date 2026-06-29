@@ -487,6 +487,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                       </FormItem>
                     )}
                   />
+                  {!isMechanic && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -531,11 +532,13 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                       )}
                     />
                   </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
+          {!isMechanic && (
           <Card>
             <CardHeader>
               <CardTitle>Pricing & Finance</CardTitle>
@@ -647,6 +650,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               />
             </CardContent>
           </Card>
+          )}
 
           <Card>
             <CardHeader>
