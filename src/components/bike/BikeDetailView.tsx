@@ -237,6 +237,40 @@ export default function BikeDetailView({
             </Card>
           )}
 
+          {bike.source === 'investor' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Investor</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Investor ID</label>
+                    <p className="text-base font-mono text-xs break-all">{bike.investor_id || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Profit share</label>
+                    <p className="text-base">{bike.profit_share_pct != null ? `${bike.profit_share_pct}%` : '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Purchase cost</label>
+                    <p className="text-base">{formatCurrency(bike.purchase_cost)}</p>
+                  </div>
+                  {bike.sale_price && bike.purchase_cost != null && bike.profit_share_pct != null && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Estimated investor return</label>
+                      <p className="text-base font-semibold">
+                        {formatCurrency(Math.max(0, (bike.sale_price - bike.purchase_cost)) * (bike.profit_share_pct / 100))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Excludes parts/jobs costs</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+
           {/* Photos */}
           {showPhotos && bike.photos && bike.photos.length > 0 && (
             <Card>
