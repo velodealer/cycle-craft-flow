@@ -319,13 +319,20 @@ export default function BikeDetailView({
                     <label className="text-sm font-medium text-muted-foreground">Purchase cost</label>
                     <p className="text-base">{formatCurrency(bike.purchase_cost)}</p>
                   </div>
-                  {bike.sale_price && bike.purchase_cost != null && bike.profit_share_pct != null && (
+                  {bike.profit_share_pct != null && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Estimated investor return</label>
                       <p className="text-base font-semibold">
-                        {formatCurrency(Math.max(0, (bike.sale_price - bike.purchase_cost)) * (bike.profit_share_pct / 100))}
+                        {(() => {
+                          const revenue = Number((bike.sale_price ?? bike.asking_price) || 0);
+                          const totalCost = Number(bike.purchase_cost ?? bike.purchase_price ?? 0) + Number(bike.collection_cost ?? 0) + Number(bike.delivery_cost ?? 0);
+                          const gross = revenue - totalCost;
+                          const vat = bike.finance_scheme === 'margin_scheme' ? Math.max(0, gross) * 20 / 120 : 0;
+                          const net = gross - vat;
+                          return formatCurrency(Math.max(0, net) * (Number(bike.profit_share_pct) / 100));
+                        })()}
                       </p>
-                      <p className="text-xs text-muted-foreground">Excludes parts/jobs costs</p>
+                      <p className="text-xs text-muted-foreground">After acquisition, collection, delivery{bike.finance_scheme === 'margin_scheme' ? ' and margin-scheme VAT' : ''}. Excludes parts/jobs.</p>
                     </div>
                   )}
                 </div>
