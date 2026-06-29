@@ -558,6 +558,246 @@ export type Database = {
         }
         Relationships: []
       }
+      social_post_checklist: {
+        Row: {
+          done: boolean
+          done_at: string | null
+          done_by: string | null
+          id: string
+          item: string
+          post_id: string
+        }
+        Insert: {
+          done?: boolean
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          item: string
+          post_id: string
+        }
+        Update: {
+          done?: boolean
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          item?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_checklist_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_post_metrics: {
+        Row: {
+          comments: number
+          id: string
+          likes: number
+          platform: string
+          post_id: string
+          recorded_at: string
+          recorded_by: string | null
+          saves: number
+          shares: number
+          views: number
+        }
+        Insert: {
+          comments?: number
+          id?: string
+          likes?: number
+          platform: string
+          post_id: string
+          recorded_at?: string
+          recorded_by?: string | null
+          saves?: number
+          shares?: number
+          views?: number
+        }
+        Update: {
+          comments?: number
+          id?: string
+          likes?: number
+          platform?: string
+          post_id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          saves?: number
+          shares?: number
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_metrics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_post_scores: {
+        Row: {
+          cta_score: number | null
+          hook_score: number | null
+          id: string
+          notes: string | null
+          overall_score: number | null
+          post_id: string
+          production_score: number | null
+          retention_score: number | null
+          scored_at: string
+          scored_by: string | null
+        }
+        Insert: {
+          cta_score?: number | null
+          hook_score?: number | null
+          id?: string
+          notes?: string | null
+          overall_score?: number | null
+          post_id: string
+          production_score?: number | null
+          retention_score?: number | null
+          scored_at?: string
+          scored_by?: string | null
+        }
+        Update: {
+          cta_score?: number | null
+          hook_score?: number | null
+          id?: string
+          notes?: string | null
+          overall_score?: number | null
+          post_id?: string
+          production_score?: number | null
+          retention_score?: number | null
+          scored_at?: string
+          scored_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_scores_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          assigned_to: string | null
+          caption: string
+          created_at: string
+          created_by: string | null
+          hashtags: string[]
+          hook: string | null
+          id: string
+          platforms: string[]
+          posted_at: string | null
+          scheduled_at: string | null
+          script_id: string | null
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          vehicle_id: string | null
+          video_url: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          caption?: string
+          created_at?: string
+          created_by?: string | null
+          hashtags?: string[]
+          hook?: string | null
+          id?: string
+          platforms?: string[]
+          posted_at?: string | null
+          scheduled_at?: string | null
+          script_id?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          vehicle_id?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          caption?: string
+          created_at?: string
+          created_by?: string | null
+          hashtags?: string[]
+          hook?: string | null
+          id?: string
+          platforms?: string[]
+          posted_at?: string | null
+          scheduled_at?: string | null
+          script_id?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "social_scripts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_scripts: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_template: boolean
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_template?: boolean
+          name: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_template?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
