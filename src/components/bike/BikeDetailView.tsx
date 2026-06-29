@@ -10,6 +10,7 @@ import CleaningTask from './CleaningTask';
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import BikeCostsSection from './BikeCostsSection';
 
 interface BikeDetailViewProps {
   bike: any;
