@@ -52,9 +52,25 @@ export default function InvestorBikePage() {
 
   const partsCost = parts.reduce((s, p) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0);
   const jobsCost = jobs.reduce((s, j) => s + Number(j.actual_cost ?? j.estimated_cost ?? 0), 0);
-  const basis = bike.status === 'sold' ? bike.sale_price : bike.asking_price;
-  const net = Number(basis || 0) - Number(bike.purchase_cost || 0) - partsCost - jobsCost;
-  const myReturn = Math.max(0, net) * (Number(bike.profit_share_pct || 0) / 100);
+  const collectionCost = Number(bike.collection_cost ?? 0);
+  const deliveryCost = Number(bike.delivery_cost ?? 0);
+  const acquisition = Number(bike.purchase_cost ?? bike.purchase_price ?? 0);
+  const totalCosts = acquisition + collectionCost + deliveryCost + partsCost + jobsCost;
+  const isSold = bike.status === 'sold';
+  const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
+  const grossProfit = revenue - totalCosts;
+  const isMargin = bike.finance_scheme === 'margin_scheme';
+  const vatOnMargin = isMargin ? Math.max(0, grossProfit) * 20 / 120 : 0;
+  const netProfit = grossProfit - vatOnMargin;
+  const sharePct = Number(bike.profit_share_pct || 0);
+  const myReturn = Math.max(0, netProfit) * (sharePct / 100);
+
+  const Row = ({ label, value, negative, bold, muted, sub }: { label: string; value: string; negative?: boolean; bold?: boolean; muted?: boolean; sub?: string }) => (
+    <div className="flex justify-between items-baseline py-1.5 border-b last:border-b-0 text-sm">
+      <span className={muted ? 'text-muted-foreground' : ''}>{label}{sub && <span className="block text-xs text-muted-foreground">{sub}</span>}</span>
+      <span className={`${bold ? 'font-semibold text-base' : ''} ${negative ? 'text-destructive' : ''}`}>{value}</span>
+    </div>
+  );
 
   const timeline: Array<{ date: string; label: string }> = [];
   if (bike.intake_date) timeline.push({ date: bike.intake_date, label: 'Acquired' });
@@ -78,10 +94,34 @@ export default function InvestorBikePage() {
 
       <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Cost & profit breakdown</CardTitle>
+          <p className="text-xs text-muted-foreground">{isSold ? 'Realised — based on sale price' : 'Estimated — based on listed asking price'}</p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-0">
+            <Row label={isSold ? 'Sale price' : 'Asking price'} value={fmt(revenue)} bold />
+            <Row label="Acquisition cost" value={`− ${fmt(acquisition)}`} muted />
+            <Row label="Collection cost" value={`− ${fmt(collectionCost)}`} muted />
+            <Row label="Delivery cost" value={`− ${fmt(deliveryCost)}`} muted />
+            <Row label="Parts" value={`− ${fmt(partsCost)}`} muted />
+            <Row label="Labour / jobs" value={`− ${fmt(jobsCost)}`} muted />
+            <Row label="Total costs" value={fmt(totalCosts)} bold />
+            <Row label="Gross profit" value={fmt(grossProfit)} bold negative={grossProfit < 0} />
+            {isMargin && (
+              <Row label="VAT (margin scheme)" sub="20% VAT on gross margin paid to HMRC" value={`− ${fmt(vatOnMargin)}`} muted />
+            )}
+            <Row label="Net profit" value={fmt(netProfit)} bold negative={netProfit < 0} />
+            <Row label={`Your share (${sharePct}%)`} value={fmt(myReturn)} bold />
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid md:grid-cols-3 gap-4">
-        <Card><CardHeader><CardTitle>Purchase cost</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{fmt(bike.purchase_cost)}</CardContent></Card>
-        <Card><CardHeader><CardTitle>Costs to date</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{fmt(partsCost + jobsCost)}</div><div className="text-xs text-muted-foreground">Parts {fmt(partsCost)} • Jobs {fmt(jobsCost)}</div></CardContent></Card>
-        <Card><CardHeader><CardTitle>Your return</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{fmt(myReturn)}</div><div className="text-xs text-muted-foreground">{bike.profit_share_pct ?? 0}% of net {bike.status === 'sold' ? '(realised)' : '(estimated)'}</div></CardContent></Card>
+        <Card><CardHeader><CardTitle>Total invested costs</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{fmt(totalCosts)}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Net profit</CardTitle></CardHeader><CardContent><div className={`text-2xl font-bold ${netProfit < 0 ? 'text-destructive' : ''}`}>{fmt(netProfit)}</div>{isMargin && <div className="text-xs text-muted-foreground">After {fmt(vatOnMargin)} VAT</div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Your return</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{fmt(myReturn)}</div><div className="text-xs text-muted-foreground">{sharePct}% of net {isSold ? '(realised)' : '(estimated)'}</div></CardContent></Card>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
