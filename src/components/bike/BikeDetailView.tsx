@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BikeDetailViewProps {
   bike: any;
@@ -33,6 +34,20 @@ export default function BikeDetailView({
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
   const canSeePricing = showPricing && !isMechanic;
+  const [partsCost, setPartsCost] = useState(0);
+  const [jobsCost, setJobsCost] = useState(0);
+
+  useEffect(() => {
+    if (!canSeePricing || !bike?.id) return;
+    (async () => {
+      const [{ data: jobs }, { data: parts }] = await Promise.all([
+        supabase.from('jobs').select('actual_cost, estimated_cost').eq('bike_id', bike.id),
+        supabase.from('parts').select('cost_price, quantity').eq('bike_id', bike.id),
+      ]);
+      setJobsCost((jobs || []).reduce((s: number, j: any) => s + Number(j.actual_cost ?? j.estimated_cost ?? 0), 0));
+      setPartsCost((parts || []).reduce((s: number, p: any) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0));
+    })();
+  }, [canSeePricing, bike?.id]);
 
   const allStages = (hasCollection: boolean = true) => {
     // Build a single ordered list; we don't know if a collection exists here without a query,
