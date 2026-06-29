@@ -242,65 +242,6 @@ export default function BikeDetailView({
 
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Collection Cost</label>
-                    <p className="text-base">{formatCurrency(bike.collection_cost)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Delivery Cost</label>
-                    <p className="text-base">{formatCurrency(bike.delivery_cost)}</p>
-                  </div>
-                </div>
-
-                {(() => {
-                  const revenue = bike.sale_price ?? bike.asking_price;
-                  const totalCost = Number(bike.purchase_price ?? 0) + Number(bike.collection_cost ?? 0) + Number(bike.delivery_cost ?? 0);
-                  const hasBoth = revenue != null && bike.purchase_price != null && totalCost > 0;
-                  const profit = hasBoth ? Number(revenue) - totalCost : null;
-                  const margin = hasBoth && Number(revenue) > 0 ? (profit! / Number(revenue)) * 100 : null;
-                  const markup = hasBoth ? (profit! / totalCost) * 100 : null;
-                  const roi = hasBoth ? (profit! / totalCost) * 100 : null;
-                  const basisLabel = bike.sale_price != null ? 'Based on sale price' : (bike.asking_price != null ? 'Based on asking price' : null);
-                  const pct = (v: number | null) => v == null ? '-' : `${v.toFixed(1)}%`;
-                  const isMargin = bike.finance_scheme === 'margin_scheme';
-                  const vatOnMargin = isMargin && hasBoth ? Math.max(0, profit!) * 20 / 120 : null;
-                  return (
-                    <div className="mt-4">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Profit</label>
-                          <p className={`text-lg font-semibold ${profit != null && profit < 0 ? 'text-destructive' : ''}`}>
-                            {profit == null ? '-' : formatCurrency(profit)}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Margin</label>
-                          <p className="text-lg font-semibold">{pct(margin)}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Markup</label>
-                          <p className="text-lg font-semibold">{pct(markup)}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">ROI</label>
-                          <p className="text-lg font-semibold">{pct(roi)}</p>
-                        </div>
-                      </div>
-                      {basisLabel && (
-                        <p className="text-xs text-muted-foreground mt-2">{basisLabel} · includes collection & delivery, excludes parts/jobs costs</p>
-                      )}
-                      {isMargin && (
-                        <div className="mt-4 p-3 rounded-md border bg-muted/30">
-                          <label className="text-sm font-medium text-muted-foreground">VAT (Margin Scheme)</label>
-                          <p className="text-lg font-semibold">{vatOnMargin == null ? '-' : formatCurrency(vatOnMargin)}</p>
-                          <p className="text-xs text-muted-foreground">20% VAT on gross margin (1/6 of profit)</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div>
                     <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
                     <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
                   </div>
@@ -311,6 +252,71 @@ export default function BikeDetailView({
                     </div>
                   )}
                 </div>
+
+                {(() => {
+                  const isSold = bike.status === 'sold';
+                  const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
+                  const acquisition = Number(bike.purchase_price ?? bike.purchase_cost ?? 0);
+                  const collectionCost = Number(bike.collection_cost ?? 0);
+                  const deliveryCost = Number(bike.delivery_cost ?? 0);
+                  const totalCost = acquisition + collectionCost + deliveryCost + partsCost + jobsCost;
+                  const gross = revenue - totalCost;
+                  const isMargin = bike.finance_scheme === 'margin_scheme';
+                  const vat = isMargin ? Math.max(0, gross) * 20 / 120 : 0;
+                  const net = gross - vat;
+                  const margin = revenue > 0 ? (net / revenue) * 100 : null;
+                  const markupRoi = totalCost > 0 ? (net / totalCost) * 100 : null;
+                  const pct = (v: number | null) => v == null ? '-' : `${v.toFixed(1)}%`;
+                  const investorShare = bike.source === 'investor' && bike.profit_share_pct != null
+                    ? Math.max(0, net) * (Number(bike.profit_share_pct) / 100)
+                    : null;
+
+                  const Row = ({ label, value, negative, bold, muted, sub }: { label: string; value: string; negative?: boolean; bold?: boolean; muted?: boolean; sub?: string }) => (
+                    <div className="flex justify-between items-baseline py-1.5 border-b last:border-b-0 text-sm">
+                      <span className={muted ? 'text-muted-foreground' : ''}>{label}{sub && <span className="block text-xs text-muted-foreground">{sub}</span>}</span>
+                      <span className={`${bold ? 'font-semibold text-base' : ''} ${negative ? 'text-destructive' : ''}`}>{value}</span>
+                    </div>
+                  );
+
+                  return (
+                    <div className="mt-6">
+                      <h4 className="text-sm font-semibold mb-2">Cost & profit breakdown</h4>
+                      <p className="text-xs text-muted-foreground mb-3">{isSold ? 'Realised — based on sale price' : 'Estimated — based on listed asking price'}</p>
+                      <div className="space-y-0">
+                        <Row label={isSold ? 'Sale price' : 'Asking price'} value={formatCurrency(revenue)} bold />
+                        <Row label="Acquisition cost" value={`− ${formatCurrency(acquisition)}`} muted />
+                        <Row label="Collection cost" value={`− ${formatCurrency(collectionCost)}`} muted />
+                        <Row label="Delivery cost" value={`− ${formatCurrency(deliveryCost)}`} muted />
+                        <Row label="Parts" value={`− ${formatCurrency(partsCost)}`} muted />
+                        <Row label="Labour / jobs" value={`− ${formatCurrency(jobsCost)}`} muted />
+                        <Row label="Total costs" value={formatCurrency(totalCost)} bold />
+                        <Row label="Gross profit" value={formatCurrency(gross)} bold negative={gross < 0} />
+                        {isMargin && (
+                          <Row label="VAT (margin scheme)" sub="20% VAT on gross margin paid to HMRC" value={`− ${formatCurrency(vat)}`} muted />
+                        )}
+                        <Row label="Net profit" value={formatCurrency(net)} bold negative={net < 0} />
+                        {investorShare != null && (
+                          <Row label={`Investor share (${bike.profit_share_pct}%)`} value={formatCurrency(investorShare)} bold />
+                        )}
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Margin</label>
+                          <p className="text-base font-semibold">{pct(margin)}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Markup</label>
+                          <p className="text-base font-semibold">{pct(markupRoi)}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">ROI</label>
+                          <p className="text-base font-semibold">{pct(markupRoi)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           )}
@@ -320,7 +326,7 @@ export default function BikeDetailView({
               <CardHeader>
                 <CardTitle>Investor</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Investor ID</label>
@@ -331,26 +337,11 @@ export default function BikeDetailView({
                     <p className="text-base">{bike.profit_share_pct != null ? `${bike.profit_share_pct}%` : '-'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Purchase cost</label>
+                    <label className="text-sm font-medium text-muted-foreground">Purchase cost (investor)</label>
                     <p className="text-base">{formatCurrency(bike.purchase_cost)}</p>
                   </div>
-                  {bike.profit_share_pct != null && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Estimated investor return</label>
-                      <p className="text-base font-semibold">
-                        {(() => {
-                          const revenue = Number((bike.sale_price ?? bike.asking_price) || 0);
-                          const totalCost = Number(bike.purchase_cost ?? bike.purchase_price ?? 0) + Number(bike.collection_cost ?? 0) + Number(bike.delivery_cost ?? 0);
-                          const gross = revenue - totalCost;
-                          const vat = bike.finance_scheme === 'margin_scheme' ? Math.max(0, gross) * 20 / 120 : 0;
-                          const net = gross - vat;
-                          return formatCurrency(Math.max(0, net) * (Number(bike.profit_share_pct) / 100));
-                        })()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">After acquisition, collection, delivery{bike.finance_scheme === 'margin_scheme' ? ' and margin-scheme VAT' : ''}. Excludes parts/jobs.</p>
-                    </div>
-                  )}
                 </div>
+                <p className="text-xs text-muted-foreground mt-3">See the Cost & profit breakdown above for the investor's calculated return.</p>
               </CardContent>
             </Card>
           )}
