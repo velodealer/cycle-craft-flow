@@ -224,7 +224,46 @@ export default function BikeDetailView({
                     <p className="text-lg font-semibold">{formatCurrency(bike.sale_price)}</p>
                   </div>
                 </div>
-                
+
+                {(() => {
+                  const revenue = bike.sale_price ?? bike.asking_price;
+                  const cost = bike.purchase_price;
+                  const hasBoth = revenue != null && cost != null && Number(cost) > 0;
+                  const profit = hasBoth ? Number(revenue) - Number(cost) : null;
+                  const margin = hasBoth && Number(revenue) > 0 ? (profit! / Number(revenue)) * 100 : null;
+                  const markup = hasBoth ? (profit! / Number(cost)) * 100 : null;
+                  const roi = hasBoth ? (profit! / Number(cost)) * 100 : null;
+                  const basisLabel = bike.sale_price != null ? 'Based on sale price' : (bike.asking_price != null ? 'Based on asking price' : null);
+                  const pct = (v: number | null) => v == null ? '-' : `${v.toFixed(1)}%`;
+                  return (
+                    <div className="mt-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Profit</label>
+                          <p className={`text-lg font-semibold ${profit != null && profit < 0 ? 'text-destructive' : ''}`}>
+                            {profit == null ? '-' : formatCurrency(profit)}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Margin</label>
+                          <p className="text-lg font-semibold">{pct(margin)}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Markup</label>
+                          <p className="text-lg font-semibold">{pct(markup)}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">ROI</label>
+                          <p className="text-lg font-semibold">{pct(roi)}</p>
+                        </div>
+                      </div>
+                      {basisLabel && (
+                        <p className="text-xs text-muted-foreground mt-2">{basisLabel} · excludes parts/jobs costs</p>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
