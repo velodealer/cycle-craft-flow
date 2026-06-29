@@ -15,9 +15,13 @@ interface InvestorBike {
   year: number | null;
   status: string;
   purchase_cost: number | null;
+  purchase_price: number | null;
+  collection_cost: number | null;
+  delivery_cost: number | null;
   sale_price: number | null;
   asking_price: number | null;
   profit_share_pct: number | null;
+  finance_scheme: string | null;
   intake_date: string | null;
   photos: string[] | null;
 }
