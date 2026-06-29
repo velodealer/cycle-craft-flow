@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PhotoUpload from '@/components/PhotoUpload';
 import OwnerForm from '@/components/management/OwnerForm';
+import AddInvestorDialog from '@/components/management/AddInvestorDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -102,6 +103,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
   const [investors, setInvestors] = useState<Array<{ user_id: string; name: string; email: string }>>([]);
   const [showOwnerDialog, setShowOwnerDialog] = useState(false);
+  const [showInvestorDialog, setShowInvestorDialog] = useState(false);
 
   const loadOwners = async () => {
     const { data, error } = await supabase
@@ -458,20 +460,25 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Investor *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={investors.length ? 'Select investor' : 'No investor users yet — add one in Settings → Users'} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {investors.map((i) => (
-                              <SelectItem key={i.user_id} value={i.user_id}>
-                                {i.name} — {i.email}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={investors.length ? 'Select investor' : 'No investors yet — add one'} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {investors.map((i) => (
+                                <SelectItem key={i.user_id} value={i.user_id}>
+                                  {i.name} — {i.email}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button type="button" variant="outline" size="icon" onClick={() => setShowInvestorDialog(true)}>
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <FormDescription>Investor who funded this bike</FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -865,6 +872,15 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           />
         </DialogContent>
       </Dialog>
+
+      <AddInvestorDialog
+        open={showInvestorDialog}
+        onOpenChange={setShowInvestorDialog}
+        onCreated={async (inv) => {
+          await loadInvestors();
+          form.setValue('investor_id', inv.user_id, { shouldValidate: true });
+        }}
+      />
     </div>
   );
 }
