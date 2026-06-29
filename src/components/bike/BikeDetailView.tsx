@@ -223,6 +223,11 @@ export default function BikeDetailView({
             </CardContent>
           </Card>
 
+          {/* Parts & Labour */}
+          {canSeePricing && (
+            <BikeCostsSection bikeId={bike.id} onChange={refreshCosts} />
+          )}
+
           {/* Pricing Information */}
           {canSeePricing && (
             <Card>
