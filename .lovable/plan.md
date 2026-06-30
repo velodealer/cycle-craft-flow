@@ -1,27 +1,22 @@
-## Ensure HTML templates copy as HTML
-
-When a template's `format` is `html`, `copyListing` in `src/lib/listingTemplate.ts` should reliably place rich HTML on the clipboard so pasting into eBay/Shopify/Gmail/etc. preserves formatting (headings, lists, line breaks), not raw `<h2>…</h2>` source.
+## Copy HTML templates as raw HTML source
 
 ### Problem
-Current `copyListing` does call `navigator.clipboard.write` with a `text/html` blob, but:
-- The `text/plain` fallback is built by stripping tags (`rendered.replace(/<[^>]+>/g, '')`), which collapses block-level breaks into one run-on line — apps that prefer `text/plain` then show garbage.
-- If `ClipboardItem` or `navigator.clipboard.write` isn't available (older Safari, insecure context), it silently falls back to `writeText(rendered)` which pastes raw HTML source.
-- No explicit signal in the success toast that HTML was copied, so the user can't tell what landed on the clipboard.
+When a template's format is `html`, the user pastes into eBay's HTML source editor (or similar). That editor reads `text/plain` from the clipboard and expects the literal markup. Today `copyListing` puts a stripped-tag version into `text/plain`, so the paste shows CSS content with no tags. The `text/html` payload is correct but most "HTML view" editors ignore it.
 
-### Changes (single file: `src/lib/listingTemplate.ts`)
+### Fix (single file: `src/lib/listingTemplate.ts`)
 
-1. **Better plain-text fallback** — convert HTML to readable plain text before putting it in the `text/plain` blob:
-   - Replace `<br>` and closing block tags (`</p>`, `</div>`, `</li>`, `</h1-6>`) with `\n`
-   - Add `• ` prefix for `<li>`
-   - Strip remaining tags, decode basic entities (`&amp; &lt; &gt; &nbsp; &#39; &quot;`)
-   - Collapse 3+ newlines to 2
+In `copyListing`, when `format === 'html'`:
 
-2. **Real HTML copy with execCommand fallback** — if `ClipboardItem` path throws or is unsupported, fall back to a hidden `contenteditable` div containing the rendered HTML, `document.execCommand('copy')` on a selection of it. Only if that also fails, fall back to `writeText`.
+- Put the **rendered HTML source verbatim** into `text/plain` (so HTML-source editors paste the markup as-is).
+- Keep `text/html` set to the same rendered source (so rich-text editors like Gmail/Docs still render it).
+- Drop the `htmlToPlain` tag-strip fallback for the HTML branch entirely — it was the source of the bad paste.
+- `execCommand` fallback: write the raw source via a hidden `<textarea>` + `select()` + `execCommand('copy')` so the clipboard ends up with the source string (not a rendered DOM selection).
+- Final fallback: `navigator.clipboard.writeText(rendered)` — also the raw source.
 
-3. **Return format info** — `copyListing` returns `{ ok, format, reason? }` so `BikeDetailView` can toast `"Copied eBay listing (HTML)"` vs `"…(plain text)"`.
+Text-format templates are unchanged: `writeText(rendered)`.
 
-4. **BikeDetailView toast** — update the existing toast to use the returned `format`.
+Toast wording stays as already implemented ("Rich HTML on clipboard" / "Plain text on clipboard"); both branches now actually deliver what they claim.
 
 ### Out of scope
-- No DB or settings UI changes.
-- No change to how `format` is stored or rendered in the preview.
+- Removing `htmlToPlain` from the file (leave it; unused for now, may be useful later).
+- Any settings/UI/DB changes.
