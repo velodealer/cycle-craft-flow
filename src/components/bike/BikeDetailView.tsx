@@ -71,6 +71,33 @@ export default function BikeDetailView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canSeePricing, bike?.id]);
 
+  useEffect(() => {
+    if (!bike?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('bike_components')
+        .select('*, components(name, brand, model, component_categories(name))')
+        .eq('bike_id', bike.id);
+      const flat = (data || []).map((row: any) => ({
+        brand: row.components?.brand,
+        model: row.components?.model,
+        name: row.components?.name,
+        category: row.components?.component_categories?.name,
+      }));
+      setBikeComponents(flat);
+    })();
+  }, [bike?.id]);
+
+  const handleCopyListing = async (platform: ListingPlatform) => {
+    const res = await copyListing(platform, bike, bikeComponents);
+    if (res.ok) {
+      toast({ title: `Copied ${platform} listing` });
+    } else {
+      toast({ title: 'Copy failed', description: res.reason, variant: 'destructive' });
+    }
+  };
+
+
   const allStages = (hasCollection: boolean = true) => {
     // Build a single ordered list; we don't know if a collection exists here without a query,
     // but status values are unique across both lists so reverse-lookup works on the union.
