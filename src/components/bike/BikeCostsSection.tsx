@@ -90,7 +90,8 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
                       <TableCell>{fmt(p.cost_price)}</TableCell>
                       <TableCell>{fmt(Number(p.cost_price ?? 0) * Number(p.quantity ?? 1))}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => removePart(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Strip to inventory" onClick={() => setStripPart(p)}><PackageMinus className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Delete" onClick={() => removePart(p.id)}><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
