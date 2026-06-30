@@ -1,51 +1,27 @@
+## Ensure HTML templates copy as HTML
 
-## Listing Format Templates
+When a template's `format` is `html`, `copyListing` in `src/lib/listingTemplate.ts` should reliably place rich HTML on the clipboard so pasting into eBay/Shopify/Gmail/etc. preserves formatting (headings, lists, line breaks), not raw `<h2>…</h2>` source.
 
-Add per-platform listing templates (eBay, Shopify, Instagram, Facebook) that admins create in Settings, then render and copy from any bike detail page.
+### Problem
+Current `copyListing` does call `navigator.clipboard.write` with a `text/html` blob, but:
+- The `text/plain` fallback is built by stripping tags (`rendered.replace(/<[^>]+>/g, '')`), which collapses block-level breaks into one run-on line — apps that prefer `text/plain` then show garbage.
+- If `ClipboardItem` or `navigator.clipboard.write` isn't available (older Safari, insecure context), it silently falls back to `writeText(rendered)` which pastes raw HTML source.
+- No explicit signal in the success toast that HTML was copied, so the user can't tell what landed on the clipboard.
 
-### 1. Database
-New table `listing_templates`:
-- `id uuid pk`
-- `platform text` — one of `ebay | shopify | instagram | facebook` (unique)
-- `format text` — `html` or `text`
-- `body text` — the template with `{placeholders}`
-- `updated_at`, `updated_by`
+### Changes (single file: `src/lib/listingTemplate.ts`)
 
-RLS: admins read/write; all authenticated read (so non-admin sellers can still copy on bike page). Standard GRANTs.
+1. **Better plain-text fallback** — convert HTML to readable plain text before putting it in the `text/plain` blob:
+   - Replace `<br>` and closing block tags (`</p>`, `</div>`, `</li>`, `</h1-6>`) with `\n`
+   - Add `• ` prefix for `<li>`
+   - Strip remaining tags, decode basic entities (`&amp; &lt; &gt; &nbsp; &#39; &quot;`)
+   - Collapse 3+ newlines to 2
 
-### 2. Settings page — new "Listing Formats" tab
-File: `src/pages/SettingsPage.tsx` add a 5th tab `Listing Formats` (admin only — already gated).
+2. **Real HTML copy with execCommand fallback** — if `ClipboardItem` path throws or is unsupported, fall back to a hidden `contenteditable` div containing the rendered HTML, `document.execCommand('copy')` on a selection of it. Only if that also fails, fall back to `writeText`.
 
-New component `src/components/settings/ListingFormats.tsx`:
-- Sub-tabs: eBay / Shopify / Instagram / Facebook
-- Each panel: format toggle (HTML / Plain text), large `Textarea` for body, Save button
-- Sidebar "Available fields" list showing every supported `{placeholder}` the user can drop in (clickable to insert at cursor)
-- Live preview box rendering against the most recently updated bike (or just showing raw with placeholders highlighted)
+3. **Return format info** — `copyListing` returns `{ ok, format, reason? }` so `BikeDetailView` can toast `"Copied eBay listing (HTML)"` vs `"…(plain text)"`.
 
-### 3. Placeholder fields
-Pull from `bikes` row + computed extras. Supported tokens:
+4. **BikeDetailView toast** — update the existing toast to use the returned `format`.
 
-```text
-{make} {model} {year} {colour} {size} {gender} {frame_material}
-{frame_number} {serial_number} {bike_type} {condition} {condition_notes}
-{description} {listing_description} {weight_kg} {is_electric}
-{has_suspension_fork} {has_rear_shock} {has_dropper}
-{accessories_included} {asking_price} {sale_price} {sku}
-{photos} — newline-joined URLs
-{components} — bulleted list from `bike_components` join (category: brand model)
-{title} — `{year} {make} {model}` convenience
-```
-
-Renderer: simple `body.replace(/\{(\w+)\}/g, ...)`. Missing fields render as empty string. Booleans render as `Yes`/`No`. Currency fields formatted as `£X`.
-
-### 4. Bike detail — Copy Template button
-File: `src/components/bike/BikeDetailView.tsx`. Add a `DropdownMenu` button "Copy listing" next to existing actions with one item per platform that has a saved template. On click:
-- Fetch the template, render with the current bike (+ components already loaded in view)
-- For HTML format: write both `text/html` and `text/plain` to clipboard via `navigator.clipboard.write([new ClipboardItem(...)])`
-- For text format: `navigator.clipboard.writeText(...)`
-- Toast "Copied eBay listing"
-
-### Technical notes
-- Templates cached per session with a simple `useQuery`-less fetch on dropdown open (only 4 rows max).
-- Shared helper `src/lib/listingTemplate.ts` exports `renderTemplate(bike, components, body)` and `LISTING_FIELDS` metadata, reused by Settings preview and BikeDetailView.
-- Out of scope: posting directly to platforms, image upload to eBay/Shopify, per-bike template overrides.
+### Out of scope
+- No DB or settings UI changes.
+- No change to how `format` is stored or rendered in the preview.

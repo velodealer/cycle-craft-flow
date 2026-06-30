@@ -91,7 +91,7 @@ export default function BikeDetailView({
   const handleCopyListing = async (platform: ListingPlatform) => {
     const res = await copyListing(platform, bike, bikeComponents);
     if (res.ok) {
-      toast({ title: `Copied ${platform} listing` });
+      toast({ title: `Copied ${platform} listing`, description: res.format === 'html' ? 'Rich HTML on clipboard' : 'Plain text on clipboard' });
     } else {
       toast({ title: 'Copy failed', description: res.reason, variant: 'destructive' });
     }
