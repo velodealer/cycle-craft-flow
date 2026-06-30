@@ -98,7 +98,7 @@ export default function InvestorDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Your bikes</CardTitle>
-          <p className="text-xs text-muted-foreground">All costs (acquisition, collection, delivery, parts, labour) and margin-scheme VAT are deducted before your share is calculated.</p>
+          
         </CardHeader>
         <CardContent>
           {loading ? (
