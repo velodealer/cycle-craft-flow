@@ -9,6 +9,7 @@ import InvestorGuard from "@/components/InvestorGuard";
 import BPSDashboard from "@/components/BPSDashboard";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import BikesPage from "./pages/BikesPage";
 import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
@@ -44,6 +45,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={guarded(<LandingPage />)} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={guarded(<Layout><BPSDashboard /></Layout>)} />
             <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
             <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />
