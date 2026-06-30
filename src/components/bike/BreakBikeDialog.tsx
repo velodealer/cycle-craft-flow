@@ -216,24 +216,22 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           const slotList = r.slotLabels.join(', ');
           const { error: creditErr } = await supabase.from('parts').insert({
             bike_id: bike.id,
-            description: `Stripped: ${r.label}`,
+            description: `Stripped: ${r.label} (${slotList})`,
             brand: r.brand || null,
             cost_price: -Math.abs(value),
             quantity: 1,
             stock_status: 'sold' as any,
             type: 'secondhand_stripped' as any,
-            notes: slotList,
           } as any);
           if (creditErr) throw creditErr;
           const { error: insErr } = await supabase.from('parts').insert({
-            description: `Drivetrain: ${groupsetName}`,
+            description: `Drivetrain: ${groupsetName} (${slotList})`,
             brand: r.brand || null,
             cost_price: value,
             quantity: 1,
             stripped_from_bike_id: bike.id,
             stock_status: 'in_stock' as any,
             type: 'secondhand_stripped' as any,
-            notes: `Includes: ${slotList}`,
           } as any);
           if (insErr) throw insErr;
           const { error: delErr } = await supabase
