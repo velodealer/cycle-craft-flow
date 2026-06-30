@@ -265,11 +265,19 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           const { error: delErr } = await supabase.from('bike_components').delete().eq('id', r.id);
           if (delErr) throw delErr;
         } else {
-          // group: drivetrain
+          // group rows: frame / cockpit / drivetrain
+          const isFrame = r.id === 'frame';
+          const isCockpit = r.id === 'cockpit';
           const slotList = r.slotLabels.join(', ');
+          const inventoryDesc = isFrame
+            ? frameInventoryDesc
+            : isCockpit
+              ? `Cockpit: ${cockpitName}${slotList ? ` (${slotList})` : ''}`
+              : `Drivetrain: ${groupsetName}${slotList ? ` (${slotList})` : ''}`;
+          const creditDesc = `Stripped: ${r.label}${slotList ? ` (${slotList})` : ''}`;
           const { error: creditErr } = await supabase.from('parts').insert({
             bike_id: bike.id,
-            description: `Stripped: ${r.label} (${slotList})`,
+            description: creditDesc,
             brand: r.brand || null,
             cost_price: -Math.abs(value),
             quantity: 1,
@@ -278,7 +286,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           } as any);
           if (creditErr) throw creditErr;
           const { error: insErr } = await supabase.from('parts').insert({
-            description: `Drivetrain: ${groupsetName} (${slotList})`,
+            description: inventoryDesc,
             brand: r.brand || null,
             cost_price: value,
             quantity: 1,
@@ -287,11 +295,13 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
             type: 'secondhand_stripped' as any,
           } as any);
           if (insErr) throw insErr;
-          const { error: delErr } = await supabase
-            .from('bike_components')
-            .delete()
-            .in('id', r.componentIds);
-          if (delErr) throw delErr;
+          if (r.componentIds.length > 0) {
+            const { error: delErr } = await supabase
+              .from('bike_components')
+              .delete()
+              .in('id', r.componentIds);
+            if (delErr) throw delErr;
+          }
         }
       }
       const { error: bikeErr } = await supabase
