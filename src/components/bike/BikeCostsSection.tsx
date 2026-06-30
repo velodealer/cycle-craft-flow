@@ -26,6 +26,8 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
   const [jobs, setJobs] = useState<any[]>([]);
   const [showPart, setShowPart] = useState(false);
   const [showJob, setShowJob] = useState(false);
+  const [showAddFromInv, setShowAddFromInv] = useState(false);
+  const [stripPart, setStripPart] = useState<any | null>(null);
 
   const load = useCallback(async () => {
     const [p, j] = await Promise.all([
