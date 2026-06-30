@@ -1,97 +1,77 @@
-## Bike Specification System — Full Build Plan
+## Goal
 
-A flexible spec system that works for every bike type (road, MTB, e-bike, cargo, kids, etc.) without hardcoding. Built in one pass.
+Let users move parts between a bike and the parts inventory, and "break" a bike entirely — keeping bike cost totals (and therefore VAT margin) accurate.
 
-### 1. Database
+## 1. Remove a part from a bike → inventory
 
-**New enum**
-- `bike_condition` — `new`, `used`
+In `BikeCostsSection` Parts table, add a **Strip to inventory** action (alongside the existing Delete) on every parts row.
 
-**Extend `bikes` table** (additive, nullable so existing rows are fine)
-- `bike_type`, `size`, `colour`, `gender`, `weight_kg`, `description`, `condition`, `frame_material`, `serial_number`, `barcode`, `sku`
-- Section toggles: `has_rear_shock`, `is_electric`, `has_dropper`, `has_suspension_fork`, `has_accessories`
-- `spec_values jsonb default '{}'` — free-form spec attributes (geometry, motor power, mileage, wear %, service notes, etc.)
+Dialog asks:
+- Value (£) — defaults to the part's current `cost_price`
+- Optional notes
 
-**`component_categories`**
-- `id`, `slug` (e.g. `frame`, `fork`, `wheels`…), `name`, `sort_order`
-- Seeded with: Frame, Fork, Rear Shock, Wheels, Tyres, Drivetrain (crank, cassette, chain, derailleurs, shifters, BB), Brakes, Cockpit (bar, stem, grips), Saddle, Seatpost, Pedals, E-bike System, Accessories
+On confirm:
+- Update the existing `parts` row: `bike_id = null`, `stripped_from_bike_id = <bike.id>`, `stock_status = 'in_stock'`, `type = 'secondhand_stripped'`, `cost_price = <entered value>`, `quantity = 1`.
+- The bike's parts cost (already summed in `BikeDetailView.refreshCosts`) drops by the stripped value, which feeds the existing margin/VAT calculation — no extra wiring needed.
+- Toast + refresh.
 
-**`components`** (global reusable library)
-- `id`, `category_id`, `brand`, `model`, `mpn`, `description`, `weight_g`, `attributes jsonb`, `created_at`, `updated_at`
-- Unique on `(brand, model, mpn)` (nulls distinct)
+The existing Delete button stays for mistakes; Strip is the correct action for "removed the wheels, keeping them".
 
-**`bike_components`** (join)
-- `id`, `bike_id`, `component_id`, `slot` (e.g. `front_tyre`, `rear_derailleur`, `crank`), `position` (`front`/`rear`/`left`/`right`/null), `notes`, `created_at`
-- Index on `bike_id`, unique on `(bike_id, slot)` when slot set
+## 2. Add a part from inventory to a bike
 
-**RLS & grants** — same pattern as existing tables: authenticated full CRUD, service_role all. Categories readable by authenticated.
+In the Parts section header, add a second button **Add from inventory** next to the existing **Add part**.
 
-### 2. JSONB spec schema (per section)
+Opens a dialog with:
+- Searchable list (description / brand / part_number) of `parts` where `stock_status = 'in_stock'` and `bike_id is null`.
+- Selected part shows brand, description, current cost.
+- "Fit to bike" cost field (defaults to the inventory `cost_price`, editable).
 
-Lives in `bikes.spec_values`. Documented as a TS type, not enforced in DB so new fields cost zero migrations. Top-level keys mirror the spec list provided: `frame`, `fork`, `rear_shock`, `wheels`, `tyres.front`, `tyres.rear`, `drivetrain`, `brakes`, `cockpit`, `saddle`, `seatpost`, `pedals`, `ebike`, `accessories`, `used`.
+On confirm:
+- Update that `parts` row: `bike_id = <bike.id>`, `stock_status = 'sold'`, `type = 'new_fitted'` if it was new otherwise leave, `cost_price = <entered value>`.
+- Bike parts cost recalculates automatically.
 
-### 3. Components Library page (`/components`)
+This keeps a single row per physical part (no duplication), so inventory ledger and bike cost stay in sync.
 
-- List with search (brand/model/mpn), category filter, paging
-- Create / edit / delete dialog (`ComponentForm`)
-- Reachable from sidebar; reused as a picker
+## 3. Break a bike for parts
 
-### 4. Bike Spec editor
+New **Break bike** button in `BikeDetailView` header (admin/manager only, same gating as edit). Hidden when status is already `sold` or `split_for_parts`.
 
-New `BikeSpecificationSection` rendered on the bike detail page (`/bikes/:id`), grouped into collapsible `Accordion` panels:
+Opens a multi-step dialog:
 
-1. General (type, size, colour, condition, frame material, serial, barcode, SKU, weight, description)
-2. Frame
-3. Fork *(hidden unless `has_suspension_fork` or type implies it)*
-4. Rear Shock *(hidden unless `has_rear_shock`)*
-5. Wheels
-6. Tyres (front + rear)
-7. Drivetrain (groupset, speed, 1x/2x/3x, crank, cassette, chain, derailleurs, shifters, BB)
-8. Brakes
-9. Cockpit (bars, stem, grips/tape)
-10. Saddle & Seatpost (+ dropper if `has_dropper`)
-11. Pedals
-12. E-bike *(hidden unless `is_electric`)*
-13. Accessories *(hidden unless `has_accessories`)*
-14. Used-bike condition *(hidden unless `condition = used`)*
+**Step A — choose components to keep**
+- Lists every row currently linked to the bike from `bike_components` joined with `components` (brand, model, slot label) plus every `parts` row on the bike.
+- Each row has a checkbox "Keep" + a "Value (£)" input.
 
-**Behaviour**
-- Each component field is a searchable `ComponentPicker` (Command palette style) that lists global `components` filtered by category, with an inline "+ Create new component" that opens `ComponentForm` and selects the new record on save
-- Selecting a component auto-fills brand/model display; saves the link in `bike_components` with the right `slot`
-- Free-form fields (travel, sizes, geometry, motor power, mileage…) write into `spec_values` JSONB
-- Section visibility driven by `bike_type` defaults + toggle flags (user can override)
-- Single Save button per section; optimistic update + toast
-- Read mode shows a clean spec sheet; Edit mode reveals inputs
+**Step B — validate & confirm**
+- Live total of entered keep-values.
+- Bike's total cost = `purchase_cost + collection_cost + delivery_cost + sum(parts) + sum(jobs)` (already computed in BikeDetailView).
+- Block submit if `total keep-value > bike total cost`. Show remaining headroom.
 
-### 5. Type defaults
+On confirm:
+- For each kept `bike_components` row → insert a new `parts` row (`bike_id = null`, `stripped_from_bike_id = <bike.id>`, `stock_status = 'in_stock'`, `type = 'secondhand_stripped'`, brand/description copied from component, `cost_price = entered value`), then delete the `bike_components` row.
+- For each kept `parts` row already on the bike → flip to inventory as in section 1.
+- Update bike `status = 'split_for_parts'`.
 
-A small `bikeTypeDefaults` map sets initial toggles when bike type changes:
-- `mtb_full_sus` → `has_rear_shock`, `has_suspension_fork`, often `has_dropper`
-- `road`, `gravel`, `cx`, `tt`, `track`, `bmx`, `kids`, `folding`, `hybrid`, `city`, `touring`, `tandem`, `recumbent` → no rear shock, no fork suspension (except hybrids optional)
-- `cargo`, any `*_electric` variants → `is_electric`
-User can still flip flags manually.
+## 4. Schema changes
 
-### 6. Files
+Single migration:
+- Add `'split_for_parts'` to the `bike_status` enum.
+- (No new tables; reuse `parts` and `bike_components`.)
 
-**Created**
-- `src/pages/ComponentsPage.tsx`
-- `src/components/components/ComponentList.tsx`
-- `src/components/components/ComponentForm.tsx`
-- `src/components/components/ComponentPicker.tsx`
-- `src/components/bike/spec/BikeSpecificationSection.tsx`
-- `src/components/bike/spec/sections/*` (Frame, Fork, RearShock, Wheels, Tyres, Drivetrain, Brakes, Cockpit, SaddleSeatpost, Pedals, Ebike, Accessories, UsedCondition)
-- `src/lib/bikeSpec.ts` — TS types for `spec_values`, slot constants, type-default map, helpers
-- Supabase migration for enum, `bikes` columns, `component_categories`, `components`, `bike_components`, seeds, RLS, grants
+## 5. Files
+
+**New**
+- `src/components/bike/StripPartDialog.tsx` — single-part strip flow.
+- `src/components/bike/AddPartFromInventoryDialog.tsx` — inventory picker.
+- `src/components/bike/BreakBikeDialog.tsx` — full break flow with validation.
 
 **Edited**
-- `src/components/bike/BikeDetailView.tsx` — mount `BikeSpecificationSection`
-- `src/components/AppSidebar.tsx` — Components link
-- `src/App.tsx` — `/components` route
-- `src/components/management/BikeForm.tsx` — add the new top-level bike fields (type, size, condition, serial, barcode, SKU, toggles)
+- `src/components/bike/BikeCostsSection.tsx` — Strip row action + "Add from inventory" header button + wire dialogs.
+- `src/components/bike/BikeDetailView.tsx` — Break bike button, hide stage advance when status is `split_for_parts`, render new status label.
+- `src/lib/bikeSpec.ts` — no change required (component slots already drive the break list via `bike_components`).
 
-### 7. Out of scope (later)
-- eBay / website export feeds
-- Valuation reports from spec data
-- Bulk import of component catalogues
+## Out of scope
 
-Tell me to proceed and I'll implement everything in one go.
+- VAT margin scheme is recomputed implicitly from the cost total; no separate VAT settings UI is changed.
+- No reverse "un-break" flow.
+- No bulk inventory editing beyond the per-row value field in the break dialog.
