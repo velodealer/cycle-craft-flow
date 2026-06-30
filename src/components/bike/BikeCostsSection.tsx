@@ -61,9 +61,12 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
             <h4 className="text-sm font-semibold">Parts</h4>
-            <Button size="sm" variant="outline" onClick={() => setShowPart(true)}><Plus className="h-4 w-4 mr-1" />Add part</Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowAddFromInv(true)}><PackagePlus className="h-4 w-4 mr-1" />Add from inventory</Button>
+              <Button size="sm" variant="outline" onClick={() => setShowPart(true)}><Plus className="h-4 w-4 mr-1" />Add part</Button>
+            </div>
           </div>
           {parts.length === 0 ? (
             <p className="text-sm text-muted-foreground">No parts added.</p>
