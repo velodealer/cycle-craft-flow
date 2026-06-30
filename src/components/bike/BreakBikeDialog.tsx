@@ -111,27 +111,74 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     () => compRows.filter((c) => DRIVETRAIN_SLOTS.includes(c.slot)),
     [compRows],
   );
+  const cockpitComps = useMemo(
+    () => compRows.filter((c) => COCKPIT_SLOTS.includes(c.slot)),
+    [compRows],
+  );
   const hasDrivetrain = drivetrainComps.length > 0;
+  const hasCockpit = cockpitComps.length > 0;
 
-  // Force-off grouping when no drivetrain components exist
   useEffect(() => {
     if (!hasDrivetrain && groupDrivetrain) setGroupDrivetrain(false);
   }, [hasDrivetrain, groupDrivetrain]);
+  useEffect(() => {
+    if (!hasCockpit && groupCockpit) setGroupCockpit(false);
+  }, [hasCockpit, groupCockpit]);
 
-  const groupsetName = useMemo(() => {
-    if (bike?.groupset) return String(bike.groupset);
-    // most common brand among drivetrain components
+  const mostCommonBrand = (items: { brand?: string | null }[]) => {
     const counts: Record<string, number> = {};
-    for (const c of drivetrainComps) {
+    for (const c of items) {
       const b = c.brand || '';
       if (b) counts[b] = (counts[b] || 0) + 1;
     }
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    return top || 'Drivetrain';
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  };
+
+  const groupsetName = useMemo(() => {
+    if (bike?.groupset) return String(bike.groupset);
+    return mostCommonBrand(drivetrainComps) || 'Drivetrain';
   }, [bike, drivetrainComps]);
+
+  const cockpitName = useMemo(
+    () => mostCommonBrand(cockpitComps) || 'Cockpit',
+    [cockpitComps],
+  );
+
+  const frameLabel = useMemo(() => {
+    const parts = [bike?.make, bike?.model].filter(Boolean).join(' ').trim();
+    const size = bike?.frame?.size || bike?.size;
+    return `Frame — ${parts || 'Bike frame'}${size ? ` (${size})` : ''}`;
+  }, [bike]);
+  const frameInventoryDesc = useMemo(() => {
+    const parts = [bike?.make, bike?.model].filter(Boolean).join(' ').trim() || 'Frame';
+    const size = bike?.frame?.size || bike?.size;
+    return `Frame: ${parts}${size ? ` (${size})` : ''}`;
+  }, [bike]);
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
+    // Frame always first
+    out.push({
+      kind: 'group',
+      id: 'frame',
+      label: frameLabel,
+      description: 'Frame, headset, seatpost, etc.',
+      brand: bike?.make || null,
+      componentIds: [],
+      slotLabels: [],
+    });
+    if (groupCockpit && hasCockpit) {
+      const slotLabels = cockpitComps.map((c) => c.label);
+      out.push({
+        kind: 'group',
+        id: 'cockpit',
+        label: `Cockpit — ${cockpitName}`,
+        description: slotLabels.join(', '),
+        brand: cockpitComps[0]?.brand || null,
+        componentIds: cockpitComps.map((c) => c.id),
+        slotLabels,
+      });
+    }
     if (groupDrivetrain && hasDrivetrain) {
       const slotLabels = drivetrainComps.map((c) => c.label);
       out.push({
@@ -143,13 +190,15 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         componentIds: drivetrainComps.map((c) => c.id),
         slotLabels,
       });
-      for (const c of compRows) if (!DRIVETRAIN_SLOTS.includes(c.slot)) out.push(c);
-    } else {
-      out.push(...compRows);
+    }
+    for (const c of compRows) {
+      const inDrivetrain = groupDrivetrain && DRIVETRAIN_SLOTS.includes(c.slot);
+      const inCockpit = groupCockpit && COCKPIT_SLOTS.includes(c.slot);
+      if (!inDrivetrain && !inCockpit) out.push(c);
     }
     out.push(...partRows);
     return out;
-  }, [groupDrivetrain, hasDrivetrain, drivetrainComps, compRows, partRows, groupsetName, bike]);
+  }, [groupDrivetrain, groupCockpit, hasDrivetrain, hasCockpit, drivetrainComps, cockpitComps, compRows, partRows, groupsetName, cockpitName, bike, frameLabel]);
 
   const total = useMemo(
     () => rows.reduce((s, r) => {
