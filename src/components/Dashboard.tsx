@@ -25,6 +25,7 @@ import {
   Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 
 type UserRole = 'admin' | 'mechanic' | 'detailer' | 'accountant' | 'owner';
 
@@ -77,6 +78,7 @@ const roleConfigs: Record<UserRole, RoleConfig> = {
 export default function Dashboard() {
   const { user, profile, signOut, loading } = useAuth();
   const { toast } = useToast();
+  const { counts, loading: countsLoading } = useDashboardCounts();
 
   if (loading) {
     return (
@@ -119,36 +121,38 @@ export default function Dashboard() {
     }
   };
 
+  const fmt = (n: number | null) => (countsLoading || n == null ? '—' : String(n));
+
   const dashboardCards = [
     {
       title: "Bikes",
-      description: "Manage bicycle inventory and tracking",
+      description: "Active stock in workflow",
       icon: Bike,
-      count: "0",
+      count: fmt(counts.bikes),
       href: "/bikes",
       roles: ['admin', 'mechanic', 'detailer', 'accountant'],
     },
     {
       title: "Parts",
-      description: "Track parts inventory and pricing",
+      description: "In-stock parts inventory",
       icon: Package,
-      count: "0",
+      count: fmt(counts.parts),
       href: "/parts",
       roles: ['admin', 'mechanic', 'accountant'],
     },
     {
       title: "Workshop Jobs",
-      description: "Manage repair and service jobs",
+      description: "Open repair & service jobs",
       icon: Wrench,
-      count: "0",
+      count: fmt(counts.jobs),
       href: "/jobs",
       roles: ['admin', 'mechanic', 'detailer'],
     },
     {
       title: "Invoices",
-      description: "Handle billing and payments",
+      description: "Outstanding invoices",
       icon: FileText,
-      count: "0",
+      count: fmt(counts.invoices),
       href: "/invoices",
       roles: ['admin', 'accountant'],
     },
@@ -162,9 +166,9 @@ export default function Dashboard() {
     },
     {
       title: "Customers",
-      description: "Manage customer relationships",
+      description: "Owners & external customers",
       icon: Users,
-      count: "0",
+      count: fmt(counts.customers),
       href: "/customers",
       roles: ['admin', 'accountant'],
     },
