@@ -7,12 +7,35 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Bike } from 'lucide-react';
+import { Bike } from 'lucide-react';
 
 export default function Auth() {
   const { user, profile, signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast({ title: "Enter your email", variant: "destructive" });
+      return;
+    }
+    setResetLoading(true);
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      toast({ title: "Error sending reset email", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password reset email sent", description: "Check your inbox for the reset link." });
+      setResetOpen(false);
+      setResetEmail('');
+    }
+  };
 
   if (user) {
     return <Navigate to={profile?.role === "investor" ? "/investor" : "/dashboard"} replace />;
@@ -108,6 +131,35 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={() => setResetOpen((v) => !v)}
+                >
+                  Forgot password?
+                </Button>
+                {resetOpen && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label htmlFor="reset-email">Reset password email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={handleResetPassword}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? "Sending..." : "Send reset link"}
+                    </Button>
+                  </div>
+                )}
               </form>
             </TabsContent>
             
@@ -149,16 +201,6 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
-          
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Demo System</p>
-                <p>This is a demo of the VeloDealer system. Default role is mechanic, contact admin to change roles.</p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
