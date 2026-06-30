@@ -69,7 +69,7 @@ export default function InvestorDashboardPage() {
     const isSold = b.status === 'sold';
     const revenue = Number((isSold ? b.sale_price : b.asking_price) || 0);
     const gross = revenue - totalCosts;
-    const vat = b.finance_scheme === 'margin_scheme' ? Math.max(0, gross) * 20 / 120 : 0;
+    const vat = b.finance_scheme === 'margin_scheme' ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
     const net = gross - vat;
     const myReturn = Math.max(0, net) * (Number(b.profit_share_pct || 0) / 100);
     return { acquisition, totalCosts, revenue, gross, vat, net, myReturn, isSold };
