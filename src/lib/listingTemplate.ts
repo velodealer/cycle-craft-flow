@@ -126,24 +126,20 @@ function htmlToPlain(html: string): string {
     .trim();
 }
 
-async function copyHtmlWithExecCommand(html: string): Promise<boolean> {
+async function copyTextWithExecCommand(text: string): Promise<boolean> {
   try {
-    const container = document.createElement('div');
-    container.contentEditable = 'true';
-    container.style.position = 'fixed';
-    container.style.left = '-9999px';
-    container.style.top = '0';
-    container.style.opacity = '0';
-    container.innerHTML = html;
-    document.body.appendChild(container);
-    const range = document.createRange();
-    range.selectNodeContents(container);
-    const sel = window.getSelection();
-    sel?.removeAllRanges();
-    sel?.addRange(range);
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
     const ok = document.execCommand('copy');
-    sel?.removeAllRanges();
-    document.body.removeChild(container);
+    document.body.removeChild(ta);
     return ok;
   } catch {
     return false;
@@ -167,26 +163,27 @@ export async function copyListing(
   const rendered = renderTemplate(tpl.body || '', bike, components);
 
   if (format === 'html') {
-    const plain = htmlToPlain(rendered);
+    // Put the raw HTML source on both text/html (for rich editors) and text/plain
+    // (so eBay-style HTML source editors paste the markup verbatim).
     if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
       try {
         await navigator.clipboard.write([
           new ClipboardItem({
             'text/html': new Blob([rendered], { type: 'text/html' }),
-            'text/plain': new Blob([plain], { type: 'text/plain' }),
+            'text/plain': new Blob([rendered], { type: 'text/plain' }),
           }),
         ]);
         return { ok: true, format };
       } catch {
-        // fall through to execCommand
+        // fall through
       }
     }
-    if (await copyHtmlWithExecCommand(rendered)) {
+    if (await copyTextWithExecCommand(rendered)) {
       return { ok: true, format };
     }
     try {
-      await navigator.clipboard.writeText(plain);
-      return { ok: true, format: 'text', reason: 'HTML clipboard unsupported; copied plain text' };
+      await navigator.clipboard.writeText(rendered);
+      return { ok: true, format };
     } catch (e: any) {
       return { ok: false, reason: e?.message || 'Clipboard failed' };
     }
@@ -198,4 +195,5 @@ export async function copyListing(
   } catch (e: any) {
     return { ok: false, reason: e?.message || 'Clipboard failed' };
   }
+}
 }
