@@ -14,6 +14,7 @@ import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
 import PartsPage from "./pages/PartsPage";
+import ComponentsPage from "./pages/ComponentsPage";
 import JobsPage from "./pages/JobsPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import OwnersPage from "./pages/OwnersPage";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
             <Route path="/logistics" element={guarded(<Layout><LogisticsPage /></Layout>)} />
             <Route path="/parts" element={guarded(<Layout><PartsPage /></Layout>)} />
+            <Route path="/components" element={guarded(<Layout><ComponentsPage /></Layout>)} />
             <Route path="/jobs" element={guarded(<Layout><JobsPage /></Layout>)} />
 
             <Route path="/invoices" element={guarded(<Layout><InvoicesPage /></Layout>)} />

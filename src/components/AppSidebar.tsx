@@ -15,6 +15,7 @@ import {
   FileVideo,
   TrendingUp,
   Briefcase,
+  Cog,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ const navigationItems = [
   { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
   { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
+  { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
   
   { title: "Invoices", url: "/invoices", icon: FileText, roles: ['admin', 'accountant'] },
