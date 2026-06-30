@@ -100,12 +100,13 @@ export function renderTemplate(body: string, bike: any, components: any[] = []):
 export async function fetchTemplates() {
   const { data, error } = await supabase.from('listing_templates' as any).select('*');
   if (error) throw error;
-  return (data || []) as Array<{
+  return (data || []) as unknown as Array<{
     id: string;
     platform: ListingPlatform;
     format: ListingFormat;
     body: string;
   }>;
+
 }
 
 export async function copyListing(
