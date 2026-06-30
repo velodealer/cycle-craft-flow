@@ -290,15 +290,12 @@ export default function BikeDetailView({
                   const totalCost = acquisition + prep;
                   const gross = revenue - totalCost;
                   const isMargin = bike.finance_scheme === 'margin_scheme';
-                  const isVatQualifying = bike.finance_scheme === 'vat_qualifying';
                   const vat = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
                   const net = gross - vat;
                   const margin = revenue > 0 ? (net / revenue) * 100 : null;
                   const markupRoi = totalCost > 0 ? (net / totalCost) * 100 : null;
                   const pct = (v: number | null) => v == null ? '-' : `${v.toFixed(1)}%`;
-                  const siv = isMargin ? acquisition + prep * 1.2
-                            : isVatQualifying ? totalCost * 1.2
-                            : totalCost;
+                  const siv = totalCost;
                   const headroom = revenue - siv;
                   const investorShare = bike.source === 'investor' && bike.profit_share_pct != null
                     ? Math.max(0, net) * (Number(bike.profit_share_pct) / 100)

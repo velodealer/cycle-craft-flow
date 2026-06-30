@@ -61,14 +61,11 @@ export default function InvestorBikePage() {
   const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
   const grossProfit = revenue - totalCosts;
   const isMargin = bike.finance_scheme === 'margin_scheme';
-  const isVatQualifying = bike.finance_scheme === 'vat_qualifying';
   const vatOnMargin = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
   const netProfit = grossProfit - vatOnMargin;
   const sharePct = Number(bike.profit_share_pct || 0);
   const myReturn = Math.max(0, netProfit) * (sharePct / 100);
-  const siv = isMargin ? acquisition + prep * 1.2
-            : isVatQualifying ? totalCosts * 1.2
-            : totalCosts;
+  const siv = totalCosts;
   const headroom = revenue - siv;
 
   const Row = ({ label, value, negative, bold, muted, sub }: { label: string; value: string; negative?: boolean; bold?: boolean; muted?: boolean; sub?: string }) => (
