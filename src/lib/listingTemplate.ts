@@ -196,4 +196,3 @@ export async function copyListing(
     return { ok: false, reason: e?.message || 'Clipboard failed' };
   }
 }
-}
