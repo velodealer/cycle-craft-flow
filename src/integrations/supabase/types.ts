@@ -1007,6 +1007,7 @@ export type Database = {
         | "awaiting_collection"
         | "collection_in_progress"
         | "in_transit"
+        | "split_for_parts"
       finance_scheme: "vat_qualifying" | "margin_scheme" | "commercial_vat"
       fulfilment_stage:
         | "intake"
@@ -1173,6 +1174,7 @@ export const Constants = {
         "awaiting_collection",
         "collection_in_progress",
         "in_transit",
+        "split_for_parts",
       ],
       finance_scheme: ["vat_qualifying", "margin_scheme", "commercial_vat"],
       fulfilment_stage: ["intake", "cleaning", "inspection", "repair", "ready"],
