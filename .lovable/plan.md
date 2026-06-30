@@ -1,31 +1,77 @@
-## Add bar+stem grouping and a Frame row to Break dialog
+## Reports page
 
-### 1. Bar & stem grouping
-- New constant `COCKPIT_SLOTS = ['handlebars', 'stem']`.
-- Second toggle above the list: **"Group bar & stem as a single row"** (disabled when neither slot is attached).
-- Synthetic group row, kind `'group'`, id `'cockpit'`, label `Cockpit — <brand>` (most common brand across the bundled slots, else `Cockpit`).
-- Save path mirrors the drivetrain group: one credit row on bike, one inventory row `Cockpit: <name> (Handlebars, Stem)`, delete the bundled `bike_components` rows in a single `.in('id', […])` call.
+Replace the placeholder at `src/pages/ReportsPage.tsx` with a real reports dashboard, plus extracted section components.
 
-### 2. Frame row
-- Synthetic row at the top of the list, kind `'group'`, id `'frame'`, with `componentIds: []` and `slotLabels: []`.
-- Label: `Frame — <make> <model>` plus size if present (e.g. `Frame — BMC Teammachine SLR-01 (54)`).
-- Always present (frame is implicit on every bike).
-- On keep + save:
-  1. Insert credit row on bike: `description = 'Stripped: Frame — <…>'`, `cost_price = -value`, `stock_status = sold`, `type = secondhand_stripped`.
-  2. Insert inventory row: `description = 'Frame: <make> <model> (<size>)'`, `cost_price = value`, `stripped_from_bike_id = bike.id`, `stock_status = in_stock`, `type = secondhand_stripped`.
-  3. No `bike_components` delete (frame has no slot).
+### Time-frame control (top of page)
+- Preset buttons: **Last 7 days**, **Last 30 days**, **Last 90 days**, **YTD**, **Last 12 months**, **All time**, **Custom**.
+- Custom opens a `<DateRangePicker>` (calendar from shadcn) — `from` + `to`.
+- Selected range is passed as `{ from: Date, to: Date }` to every section.
+- Default: Last 90 days.
 
-### 3. Row ordering
-Frame → Cockpit (if grouped) → Drivetrain (if grouped) → remaining components → parts.
+### KPI strip
+Four cards above the sections, all scoped to the selected range:
+- Revenue (sum of `invoices.gross` paid in range)
+- Bikes sold (count of bikes with `status='sold'` and `updated_at` in range)
+- Gross margin £ and %
+- Active stock value (£ at cost) — snapshot, not range-dependent (labelled accordingly)
 
-### Edge cases
-- Grouping toggles independently disable when the relevant slots aren't attached.
-- Headroom math unchanged — all kept rows (including Frame) contribute to total.
-- Frame row credit means a fully-kept bike (frame + all components at their bike-cost share) zeroes headroom, matching today's component-strip accounting.
+### Sections
 
-### Files
+1. **Sales pipeline analysis**
+   - Funnel/bar chart of bike counts by status, restricted to bikes created/updated in range: pending_intake → intake → cleaning → inspection → repair → ready → listed → sold.
+   - Side table: status, count, total asking price, total cost, projected margin.
 
-**Edited**
-- `src/components/bike/BreakBikeDialog.tsx` — add `COCKPIT_SLOTS`, second toggle, frame synthetic row generation, save branch tweaks to handle frame (no slot delete).
+2. **Stock aging**
+   - Two tabs: **Bikes** | **Parts**.
+   - Bucket by age = today − `intake_date` (bikes) / `created_at` (parts in stock): 0–30, 31–60, 61–90, 91–180, 180+.
+   - Stacked bar by bucket × status (bikes: in_stock/ready/listed; parts: in_stock).
+   - Drill-down table below: rows of items in the selected bucket (click bar → filters table).
+   - Aging ignores the global timeframe (it's always "as of now") — note this on the card. The timeframe still filters sold items to compute aging-at-sale below.
 
-No schema, no other files.
+3. **Margin analysis & profitability**
+   - Per bike sold in range:
+     `revenue = invoices.gross (type='bike_sale')`,
+     `cost = purchase_price + collection_cost + delivery_cost + Σ parts.cost_price (bike_id=bike) + Σ jobs.actual_cost`,
+     `margin = revenue − cost`, `margin% = margin/revenue`.
+   - Summary cards: avg margin £, avg margin %, total margin.
+   - Scatter plot: cost (x) vs sale price (y), point colour = margin%.
+   - Sortable table: bike, sold date, revenue, cost, margin £, margin %.
+
+4. **Revenue tracking**
+   - Monthly stacked area chart of `invoices.gross` paid (bucket by `paid_at`), split by `invoices.type` (bike_sale / service / parts).
+   - Cumulative line overlay.
+   - Granularity toggle: Day / Week / Month — defaults based on range length (≤31d=day, ≤120d=week, else=month).
+
+5. **Inventory turnover rates**
+   - Computed per category (bikes overall, plus parts by `parts.type`).
+   - `turnover = units sold in range / average inventory in range` (average of start + end snapshot ÷ 2).
+   - `days on hand = range days / turnover`.
+   - Table with: category, sold qty, avg inventory, turnover, days on hand.
+
+### Data fetching
+- One `useReportsData(range)` hook in `src/hooks/useReportsData.ts` that fires the queries in parallel: `bikes`, `parts`, `invoices`, `jobs` (only the fields each section needs). Returns memoised slices to each section so we don't hit Supabase per section.
+- All aggregation done in JS (data volumes are small for a dealership). No new RPCs.
+- Limit each query to its needed window with `.gte('created_at', from)` where applicable; fetch full table for stock-aging snapshot.
+
+### File layout
+- `src/pages/ReportsPage.tsx` — page shell, timeframe state, layout grid.
+- `src/components/reports/TimeframePicker.tsx` — presets + custom range popover.
+- `src/components/reports/KpiStrip.tsx`
+- `src/components/reports/SalesPipelineSection.tsx`
+- `src/components/reports/StockAgingSection.tsx`
+- `src/components/reports/MarginAnalysisSection.tsx`
+- `src/components/reports/RevenueTrackingSection.tsx`
+- `src/components/reports/InventoryTurnoverSection.tsx`
+- `src/hooks/useReportsData.ts`
+- `src/lib/reports.ts` — pure aggregation helpers + age-bucket utility.
+
+### Tech notes
+- Charts: `recharts` (already installed).
+- Date math: `date-fns` (already installed).
+- Use existing shadcn `Card`, `Tabs`, `Button`, `Popover`, `Calendar`, `Table` primitives — no new deps.
+- Loading: skeletons per section; errors: toast + inline retry button.
+
+### Out of scope
+- CSV / PDF export — can add later if needed.
+- Workshop performance & custom report builder (the user dropped these from the requested list).
+- Role-based filtering — page already gated to admin/accountant via existing route auth; no changes here.
