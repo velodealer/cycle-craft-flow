@@ -141,6 +141,8 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
 
       <AddPartDialog open={showPart} onOpenChange={setShowPart} bikeId={bikeId} onSaved={refresh} />
       <AddJobDialog open={showJob} onOpenChange={setShowJob} bikeId={bikeId} onSaved={refresh} />
+      <AddPartFromInventoryDialog open={showAddFromInv} onOpenChange={setShowAddFromInv} bikeId={bikeId} onSaved={refresh} />
+      <StripPartDialog open={!!stripPart} onOpenChange={(v) => !v && setStripPart(null)} part={stripPart} bikeId={bikeId} onSaved={refresh} />
     </Card>
   );
 }
