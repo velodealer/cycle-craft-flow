@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
+import StripComponentDialog from './StripComponentDialog';
+import { PackageMinus } from 'lucide-react';
 import {
   BIKE_TYPES, FRAME_MATERIALS, GENDERS, CONDITIONS,
   SPEC_SECTIONS, applyTypeDefaults, getAtPath, setAtPath,
@@ -27,10 +29,9 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [bikeComponents, setBikeComponents] = useState<Record<string, string>>({}); // slot -> component_id
+  const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
 
-  useEffect(() => { setDraft(bike); }, [bike]);
-
-  useEffect(() => {
+  const reloadComponents = () => {
     if (!bike?.id) return;
     supabase.from('bike_components').select('slot, component_id').eq('bike_id', bike.id)
       .then(({ data }) => {
@@ -38,7 +39,11 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
         (data || []).forEach((r: any) => { map[r.slot] = r.component_id; });
         setBikeComponents(map);
       });
-  }, [bike?.id]);
+  };
+
+  useEffect(() => { setDraft(bike); }, [bike]);
+
+  useEffect(() => { reloadComponents(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [bike?.id]);
 
   const visibleSections = useMemo(() => SPEC_SECTIONS.filter((s) => !s.show || s.show(draft)), [draft]);
 
@@ -252,16 +257,34 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                 <div className="space-y-4">
                   {s.slots && s.slots.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {s.slots.map((slot) => (
-                        <div key={slot.slot}>
-                          <Label>{slot.label}</Label>
-                          <ComponentPicker
-                            categorySlug={slot.categorySlug}
-                            value={bikeComponents[slot.slot] || null}
-                            onChange={(id) => onSlotChange(slot, id)}
-                          />
-                        </div>
-                      ))}
+                      {s.slots.map((slot) => {
+                        const linkedId = bikeComponents[slot.slot] || null;
+                        return (
+                          <div key={slot.slot}>
+                            <Label>{slot.label}</Label>
+                            <div className="flex gap-1 items-start">
+                              <div className="flex-1">
+                                <ComponentPicker
+                                  categorySlug={slot.categorySlug}
+                                  value={linkedId}
+                                  onChange={(id) => onSlotChange(slot, id)}
+                                />
+                              </div>
+                              {linkedId && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  title="Strip to inventory"
+                                  onClick={() => setStripping({ slot: slot.slot, label: slot.label, componentId: linkedId })}
+                                >
+                                  <PackageMinus className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   {s.fields && s.fields.length > 0 && (
@@ -280,6 +303,17 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
           ))}
         </Accordion>
       </CardContent>
+      {stripping && (
+        <StripComponentDialog
+          open={!!stripping}
+          onOpenChange={(v) => !v && setStripping(null)}
+          bikeId={bike.id}
+          slot={stripping.slot}
+          slotLabel={stripping.label}
+          componentId={stripping.componentId}
+          onDone={() => { reloadComponents(); onUpdate(); }}
+        />
+      )}
     </Card>
   );
 }
