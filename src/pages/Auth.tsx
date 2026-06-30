@@ -24,8 +24,12 @@ export default function Auth() {
     }
     setResetLoading(true);
     const { supabase } = await import('@/integrations/supabase/client');
+    const siteUrl =
+      window.location.hostname === 'localhost'
+        ? 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app'
+        : window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${siteUrl}/reset-password`,
     });
     setResetLoading(false);
     if (error) {
