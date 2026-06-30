@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Bike } from 'lucide-react';
+import { Bike } from 'lucide-react';
 
 export default function Auth() {
   const { user, profile, signIn, signUp } = useAuth();
