@@ -139,7 +139,7 @@ export default function InvestorBikePage() {
 
       <div className="grid md:grid-cols-3 gap-4">
         <Card><CardHeader><CardTitle>Total invested costs</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{fmt(totalCosts)}</CardContent></Card>
-        <Card><CardHeader><CardTitle>Net profit</CardTitle></CardHeader><CardContent><div className={`text-2xl font-bold ${netProfit < 0 ? 'text-destructive' : ''}`}>{fmt(netProfit)}</div>{isMargin && <div className="text-xs text-muted-foreground">After {fmt(vatOnMargin)} VAT</div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Net profit</CardTitle></CardHeader><CardContent><div className={`text-2xl font-bold ${netProfit < 0 ? 'text-destructive' : ''}`}>{fmt(netProfit)}</div></CardContent></Card>
         <Card><CardHeader><CardTitle>Your return</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{fmt(myReturn)}</div><div className="text-xs text-muted-foreground">{sharePct}% of net {isSold ? '(realised)' : '(estimated)'}</div></CardContent></Card>
       </div>
 
