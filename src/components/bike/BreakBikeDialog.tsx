@@ -42,6 +42,7 @@ type GroupRow = {
 type Row = ComponentRow | PartRow | GroupRow;
 
 const DRIVETRAIN_SLOTS = ['shifters', 'front_derailleur', 'rear_derailleur', 'cassette', 'chain', 'crank', 'brakes'];
+const COCKPIT_SLOTS = ['handlebars', 'stem'];
 
 const slotLabelMap: Record<string, string> = (() => {
   const m: Record<string, string> = {};
@@ -59,6 +60,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
   const [bikeTotalCost, setBikeTotalCost] = useState(0);
   const [saving, setSaving] = useState(false);
   const [groupDrivetrain, setGroupDrivetrain] = useState(false);
+  const [groupCockpit, setGroupCockpit] = useState(false);
 
   const load = useCallback(async () => {
     const [{ data: comps }, { data: parts }, { data: jobs }] = await Promise.all([
@@ -96,6 +98,8 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     for (const r of cRows) initial[`component:${r.id}`] = { checked: false, value: '' };
     for (const r of pRows) initial[`part:${r.id}`] = { checked: false, value: r.currentCost };
     initial['group:drivetrain'] = { checked: false, value: '' };
+    initial['group:cockpit'] = { checked: false, value: '' };
+    initial['group:frame'] = { checked: false, value: '' };
     setKeep(initial);
   }, [bike]);
 
@@ -107,27 +111,74 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     () => compRows.filter((c) => DRIVETRAIN_SLOTS.includes(c.slot)),
     [compRows],
   );
+  const cockpitComps = useMemo(
+    () => compRows.filter((c) => COCKPIT_SLOTS.includes(c.slot)),
+    [compRows],
+  );
   const hasDrivetrain = drivetrainComps.length > 0;
+  const hasCockpit = cockpitComps.length > 0;
 
-  // Force-off grouping when no drivetrain components exist
   useEffect(() => {
     if (!hasDrivetrain && groupDrivetrain) setGroupDrivetrain(false);
   }, [hasDrivetrain, groupDrivetrain]);
+  useEffect(() => {
+    if (!hasCockpit && groupCockpit) setGroupCockpit(false);
+  }, [hasCockpit, groupCockpit]);
 
-  const groupsetName = useMemo(() => {
-    if (bike?.groupset) return String(bike.groupset);
-    // most common brand among drivetrain components
+  const mostCommonBrand = (items: { brand?: string | null }[]) => {
     const counts: Record<string, number> = {};
-    for (const c of drivetrainComps) {
+    for (const c of items) {
       const b = c.brand || '';
       if (b) counts[b] = (counts[b] || 0) + 1;
     }
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    return top || 'Drivetrain';
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  };
+
+  const groupsetName = useMemo(() => {
+    if (bike?.groupset) return String(bike.groupset);
+    return mostCommonBrand(drivetrainComps) || 'Drivetrain';
   }, [bike, drivetrainComps]);
+
+  const cockpitName = useMemo(
+    () => mostCommonBrand(cockpitComps) || 'Cockpit',
+    [cockpitComps],
+  );
+
+  const frameLabel = useMemo(() => {
+    const parts = [bike?.make, bike?.model].filter(Boolean).join(' ').trim();
+    const size = bike?.frame?.size || bike?.size;
+    return `Frame — ${parts || 'Bike frame'}${size ? ` (${size})` : ''}`;
+  }, [bike]);
+  const frameInventoryDesc = useMemo(() => {
+    const parts = [bike?.make, bike?.model].filter(Boolean).join(' ').trim() || 'Frame';
+    const size = bike?.frame?.size || bike?.size;
+    return `Frame: ${parts}${size ? ` (${size})` : ''}`;
+  }, [bike]);
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
+    // Frame always first
+    out.push({
+      kind: 'group',
+      id: 'frame',
+      label: frameLabel,
+      description: 'Frame, headset, seatpost, etc.',
+      brand: bike?.make || null,
+      componentIds: [],
+      slotLabels: [],
+    });
+    if (groupCockpit && hasCockpit) {
+      const slotLabels = cockpitComps.map((c) => c.label);
+      out.push({
+        kind: 'group',
+        id: 'cockpit',
+        label: `Cockpit — ${cockpitName}`,
+        description: slotLabels.join(', '),
+        brand: cockpitComps[0]?.brand || null,
+        componentIds: cockpitComps.map((c) => c.id),
+        slotLabels,
+      });
+    }
     if (groupDrivetrain && hasDrivetrain) {
       const slotLabels = drivetrainComps.map((c) => c.label);
       out.push({
@@ -139,13 +190,15 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         componentIds: drivetrainComps.map((c) => c.id),
         slotLabels,
       });
-      for (const c of compRows) if (!DRIVETRAIN_SLOTS.includes(c.slot)) out.push(c);
-    } else {
-      out.push(...compRows);
+    }
+    for (const c of compRows) {
+      const inDrivetrain = groupDrivetrain && DRIVETRAIN_SLOTS.includes(c.slot);
+      const inCockpit = groupCockpit && COCKPIT_SLOTS.includes(c.slot);
+      if (!inDrivetrain && !inCockpit) out.push(c);
     }
     out.push(...partRows);
     return out;
-  }, [groupDrivetrain, hasDrivetrain, drivetrainComps, compRows, partRows, groupsetName, bike]);
+  }, [groupDrivetrain, groupCockpit, hasDrivetrain, hasCockpit, drivetrainComps, cockpitComps, compRows, partRows, groupsetName, cockpitName, bike, frameLabel]);
 
   const total = useMemo(
     () => rows.reduce((s, r) => {
@@ -212,11 +265,19 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           const { error: delErr } = await supabase.from('bike_components').delete().eq('id', r.id);
           if (delErr) throw delErr;
         } else {
-          // group: drivetrain
+          // group rows: frame / cockpit / drivetrain
+          const isFrame = r.id === 'frame';
+          const isCockpit = r.id === 'cockpit';
           const slotList = r.slotLabels.join(', ');
+          const inventoryDesc = isFrame
+            ? frameInventoryDesc
+            : isCockpit
+              ? `Cockpit: ${cockpitName}${slotList ? ` (${slotList})` : ''}`
+              : `Drivetrain: ${groupsetName}${slotList ? ` (${slotList})` : ''}`;
+          const creditDesc = `Stripped: ${r.label}${slotList ? ` (${slotList})` : ''}`;
           const { error: creditErr } = await supabase.from('parts').insert({
             bike_id: bike.id,
-            description: `Stripped: ${r.label} (${slotList})`,
+            description: creditDesc,
             brand: r.brand || null,
             cost_price: -Math.abs(value),
             quantity: 1,
@@ -225,7 +286,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           } as any);
           if (creditErr) throw creditErr;
           const { error: insErr } = await supabase.from('parts').insert({
-            description: `Drivetrain: ${groupsetName} (${slotList})`,
+            description: inventoryDesc,
             brand: r.brand || null,
             cost_price: value,
             quantity: 1,
@@ -234,11 +295,13 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
             type: 'secondhand_stripped' as any,
           } as any);
           if (insErr) throw insErr;
-          const { error: delErr } = await supabase
-            .from('bike_components')
-            .delete()
-            .in('id', r.componentIds);
-          if (delErr) throw delErr;
+          if (r.componentIds.length > 0) {
+            const { error: delErr } = await supabase
+              .from('bike_components')
+              .delete()
+              .in('id', r.componentIds);
+            if (delErr) throw delErr;
+          }
         }
       }
       const { error: bikeErr } = await supabase
@@ -266,16 +329,29 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
             The bike's status changes to <span className="font-medium">Split for parts</span>.
           </p>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="group-drivetrain"
-              checked={groupDrivetrain}
-              disabled={!hasDrivetrain}
-              onCheckedChange={(c) => setGroupDrivetrain(!!c)}
-            />
-            <Label htmlFor="group-drivetrain" className={!hasDrivetrain ? 'text-muted-foreground' : ''}>
-              Group drivetrain as a single row
-            </Label>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="group-drivetrain"
+                checked={groupDrivetrain}
+                disabled={!hasDrivetrain}
+                onCheckedChange={(c) => setGroupDrivetrain(!!c)}
+              />
+              <Label htmlFor="group-drivetrain" className={!hasDrivetrain ? 'text-muted-foreground' : ''}>
+                Group drivetrain as a single row
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="group-cockpit"
+                checked={groupCockpit}
+                disabled={!hasCockpit}
+                onCheckedChange={(c) => setGroupCockpit(!!c)}
+              />
+              <Label htmlFor="group-cockpit" className={!hasCockpit ? 'text-muted-foreground' : ''}>
+                Group bar & stem as a single row
+              </Label>
+            </div>
           </div>
 
           <div className="border rounded-md">
