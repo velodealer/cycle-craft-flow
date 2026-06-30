@@ -98,6 +98,8 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     for (const r of cRows) initial[`component:${r.id}`] = { checked: false, value: '' };
     for (const r of pRows) initial[`part:${r.id}`] = { checked: false, value: r.currentCost };
     initial['group:drivetrain'] = { checked: false, value: '' };
+    initial['group:cockpit'] = { checked: false, value: '' };
+    initial['group:frame'] = { checked: false, value: '' };
     setKeep(initial);
   }, [bike]);
 
