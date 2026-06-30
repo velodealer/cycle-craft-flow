@@ -329,16 +329,29 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
             The bike's status changes to <span className="font-medium">Split for parts</span>.
           </p>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="group-drivetrain"
-              checked={groupDrivetrain}
-              disabled={!hasDrivetrain}
-              onCheckedChange={(c) => setGroupDrivetrain(!!c)}
-            />
-            <Label htmlFor="group-drivetrain" className={!hasDrivetrain ? 'text-muted-foreground' : ''}>
-              Group drivetrain as a single row
-            </Label>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="group-drivetrain"
+                checked={groupDrivetrain}
+                disabled={!hasDrivetrain}
+                onCheckedChange={(c) => setGroupDrivetrain(!!c)}
+              />
+              <Label htmlFor="group-drivetrain" className={!hasDrivetrain ? 'text-muted-foreground' : ''}>
+                Group drivetrain as a single row
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="group-cockpit"
+                checked={groupCockpit}
+                disabled={!hasCockpit}
+                onCheckedChange={(c) => setGroupCockpit(!!c)}
+              />
+              <Label htmlFor="group-cockpit" className={!hasCockpit ? 'text-muted-foreground' : ''}>
+                Group bar & stem as a single row
+              </Label>
+            </div>
           </div>
 
           <div className="border rounded-md">
