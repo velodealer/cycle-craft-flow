@@ -93,7 +93,8 @@ export default function BikeDetailView({
       'repair': 'Repair',
       'ready': 'Ready for Sale',
       'listed': 'Listed',
-      'sold': 'Sold'
+      'sold': 'Sold',
+      'split_for_parts': 'Split for parts'
     };
     return labels[stage] || stage;
   };
