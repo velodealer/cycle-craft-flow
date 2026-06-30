@@ -149,16 +149,6 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
-          
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Demo System</p>
-                <p>This is a demo of the VeloDealer system. Default role is mechanic, contact admin to change roles.</p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
