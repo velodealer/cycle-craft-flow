@@ -40,15 +40,18 @@ export default function BikeDetailView({
   const canSeePricing = showPricing && !isMechanic;
   const [partsCost, setPartsCost] = useState(0);
   const [jobsCost, setJobsCost] = useState(0);
+  const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
 
   const refreshCosts = async () => {
     if (!bike?.id) return;
-    const [{ data: jobs }, { data: parts }] = await Promise.all([
+    const [{ data: jobs }, { data: parts }, { data: stripped }] = await Promise.all([
       supabase.from('jobs').select('actual_cost, estimated_cost').eq('bike_id', bike.id),
       supabase.from('parts').select('cost_price, quantity').eq('bike_id', bike.id),
+      supabase.from('parts').select('cost_price, quantity').eq('stripped_from_bike_id', bike.id).eq('stock_status', 'in_stock'),
     ]);
     setJobsCost((jobs || []).reduce((s: number, j: any) => s + Number(j.actual_cost ?? j.estimated_cost ?? 0), 0));
     setPartsCost((parts || []).reduce((s: number, p: any) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0));
+    setStrippedInventoryValue((stripped || []).reduce((s: number, p: any) => s + Math.max(0, Number(p.cost_price ?? 0)) * Number(p.quantity ?? 1), 0));
   };
 
   useEffect(() => {
