@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
+import StripComponentDialog from './StripComponentDialog';
+import { PackageMinus } from 'lucide-react';
 import {
   BIKE_TYPES, FRAME_MATERIALS, GENDERS, CONDITIONS,
   SPEC_SECTIONS, applyTypeDefaults, getAtPath, setAtPath,
