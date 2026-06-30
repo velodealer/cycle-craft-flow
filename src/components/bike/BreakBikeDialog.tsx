@@ -42,6 +42,7 @@ type GroupRow = {
 type Row = ComponentRow | PartRow | GroupRow;
 
 const DRIVETRAIN_SLOTS = ['shifters', 'front_derailleur', 'rear_derailleur', 'cassette', 'chain', 'crank', 'brakes'];
+const COCKPIT_SLOTS = ['handlebars', 'stem'];
 
 const slotLabelMap: Record<string, string> = (() => {
   const m: Record<string, string> = {};
