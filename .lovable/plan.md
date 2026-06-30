@@ -1,34 +1,31 @@
-## Drivetrain grouping in Break dialog
+## Add bar+stem grouping and a Frame row to Break dialog
 
-### Drivetrain slots
-`['shifters', 'front_derailleur', 'rear_derailleur', 'cassette', 'chain', 'crankset', 'brake_calipers']`
-(constant in `BreakBikeDialog.tsx`; verify each name matches `SPEC_SECTIONS` slot keys — adjust if any differ).
+### 1. Bar & stem grouping
+- New constant `COCKPIT_SLOTS = ['handlebars', 'stem']`.
+- Second toggle above the list: **"Group bar & stem as a single row"** (disabled when neither slot is attached).
+- Synthetic group row, kind `'group'`, id `'cockpit'`, label `Cockpit — <brand>` (most common brand across the bundled slots, else `Cockpit`).
+- Save path mirrors the drivetrain group: one credit row on bike, one inventory row `Cockpit: <name> (Handlebars, Stem)`, delete the bundled `bike_components` rows in a single `.in('id', […])` call.
 
-### UI
-- Add a single `Checkbox` above the rows: **"Group drivetrain as a single row"** (default off).
-- When **off**: behaves as today, one row per component/part.
-- When **on**: all drivetrain component rows currently attached to the bike collapse into one synthetic row:
-  - Label: `Drivetrain — <groupset name>` where `<groupset name>` is the existing bike `groupset` field if set, otherwise the brand most common across drivetrain components, otherwise just `Drivetrain`.
-  - Sub-line lists the included slot labels (e.g. "Shifters, Rear derailleur, Chain, Cassette").
-  - Single Keep checkbox, single value input.
-- Non-drivetrain rows (parts, wheels, bars, saddle, etc.) stay as individual rows regardless of toggle.
+### 2. Frame row
+- Synthetic row at the top of the list, kind `'group'`, id `'frame'`, with `componentIds: []` and `slotLabels: []`.
+- Label: `Frame — <make> <model>` plus size if present (e.g. `Frame — BMC Teammachine SLR-01 (54)`).
+- Always present (frame is implicit on every bike).
+- On keep + save:
+  1. Insert credit row on bike: `description = 'Stripped: Frame — <…>'`, `cost_price = -value`, `stock_status = sold`, `type = secondhand_stripped`.
+  2. Insert inventory row: `description = 'Frame: <make> <model> (<size>)'`, `cost_price = value`, `stripped_from_bike_id = bike.id`, `stock_status = in_stock`, `type = secondhand_stripped`.
+  3. No `bike_components` delete (frame has no slot).
 
-### Save behaviour (grouped)
-When the synthetic drivetrain row is kept:
-1. Insert one credit row on the bike: `description = 'Stripped: Drivetrain — <groupset name>'`, `cost_price = -value`, `stock_status = sold`, `type = secondhand_stripped`.
-2. Insert one inventory parts row: `description = 'Drivetrain: <groupset name>'`, `cost_price = value`, `stripped_from_bike_id = bike.id`, `stock_status = in_stock`, `type = secondhand_stripped`, plus a `notes` field listing the included slot labels.
-3. Delete all the corresponding `bike_components` rows for the drivetrain slots in a single `.in('id', [...])` call.
-
-If the drivetrain row is **not** ticked while grouping is on, the underlying drivetrain components remain on the bike — same as unticking any other row today.
+### 3. Row ordering
+Frame → Cockpit (if grouped) → Drivetrain (if grouped) → remaining components → parts.
 
 ### Edge cases
-- Grouping checkbox is disabled (and forced off) when zero drivetrain components are attached.
-- Headroom/overspent math is unchanged — synthetic row contributes its single value.
-- Toggling the checkbox resets only the drivetrain entries in `keep` state; other rows keep their checked/value state.
+- Grouping toggles independently disable when the relevant slots aren't attached.
+- Headroom math unchanged — all kept rows (including Frame) contribute to total.
+- Frame row credit means a fully-kept bike (frame + all components at their bike-cost share) zeroes headroom, matching today's component-strip accounting.
 
 ### Files
 
 **Edited**
-- `src/components/bike/BreakBikeDialog.tsx` — drivetrain slot list, grouping toggle, synthetic row rendering, grouped save path.
+- `src/components/bike/BreakBikeDialog.tsx` — add `COCKPIT_SLOTS`, second toggle, frame synthetic row generation, save branch tweaks to handle frame (no slot delete).
 
-No schema changes, no other files touched.
+No schema, no other files.
