@@ -13,6 +13,29 @@ export default function Auth() {
   const { user, profile, signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast({ title: "Enter your email", variant: "destructive" });
+      return;
+    }
+    setResetLoading(true);
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      toast({ title: "Error sending reset email", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password reset email sent", description: "Check your inbox for the reset link." });
+      setResetOpen(false);
+      setResetEmail('');
+    }
+  };
 
   if (user) {
     return <Navigate to={profile?.role === "investor" ? "/investor" : "/dashboard"} replace />;
