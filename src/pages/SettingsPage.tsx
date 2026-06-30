@@ -1,6 +1,7 @@
 import PlaceholderPage from '@/components/PlaceholderPage';
 import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
+import ListingFormats from '@/components/settings/ListingFormats';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
