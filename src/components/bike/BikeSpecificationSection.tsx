@@ -303,6 +303,17 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
           ))}
         </Accordion>
       </CardContent>
+      {stripping && (
+        <StripComponentDialog
+          open={!!stripping}
+          onOpenChange={(v) => !v && setStripping(null)}
+          bikeId={bike.id}
+          slot={stripping.slot}
+          slotLabel={stripping.label}
+          componentId={stripping.componentId}
+          onDone={() => { reloadComponents(); onUpdate(); }}
+        />
+      )}
     </Card>
   );
 }
