@@ -468,6 +468,8 @@ export default function BikeDetailView({
           onSuccess={onUpdate}
         />
       )}
+
+      <BreakBikeDialog open={showBreak} onOpenChange={setShowBreak} bike={bike} onDone={onUpdate} />
     </div>
   );
 }
