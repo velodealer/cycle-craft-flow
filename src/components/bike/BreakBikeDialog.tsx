@@ -60,6 +60,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
   const [bikeTotalCost, setBikeTotalCost] = useState(0);
   const [saving, setSaving] = useState(false);
   const [groupDrivetrain, setGroupDrivetrain] = useState(false);
+  const [groupCockpit, setGroupCockpit] = useState(false);
 
   const load = useCallback(async () => {
     const [{ data: comps }, { data: parts }, { data: jobs }] = await Promise.all([
