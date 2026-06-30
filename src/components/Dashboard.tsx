@@ -78,6 +78,7 @@ const roleConfigs: Record<UserRole, RoleConfig> = {
 export default function Dashboard() {
   const { user, profile, signOut, loading } = useAuth();
   const { toast } = useToast();
+  const { counts, loading: countsLoading } = useDashboardCounts();
 
   if (loading) {
     return (
