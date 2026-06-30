@@ -109,6 +109,18 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
             .eq('id', r.id);
           if (error) throw error;
         } else {
+          // Credit on the bike (reduces parts cost)
+          const { error: creditErr } = await supabase.from('parts').insert({
+            bike_id: bike.id,
+            description: `Stripped: ${r.label} — ${r.description}`,
+            brand: r.brand || null,
+            cost_price: -Math.abs(value),
+            quantity: 1,
+            stock_status: 'sold' as any,
+            type: 'secondhand_stripped' as any,
+          } as any);
+          if (creditErr) throw creditErr;
+          // New inventory part
           const { error: insErr } = await supabase.from('parts').insert({
             description: `${r.label}: ${r.description}`,
             brand: r.brand || null,
