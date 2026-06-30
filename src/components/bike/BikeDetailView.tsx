@@ -11,6 +11,7 @@ import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import BikeCostsSection from './BikeCostsSection';
+import BikeSpecificationSection from './BikeSpecificationSection';
 
 interface BikeDetailViewProps {
   bike: any;
@@ -222,6 +223,9 @@ export default function BikeDetailView({
               )}
             </CardContent>
           </Card>
+
+          {/* Full bike specification */}
+          <BikeSpecificationSection bike={bike} onUpdate={onUpdate} />
 
           {/* Parts & Labour */}
           {canSeePricing && (
