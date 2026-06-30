@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, PackageMinus, PackagePlus } from 'lucide-react';
+import StripPartDialog from './StripPartDialog';
+import AddPartFromInventoryDialog from './AddPartFromInventoryDialog';
 
 interface Props {
   bikeId: string;
@@ -24,6 +26,8 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
   const [jobs, setJobs] = useState<any[]>([]);
   const [showPart, setShowPart] = useState(false);
   const [showJob, setShowJob] = useState(false);
+  const [showAddFromInv, setShowAddFromInv] = useState(false);
+  const [stripPart, setStripPart] = useState<any | null>(null);
 
   const load = useCallback(async () => {
     const [p, j] = await Promise.all([
@@ -57,9 +61,12 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
             <h4 className="text-sm font-semibold">Parts</h4>
-            <Button size="sm" variant="outline" onClick={() => setShowPart(true)}><Plus className="h-4 w-4 mr-1" />Add part</Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setShowAddFromInv(true)}><PackagePlus className="h-4 w-4 mr-1" />Add from inventory</Button>
+              <Button size="sm" variant="outline" onClick={() => setShowPart(true)}><Plus className="h-4 w-4 mr-1" />Add part</Button>
+            </div>
           </div>
           {parts.length === 0 ? (
             <p className="text-sm text-muted-foreground">No parts added.</p>
@@ -83,7 +90,8 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
                       <TableCell>{fmt(p.cost_price)}</TableCell>
                       <TableCell>{fmt(Number(p.cost_price ?? 0) * Number(p.quantity ?? 1))}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => removePart(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Strip to inventory" onClick={() => setStripPart(p)}><PackageMinus className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Delete" onClick={() => removePart(p.id)}><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -133,6 +141,8 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
 
       <AddPartDialog open={showPart} onOpenChange={setShowPart} bikeId={bikeId} onSaved={refresh} />
       <AddJobDialog open={showJob} onOpenChange={setShowJob} bikeId={bikeId} onSaved={refresh} />
+      <AddPartFromInventoryDialog open={showAddFromInv} onOpenChange={setShowAddFromInv} bikeId={bikeId} onSaved={refresh} />
+      <StripPartDialog open={!!stripPart} onOpenChange={(v) => !v && setStripPart(null)} part={stripPart} bikeId={bikeId} onSaved={refresh} />
     </Card>
   );
 }

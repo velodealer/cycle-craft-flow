@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
+import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import { CollectionStatus } from './CollectionStatus';
@@ -33,6 +34,7 @@ export default function BikeDetailView({
   showDescriptions = true
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
+  const [showBreak, setShowBreak] = useState(false);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
   const canSeePricing = showPricing && !isMechanic;
@@ -91,7 +93,8 @@ export default function BikeDetailView({
       'repair': 'Repair',
       'ready': 'Ready for Sale',
       'listed': 'Listed',
-      'sold': 'Sold'
+      'sold': 'Sold',
+      'split_for_parts': 'Split for parts'
     };
     return labels[stage] || stage;
   };
@@ -133,6 +136,12 @@ export default function BikeDetailView({
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
+          {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
+            <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
+              <Wrench className="h-4 w-4 mr-2" />
+              Break bike
+            </Button>
+          )}
           {previousStage && (
             <Button
               variant="outline"
@@ -460,6 +469,8 @@ export default function BikeDetailView({
           onSuccess={onUpdate}
         />
       )}
+
+      <BreakBikeDialog open={showBreak} onOpenChange={setShowBreak} bike={bike} onDone={onUpdate} />
     </div>
   );
 }
