@@ -39,6 +39,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
       let query = supabase
         .from('parts')
         .select('*')
+        .is('bike_id', null)
         .order('created_at', { ascending: false });
 
       if (typeFilter !== 'all') {
