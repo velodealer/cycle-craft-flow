@@ -62,18 +62,13 @@ export default function InvestorBikePage() {
   const grossProfit = revenue - totalCosts;
   const isMargin = bike.finance_scheme === 'margin_scheme';
   const isVatQualifying = bike.finance_scheme === 'vat_qualifying';
-  const vatOnMargin = isMargin ? Math.max(0, grossProfit) * 20 / 120 : 0;
+  const vatOnMargin = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
   const netProfit = grossProfit - vatOnMargin;
   const sharePct = Number(bike.profit_share_pct || 0);
   const myReturn = Math.max(0, netProfit) * (sharePct / 100);
   const siv = isMargin ? acquisition + prep * 1.2
             : isVatQualifying ? totalCosts * 1.2
             : totalCosts;
-  const sivExplain = isMargin
-    ? 'Lowest sale price that covers all costs including margin-scheme VAT (1/6 of gross margin).'
-    : isVatQualifying
-      ? 'Lowest sale price that covers all costs plus 20% output VAT (VAT-qualifying scheme).'
-      : 'Lowest sale price that covers all costs.';
   const headroom = revenue - siv;
 
   const Row = ({ label, value, negative, bold, muted, sub }: { label: string; value: string; negative?: boolean; bold?: boolean; muted?: boolean; sub?: string }) => (
@@ -121,7 +116,7 @@ export default function InvestorBikePage() {
             <Row label="Total costs" value={fmt(totalCosts)} bold />
             <Row label="Gross profit" value={fmt(grossProfit)} bold negative={grossProfit < 0} />
             {isMargin && (
-              <Row label="VAT (margin scheme)" sub="20% VAT on gross margin paid to HMRC" value={`− ${fmt(vatOnMargin)}`} muted />
+              <Row label="VAT (margin scheme)" value={`− ${fmt(vatOnMargin)}`} muted />
             )}
             <Row label="Net profit" value={fmt(netProfit)} bold negative={netProfit < 0} />
             <Row label={`Your share (${sharePct}%)`} value={fmt(myReturn)} bold />
@@ -129,10 +124,7 @@ export default function InvestorBikePage() {
 
           <div className="mt-4 p-3 rounded-md border bg-muted/30 space-y-1">
             <div className="flex justify-between items-baseline">
-              <div>
-                <div className="text-sm font-semibold">Stand-In Value (break-even price)</div>
-                <div className="text-xs text-muted-foreground">{sivExplain}</div>
-              </div>
+              <div className="text-sm font-semibold">Stand-In Value (break-even price)</div>
               <div className="text-lg font-semibold">{fmt(siv)}</div>
             </div>
             {revenue > 0 && (
@@ -147,7 +139,7 @@ export default function InvestorBikePage() {
 
       <div className="grid md:grid-cols-3 gap-4">
         <Card><CardHeader><CardTitle>Total invested costs</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{fmt(totalCosts)}</CardContent></Card>
-        <Card><CardHeader><CardTitle>Net profit</CardTitle></CardHeader><CardContent><div className={`text-2xl font-bold ${netProfit < 0 ? 'text-destructive' : ''}`}>{fmt(netProfit)}</div>{isMargin && <div className="text-xs text-muted-foreground">After {fmt(vatOnMargin)} VAT</div>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Net profit</CardTitle></CardHeader><CardContent><div className={`text-2xl font-bold ${netProfit < 0 ? 'text-destructive' : ''}`}>{fmt(netProfit)}</div></CardContent></Card>
         <Card><CardHeader><CardTitle>Your return</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{fmt(myReturn)}</div><div className="text-xs text-muted-foreground">{sharePct}% of net {isSold ? '(realised)' : '(estimated)'}</div></CardContent></Card>
       </div>
 
