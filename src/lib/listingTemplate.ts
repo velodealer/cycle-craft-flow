@@ -109,11 +109,52 @@ export async function fetchTemplates() {
 
 }
 
+function htmlToPlain(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|tr)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+async function copyHtmlWithExecCommand(html: string): Promise<boolean> {
+  try {
+    const container = document.createElement('div');
+    container.contentEditable = 'true';
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.opacity = '0';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    const ok = document.execCommand('copy');
+    sel?.removeAllRanges();
+    document.body.removeChild(container);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function copyListing(
   platform: ListingPlatform,
   bike: any,
   components: any[] = [],
-): Promise<{ ok: boolean; reason?: string }> {
+): Promise<{ ok: boolean; format?: ListingFormat; reason?: string }> {
   const { data, error } = await supabase
     .from('listing_templates' as any)
     .select('*')
@@ -122,20 +163,38 @@ export async function copyListing(
   if (error) return { ok: false, reason: error.message };
   if (!data) return { ok: false, reason: 'No template configured' };
   const tpl = data as any;
+  const format: ListingFormat = tpl.format === 'html' ? 'html' : 'text';
   const rendered = renderTemplate(tpl.body || '', bike, components);
-  try {
-    if (tpl.format === 'html' && typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-      const plain = rendered.replace(/<[^>]+>/g, '');
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html': new Blob([rendered], { type: 'text/html' }),
-          'text/plain': new Blob([plain], { type: 'text/plain' }),
-        }),
-      ]);
-    } else {
-      await navigator.clipboard.writeText(rendered);
+
+  if (format === 'html') {
+    const plain = htmlToPlain(rendered);
+    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([rendered], { type: 'text/html' }),
+            'text/plain': new Blob([plain], { type: 'text/plain' }),
+          }),
+        ]);
+        return { ok: true, format };
+      } catch {
+        // fall through to execCommand
+      }
     }
-    return { ok: true };
+    if (await copyHtmlWithExecCommand(rendered)) {
+      return { ok: true, format };
+    }
+    try {
+      await navigator.clipboard.writeText(plain);
+      return { ok: true, format: 'text', reason: 'HTML clipboard unsupported; copied plain text' };
+    } catch (e: any) {
+      return { ok: false, reason: e?.message || 'Clipboard failed' };
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(rendered);
+    return { ok: true, format };
   } catch (e: any) {
     return { ok: false, reason: e?.message || 'Clipboard failed' };
   }
