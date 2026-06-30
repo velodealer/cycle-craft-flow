@@ -131,6 +131,35 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={() => setResetOpen((v) => !v)}
+                >
+                  Forgot password?
+                </Button>
+                {resetOpen && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label htmlFor="reset-email">Reset password email</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={handleResetPassword}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? "Sending..." : "Send reset link"}
+                    </Button>
+                  </div>
+                )}
               </form>
             </TabsContent>
             
