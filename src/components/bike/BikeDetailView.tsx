@@ -135,6 +135,12 @@ export default function BikeDetailView({
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
+          {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
+            <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
+              <Wrench className="h-4 w-4 mr-2" />
+              Break bike
+            </Button>
+          )}
           {previousStage && (
             <Button
               variant="outline"
