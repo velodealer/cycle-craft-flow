@@ -265,16 +265,34 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                 <div className="space-y-4">
                   {s.slots && s.slots.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {s.slots.map((slot) => (
-                        <div key={slot.slot}>
-                          <Label>{slot.label}</Label>
-                          <ComponentPicker
-                            categorySlug={slot.categorySlug}
-                            value={bikeComponents[slot.slot] || null}
-                            onChange={(id) => onSlotChange(slot, id)}
-                          />
-                        </div>
-                      ))}
+                      {s.slots.map((slot) => {
+                        const linkedId = bikeComponents[slot.slot] || null;
+                        return (
+                          <div key={slot.slot}>
+                            <Label>{slot.label}</Label>
+                            <div className="flex gap-1 items-start">
+                              <div className="flex-1">
+                                <ComponentPicker
+                                  categorySlug={slot.categorySlug}
+                                  value={linkedId}
+                                  onChange={(id) => onSlotChange(slot, id)}
+                                />
+                              </div>
+                              {linkedId && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  title="Strip to inventory"
+                                  onClick={() => setStripping({ slot: slot.slot, label: slot.label, componentId: linkedId })}
+                                >
+                                  <PackageMinus className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   {s.fields && s.fields.length > 0 && (
