@@ -43,15 +43,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
 
   useEffect(() => { setDraft(bike); }, [bike]);
 
-  useEffect(() => {
-    if (!bike?.id) return;
-    supabase.from('bike_components').select('slot, component_id').eq('bike_id', bike.id)
-      .then(({ data }) => {
-        const map: Record<string, string> = {};
-        (data || []).forEach((r: any) => { map[r.slot] = r.component_id; });
-        setBikeComponents(map);
-      });
-  }, [bike?.id]);
+  useEffect(() => { reloadComponents(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [bike?.id]);
 
   const visibleSections = useMemo(() => SPEC_SECTIONS.filter((s) => !s.show || s.show(draft)), [draft]);
 
