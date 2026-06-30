@@ -34,6 +34,7 @@ export default function BikeDetailView({
   showDescriptions = true
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
+  const [showBreak, setShowBreak] = useState(false);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
   const canSeePricing = showPricing && !isMechanic;
