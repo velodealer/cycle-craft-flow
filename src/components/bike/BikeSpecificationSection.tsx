@@ -29,6 +29,17 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [bikeComponents, setBikeComponents] = useState<Record<string, string>>({}); // slot -> component_id
+  const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
+
+  const reloadComponents = () => {
+    if (!bike?.id) return;
+    supabase.from('bike_components').select('slot, component_id').eq('bike_id', bike.id)
+      .then(({ data }) => {
+        const map: Record<string, string> = {};
+        (data || []).forEach((r: any) => { map[r.slot] = r.component_id; });
+        setBikeComponents(map);
+      });
+  };
 
   useEffect(() => { setDraft(bike); }, [bike]);
 
