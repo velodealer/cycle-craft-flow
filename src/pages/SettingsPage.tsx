@@ -109,6 +109,12 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="listings" className="space-y-4">
+          <ListingFormats />
+        </TabsContent>
+
+
+
         <TabsContent value="security" className="space-y-4">
           <Card>
             <CardHeader>
