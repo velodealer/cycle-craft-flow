@@ -642,6 +642,33 @@ export type Database = {
           },
         ]
       }
+      listing_templates: {
+        Row: {
+          body: string
+          format: string
+          id: string
+          platform: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string
+          format?: string
+          id?: string
+          platform: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          format?: string
+          id?: string
+          platform?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       parts: {
         Row: {
           bike_id: string | null

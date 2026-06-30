@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
@@ -13,6 +13,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import BikeCostsSection from './BikeCostsSection';
 import BikeSpecificationSection from './BikeSpecificationSection';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { copyListing, PLATFORMS, type ListingPlatform } from '@/lib/listingTemplate';
+import { toast } from '@/hooks/use-toast';
+
 
 interface BikeDetailViewProps {
   bike: any;
@@ -41,6 +50,7 @@ export default function BikeDetailView({
   const [partsCost, setPartsCost] = useState(0);
   const [jobsCost, setJobsCost] = useState(0);
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
+  const [bikeComponents, setBikeComponents] = useState<any[]>([]);
 
   const refreshCosts = async () => {
     if (!bike?.id) return;
@@ -49,6 +59,7 @@ export default function BikeDetailView({
       supabase.from('parts').select('cost_price, quantity').eq('bike_id', bike.id),
       supabase.from('parts').select('cost_price, quantity').eq('stripped_from_bike_id', bike.id).eq('stock_status', 'in_stock'),
     ]);
+
     setJobsCost((jobs || []).reduce((s: number, j: any) => s + Number(j.actual_cost ?? j.estimated_cost ?? 0), 0));
     setPartsCost((parts || []).reduce((s: number, p: any) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0));
     setStrippedInventoryValue((stripped || []).reduce((s: number, p: any) => s + Math.max(0, Number(p.cost_price ?? 0)) * Number(p.quantity ?? 1), 0));
@@ -59,6 +70,33 @@ export default function BikeDetailView({
     refreshCosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canSeePricing, bike?.id]);
+
+  useEffect(() => {
+    if (!bike?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from('bike_components')
+        .select('*, components(name, brand, model, component_categories(name))')
+        .eq('bike_id', bike.id);
+      const flat = (data || []).map((row: any) => ({
+        brand: row.components?.brand,
+        model: row.components?.model,
+        name: row.components?.name,
+        category: row.components?.component_categories?.name,
+      }));
+      setBikeComponents(flat);
+    })();
+  }, [bike?.id]);
+
+  const handleCopyListing = async (platform: ListingPlatform) => {
+    const res = await copyListing(platform, bike, bikeComponents);
+    if (res.ok) {
+      toast({ title: `Copied ${platform} listing` });
+    } else {
+      toast({ title: 'Copy failed', description: res.reason, variant: 'destructive' });
+    }
+  };
+
 
   const allStages = (hasCollection: boolean = true) => {
     // Build a single ordered list; we don't know if a collection exists here without a query,
@@ -139,6 +177,21 @@ export default function BikeDetailView({
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy listing
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {PLATFORMS.map((p) => (
+                <DropdownMenuItem key={p.value} onClick={() => handleCopyListing(p.value)}>
+                  {p.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
             <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
               <Wrench className="h-4 w-4 mr-2" />
