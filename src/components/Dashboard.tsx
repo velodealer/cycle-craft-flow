@@ -25,6 +25,7 @@ import {
   Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDashboardCounts } from '@/hooks/useDashboardCounts';
 
 type UserRole = 'admin' | 'mechanic' | 'detailer' | 'accountant' | 'owner';
 
