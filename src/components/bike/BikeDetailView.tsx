@@ -177,6 +177,21 @@ export default function BikeDetailView({
             <Edit className="h-4 w-4 mr-2" />
             Edit Bike
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy listing
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {PLATFORMS.map((p) => (
+                <DropdownMenuItem key={p.value} onClick={() => handleCopyListing(p.value)}>
+                  {p.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
             <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
               <Wrench className="h-4 w-4 mr-2" />
