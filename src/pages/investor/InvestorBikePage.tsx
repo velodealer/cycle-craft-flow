@@ -116,7 +116,7 @@ export default function InvestorBikePage() {
             <Row label="Total costs" value={fmt(totalCosts)} bold />
             <Row label="Gross profit" value={fmt(grossProfit)} bold negative={grossProfit < 0} />
             {isMargin && (
-              <Row label="VAT (margin scheme)" sub="20% VAT on gross margin paid to HMRC" value={`− ${fmt(vatOnMargin)}`} muted />
+              <Row label="VAT (margin scheme)" value={`− ${fmt(vatOnMargin)}`} muted />
             )}
             <Row label="Net profit" value={fmt(netProfit)} bold negative={netProfit < 0} />
             <Row label={`Your share (${sharePct}%)`} value={fmt(myReturn)} bold />
@@ -124,10 +124,7 @@ export default function InvestorBikePage() {
 
           <div className="mt-4 p-3 rounded-md border bg-muted/30 space-y-1">
             <div className="flex justify-between items-baseline">
-              <div>
-                <div className="text-sm font-semibold">Stand-In Value (break-even price)</div>
-                <div className="text-xs text-muted-foreground">{sivExplain}</div>
-              </div>
+              <div className="text-sm font-semibold">Stand-In Value (break-even price)</div>
               <div className="text-lg font-semibold">{fmt(siv)}</div>
             </div>
             {revenue > 0 && (
