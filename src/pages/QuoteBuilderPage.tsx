@@ -26,18 +26,26 @@ import {
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
 
 const CATEGORIES = [
-  "Frame", "Fork", "Wheelset", "Groupset", "Shifters", "Derailleurs",
-  "Crankset", "Cassette", "Chain", "Brakes", "Bars", "Stem", "Seatpost",
-  "Saddle", "Tyres", "Pedals", "Accessories", "Labour", "Other",
+  "Bike", "Frame", "Fork", "Wheels", "Wheelset", "Groupset", "Shifters", "Derailleurs",
+  "Crankset", "Cassette", "Chain", "Brakes", "Handlebar", "Bars", "Stem", "Seatpost",
+  "Saddle", "Tyres", "Tubes", "Bar tape", "Pedals", "Accessories", "Labour", "Other",
 ];
 
-const newRow = (): QuoteRow => ({
+const PRESET_CATEGORIES = [
+  "Frame", "Seatpost", "Stem", "Handlebar", "Groupset",
+  "Wheels", "Tyres", "Tubes", "Saddle", "Bar tape",
+];
+
+const newRow = (category = "Other", parentId: string | null = null): QuoteRow => ({
   id: crypto.randomUUID(),
   description: "",
-  category: "Other",
+  category,
   qty: 1,
   unitCost: 0,
+  parentId,
 });
+
+const presetRows = (): QuoteRow[] => PRESET_CATEGORIES.map((c) => newRow(c));
 
 const gbp = (n: number) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 2 })
