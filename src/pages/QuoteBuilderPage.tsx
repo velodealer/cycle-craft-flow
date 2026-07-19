@@ -153,6 +153,7 @@ export default function QuoteBuilderPage() {
       category: r.category ?? "Other",
       qty: Number(r.qty) || 0,
       unitCost: Number(r.unitCost) || 0,
+      parentId: r.parentId ?? null,
     }));
     setRows(restored.length ? restored : [newRow()]);
     setDirty(true);
