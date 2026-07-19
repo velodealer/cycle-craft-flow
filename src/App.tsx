@@ -21,6 +21,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import OwnersPage from "./pages/OwnersPage";
 import ReportsPage from "./pages/ReportsPage";
 import QuoteBuilderPage from "./pages/QuoteBuilderPage";
+import QuoteListPage from "./pages/QuoteListPage";
 import SettingsPage from "./pages/SettingsPage";
 import LogisticsPage from "./pages/LogisticsPage";
 import SocialDashboardPage from "./pages/social/SocialDashboardPage";
