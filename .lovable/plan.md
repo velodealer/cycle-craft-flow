@@ -1,52 +1,52 @@
-## Quote Builder — Preset rows & nested credit sub-lines
+## Quote Builder — VAT display & scheme toggle
 
-### 1. Pre-fill basic components on new quote
-When starting a new quote, seed the rows list with 10 blank rows (qty 1, unit cost 0), one per category:
+### Goal
+Show VAT on each component line and on the totals, with a scheme toggle:
+- **Standard (20%)**: each line's unit cost is treated as net; VAT = line net × 20%. Total VAT = sum of line VAT. Sale price is treated as gross (VAT-inclusive).
+- **Margin scheme**: VAT = 0 on every line. Final VAT = (sale price − total cost) × 1/6, only if positive. Sale price is gross.
 
-Frame, Seatpost, Stem, Handlebar, Groupset, Wheels, Tyres, Tubes, Saddle, Bar tape.
+Assumptions (flag if wrong):
+- Unit costs entered on lines are **net** amounts under standard scheme.
+- Sale price stays a **gross** figure the customer pays; profit metrics keep using `sale − cost` as today (i.e. the margin/markup/ROI numbers don't change definition — VAT is shown alongside, not folded into profit).
+- Child (credit) rows follow the same scheme as their parent (standard: −20% VAT credit; margin: £0 VAT).
+- Scheme is per-quote, persisted with the quote, and captured in each version snapshot.
 
-- Add matching entries to the `CATEGORIES` list in `QuoteBuilderPage.tsx` (currently missing "Bar tape", "Tubes" — the rest exist or map cleanly; "Wheels" replaces or joins "Wheelset").
-- Editing an existing quote continues to load whatever rows were saved (unchanged).
-
-### 2. Nested credit sub-lines under a bike row
-Extend `QuoteRow` so any row can act as a **parent "bike"** with indented **child credit rows** beneath it. Child rows are entered as positive numbers but subtracted from the parent's effective cost and from the quote total.
-
-Data model change in `src/lib/quotes.ts`:
+### Data model (`src/lib/quotes.ts`)
+Add a `vat_scheme` field:
 
 ```ts
-export type QuoteRow = {
-  id: string;
-  description: string;
-  category: string;
-  qty: number;
-  unitCost: number;
-  parentId?: string | null;   // NEW — if set, this row is a credit under parentId
+export type VatScheme = "standard" | "margin";
+
+export type Quote = {
+  // ...existing
+  vat_scheme: VatScheme;
 };
 ```
 
-`computeTotalCost` becomes:
+- Persist `vat_scheme` on `quotes` and `quote_versions`. Column is `text` with default `'standard'`; existing rows backfill to `'standard'`. Requires a small migration adding the column to both tables.
+- `saveQuote` / restore paths thread the value through.
+- Add helpers:
+  - `lineVat(row, scheme)` → 20% of `qty × unitCost` for standard (negative for child rows), else 0.
+  - `computeVat(rows, salePrice, scheme)` → returns `{ lineVatTotal, marginVat, totalVat }` where `marginVat = scheme === "margin" ? max(0, (sale − cost) × 1/6) : 0`.
 
-```text
-total = Σ parent rows (qty × unitCost)  -  Σ child rows (qty × unitCost)
-```
+### UI (`src/pages/QuoteBuilderPage.tsx`)
+1. **Scheme selector** in the "Details" card: segmented control / Select with "Standard VAT (20%)" and "Margin scheme (VAT on profit)". Marks dirty on change.
+2. **Components table**: add a "VAT" column between "Unit cost" and "Total". Renders `£0.00` (muted) under margin, or 20% of the line under standard; child rows show `− £X` in destructive tone. Mobile layout gets a matching row label.
+3. **Totals block** below "Add component":
+   - Total (net) cost
+   - VAT on parts (standard only; £0 for margin)
+   - Total (gross) cost
+4. **Results card** (Sale price / Results): add a compact VAT summary line:
+   - Standard: "VAT already included in cost lines: £X"
+   - Margin: "VAT due on margin (1/6 of profit): £Y" — shows £0 when profit ≤ 0.
+   No change to Profit / Margin / Markup / ROI formulas.
 
-Backward compatible: existing saved rows have no `parentId`, behave as before.
-
-### 3. UI in `QuoteBuilderPage.tsx`
-- New "Deduct part from this" button on every parent row → inserts a child row directly beneath it with `parentId` set and category defaulted to "Wheels".
-- Child rows render:
-  - Indented (left padding), muted red text, minus-sign prefix on line total.
-  - "Removed from: {parent description}" hint.
-  - Cannot themselves have children (button hidden).
-- Parent row shows an **effective cost** sub-line below its total: `£X (bike) − £Y (parts removed) = £Z`.
-- Deleting a parent also deletes its children.
-- "Add component" adds a new top-level row (unchanged).
-
-### 4. History / versioning
-No schema change needed — `rows` is `jsonb`. New `parentId` field is persisted transparently. Old versions restore as flat rows (no children), which is correct.
+### History
+`QuoteHistoryPanel` restore path passes `vat_scheme` through so restoring an old version also restores its scheme.
 
 ### Files to change
-- `src/lib/quotes.ts` — add `parentId` to type, update `computeTotalCost` to subtract children.
-- `src/pages/QuoteBuilderPage.tsx` — seed 10 preset rows, add "Bar tape"/"Tubes" to `CATEGORIES`, render nested UI, add/remove child logic, cascade delete.
-
-No database migration required.
+- `supabase` migration: add `vat_scheme text not null default 'standard'` to `quotes` and `quote_versions`.
+- `src/lib/quotes.ts` — type, save/load, VAT helpers.
+- `src/pages/QuoteBuilderPage.tsx` — scheme selector, per-line VAT column, totals, results VAT line.
+- `src/components/quotes/QuoteHistoryPanel.tsx` — include scheme in restore payload.
+- `src/pages/QuoteListPage.tsx` — (optional) small badge showing scheme; skip if not wanted.
