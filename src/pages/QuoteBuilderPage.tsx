@@ -120,11 +120,26 @@ export default function QuoteBuilderPage() {
     markDirty();
   };
   const removeRow = (rid: string) => {
-    setRows((rs) => (rs.length > 1 ? rs.filter((r) => r.id !== rid) : rs));
+    setRows((rs) => {
+      const filtered = rs.filter((r) => r.id !== rid && r.parentId !== rid);
+      return filtered.length ? filtered : [newRow()];
+    });
     markDirty();
   };
   const addRow = () => {
     setRows((rs) => [...rs, newRow()]);
+    markDirty();
+  };
+  const addChildRow = (parentId: string) => {
+    setRows((rs) => {
+      const idx = rs.findIndex((r) => r.id === parentId);
+      if (idx < 0) return rs;
+      // insert after parent and any existing children of that parent
+      let insertAt = idx + 1;
+      while (insertAt < rs.length && rs[insertAt].parentId === parentId) insertAt++;
+      const child = newRow("Wheels", parentId);
+      return [...rs.slice(0, insertAt), child, ...rs.slice(insertAt)];
+    });
     markDirty();
   };
 
