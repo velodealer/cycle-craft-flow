@@ -60,6 +60,7 @@ const App = () => (
             <Route path="/invoices" element={guarded(<Layout><InvoicesPage /></Layout>)} />
             <Route path="/owners" element={guarded(<Layout><OwnersPage /></Layout>)} />
             <Route path="/reports" element={guarded(<Layout><ReportsPage /></Layout>)} />
+            <Route path="/quote-builder" element={guarded(<Layout><QuoteBuilderPage /></Layout>)} />
             <Route path="/settings" element={guarded(<Layout><SettingsPage /></Layout>)} />
             <Route path="/social" element={guarded(<Layout><SocialDashboardPage /></Layout>)} />
             <Route path="/social/calendar" element={guarded(<Layout><SocialCalendarPage /></Layout>)} />
