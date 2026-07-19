@@ -64,7 +64,7 @@ export default function QuoteBuilderPage() {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [salePrice, setSalePrice] = useState<number>(0);
-  const [rows, setRows] = useState<QuoteRow[]>([newRow(), newRow(), newRow()]);
+  const [rows, setRows] = useState<QuoteRow[]>(presetRows());
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
