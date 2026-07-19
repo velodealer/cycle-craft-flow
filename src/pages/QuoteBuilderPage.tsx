@@ -286,18 +286,29 @@ export default function QuoteBuilderPage() {
 
           {rows.map((r) => {
             const lineTotal = (r.qty || 0) * (r.unitCost || 0);
+            const isChild = !!r.parentId;
+            const parent = isChild ? rows.find((p) => p.id === r.parentId) : null;
             return (
               <div
                 key={r.id}
-                className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center border rounded-md p-3 md:border-0 md:p-0"
+                className={`grid grid-cols-1 md:grid-cols-12 gap-2 items-center border rounded-md p-3 md:border-0 md:p-0 ${
+                  isChild ? "md:pl-8 border-l-2 border-l-destructive/40 bg-destructive/5 md:bg-transparent" : ""
+                }`}
               >
                 <div className="md:col-span-4">
                   <Label className="md:hidden text-xs">Description</Label>
-                  <Input
-                    placeholder="e.g. Enve SES 5.6 Wheelset"
-                    value={r.description}
-                    onChange={(e) => updateRow(r.id, { description: e.target.value })}
-                  />
+                  <div className="flex items-center gap-2">
+                    {isChild && <Minus className="h-4 w-4 text-destructive shrink-0" />}
+                    <Input
+                      placeholder={
+                        isChild
+                          ? `Part removed from ${parent?.description || "bike"}`
+                          : "e.g. Enve SES 5.6 Wheelset"
+                      }
+                      value={r.description}
+                      onChange={(e) => updateRow(r.id, { description: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div className="md:col-span-3">
                   <Label className="md:hidden text-xs">Category</Label>
@@ -339,13 +350,28 @@ export default function QuoteBuilderPage() {
                     onChange={(e) => updateRow(r.id, { unitCost: Number(e.target.value) || 0 })}
                   />
                 </div>
-                <div className="md:col-span-1 md:text-right font-medium tabular-nums">
+                <div
+                  className={`md:col-span-1 md:text-right font-medium tabular-nums ${
+                    isChild ? "text-destructive" : ""
+                  }`}
+                >
                   <span className="md:hidden text-xs text-muted-foreground mr-2">
                     Line total:
                   </span>
-                  {gbp(lineTotal)}
+                  {isChild ? `− ${gbp(lineTotal)}` : gbp(lineTotal)}
                 </div>
-                <div className="md:col-span-1 flex md:justify-end">
+                <div className="md:col-span-1 flex md:justify-end gap-1">
+                  {!isChild && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => addChildRow(r.id)}
+                      aria-label="Deduct part from this row"
+                      title="Deduct part from this row"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
