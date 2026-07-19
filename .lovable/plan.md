@@ -1,59 +1,52 @@
-## Save, edit & version quotes
+## Quote Builder — Preset rows & nested credit sub-lines
 
-Extend the Quote Builder so quotes are stored in Supabase, can be reopened and edited later, and every save creates an immutable snapshot for auditing.
+### 1. Pre-fill basic components on new quote
+When starting a new quote, seed the rows list with 10 blank rows (qty 1, unit cost 0), one per category:
 
-### Data model (migration)
+Frame, Seatpost, Stem, Handlebar, Groupset, Wheels, Tyres, Tubes, Saddle, Bar tape.
 
-Two new tables in `public`:
+- Add matching entries to the `CATEGORIES` list in `QuoteBuilderPage.tsx` (currently missing "Bar tape", "Tubes" — the rest exist or map cleanly; "Wheels" replaces or joins "Wheelset").
+- Editing an existing quote continues to load whatever rows were saved (unchanged).
 
-**`quotes`** — the current/editable state of each quote
-- `name` (text, required — e.g. "Custom Enve build for J. Smith")
-- `notes` (text, optional)
-- `sale_price` (numeric)
-- `rows` (jsonb — array of `{description, category, qty, unitCost}`)
-- `total_cost` (numeric, generated from rows on save)
-- `current_version` (int, default 1)
-- `created_by` (uuid → profiles.user_id)
-- `created_at`, `updated_at`
+### 2. Nested credit sub-lines under a bike row
+Extend `QuoteRow` so any row can act as a **parent "bike"** with indented **child credit rows** beneath it. Child rows are entered as positive numbers but subtracted from the parent's effective cost and from the quote total.
 
-**`quote_versions`** — immutable audit trail, one row per save
-- `quote_id` (uuid → quotes.id, cascade)
-- `version` (int)
-- `name`, `notes`, `sale_price`, `rows` (jsonb), `total_cost`
-- `saved_by` (uuid), `saved_at`
-- Unique on `(quote_id, version)`
+Data model change in `src/lib/quotes.ts`:
 
-RLS: admin/mechanic/accountant/owner can read all quotes; creators + admin can update/delete their quotes; versions are insert-only from the app and readable by the same roles. Standard GRANTs for `authenticated` + `service_role`. `updated_at` trigger on `quotes`.
+```ts
+export type QuoteRow = {
+  id: string;
+  description: string;
+  category: string;
+  qty: number;
+  unitCost: number;
+  parentId?: string | null;   // NEW — if set, this row is a credit under parentId
+};
+```
 
-### UI changes
+`computeTotalCost` becomes:
 
-**`/quote-builder`** (list view)
-- Replace the single calculator with a list page showing saved quotes: name, total cost, sale price, margin, last updated, author.
-- "New quote" button → `/quote-builder/new`.
-- Row click → `/quote-builder/:id`.
+```text
+total = Σ parent rows (qty × unitCost)  -  Σ child rows (qty × unitCost)
+```
 
-**`/quote-builder/:id` / `/new`** (editor)
-- Existing calculator UI (rows, sale price, live metrics), plus:
-  - Name + notes fields at the top.
-  - "Save" button — on first save inserts into `quotes` + writes version 1 to `quote_versions`. On subsequent saves updates `quotes`, increments `current_version`, and inserts a new `quote_versions` row.
-  - "History" panel (collapsible side sheet) listing every version with saved_at + author. Selecting a version shows a read-only diff-style view and offers "Restore this version" (which loads the values into the editor; user still has to Save to create a new version — keeps history append-only).
-  - Unsaved-changes indicator + confirm-on-leave.
+Backward compatible: existing saved rows have no `parentId`, behave as before.
 
-### Files
+### 3. UI in `QuoteBuilderPage.tsx`
+- New "Deduct part from this" button on every parent row → inserts a child row directly beneath it with `parentId` set and category defaulted to "Wheels".
+- Child rows render:
+  - Indented (left padding), muted red text, minus-sign prefix on line total.
+  - "Removed from: {parent description}" hint.
+  - Cannot themselves have children (button hidden).
+- Parent row shows an **effective cost** sub-line below its total: `£X (bike) − £Y (parts removed) = £Z`.
+- Deleting a parent also deletes its children.
+- "Add component" adds a new top-level row (unchanged).
 
-New:
-- `src/pages/QuoteListPage.tsx` — index list.
-- `src/pages/QuoteEditorPage.tsx` — replaces most of the current `QuoteBuilderPage` logic, handles both new + existing.
-- `src/components/quotes/QuoteHistoryPanel.tsx` — version list + restore.
-- `src/hooks/useQuote.ts` — load/save/version helpers.
+### 4. History / versioning
+No schema change needed — `rows` is `jsonb`. New `parentId` field is persisted transparently. Old versions restore as flat rows (no children), which is correct.
 
-Edited:
-- `src/pages/QuoteBuilderPage.tsx` — becomes a thin wrapper or is replaced by the list page.
-- `src/App.tsx` — routes: `/quote-builder` (list), `/quote-builder/new`, `/quote-builder/:id`.
-- Sidebar entry unchanged.
+### Files to change
+- `src/lib/quotes.ts` — add `parentId` to type, update `computeTotalCost` to subtract children.
+- `src/pages/QuoteBuilderPage.tsx` — seed 10 preset rows, add "Bar tape"/"Tubes" to `CATEGORIES`, render nested UI, add/remove child logic, cascade delete.
 
-### Technical notes
-
-- Rows stored as JSONB keeps the schema flexible and matches the current in-memory shape — no per-row table needed for an auditing use case.
-- Versions are written client-side in the same transaction-style flow (update quote → insert version). Acceptable because `quote_versions` is append-only and RLS forbids updates/deletes on it.
-- "Restore" never rewrites history; it just repopulates the editor, so the audit trail stays intact.
+No database migration required.

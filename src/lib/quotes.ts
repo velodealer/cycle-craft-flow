@@ -6,6 +6,7 @@ export type QuoteRow = {
   category: string;
   qty: number;
   unitCost: number;
+  parentId?: string | null;
 };
 
 export type Quote = {
