@@ -762,6 +762,92 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_versions: {
+        Row: {
+          id: string
+          name: string
+          notes: string | null
+          quote_id: string
+          rows: Json
+          sale_price: number
+          saved_at: string
+          saved_by: string | null
+          total_cost: number
+          version: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          notes?: string | null
+          quote_id: string
+          rows?: Json
+          sale_price?: number
+          saved_at?: string
+          saved_by?: string | null
+          total_cost?: number
+          version: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          notes?: string | null
+          quote_id?: string
+          rows?: Json
+          sale_price?: number
+          saved_at?: string
+          saved_by?: string | null
+          total_cost?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_versions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_version: number
+          id: string
+          name: string
+          notes: string | null
+          rows: Json
+          sale_price: number
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          id?: string
+          name: string
+          notes?: string | null
+          rows?: Json
+          sale_price?: number
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          rows?: Json
+          sale_price?: number
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_post_checklist: {
         Row: {
           done: boolean
