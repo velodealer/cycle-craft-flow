@@ -87,8 +87,9 @@ export default function QuoteBuilderPage() {
           category: r.category ?? "Other",
           qty: Number(r.qty) || 0,
           unitCost: Number(r.unitCost) || 0,
+          parentId: r.parentId ?? null,
         }));
-        setRows(loaded.length ? loaded : [newRow()]);
+        setRows(loaded.length ? loaded : presetRows());
         setDirty(false);
       })
       .catch((e) => toast.error(e.message ?? "Failed to load quote"))
