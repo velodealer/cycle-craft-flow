@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Briefcase,
   Cog,
+  Calculator,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const navigationItems = [
   { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant'] },
   { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
+  { title: "Quote Builder", url: "/quote-builder", icon: Calculator, roles: ['admin', 'mechanic', 'accountant', 'owner'] },
   
   { title: "Invoices", url: "/invoices", icon: FileText, roles: ['admin', 'accountant'] },
   { title: "Owners", url: "/owners", icon: Users, roles: ['admin', 'accountant'] },
