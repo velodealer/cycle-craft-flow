@@ -6,6 +6,7 @@ export type QuoteRow = {
   category: string;
   qty: number;
   unitCost: number;
+  parentId?: string | null;
 };
 
 export type Quote = {
@@ -35,7 +36,10 @@ export type QuoteVersion = {
 };
 
 export const computeTotalCost = (rows: QuoteRow[]) =>
-  rows.reduce((s, r) => s + (Number(r.qty) || 0) * (Number(r.unitCost) || 0), 0);
+  rows.reduce((s, r) => {
+    const line = (Number(r.qty) || 0) * (Number(r.unitCost) || 0);
+    return r.parentId ? s - line : s + line;
+  }, 0);
 
 export async function listQuotes(): Promise<Quote[]> {
   const { data, error } = await supabase
