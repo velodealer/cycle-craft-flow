@@ -279,6 +279,29 @@ export default function QuoteBuilderPage() {
               rows={2}
             />
           </div>
+          <div className="md:col-span-3">
+            <Label htmlFor="vat-scheme">VAT scheme</Label>
+            <Select
+              value={vatScheme}
+              onValueChange={(v) => {
+                setVatScheme(v as VatScheme);
+                markDirty();
+              }}
+            >
+              <SelectTrigger id="vat-scheme">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard VAT (20% per line)</SelectItem>
+                <SelectItem value="margin">Margin scheme (1/6 of profit)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {vatScheme === "standard"
+                ? "20% VAT is added on top of each component's cost."
+                : "No VAT on individual parts. VAT is 1/6 of (sale − cost)."}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
