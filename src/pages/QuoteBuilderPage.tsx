@@ -312,10 +312,11 @@ export default function QuoteBuilderPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="hidden md:grid grid-cols-12 gap-2 text-xs uppercase tracking-wide text-muted-foreground px-1">
-            <div className="col-span-4">Description</div>
+            <div className="col-span-3">Description</div>
             <div className="col-span-3">Category</div>
             <div className="col-span-1 text-right">Qty</div>
             <div className="col-span-2 text-right">Unit cost</div>
+            <div className="col-span-1 text-right">VAT</div>
             <div className="col-span-1 text-right">Total</div>
             <div className="col-span-1" />
           </div>
