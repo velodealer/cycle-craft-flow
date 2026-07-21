@@ -95,6 +95,7 @@ export default function QuoteBuilderPage() {
           parentId: r.parentId ?? null,
         }));
         setRows(loaded.length ? loaded : presetRows());
+        setVatScheme(((q as any).vat_scheme as VatScheme) ?? "standard");
         setDirty(false);
       })
       .catch((e) => toast.error(e.message ?? "Failed to load quote"))
