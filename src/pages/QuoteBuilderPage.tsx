@@ -18,10 +18,14 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
   computeTotalCost,
+  computeVat,
   getQuote,
+  lineNet,
+  lineVat,
   saveQuote,
   type QuoteRow,
   type QuoteVersion,
+  type VatScheme,
 } from "@/lib/quotes";
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
 
