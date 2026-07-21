@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type VatScheme = "standard" | "margin";
+
+export const VAT_RATE = 0.2;
+
 export type QuoteRow = {
   id: string;
   description: string;
@@ -17,6 +21,7 @@ export type Quote = {
   rows: QuoteRow[];
   total_cost: number;
   current_version: number;
+  vat_scheme: VatScheme;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -31,6 +36,7 @@ export type QuoteVersion = {
   sale_price: number;
   rows: QuoteRow[];
   total_cost: number;
+  vat_scheme: VatScheme;
   saved_by: string | null;
   saved_at: string;
 };
@@ -40,6 +46,33 @@ export const computeTotalCost = (rows: QuoteRow[]) =>
     const line = (Number(r.qty) || 0) * (Number(r.unitCost) || 0);
     return r.parentId ? s - line : s + line;
   }, 0);
+
+/** Signed line total; child rows are negative. */
+export const lineNet = (r: QuoteRow) => {
+  const raw = (Number(r.qty) || 0) * (Number(r.unitCost) || 0);
+  return r.parentId ? -raw : raw;
+};
+
+/** VAT on a single line for the given scheme. Child rows produce negative VAT under standard. */
+export const lineVat = (r: QuoteRow, scheme: VatScheme) =>
+  scheme === "standard" ? lineNet(r) * VAT_RATE : 0;
+
+export const computeVat = (
+  rows: QuoteRow[],
+  salePrice: number,
+  scheme: VatScheme
+) => {
+  const totalCost = computeTotalCost(rows);
+  const lineVatTotal =
+    scheme === "standard" ? rows.reduce((s, r) => s + lineVat(r, scheme), 0) : 0;
+  const profit = (Number(salePrice) || 0) - totalCost;
+  const marginVat = scheme === "margin" && profit > 0 ? profit / 6 : 0;
+  return {
+    lineVatTotal,
+    marginVat,
+    totalVat: lineVatTotal + marginVat,
+  };
+};
 
 export async function listQuotes(): Promise<Quote[]> {
   const { data, error } = await supabase
@@ -72,6 +105,7 @@ type SaveInput = {
   notes: string | null;
   sale_price: number;
   rows: QuoteRow[];
+  vat_scheme: VatScheme;
   userId: string;
 };
 
@@ -89,6 +123,7 @@ export async function saveQuote(input: SaveInput): Promise<Quote> {
         rows: input.rows as any,
         total_cost,
         current_version: 1,
+        vat_scheme: input.vat_scheme,
         created_by: input.userId,
       })
       .select("*")
@@ -112,6 +147,7 @@ export async function saveQuote(input: SaveInput): Promise<Quote> {
         rows: input.rows as any,
         total_cost,
         current_version: nextVersion,
+        vat_scheme: input.vat_scheme,
       })
       .eq("id", input.id)
       .select("*")
@@ -128,6 +164,7 @@ export async function saveQuote(input: SaveInput): Promise<Quote> {
     sale_price: quote.sale_price,
     rows: quote.rows as any,
     total_cost: quote.total_cost,
+    vat_scheme: quote.vat_scheme,
     saved_by: input.userId,
   });
   if (vErr) throw vErr;
