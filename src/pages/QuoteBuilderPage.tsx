@@ -325,6 +325,7 @@ export default function QuoteBuilderPage() {
             const lineTotal = (r.qty || 0) * (r.unitCost || 0);
             const isChild = !!r.parentId;
             const parent = isChild ? rows.find((p) => p.id === r.parentId) : null;
+            const rowVat = Math.abs(lineVat(r, vatScheme));
             return (
               <div
                 key={r.id}
@@ -332,7 +333,7 @@ export default function QuoteBuilderPage() {
                   isChild ? "md:pl-8 border-l-2 border-l-destructive/40 bg-destructive/5 md:bg-transparent" : ""
                 }`}
               >
-                <div className="md:col-span-4">
+                <div className="md:col-span-3">
                   <Label className="md:hidden text-xs">Description</Label>
                   <div className="flex items-center gap-2">
                     {isChild && <Minus className="h-4 w-4 text-destructive shrink-0" />}
@@ -388,6 +389,24 @@ export default function QuoteBuilderPage() {
                   />
                 </div>
                 <div
+                  className={`md:col-span-1 md:text-right tabular-nums text-sm ${
+                    vatScheme === "margin"
+                      ? "text-muted-foreground"
+                      : isChild
+                      ? "text-destructive"
+                      : ""
+                  }`}
+                >
+                  <span className="md:hidden text-xs text-muted-foreground mr-2">
+                    VAT:
+                  </span>
+                  {vatScheme === "margin"
+                    ? gbp(0)
+                    : isChild
+                    ? `− ${gbp(rowVat)}`
+                    : gbp(rowVat)}
+                </div>
+                <div
                   className={`md:col-span-1 md:text-right font-medium tabular-nums ${
                     isChild ? "text-destructive" : ""
                   }`}
@@ -422,14 +441,32 @@ export default function QuoteBuilderPage() {
             );
           })}
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-2">
             <Button variant="outline" onClick={addRow}>
               <Plus className="h-4 w-4 mr-2" />
               Add component
             </Button>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Total cost</div>
-              <div className="text-xl font-bold tabular-nums">{gbp(totalCost)}</div>
+            <div className="text-right space-y-0.5 min-w-[220px]">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Net cost</span>
+                <span className="tabular-nums font-medium">{gbp(totalCost)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  VAT on parts{vatScheme === "margin" ? " (margin scheme)" : ""}
+                </span>
+                <span className="tabular-nums font-medium">
+                  {gbp(vat.lineVatTotal)}
+                </span>
+              </div>
+              <div className="flex justify-between pt-1 border-t">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Gross cost
+                </span>
+                <span className="tabular-nums text-xl font-bold">
+                  {gbp(totalCost + vat.lineVatTotal)}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
