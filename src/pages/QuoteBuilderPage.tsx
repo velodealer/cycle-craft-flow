@@ -167,6 +167,7 @@ export default function QuoteBuilderPage() {
       parentId: r.parentId ?? null,
     }));
     setRows(restored.length ? restored : [newRow()]);
+    setVatScheme(((v as any).vat_scheme as VatScheme) ?? "standard");
     setDirty(true);
   };
 
@@ -181,6 +182,7 @@ export default function QuoteBuilderPage() {
         notes: notes.trim() ? notes.trim() : null,
         sale_price: salePrice,
         rows,
+        vat_scheme: vatScheme,
         userId: user.id,
       });
       setQuoteId(saved.id);
