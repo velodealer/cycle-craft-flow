@@ -773,6 +773,7 @@ export type Database = {
           saved_at: string
           saved_by: string | null
           total_cost: number
+          vat_scheme: string
           version: number
         }
         Insert: {
@@ -785,6 +786,7 @@ export type Database = {
           saved_at?: string
           saved_by?: string | null
           total_cost?: number
+          vat_scheme?: string
           version: number
         }
         Update: {
@@ -797,6 +799,7 @@ export type Database = {
           saved_at?: string
           saved_by?: string | null
           total_cost?: number
+          vat_scheme?: string
           version?: number
         }
         Relationships: [
@@ -821,6 +824,7 @@ export type Database = {
           sale_price: number
           total_cost: number
           updated_at: string
+          vat_scheme: string
         }
         Insert: {
           created_at?: string
@@ -833,6 +837,7 @@ export type Database = {
           sale_price?: number
           total_cost?: number
           updated_at?: string
+          vat_scheme?: string
         }
         Update: {
           created_at?: string
@@ -845,6 +850,7 @@ export type Database = {
           sale_price?: number
           total_cost?: number
           updated_at?: string
+          vat_scheme?: string
         }
         Relationships: []
       }

@@ -18,10 +18,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import {
   computeTotalCost,
+  computeVat,
   getQuote,
+  lineVat,
   saveQuote,
   type QuoteRow,
   type QuoteVersion,
+  type VatScheme,
 } from "@/lib/quotes";
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
 
@@ -65,6 +68,7 @@ export default function QuoteBuilderPage() {
   const [notes, setNotes] = useState("");
   const [salePrice, setSalePrice] = useState<number>(0);
   const [rows, setRows] = useState<QuoteRow[]>(presetRows());
+  const [vatScheme, setVatScheme] = useState<VatScheme>("standard");
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -90,6 +94,7 @@ export default function QuoteBuilderPage() {
           parentId: r.parentId ?? null,
         }));
         setRows(loaded.length ? loaded : presetRows());
+        setVatScheme(((q as any).vat_scheme as VatScheme) ?? "standard");
         setDirty(false);
       })
       .catch((e) => toast.error(e.message ?? "Failed to load quote"))
@@ -109,7 +114,12 @@ export default function QuoteBuilderPage() {
   }, [dirty]);
 
   const totalCost = useMemo(() => computeTotalCost(rows), [rows]);
+  const vat = useMemo(
+    () => computeVat(rows, salePrice, vatScheme),
+    [rows, salePrice, vatScheme]
+  );
   const profit = salePrice - totalCost;
+  const profitAfterVat = profit - vat.marginVat;
   const margin = salePrice > 0 ? profit / salePrice : NaN;
   const markup = totalCost > 0 ? profit / totalCost : NaN;
   const roi = totalCost > 0 ? profit / totalCost : NaN;
@@ -156,6 +166,7 @@ export default function QuoteBuilderPage() {
       parentId: r.parentId ?? null,
     }));
     setRows(restored.length ? restored : [newRow()]);
+    setVatScheme(((v as any).vat_scheme as VatScheme) ?? "standard");
     setDirty(true);
   };
 
@@ -170,6 +181,7 @@ export default function QuoteBuilderPage() {
         notes: notes.trim() ? notes.trim() : null,
         sale_price: salePrice,
         rows,
+        vat_scheme: vatScheme,
         userId: user.id,
       });
       setQuoteId(saved.id);
@@ -266,6 +278,29 @@ export default function QuoteBuilderPage() {
               rows={2}
             />
           </div>
+          <div className="md:col-span-3">
+            <Label htmlFor="vat-scheme">VAT scheme</Label>
+            <Select
+              value={vatScheme}
+              onValueChange={(v) => {
+                setVatScheme(v as VatScheme);
+                markDirty();
+              }}
+            >
+              <SelectTrigger id="vat-scheme">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard VAT (20% per line)</SelectItem>
+                <SelectItem value="margin">Margin scheme (1/6 of profit)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {vatScheme === "standard"
+                ? "20% VAT is added on top of each component's cost."
+                : "No VAT on individual parts. VAT is 1/6 of (sale − cost)."}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -276,10 +311,11 @@ export default function QuoteBuilderPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="hidden md:grid grid-cols-12 gap-2 text-xs uppercase tracking-wide text-muted-foreground px-1">
-            <div className="col-span-4">Description</div>
+            <div className="col-span-3">Description</div>
             <div className="col-span-3">Category</div>
             <div className="col-span-1 text-right">Qty</div>
             <div className="col-span-2 text-right">Unit cost</div>
+            <div className="col-span-1 text-right">VAT</div>
             <div className="col-span-1 text-right">Total</div>
             <div className="col-span-1" />
           </div>
@@ -288,6 +324,7 @@ export default function QuoteBuilderPage() {
             const lineTotal = (r.qty || 0) * (r.unitCost || 0);
             const isChild = !!r.parentId;
             const parent = isChild ? rows.find((p) => p.id === r.parentId) : null;
+            const rowVat = Math.abs(lineVat(r, vatScheme));
             return (
               <div
                 key={r.id}
@@ -295,7 +332,7 @@ export default function QuoteBuilderPage() {
                   isChild ? "md:pl-8 border-l-2 border-l-destructive/40 bg-destructive/5 md:bg-transparent" : ""
                 }`}
               >
-                <div className="md:col-span-4">
+                <div className="md:col-span-3">
                   <Label className="md:hidden text-xs">Description</Label>
                   <div className="flex items-center gap-2">
                     {isChild && <Minus className="h-4 w-4 text-destructive shrink-0" />}
@@ -351,6 +388,24 @@ export default function QuoteBuilderPage() {
                   />
                 </div>
                 <div
+                  className={`md:col-span-1 md:text-right tabular-nums text-sm ${
+                    vatScheme === "margin"
+                      ? "text-muted-foreground"
+                      : isChild
+                      ? "text-destructive"
+                      : ""
+                  }`}
+                >
+                  <span className="md:hidden text-xs text-muted-foreground mr-2">
+                    VAT:
+                  </span>
+                  {vatScheme === "margin"
+                    ? gbp(0)
+                    : isChild
+                    ? `− ${gbp(rowVat)}`
+                    : gbp(rowVat)}
+                </div>
+                <div
                   className={`md:col-span-1 md:text-right font-medium tabular-nums ${
                     isChild ? "text-destructive" : ""
                   }`}
@@ -385,14 +440,32 @@ export default function QuoteBuilderPage() {
             );
           })}
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pt-2">
             <Button variant="outline" onClick={addRow}>
               <Plus className="h-4 w-4 mr-2" />
               Add component
             </Button>
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Total cost</div>
-              <div className="text-xl font-bold tabular-nums">{gbp(totalCost)}</div>
+            <div className="text-right space-y-0.5 min-w-[220px]">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Net cost</span>
+                <span className="tabular-nums font-medium">{gbp(totalCost)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  VAT on parts{vatScheme === "margin" ? " (margin scheme)" : ""}
+                </span>
+                <span className="tabular-nums font-medium">
+                  {gbp(vat.lineVatTotal)}
+                </span>
+              </div>
+              <div className="flex justify-between pt-1 border-t">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Gross cost
+                </span>
+                <span className="tabular-nums text-xl font-bold">
+                  {gbp(totalCost + vat.lineVatTotal)}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -431,12 +504,38 @@ export default function QuoteBuilderPage() {
             <CardTitle>Results</CardTitle>
             <CardDescription>Live profitability breakdown.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Stat label="Profit" value={gbp(profit)} tone={profitTone} />
               <Stat label="Margin" value={pct(margin)} hint="profit ÷ sale" tone={profitTone} />
               <Stat label="Markup" value={pct(markup)} hint="profit ÷ cost" tone={profitTone} />
               <Stat label="ROI" value={pct(roi)} hint="return on investment" tone={profitTone} />
+            </div>
+            <div className="rounded-lg border p-4 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {vatScheme === "standard"
+                    ? "VAT on parts (20%)"
+                    : "VAT on margin (1/6 of profit)"}
+                </span>
+                <span className="tabular-nums font-medium">
+                  {gbp(vatScheme === "standard" ? vat.lineVatTotal : vat.marginVat)}
+                </span>
+              </div>
+              {vatScheme === "margin" && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Profit after VAT</span>
+                  <span className={`tabular-nums font-medium ${profitTone}`}>
+                    {gbp(profitAfterVat)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between pt-1 border-t">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Total VAT
+                </span>
+                <span className="tabular-nums font-semibold">{gbp(vat.totalVat)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
