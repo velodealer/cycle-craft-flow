@@ -69,6 +69,7 @@ export default function QuoteBuilderPage() {
   const [notes, setNotes] = useState("");
   const [salePrice, setSalePrice] = useState<number>(0);
   const [rows, setRows] = useState<QuoteRow[]>(presetRows());
+  const [vatScheme, setVatScheme] = useState<VatScheme>("standard");
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
