@@ -115,7 +115,12 @@ export default function QuoteBuilderPage() {
   }, [dirty]);
 
   const totalCost = useMemo(() => computeTotalCost(rows), [rows]);
+  const vat = useMemo(
+    () => computeVat(rows, salePrice, vatScheme),
+    [rows, salePrice, vatScheme]
+  );
   const profit = salePrice - totalCost;
+  const profitAfterVat = profit - vat.marginVat;
   const margin = salePrice > 0 ? profit / salePrice : NaN;
   const markup = totalCost > 0 ? profit / totalCost : NaN;
   const roi = totalCost > 0 ? profit / totalCost : NaN;
