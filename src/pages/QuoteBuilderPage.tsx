@@ -20,7 +20,6 @@ import {
   computeTotalCost,
   computeVat,
   getQuote,
-  lineNet,
   lineVat,
   saveQuote,
   type QuoteRow,
