@@ -505,12 +505,38 @@ export default function QuoteBuilderPage() {
             <CardTitle>Results</CardTitle>
             <CardDescription>Live profitability breakdown.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Stat label="Profit" value={gbp(profit)} tone={profitTone} />
               <Stat label="Margin" value={pct(margin)} hint="profit ÷ sale" tone={profitTone} />
               <Stat label="Markup" value={pct(markup)} hint="profit ÷ cost" tone={profitTone} />
               <Stat label="ROI" value={pct(roi)} hint="return on investment" tone={profitTone} />
+            </div>
+            <div className="rounded-lg border p-4 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {vatScheme === "standard"
+                    ? "VAT on parts (20%)"
+                    : "VAT on margin (1/6 of profit)"}
+                </span>
+                <span className="tabular-nums font-medium">
+                  {gbp(vatScheme === "standard" ? vat.lineVatTotal : vat.marginVat)}
+                </span>
+              </div>
+              {vatScheme === "margin" && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Profit after VAT</span>
+                  <span className={`tabular-nums font-medium ${profitTone}`}>
+                    {gbp(profitAfterVat)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between pt-1 border-t">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Total VAT
+                </span>
+                <span className="tabular-nums font-semibold">{gbp(vat.totalVat)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
