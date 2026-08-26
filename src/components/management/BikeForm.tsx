@@ -25,6 +25,8 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import LocationSelect from '@/components/bike/LocationSelect';
+import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
+
 
 
 const bikeSchema = z.object({
@@ -277,7 +279,26 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               <CardTitle>Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <BikeCatalogLookup
+                onApply={({ make, model, size, summary }) => {
+                  const existing = [form.getValues('make'), form.getValues('model'), form.getValues('size')].filter(
+                    (v) => v && String(v).trim(),
+                  );
+                  if (existing.length > 0 && !window.confirm('Overwrite the make, model and size already entered?')) {
+                    return;
+                  }
+                  form.setValue('make', make, { shouldDirty: true, shouldValidate: true });
+                  form.setValue('model', model, { shouldDirty: true, shouldValidate: true });
+                  if (size) form.setValue('size', size, { shouldDirty: true });
+                  if (summary && !form.getValues('description')?.trim()) {
+                    form.setValue('description', summary, { shouldDirty: true });
+                  }
+                  toast({ title: 'Bike details filled from catalog' });
+                }}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                 <FormField
                   control={form.control}
                   name="make"
