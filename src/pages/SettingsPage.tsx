@@ -2,6 +2,8 @@ import PlaceholderPage from '@/components/PlaceholderPage';
 import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
+import StorageBays from '@/components/settings/StorageBays';
+
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,13 +47,15 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="flex w-full flex-wrap h-auto gap-1 md:grid md:grid-cols-6">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="listings">Listing Formats</TabsTrigger>
+          <TabsTrigger value="bays">Storage Bays</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="users" className="space-y-4">
           <UserManagement />
@@ -112,6 +116,12 @@ export default function SettingsPage() {
         <TabsContent value="listings" className="space-y-4">
           <ListingFormats />
         </TabsContent>
+
+        <TabsContent value="bays" className="space-y-4">
+          <StorageBays />
+        </TabsContent>
+
+
 
 
 
