@@ -17,6 +17,11 @@ export default function StorageBays() {
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, Partial<StorageBay>>>({});
 
+  const [prefix, setPrefix] = useState('');
+  const [startNum, setStartNum] = useState('1');
+  const [endNum, setEndNum] = useState('20');
+  const [batchZone, setBatchZone] = useState('');
+
   const addBay = async () => {
     if (!name.trim()) {
       toast({ title: 'Name required', description: 'Give the bay a name', variant: 'destructive' });
