@@ -1,20 +1,21 @@
-# Assign bays from existing list only
+# Bay assignment: explicit Assign button
 
 ## The problem
 
-Typing a bay on a bike tries to **create** the bay if it doesn't already exist. Creating bays is admin-only, so Jahan (mechanic) hits a permission error and the assignment fails.
-
-Bays shouldn't be created while assigning — they should already exist, and assigning just picks one.
+The bay field saves automatically the moment you leave the letter box, so typing just a letter (e.g. "C") immediately tries to assign — and creating a new bay is admin-only, so Jahan's attempt fails.
 
 ## Fix
 
-- Change the bay field on bikes (bike detail, lists, intake) from free-text entry into a **picker of existing bays** — searchable dropdown listing the active bays, plus a "No location" option to clear it.
-- Remove the auto-create behaviour entirely, so assigning only writes `storage_bay_id` on the bike, which mechanics are already allowed to do.
-- Bays continue to be created/edited/deleted by admins in Settings → Storage bays (including the bulk generator).
-- If saving fails, show the real error and revert the field to the previously saved bay.
+- Keep the two free-text fields (bay letter + number), but **stop saving on blur**.
+- Add an explicit **Assign** button next to the fields; pressing Enter in either field also assigns.
+- On Assign:
+  - If the bay already exists, set the bike's location to it.
+  - If it doesn't exist, show a clear message that the bay doesn't exist and must be created by an admin in Settings → Storage bays (no auto-create, so mechanics never hit the permission error).
+  - Clearing both fields and pressing Assign removes the location.
+- If saving fails, show the real error and revert the fields to the previously saved bay.
 
 ## Technical notes
 
-- Rewrite `src/components/bike/LocationSelect.tsx` as a shadcn Popover + Command combobox over `useStorageBays()` (active bays, natural sort), with a clear option. Drop the `storage_bays` insert.
-- No database or RLS changes needed; the admin-only insert policy stays as is.
-- Props (`bikeId`, `value`, `onChange`, `className`, `size`) stay unchanged so all current call sites keep working.
+- `src/components/bike/LocationSelect.tsx`: remove `onBlur` commit; add an Assign button (and Enter key handling) that calls the commit logic; drop the `storage_bays` insert path.
+- No database or RLS changes needed.
+- Props (`bikeId`, `value`, `onChange`, `className`, `size`) stay unchanged so all call sites keep working.
