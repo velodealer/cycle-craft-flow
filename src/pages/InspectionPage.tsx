@@ -232,6 +232,7 @@ export default function InspectionPage() {
               showPhotos={false}
               showPricing={false}
               showDescriptions={false}
+              inspectionMode={true}
             />
           )}
         </DialogContent>
