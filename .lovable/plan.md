@@ -17,12 +17,28 @@ On save:
    - VAT-qualifying: standard 20% VAT shown on the invoice.
 3. The invoice is pushed to QuickBooks Online.
 4. A journal entry is posted in QuickBooks:
-   - **Stock/Inventory** credited by the bike's total cost (acquisition + collection + delivery + parts + labour).
-   - **Cost of Goods Sold** debited by the same total cost.
-   - **Margin scheme only**: the margin VAT (`(sale price − acquisition cost) × 20/120`) is credited to the **VAT control / liability** account (no VAT on the customer invoice itself).
+   - **Stock/Inventory** credited by the bike's **purchase price only** (this reverses the purchase entry made at intake, so stock never carries prep costs).
+   - **Cost of Goods Sold** debited by the same purchase price.
+   - **Margin scheme only**: the margin VAT (`(sale price − purchase price) × 20/120`) is credited to the **VAT control / liability** account (no VAT on the customer invoice itself).
 5. The bike stops counting in in-app stock value and stock aging reports.
 
 The Invoices page (currently a placeholder) becomes a real list: invoice number, bike, customer, net/VAT/gross, status, QuickBooks sync state, with a retry button if a sync failed.
+
+## Logging the purchase at intake
+
+When a bike is added to the site with a purchase price, we post the purchase to the balance sheet:
+
+- **Stock/Inventory (asset)** debited by the purchase price.
+- The other side credited to the account you choose in settings (Accounts Payable, Bank, or a Purchases clearing account).
+
+Prep costs (collection, delivery, parts, labour) are **not** capitalised into stock — they stay as expenses and only feed the in-app SIV/profit view.
+
+Rules:
+- Posted once per bike, on creation (or on the first save where a purchase price is set); a `quickbooks_purchase_journal_id` on the bike prevents duplicates.
+- If the purchase price is later edited, the journal is updated in QuickBooks to match.
+- If QuickBooks isn't connected, the bike is flagged "purchase not posted" and can be pushed later from the bike page or the Invoices/Accounting screen.
+
+In-app stock value in Reports also uses purchase price only, matching the ledger.
 
 ## QuickBooks setup (what you need to do)
 
