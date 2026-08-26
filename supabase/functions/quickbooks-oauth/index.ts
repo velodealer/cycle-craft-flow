@@ -10,6 +10,7 @@ import {
   requireUser,
   type QboSettings,
 } from '../_shared/quickbooks.ts';
+import { mapSalesTaxCodes, type QboTaxCodeRef } from '../_shared/quickbooks-tax.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -93,6 +94,7 @@ Deno.serve(async (req) => {
         environment: qboEnv(),
         realm_id: settings.realm_id ?? null,
         accounts: settings.accounts ?? {},
+        tax_codes: settings.tax_codes ?? {},
         connected_at: settings.connected_at ?? null,
         redirect_uri: redirectUri(),
       });
@@ -127,10 +129,45 @@ Deno.serve(async (req) => {
       return json({ accounts });
     }
 
+    if (action === 'tax_codes') {
+      const { accessToken, realmId } = await getQboAuth(supabase);
+      const taxCodeQuery = encodeURIComponent('select * from TaxCode where Active = true maxresults 1000');
+      const taxRateQuery = encodeURIComponent('select * from TaxRate where Active = true maxresults 1000');
+      const [taxCodeData, taxRateData] = await Promise.all([
+        qboFetch(accessToken, realmId, `/query?query=${taxCodeQuery}&minorversion=70`),
+        qboFetch(accessToken, realmId, `/query?query=${taxRateQuery}&minorversion=70`),
+      ]);
+      return json({
+        tax_codes: mapSalesTaxCodes(
+          taxCodeData?.QueryResponse?.TaxCode ?? [],
+          taxRateData?.QueryResponse?.TaxRate ?? [],
+        ),
+      });
+    }
+
     if (action === 'save_accounts') {
       const accounts = body.accounts ?? {};
       await saveSettings(supabase, { accounts });
       return json({ ok: true, accounts });
+    }
+
+    if (action === 'save_tax_codes') {
+      const taxCodes = body.tax_codes as QboTaxCodeRef | undefined;
+      if (
+        !taxCodes ||
+        typeof taxCodes.standard_sales !== 'string' ||
+        typeof taxCodes.margin_sales !== 'string' ||
+        !taxCodes.standard_sales.trim() ||
+        !taxCodes.margin_sales.trim()
+      ) {
+        return json({ error: 'Select both QuickBooks sales VAT codes' }, 400);
+      }
+      const saved = {
+        standard_sales: taxCodes.standard_sales.trim(),
+        margin_sales: taxCodes.margin_sales.trim(),
+      };
+      await saveSettings(supabase, { tax_codes: saved });
+      return json({ ok: true, tax_codes: saved });
     }
 
     if (action === 'disconnect') {

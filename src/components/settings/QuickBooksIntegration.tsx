@@ -12,10 +12,14 @@ import {
   getQuickBooksAuthUrl,
   listQuickBooksAccounts,
   saveQuickBooksAccounts,
+  listQuickBooksTaxCodes,
+  saveQuickBooksTaxCodes,
   disconnectQuickBooks,
   type QboAccount,
   type QboAccountMap,
   type QboStatus,
+  type QboTaxCode,
+  type QboTaxCodeMap,
 } from '@/lib/quickbooks';
 
 const ACCOUNT_FIELDS: { key: keyof QboAccountMap; label: string; hint: string }[] = [
@@ -30,6 +34,8 @@ export default function QuickBooksIntegration() {
   const [status, setStatus] = useState<QboStatus | null>(null);
   const [accounts, setAccounts] = useState<QboAccount[]>([]);
   const [mapping, setMapping] = useState<QboAccountMap>({});
+  const [taxCodes, setTaxCodes] = useState<QboTaxCode[]>([]);
+  const [taxMapping, setTaxMapping] = useState<QboTaxCodeMap>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
@@ -40,6 +46,7 @@ export default function QuickBooksIntegration() {
       const result = await getQuickBooksStatus();
       setStatus(result);
       setMapping(result.accounts || {});
+      setTaxMapping(result.tax_codes || {});
       setError(null);
       return result;
     } catch (e) {
@@ -62,18 +69,27 @@ export default function QuickBooksIntegration() {
     }
   }, []);
 
-  useEffect(() => { loadStatus().then((s) => { if (s?.connected) loadAccounts(); }); }, [loadStatus, loadAccounts]);
+  const loadTaxCodes = useCallback(async () => {
+    try {
+      const { tax_codes: list } = await listQuickBooksTaxCodes();
+      setTaxCodes(list);
+    } catch (e) {
+      toast.error(`Could not load QuickBooks VAT codes: ${(e as Error).message}`);
+    }
+  }, []);
+
+  useEffect(() => { loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } }); }, [loadStatus, loadAccounts, loadTaxCodes]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.data?.type === 'quickbooks-connected') {
         toast.success('QuickBooks connected');
-        loadStatus().then((s) => { if (s?.connected) loadAccounts(); });
+        loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } });
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [loadStatus, loadAccounts]);
+  }, [loadStatus, loadAccounts, loadTaxCodes]);
 
   const handleConnect = async () => {
     try {
@@ -99,7 +115,8 @@ export default function QuickBooksIntegration() {
     setSaving(true);
     try {
       await saveQuickBooksAccounts(mapping);
-      toast.success('Account mapping saved');
+      await saveQuickBooksTaxCodes(taxMapping);
+      toast.success('QuickBooks mapping saved');
       loadStatus();
     } catch (e) {
       toast.error((e as Error).message);
@@ -197,6 +214,35 @@ export default function QuickBooksIntegration() {
                   <p className="text-xs text-muted-foreground">{field.hint}</p>
                 </div>
               ))}
+            </div>
+            <div className="border-t pt-4">
+              <h4 className="mb-3 font-medium">Sales VAT codes</h4>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {([
+                  ['standard_sales', 'Standard VAT sales', 'Choose the active 20% sales VAT code from this QuickBooks company.'],
+                  ['margin_sales', 'No VAT / margin scheme', 'Choose the no-VAT sales code; margin VAT is posted separately.'],
+                ] as const).map(([key, label, hint]) => (
+                  <div key={key} className="space-y-1.5">
+                    <Label>{label}</Label>
+                    <Select
+                      value={taxMapping[key] ?? ''}
+                      onValueChange={(value) => setTaxMapping((prev) => ({ ...prev, [key]: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a QuickBooks VAT code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {taxCodes.map((code) => (
+                          <SelectItem key={code.id} value={code.id}>
+                            {code.name}{code.rate === null ? '' : ` · ${code.rate}%`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
             </div>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

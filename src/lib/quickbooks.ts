@@ -14,6 +14,7 @@ export interface QboStatus {
   environment: string;
   realm_id: string | null;
   accounts: QboAccountMap;
+  tax_codes: QboTaxCodeMap;
   connected_at: string | null;
   redirect_uri: string;
 }
@@ -24,6 +25,17 @@ export interface QboAccount {
   type: string;
   subType?: string;
   classification?: string;
+}
+
+export interface QboTaxCodeMap {
+  standard_sales?: string;
+  margin_sales?: string;
+}
+
+export interface QboTaxCode {
+  id: string;
+  name: string;
+  rate: number | null;
 }
 
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
@@ -45,6 +57,10 @@ export const getQuickBooksAuthUrl = () => invoke<{ url: string }>('quickbooks-oa
 export const listQuickBooksAccounts = () => invoke<{ accounts: QboAccount[] }>('quickbooks-oauth', { action: 'accounts' });
 export const saveQuickBooksAccounts = (accounts: QboAccountMap) =>
   invoke<{ ok: true }>('quickbooks-oauth', { action: 'save_accounts', accounts });
+export const listQuickBooksTaxCodes = () =>
+  invoke<{ tax_codes: QboTaxCode[] }>('quickbooks-oauth', { action: 'tax_codes' });
+export const saveQuickBooksTaxCodes = (taxCodes: QboTaxCodeMap) =>
+  invoke<{ ok: true }>('quickbooks-oauth', { action: 'save_tax_codes', tax_codes: taxCodes });
 export const disconnectQuickBooks = () => invoke<{ ok: true }>('quickbooks-oauth', { action: 'disconnect' });
 
 /** Readable QuickBooks Doc Numbers (max 21 chars) — must match the edge functions. */
