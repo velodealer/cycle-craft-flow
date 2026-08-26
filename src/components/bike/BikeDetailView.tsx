@@ -291,12 +291,15 @@ export default function BikeDetailView({
 
       {!inspectionMode && (
         <>
+          {isAdmin && <AdminStatusSelect bike={bike} onUpdate={onUpdate} />}
+
           {/* Status Progress */}
           <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
 
           <Separator />
         </>
       )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
