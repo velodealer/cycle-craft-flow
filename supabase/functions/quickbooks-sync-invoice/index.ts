@@ -100,6 +100,7 @@ Deno.serve(async (req) => {
       CustomerRef: { value: customerRef },
       DocNumber: invoice.invoice_number,
       TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
+      GlobalTaxCalculation: isMargin ? 'NotApplicable' : 'TaxInclusive',
       Line: [
         {
           Amount: gross,
