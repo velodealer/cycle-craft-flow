@@ -46,6 +46,67 @@ export default function StorageBays() {
     }
   };
 
+  const generateBays = async () => {
+    const p = prefix.trim().toUpperCase();
+    const start = parseInt(startNum, 10);
+    const end = parseInt(endNum, 10);
+
+    if (!p || !/^[A-Z]$/.test(p)) {
+      toast({ title: 'Invalid prefix', description: 'Enter a single letter (e.g., A, B, M).', variant: 'destructive' });
+      return;
+    }
+    if (Number.isNaN(start) || Number.isNaN(end) || start < 1 || end < 1 || start > end) {
+      toast({ title: 'Invalid range', description: 'Start and end must be positive numbers and start ≤ end.', variant: 'destructive' });
+      return;
+    }
+
+    const count = end - start + 1;
+    if (count > 100) {
+      toast({ title: 'Range too large', description: 'Generate at most 100 bays at once.', variant: 'destructive' });
+      return;
+    }
+
+    const existingNames = new Set(bays.map((b) => b.name.toUpperCase()));
+    const namesToCreate: string[] = [];
+    for (let i = start; i <= end; i++) {
+      const name = `${p}${i}`;
+      if (!existingNames.has(name.toUpperCase())) namesToCreate.push(name);
+    }
+
+    if (namesToCreate.length === 0) {
+      toast({ title: 'No new bays', description: 'All names in that range already exist.', variant: 'destructive' });
+      return;
+    }
+
+    const nextSortOrder = bays.length > 0 ? Math.max(...bays.map((b) => b.sort_order)) + 1 : 0;
+    const rows = namesToCreate.map((n, idx) => ({
+      name: n,
+      zone: batchZone.trim() || null,
+      sort_order: nextSortOrder + idx,
+      is_active: true,
+    }));
+
+    setBusy(true);
+    try {
+      const { error } = await supabase.from('storage_bays').insert(rows);
+      if (error) throw error;
+      setPrefix('');
+      setStartNum('1');
+      setEndNum('20');
+      setBatchZone('');
+      await reload();
+      const skipped = count - namesToCreate.length;
+      toast({
+        title: `${namesToCreate.length} bays created`,
+        description: skipped > 0 ? `${skipped} already existed and were skipped` : undefined,
+      });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const saveBay = async (bay: StorageBay) => {
     const draft = drafts[bay.id];
     if (!draft) return;
