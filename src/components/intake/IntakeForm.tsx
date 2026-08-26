@@ -28,7 +28,10 @@ interface IntakeFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   preselectedBikeId?: string;
+  /** Rendered inside another card (e.g. bike detail page): hides bike picker chrome and Cancel */
+  embedded?: boolean;
 }
+
 
 interface Bike {
   id: string;
