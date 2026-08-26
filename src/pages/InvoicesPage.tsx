@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { syncInvoice } from '@/lib/quickbooks';
+import { stockOutDocNumber, syncInvoice } from '@/lib/quickbooks';
 import { toast } from 'sonner';
 
 interface InvoiceRow {
@@ -22,6 +22,8 @@ interface InvoiceRow {
   sync_status: string;
   sync_error: string | null;
   quickbooks_invoice_id: string | null;
+  quickbooks_journal_id: string | null;
+
   bike_id: string | null;
   bikes: { id: string; make: string; model: string; reference: string | null } | null;
   external_owners: { name: string } | null;
