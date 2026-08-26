@@ -281,8 +281,13 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId, emb
 
   const isChecklistComplete = Object.values(checklist).every(Boolean);
 
+  if (embedded && !selectedBike) {
+    return <p className="text-sm text-muted-foreground">Loading intake details...</p>;
+  }
+
   // If no bike is selected, show bike selection
   if (!selectedBike) {
+
     return (
       <div className="space-y-6">
         <Card>
