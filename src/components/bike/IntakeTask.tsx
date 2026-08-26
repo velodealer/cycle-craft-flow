@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { PackageCheck, Save } from 'lucide-react';
 import IntakeForm from '@/components/intake/IntakeForm';
+import PhotoUpload from '@/components/PhotoUpload';
+
 import LocationSelect from './LocationSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -26,6 +28,9 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
   const [saving, setSaving] = useState(false);
   const [frameNumber, setFrameNumber] = useState(bike.frame_number || '');
   const [accessories, setAccessories] = useState(bike.accessories_included || '');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [serialPhotos, setSerialPhotos] = useState<string[]>([]);
+  const [registerPhotos, setRegisterPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     setFrameNumber(bike.frame_number || '');
@@ -35,15 +40,21 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('bikes')
-        .update({
-          frame_number: frameNumber.trim() || null,
-          accessories_included: accessories.trim() || null,
-        })
-        .eq('id', bike.id);
+      const newPhotos = [...photos, ...serialPhotos, ...registerPhotos];
+      const update: Record<string, any> = {
+        frame_number: frameNumber.trim() || null,
+        accessories_included: accessories.trim() || null,
+      };
+      if (newPhotos.length > 0) {
+        update.photos = [...((bike.photos as string[] | null) || []), ...newPhotos];
+      }
+
+      const { error } = await supabase.from('bikes').update(update).eq('id', bike.id);
       if (error) throw error;
       toast({ title: 'Saved', description: 'Intake details updated' });
+      setPhotos([]);
+      setSerialPhotos([]);
+      setRegisterPhotos([]);
       setEditing(false);
       onUpdate();
     } catch (error: any) {
@@ -52,6 +63,7 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
       setSaving(false);
     }
   };
+
 
   if (pending) {
     return (
@@ -129,6 +141,36 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
                 onChange={(e) => setAccessories(e.target.value)}
               />
             </div>
+            <div className="space-y-1">
+              <Label>Bike photos</Label>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`bike-${bike.id}/intake`}
+                photos={photos}
+                onChange={setPhotos}
+                maxPhotos={10}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Serial number photo</Label>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`bike-${bike.id}/serial`}
+                photos={serialPhotos}
+                onChange={setSerialPhotos}
+                maxPhotos={3}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Registration document photo</Label>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`bike-${bike.id}/register`}
+                photos={registerPhotos}
+                onChange={setRegisterPhotos}
+                maxPhotos={3}
+              />
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving} className="flex-1">
                 <Save className="h-4 w-4 mr-2" />
@@ -155,6 +197,22 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
                 <p className="whitespace-pre-wrap">{bike.condition_notes}</p>
               </div>
             )}
+            {Array.isArray(bike.photos) && bike.photos.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Intake photos</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {(bike.photos as string[]).slice(0, 8).map((url) => (
+                    <img
+                      key={url}
+                      src={url}
+                      alt={`${bike.make} ${bike.model} intake photo`}
+                      loading="lazy"
+                      className="h-16 w-full rounded object-cover"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                 Edit intake details
@@ -162,6 +220,7 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
             )}
           </div>
         )}
+
 
         <div className="space-y-1">
           <span className="text-xs text-muted-foreground">Location</span>

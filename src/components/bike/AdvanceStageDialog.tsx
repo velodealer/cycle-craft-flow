@@ -55,13 +55,42 @@ export default function AdvanceStageDialog({
 
     setSubmitting(true);
     try {
-      // Update bike status
+      const update: Record<string, any> = { status: nextStage };
+
+      if (photos.length > 0) {
+        const { data: current } = await supabase
+          .from('bikes')
+          .select('photos')
+          .eq('id', bike.id)
+          .maybeSingle();
+        update.photos = [...((current?.photos as string[] | null) || []), ...photos];
+      }
+
+      // Update bike status (and attach any photos taken at this stage)
       const { error: bikeError } = await supabase
         .from('bikes')
-        .update({ status: nextStage as any })
+        .update(update)
         .eq('id', bike.id);
 
       if (bikeError) throw bikeError;
+
+      // Record a fulfilment event so notes/photos aren't lost
+      const FULFILMENT_STAGES = ['intake', 'cleaning', 'inspection', 'repair', 'ready'];
+      if (FULFILMENT_STAGES.includes(nextStage)) {
+        const noteParts = [values.notes?.trim() || ''];
+        if (photos.length > 0) {
+          noteParts.push(`${photos.length} photo(s) added at this stage.`);
+        }
+        const notes = noteParts.filter(Boolean).join('\n\n');
+
+        const { error: eventError } = await supabase.from('fulfilment_events').insert({
+          bike_id: bike.id,
+          stage: nextStage as any,
+          notes: notes || null,
+          performed_by: profile.id,
+        });
+        if (eventError) console.error('Failed to record fulfilment event', eventError);
+      }
 
       toast({
         title: 'Stage Updated',
@@ -72,6 +101,7 @@ export default function AdvanceStageDialog({
       onClose();
       form.reset();
       setPhotos([]);
+
     } catch (error: any) {
       toast({
         title: 'Error',
