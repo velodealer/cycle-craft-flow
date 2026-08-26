@@ -50,7 +50,7 @@ If QuickBooks isn't connected yet, sales still record and invoice normally — t
 
 **Edge functions**
 - `quickbooks-oauth` — start URL + callback exchange, stores refresh token (verify_jwt false only for the callback path).
-- `quickbooks-sync-invoice` — JWT-validated; refreshes access token, creates/updates the QBO Customer, creates the Invoice with the correct tax code/VAT amount, then posts the JournalEntry (credit Stock, debit COGS by total bike cost = acquisition + collection + delivery + parts + labour), and writes ids/errors back onto the invoice row.
+- `quickbooks-sync-invoice` — JWT-validated; refreshes access token, creates/updates the QBO Customer, creates the Invoice (margin = 0% tax on the line), then posts the JournalEntry for stock-to-COGS plus, for margin schemes, the margin VAT to the VAT control account. It writes ids/errors back onto the invoice row.
 
 **Frontend**
 - New `src/components/bike/RecordSaleDialog.tsx`, wired into `BikeDetailView` in place of `AdvanceStageDialog` when the next stage is `sold`.
