@@ -10,7 +10,9 @@ export interface LabelBike {
   model: string;
   size?: string | null;
   colour?: string | null;
+  serial_number?: string | null;
 }
+
 
 interface BikeLabelsProps {
   bikes: LabelBike[];
@@ -109,21 +111,20 @@ export function LabelContent({ bike }: { bike: LabelBike }) {
             <p className="text-lg font-semibold">{bike.colour || '—'}</p>
           </div>
         </div>
+        <div>
+          <p className="text-xs font-semibold text-gray-600">SERIAL NUMBER</p>
+          <p className="text-lg font-semibold">{bike.serial_number || '—'}</p>
+        </div>
       </div>
 
       {/* QR Code */}
       <div className="flex flex-col items-center border-t-2 border-black pt-3">
         <QRCodeSVG value={labelUrl} size={160} level="M" includeMargin={false} />
-        <p className="text-sm mt-2 text-center font-mono font-bold">{bikeRef(bike)}</p>
+        <p className="text-xs mt-1 text-center text-gray-600">BIKE ID</p>
+        <p className="text-sm text-center font-mono font-bold">{bikeRef(bike)}</p>
         <p className="text-xs text-center text-gray-600">Scan to view bike details</p>
       </div>
 
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-500">
-        <p>
-          {bikeRef(bike)} • {new Date().toLocaleDateString()}
-        </p>
-      </div>
     </div>
   );
 }
