@@ -22,6 +22,7 @@ import AddInvestorDialog from '@/components/management/AddInvestorDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useStorageBays } from '@/hooks/useStorageBays';
 
 const bikeSchema = z.object({
   make: z.string().min(1, 'Make is required'),
@@ -104,6 +105,7 @@ interface BikeFormProps {
 export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [submitting, setSubmitting] = useState(false);
+  const { bays: storageBays } = useStorageBays();
   const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
   const [investors, setInvestors] = useState<Array<{ user_id: string; name: string; email: string }>>([]);
   const [showOwnerDialog, setShowOwnerDialog] = useState(false);
@@ -188,6 +190,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
         status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
+        storage_bay_id: bikeFields.storage_bay_id || null,
         photos,
       };
 
