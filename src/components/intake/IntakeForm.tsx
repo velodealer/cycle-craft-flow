@@ -380,52 +380,14 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId, emb
   // Show intake form for selected bike
   return (
     <div className="space-y-6">
+      {!embedded && (
       <Card className="border-primary/20">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Selected Bike</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Performing intake on: {selectedBike.make} {selectedBike.model}
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setSelectedBike(null)}
-            >
-              Change Bike
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="font-medium">Owner:</span>
-              <div className="text-muted-foreground">
-                {selectedBike.external_owner?.name || 'Not assigned'}
-              </div>
-            </div>
-            <div>
-              <span className="font-medium">Year:</span>
-              <div className="text-muted-foreground">{selectedBike.year || 'Not recorded'}</div>
-            </div>
-            <div>
-              <span className="font-medium">Current Status:</span>
-              <div>
-                <Badge variant="outline">
-                  {selectedBike.status.replace('_', ' ')}
-                </Badge>
-              </div>
-            </div>
-            <div>
-              <span className="font-medium">Frame Number:</span>
-              <div className="text-muted-foreground">
-                {selectedBike.frame_number || 'Not recorded'}
-              </div>
-            </div>
-          </div>
+        ...
         </CardContent>
       </Card>
+      )}
+
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
