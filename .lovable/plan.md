@@ -32,7 +32,9 @@ QuickBooks isn't a one-click Lovable connector, so we build the connection ourse
 - QuickBooks Client Secret
 - Whether to start in Sandbox or Production
 
-Then in Settings > Integrations you click "Connect QuickBooks", approve in the Intuit window, and pick which QuickBooks accounts map to **Stock/Inventory**, **Cost of Goods Sold**, **Sales income**, and the **VAT/tax code** to use. Those choices are saved so every sale posts consistently.
+Then in Settings > Integrations you click "Connect QuickBooks", approve in the Intuit window, and pick which QuickBooks accounts map to **Stock/Inventory**, **Cost of Goods Sold**, **Sales income**, and **VAT control / liability**. Those choices are saved so every sale posts consistently.
+
+The margin VAT is never shown on the customer invoice; it is added to the VAT control account through the journal entry only.
 
 If QuickBooks isn't connected yet, sales still record and invoice normally — they're just flagged as "not synced" and can be pushed later.
 
