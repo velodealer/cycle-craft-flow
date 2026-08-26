@@ -573,8 +573,20 @@ export default function BikeDetailView({
         </div>
       </div>
 
+      {/* Record sale */}
+      {dialogDirection === 'forward' && nextStage === 'sold' && (
+        <RecordSaleDialog
+          isOpen={true}
+          onClose={() => setDialogDirection(null)}
+          bike={bike}
+          onSuccess={onUpdate}
+        />
+      )}
+
       {/* Advance/Revert Stage Dialog */}
-      {dialogDirection && (dialogDirection === 'forward' ? nextStage : previousStage) && (
+      {dialogDirection &&
+        !(dialogDirection === 'forward' && nextStage === 'sold') &&
+        (dialogDirection === 'forward' ? nextStage : previousStage) && (
         <AdvanceStageDialog
           isOpen={true}
           onClose={() => setDialogDirection(null)}
