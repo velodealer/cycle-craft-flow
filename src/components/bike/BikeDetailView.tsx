@@ -8,6 +8,8 @@ import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
+import InspectionTask from './InspectionTask';
+
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -511,6 +513,10 @@ export default function BikeDetailView({
           {bike.status === 'cleaning' && (
             <CleaningTask bike={bike} onUpdate={onUpdate} />
           )}
+
+          {/* Inspection record */}
+          <InspectionTask bike={bike} onUpdate={onUpdate} />
+
         </div>
       </div>
 

@@ -445,6 +445,63 @@ export type Database = {
           },
         ]
       }
+      inspections: {
+        Row: {
+          bike_id: string
+          completed_at: string | null
+          created_at: string
+          has_issues: boolean
+          id: string
+          inspected_by: string | null
+          notes: string | null
+          report_url: string | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bike_id: string
+          completed_at?: string | null
+          created_at?: string
+          has_issues?: boolean
+          id?: string
+          inspected_by?: string | null
+          notes?: string | null
+          report_url?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bike_id?: string
+          completed_at?: string | null
+          created_at?: string
+          has_issues?: boolean
+          id?: string
+          inspected_by?: string | null
+          notes?: string | null
+          report_url?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspections_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_inspected_by_fkey"
+            columns: ["inspected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           api_key: string | null
