@@ -1,6 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
 import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
+import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -8,45 +9,6 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-async function findOrCreateItem(accessToken: string, realmId: string, incomeAccountId: string) {
-  const name = 'Bicycle sale';
-  const query = encodeURIComponent(`select Id, Name from Item where Name = '${name}'`);
-  const found = await qboFetch(accessToken, realmId, `/query?query=${query}&minorversion=70`);
-  const existing = found?.QueryResponse?.Item?.[0];
-  if (existing) return existing.Id;
-  const created = await qboFetch(accessToken, realmId, '/item?minorversion=70', {
-    method: 'POST',
-    body: JSON.stringify({
-      Name: name,
-      Type: 'Service',
-      IncomeAccountRef: { value: incomeAccountId },
-    }),
-  });
-  return created?.Item?.Id;
-}
-
-async function findOrCreateCustomer(
-  accessToken: string,
-  realmId: string,
-  customer: { name: string; email?: string | null; phone?: string | null; address?: string | null },
-) {
-  const safeName = customer.name.replace(/['\\]/g, '');
-  const query = encodeURIComponent(`select Id, DisplayName from Customer where DisplayName = '${safeName}'`);
-  const found = await qboFetch(accessToken, realmId, `/query?query=${query}&minorversion=70`);
-  const existing = found?.QueryResponse?.Customer?.[0];
-  if (existing) return existing.Id;
-
-  const created = await qboFetch(accessToken, realmId, '/customer?minorversion=70', {
-    method: 'POST',
-    body: JSON.stringify({
-      DisplayName: customer.name,
-      ...(customer.email ? { PrimaryEmailAddr: { Address: customer.email } } : {}),
-      ...(customer.phone ? { PrimaryPhone: { FreeFormNumber: customer.phone } } : {}),
-      ...(customer.address ? { BillAddr: { Line1: customer.address } } : {}),
-    }),
-  });
-  return created?.Customer?.Id;
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -92,8 +54,10 @@ Deno.serve(async (req) => {
     const bikeReference = bike?.reference || bike?.id || '';
     const stockInDoc = bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
     const stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
-    const customerRef = await findOrCreateCustomer(accessToken, realmId, customer);
-    const itemRef = await findOrCreateItem(accessToken, realmId, accounts.sales);
+    const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
+    const customerRef = await findOrCreateCustomer(fetcher, customer);
+    const itemRef = await findOrCreateItem(fetcher, accounts.sales);
+
 
     // 1. Customer invoice. Margin scheme lines carry no VAT.
     const invoicePayload: Record<string, unknown> = {
