@@ -33,6 +33,7 @@ interface BikeDetailViewProps {
   showPhotos?: boolean;
   showPricing?: boolean;
   showDescriptions?: boolean;
+  inspectionMode?: boolean;
 }
 
 export default function BikeDetailView({ 
@@ -42,7 +43,8 @@ export default function BikeDetailView({
   onUpdate,
   showPhotos = true,
   showPricing = true,
-  showDescriptions = true
+  showDescriptions = true,
+  inspectionMode = false
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
   const [showBreak, setShowBreak] = useState(false);
