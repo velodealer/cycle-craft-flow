@@ -284,7 +284,12 @@ export default function BikeDetailView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Basic Information */}
+          {/* Photos */}
+          {showPhotos && (
+            <BikePhotoGallery photos={bike.photos} alt={`${bike.make} ${bike.model}`} />
+          )}
+
+
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
