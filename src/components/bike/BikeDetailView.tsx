@@ -184,6 +184,11 @@ export default function BikeDetailView({
               <Edit className="h-4 w-4 mr-2" />
               Edit Bike
             </Button>
+            <Button variant="outline" onClick={() => setShowLabel(true)} className="w-full sm:w-auto">
+              <Printer className="h-4 w-4 mr-2" />
+              Print label
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
