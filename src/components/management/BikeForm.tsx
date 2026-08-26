@@ -214,6 +214,16 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         if (error) throw error;
         bikeId = data.id;
         toast({ title: 'Bike created successfully' });
+
+        // Post the purchase to QuickBooks stock (purchase price only).
+        const posted = await tryPostPurchase(bikeId);
+        if (!posted.ok) {
+          toast({
+            title: 'QuickBooks purchase not posted',
+            description: posted.error,
+            variant: 'destructive',
+          });
+        }
       }
 
       // Arrange collection if requested
