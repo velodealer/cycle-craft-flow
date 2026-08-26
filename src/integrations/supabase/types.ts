@@ -190,11 +190,15 @@ export type Database = {
           purchase_cost: number | null
           purchase_date: string | null
           purchase_price: number | null
+          purchase_sync_error: string | null
+          purchase_sync_status: string
+          quickbooks_purchase_journal_id: string | null
           reference: string | null
           sale_price: number | null
           serial_number: string | null
           size: string | null
           sku: string | null
+          sold_at: string | null
           source: Database["public"]["Enums"]["bike_source"]
           spec_values: Json
           status: Database["public"]["Enums"]["bike_status"]
@@ -238,11 +242,15 @@ export type Database = {
           purchase_cost?: number | null
           purchase_date?: string | null
           purchase_price?: number | null
+          purchase_sync_error?: string | null
+          purchase_sync_status?: string
+          quickbooks_purchase_journal_id?: string | null
           reference?: string | null
           sale_price?: number | null
           serial_number?: string | null
           size?: string | null
           sku?: string | null
+          sold_at?: string | null
           source?: Database["public"]["Enums"]["bike_source"]
           spec_values?: Json
           status?: Database["public"]["Enums"]["bike_status"]
@@ -286,11 +294,15 @@ export type Database = {
           purchase_cost?: number | null
           purchase_date?: string | null
           purchase_price?: number | null
+          purchase_sync_error?: string | null
+          purchase_sync_status?: string
+          quickbooks_purchase_journal_id?: string | null
           reference?: string | null
           sale_price?: number | null
           serial_number?: string | null
           size?: string | null
           sku?: string | null
+          sold_at?: string | null
           source?: Database["public"]["Enums"]["bike_source"]
           spec_values?: Json
           status?: Database["public"]["Enums"]["bike_status"]
@@ -586,7 +598,11 @@ export type Database = {
           job_id: string | null
           net: number
           paid_at: string | null
+          quickbooks_invoice_id: string | null
+          quickbooks_journal_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
+          sync_error: string | null
+          sync_status: string
           total: number
           type: Database["public"]["Enums"]["invoice_type"]
           updated_at: string
@@ -605,7 +621,11 @@ export type Database = {
           job_id?: string | null
           net: number
           paid_at?: string | null
+          quickbooks_invoice_id?: string | null
+          quickbooks_journal_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          sync_error?: string | null
+          sync_status?: string
           total: number
           type: Database["public"]["Enums"]["invoice_type"]
           updated_at?: string
@@ -624,7 +644,11 @@ export type Database = {
           job_id?: string | null
           net?: number
           paid_at?: string | null
+          quickbooks_invoice_id?: string | null
+          quickbooks_journal_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
+          sync_error?: string | null
+          sync_status?: string
           total?: number
           type?: Database["public"]["Enums"]["invoice_type"]
           updated_at?: string
@@ -1237,6 +1261,7 @@ export type Database = {
         Returns: boolean
       }
       is_investor_for_bike: { Args: { _bike_id: string }; Returns: boolean }
+      next_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
       bike_source: "owned" | "customer_consignment" | "investor"
