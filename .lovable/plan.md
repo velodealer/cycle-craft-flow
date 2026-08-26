@@ -7,14 +7,19 @@ When you move a bike to **Sold**, instead of the plain "Move to..." dialog you g
 - Sale price (defaults to asking price, but editable — the actual sale price is what's saved)
 - Sale date
 - Customer: search existing customers, or add a new one inline (name, email, phone, address)
-- VAT scheme shown (margin vs VAT-qualifying), with the VAT figure calculated live
+- VAT scheme shown (margin vs VAT-qualifying), with the margin VAT amount calculated live
 - Optional notes and photos (same as today's stage dialog)
 
 On save:
 1. The bike is marked sold with `sale_price` and sale date stored.
-2. An invoice is created in the app (numbered, linked to the bike and customer, with net/VAT/gross based on the bike's VAT scheme).
-3. The invoice is pushed to QuickBooks Online, with the VAT entry based on the margin (margin scheme: VAT = (sale price − acquisition cost) × 20/120; VAT-qualifying: standard 20%).
-4. A journal entry is posted in QuickBooks moving the bike's total cost out of the Stock/Inventory account into Cost of Goods Sold.
+2. An invoice is created in the app (numbered, linked to the bike and customer).
+   - Margin scheme: the customer invoice shows **0% VAT**; gross equals the sale price.
+   - VAT-qualifying: standard 20% VAT shown on the invoice.
+3. The invoice is pushed to QuickBooks Online.
+4. A journal entry is posted in QuickBooks:
+   - **Stock/Inventory** credited by the bike's total cost (acquisition + collection + delivery + parts + labour).
+   - **Cost of Goods Sold** debited by the same total cost.
+   - **Margin scheme only**: the margin VAT (`(sale price − acquisition cost) × 20/120`) is credited to the **VAT control / liability** account (no VAT on the customer invoice itself).
 5. The bike stops counting in in-app stock value and stock aging reports.
 
 The Invoices page (currently a placeholder) becomes a real list: invoice number, bike, customer, net/VAT/gross, status, QuickBooks sync state, with a retry button if a sync failed.
@@ -27,7 +32,9 @@ QuickBooks isn't a one-click Lovable connector, so we build the connection ourse
 - QuickBooks Client Secret
 - Whether to start in Sandbox or Production
 
-Then in Settings > Integrations you click "Connect QuickBooks", approve in the Intuit window, and pick which QuickBooks accounts map to **Stock/Inventory**, **Cost of Goods Sold**, **Sales income**, and the **VAT/tax code** to use. Those choices are saved so every sale posts consistently.
+Then in Settings > Integrations you click "Connect QuickBooks", approve in the Intuit window, and pick which QuickBooks accounts map to **Stock/Inventory**, **Cost of Goods Sold**, **Sales income**, and **VAT control / liability**. Those choices are saved so every sale posts consistently.
+
+The margin VAT is never shown on the customer invoice; it is added to the VAT control account through the journal entry only.
 
 If QuickBooks isn't connected yet, sales still record and invoice normally — they're just flagged as "not synced" and can be pushed later.
 
@@ -43,7 +50,7 @@ If QuickBooks isn't connected yet, sales still record and invoice normally — t
 
 **Edge functions**
 - `quickbooks-oauth` — start URL + callback exchange, stores refresh token (verify_jwt false only for the callback path).
-- `quickbooks-sync-invoice` — JWT-validated; refreshes access token, creates/updates the QBO Customer, creates the Invoice with the correct tax code/VAT amount, then posts the JournalEntry (credit Stock, debit COGS by total bike cost = acquisition + collection + delivery + parts + labour), and writes ids/errors back onto the invoice row.
+- `quickbooks-sync-invoice` — JWT-validated; refreshes access token, creates/updates the QBO Customer, creates the Invoice (margin = 0% tax on the line), then posts the JournalEntry for stock-to-COGS plus, for margin schemes, the margin VAT to the VAT control account. It writes ids/errors back onto the invoice row.
 
 **Frontend**
 - New `src/components/bike/RecordSaleDialog.tsx`, wired into `BikeDetailView` in place of `AdvanceStageDialog` when the next stage is `sold`.
