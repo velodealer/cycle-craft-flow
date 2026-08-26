@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { PackageCheck, Save } from 'lucide-react';
 import IntakeForm from '@/components/intake/IntakeForm';
+import PhotoUpload from '@/components/PhotoUpload';
+
 import LocationSelect from './LocationSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
