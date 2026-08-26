@@ -139,7 +139,82 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
           {searchQuery ? "No collections found matching your search" : "No collections found"}
         </div>
       ) : (
-        <div className="rounded-md border">
+        <>
+        {/* Mobile cards */}
+        <div className="space-y-3 md:hidden">
+          {filteredCollections.map((collection) => (
+            <ListCard key={collection.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold break-words">
+                    {collection.bikes ? `${collection.bikes.make} ${collection.bikes.model}` : 'Unknown bike'}
+                  </div>
+                  {collection.bikes?.frame_number && (
+                    <div className="text-xs text-muted-foreground">{collection.bikes.frame_number}</div>
+                  )}
+                </div>
+                {getStatusBadge(collection.status)}
+              </div>
+              <ListCardRow
+                label="Tracking"
+                value={
+                  collection.tracking_number ? (
+                    <button
+                      className="font-mono text-sm underline underline-offset-2"
+                      onClick={() => copyTrackingNumber(collection.tracking_number!)}
+                    >
+                      {collection.tracking_number}
+                      <Copy className="inline h-3 w-3 ml-1" />
+                    </button>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+              <ListCardRow
+                label="Sender"
+                value={
+                  <span>
+                    {collection.sender_name}
+                    <span className="block text-xs text-muted-foreground">{collection.sender_email}</span>
+                  </span>
+                }
+              />
+              <ListCardRow
+                label="Address"
+                value={
+                  <span>
+                    {collection.address_street}
+                    <span className="block text-xs text-muted-foreground">
+                      {collection.address_city}, {collection.address_postcode}
+                    </span>
+                  </span>
+                }
+              />
+              <ListCardRow
+                label="Scheduled"
+                value={
+                  collection.scheduled_date
+                    ? format(new Date(collection.scheduled_date), 'MMM d, yyyy HH:mm')
+                    : '—'
+                }
+              />
+              <ListCardRow label="Created" value={format(new Date(collection.created_at), 'MMM d, yyyy')} />
+              <ListCardActions>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate(`/bikes?bike=${collection.bike_id}`)}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open bike
+                </Button>
+              </ListCardActions>
+            </ListCard>
+          ))}
+        </div>
+
+        <div className="hidden md:block rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
