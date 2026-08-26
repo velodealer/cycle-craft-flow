@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useStorageBays } from '@/hooks/useStorageBays';
@@ -22,8 +24,9 @@ function splitName(name: string): { bay: string; number: string } {
 }
 
 /**
- * Storage location entered as two plain fields: bay letter + number.
- * Unknown combinations create a new bay automatically.
+ * Storage location entered as bay letter + number, applied with an
+ * explicit Assign button. Only existing bays can be assigned — bays are
+ * created by admins in Settings → Storage bays.
  */
 export default function LocationSelect({
   bikeId,
@@ -32,7 +35,7 @@ export default function LocationSelect({
   className,
   size = 'default',
 }: LocationSelectProps) {
-  const { bays, reload } = useStorageBays();
+  const { bays } = useStorageBays();
   const [saving, setSaving] = useState(false);
   const [current, setCurrent] = useState<string | null>(value ?? null);
   const [bay, setBay] = useState('');
@@ -49,31 +52,35 @@ export default function LocationSelect({
     setNumber(parts.number);
   }, [current, bays]);
 
-  const commit = async (nextBay: string, nextNumber: string) => {
-    const name = `${nextBay.trim().toUpperCase()}${nextNumber.trim()}`;
+  const revert = () => {
+    const found = bays.find((b) => b.id === current);
+    const parts = found ? splitName(found.name) : { bay: '', number: '' };
+    setBay(parts.bay);
+    setNumber(parts.number);
+  };
+
+  const assign = async () => {
+    const name = `${bay.trim().toUpperCase()}${number.trim()}`;
     const currentBay = bays.find((b) => b.id === current);
     if (name === (currentBay?.name ?? '')) return;
 
+    let bayId: string | null = null;
+    if (name) {
+      const existing = bays.find((b) => b.name.toLowerCase() === name.toLowerCase());
+      if (!existing) {
+        toast({
+          title: 'Unknown bay',
+          description: `${name} doesn't exist. An admin can add it in Settings → Storage bays.`,
+          variant: 'destructive',
+        });
+        revert();
+        return;
+      }
+      bayId = existing.id;
+    }
+
     setSaving(true);
     try {
-      let bayId: string | null = null;
-
-      if (name) {
-        const existing = bays.find((b) => b.name.toLowerCase() === name.toLowerCase());
-        if (existing) {
-          bayId = existing.id;
-        } else {
-          const { data, error } = await supabase
-            .from('storage_bays')
-            .insert({ name })
-            .select('id')
-            .single();
-          if (error) throw error;
-          bayId = data.id;
-          reload();
-        }
-      }
-
       if (bikeId) {
         const { error } = await supabase
           .from('bikes')
@@ -89,9 +96,17 @@ export default function LocationSelect({
         description: name ? `Set to ${name}` : 'Location cleared',
       });
     } catch (error: any) {
+      revert();
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      assign();
     }
   };
 
@@ -106,13 +121,7 @@ export default function LocationSelect({
         aria-label="Bay"
         className={cn(inputClass, 'w-16 uppercase')}
         onChange={(e) => setBay(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
-        onBlur={() => commit(bay, number)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            (e.target as HTMLInputElement).blur();
-          }
-        }}
+        onKeyDown={handleKeyDown}
       />
       <Input
         value={number}
@@ -122,14 +131,19 @@ export default function LocationSelect({
         aria-label="Bay number"
         className={cn(inputClass, 'w-16')}
         onChange={(e) => setNumber(e.target.value.replace(/[^0-9]/g, ''))}
-        onBlur={() => commit(bay, number)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            (e.target as HTMLInputElement).blur();
-          }
-        }}
+        onKeyDown={handleKeyDown}
       />
+      <Button
+        type="button"
+        variant="outline"
+        size={size === 'sm' ? 'sm' : 'default'}
+        disabled={saving}
+        onClick={assign}
+        aria-label="Assign location"
+      >
+        <Check className="h-4 w-4" />
+        Assign
+      </Button>
     </div>
   );
 }
