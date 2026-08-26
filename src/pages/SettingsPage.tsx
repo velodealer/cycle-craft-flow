@@ -1,6 +1,7 @@
 import PlaceholderPage from '@/components/PlaceholderPage';
 import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
+import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
