@@ -19,6 +19,7 @@ import { useStorageBays } from '@/hooks/useStorageBays';
 
 interface Bike {
   id: string;
+  reference: string | null;
   make: string;
   model: string;
   year: number | null;
@@ -51,7 +52,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     try {
       let query = supabase
         .from('bikes')
-        .select('id, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number')
+        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {

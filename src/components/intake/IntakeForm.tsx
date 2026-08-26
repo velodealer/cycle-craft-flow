@@ -32,6 +32,7 @@ interface IntakeFormProps {
 
 interface Bike {
   id: string;
+  reference?: string | null;
   make: string;
   model: string;
   year?: number;
