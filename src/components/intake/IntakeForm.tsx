@@ -28,7 +28,10 @@ interface IntakeFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   preselectedBikeId?: string;
+  /** Rendered inside another card (e.g. bike detail page): hides bike picker chrome and Cancel */
+  embedded?: boolean;
 }
+
 
 interface Bike {
   id: string;
@@ -49,7 +52,7 @@ interface Bike {
 }
 
 
-export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: IntakeFormProps) {
+export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId, embedded = false }: IntakeFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [serialPhotos, setSerialPhotos] = useState<string[]>([]);
   const [registerPhotos, setRegisterPhotos] = useState<string[]>([]);
@@ -278,8 +281,13 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
 
   const isChecklistComplete = Object.values(checklist).every(Boolean);
 
+  if (embedded && !selectedBike) {
+    return <p className="text-sm text-muted-foreground">Loading intake details...</p>;
+  }
+
   // If no bike is selected, show bike selection
   if (!selectedBike) {
+
     return (
       <div className="space-y-6">
         <Card>
@@ -372,6 +380,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
   // Show intake form for selected bike
   return (
     <div className="space-y-6">
+      {!embedded && (
       <Card className="border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -418,6 +427,9 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
           </div>
         </CardContent>
       </Card>
+      )}
+
+
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -606,9 +618,12 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
           </Card>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
+            {!embedded && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+
             <Button 
               type="submit" 
               disabled={submitting || !isChecklistComplete}
