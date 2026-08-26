@@ -8,6 +8,7 @@ import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader
 import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
+import RecordSaleDialog from './RecordSaleDialog';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
