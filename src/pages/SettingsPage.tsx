@@ -92,6 +92,9 @@ export default function SettingsPage() {
         <TabsContent value="integrations" className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
             <CycleCourierIntegration />
+            <QuickBooksIntegration />
+
+
             
             <Card>
               <CardHeader>
