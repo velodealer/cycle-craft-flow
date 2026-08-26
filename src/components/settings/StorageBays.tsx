@@ -199,6 +199,64 @@ export default function StorageBays() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Generate bays
+          </CardTitle>
+          <CardDescription>Create a whole run of bays at once, e.g. A1 to A20.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="bay-prefix">Letter</Label>
+              <Input
+                id="bay-prefix"
+                placeholder="A"
+                value={prefix}
+                maxLength={1}
+                onChange={(e) => setPrefix(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bay-start">From number</Label>
+              <Input
+                id="bay-start"
+                type="number"
+                min={1}
+                value={startNum}
+                onChange={(e) => setStartNum(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bay-end">To number</Label>
+              <Input
+                id="bay-end"
+                type="number"
+                min={1}
+                value={endNum}
+                onChange={(e) => setEndNum(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="batch-zone">Zone (optional)</Label>
+              <Input
+                id="batch-zone"
+                placeholder="Mezzanine"
+                value={batchZone}
+                onChange={(e) => setBatchZone(e.target.value)}
+              />
+            </div>
+          </div>
+          <Button onClick={generateBays} disabled={busy} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Generate bays
+          </Button>
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardHeader>
           <CardTitle>Bays ({bays.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
