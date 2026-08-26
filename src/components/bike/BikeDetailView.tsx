@@ -294,15 +294,15 @@ export default function BikeDetailView({
           </Card>
 
           {/* Full bike specification */}
-          <BikeSpecificationSection bike={bike} onUpdate={onUpdate} />
+          {!inspectionMode && <BikeSpecificationSection bike={bike} onUpdate={onUpdate} />}
 
           {/* Parts & Labour */}
-          {canSeePricing && (
+          {canSeePricing && !inspectionMode && (
             <BikeCostsSection bikeId={bike.id} onChange={refreshCosts} />
           )}
 
           {/* Pricing Information */}
-          {canSeePricing && (
+          {canSeePricing && !inspectionMode && (
             <Card>
               <CardHeader>
                 <CardTitle>Pricing & Finance</CardTitle>
@@ -435,7 +435,7 @@ export default function BikeDetailView({
             </Card>
           )}
 
-          {bike.source === 'investor' && !isMechanic && (
+          {bike.source === 'investor' && !isMechanic && !inspectionMode && (
             <Card>
               <CardHeader>
                 <CardTitle>Investor</CardTitle>
@@ -509,7 +509,7 @@ export default function BikeDetailView({
         {/* Tasks & Timeline */}
         <div className="space-y-6">
           {/* Show collection status if bike has collection */}
-          <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />
+          {!inspectionMode && <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />}
           
           {/* Show cleaning task if bike is in cleaning status */}
           {bike.status === 'cleaning' && (
