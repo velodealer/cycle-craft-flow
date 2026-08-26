@@ -36,6 +36,7 @@ interface Bike {
   model: string;
   year?: number;
   frame_number?: string;
+  serial_number?: string | null;
   size?: string | null;
   colour?: string | null;
   status: string;
@@ -46,6 +47,7 @@ interface Bike {
     email?: string;
   };
 }
+
 
 export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: IntakeFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
@@ -90,6 +92,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
             model,
             year,
             frame_number,
+            serial_number,
             size,
             colour,
             status,
