@@ -1,2182 +1,2727 @@
 [
 {
 "name": "2 Danger",
-"slug": "2-danger"
+"slug": "2-danger",
+"count": 12
 },
 {
 "name": "3T",
-"slug": "3t"
+"slug": "3t",
+"count": 119
 },
 {
 "name": "8 Bar",
-"slug": "8-bar"
+"slug": "8-bar",
+"count": 3
 },
 {
-"name": "8bar",
-"slug": "8bar"
+"name": "8Bar",
+"slug": "8bar",
+"count": 4
 },
 {
-"name": "A2b",
-"slug": "a2b"
+"name": "A2B",
+"slug": "a2b",
+"count": 1
 },
 {
 "name": "Accent",
-"slug": "accent"
+"slug": "accent",
+"count": 1
 },
 {
-"name": "Addmotor",
-"slug": "addmotor"
+"name": "AddMotoR",
+"slug": "addmotor",
+"count": 2
 },
 {
 "name": "Adris",
-"slug": "adris"
+"slug": "adris",
+"count": 10
 },
 {
 "name": "Aegis",
-"slug": "aegis"
+"slug": "aegis",
+"count": 2
 },
 {
 "name": "Airborne",
-"slug": "airborne"
+"slug": "airborne",
+"count": 4
 },
 {
 "name": "Airdrop",
-"slug": "airdrop"
+"slug": "airdrop",
+"count": 1
 },
 {
 "name": "Airstreeem",
-"slug": "airstreeem"
+"slug": "airstreeem",
+"count": 6
 },
 {
 "name": "Alan",
-"slug": "alan"
+"slug": "alan",
+"count": 9
 },
 {
 "name": "Alchemy",
-"slug": "alchemy"
+"slug": "alchemy",
+"count": 2
 },
 {
-"name": "All City",
-"slug": "all-city"
+"name": "All-City",
+"slug": "all-city",
+"count": 11
 },
 {
 "name": "Allied",
-"slug": "allied"
+"slug": "allied",
+"count": 8
 },
 {
 "name": "Alutech",
-"slug": "alutech"
+"slug": "alutech",
+"count": 4
 },
 {
 "name": "American Eagle",
-"slug": "american-eagle"
+"slug": "american-eagle",
+"count": 1
 },
 {
 "name": "Ancheer",
-"slug": "ancheer"
+"slug": "ancheer",
+"count": 1
 },
 {
 "name": "Antidote",
-"slug": "antidote"
+"slug": "antidote",
+"count": 2
 },
 {
 "name": "Apex",
-"slug": "apex"
+"slug": "apex",
+"count": 3
 },
 {
 "name": "Aquila",
-"slug": "aquila"
+"slug": "aquila",
+"count": 1
 },
 {
-"name": "Arc 8",
-"slug": "arc-8"
+"name": "ARC 8",
+"slug": "arc-8",
+"count": 1
 },
 {
-"name": "Arc8",
-"slug": "arc8"
+"name": "ARC8",
+"slug": "arc8",
+"count": 18
 },
 {
 "name": "Argon 18",
-"slug": "argon-18"
+"slug": "argon-18",
+"count": 115
 },
 {
 "name": "Argonaut",
-"slug": "argonaut"
+"slug": "argonaut",
+"count": 1
 },
 {
 "name": "Atala",
-"slug": "atala"
+"slug": "atala",
+"count": 25
 },
 {
 "name": "Augment",
-"slug": "augment"
+"slug": "augment",
+"count": 1
 },
 {
 "name": "Aurum",
-"slug": "aurum"
+"slug": "aurum",
+"count": 6
 },
 {
 "name": "Author",
-"slug": "author"
+"slug": "author",
+"count": 5
 },
 {
 "name": "Avanti",
-"slug": "avanti"
+"slug": "avanti",
+"count": 1
 },
 {
-"name": "Avenger",
-"slug": "avenger"
+"name": "AVENGER",
+"slug": "avenger",
+"count": 1
 },
 {
 "name": "Aventon",
-"slug": "aventon"
+"slug": "aventon",
+"count": 5
 },
 {
-"name": "AX Lightness",
-"slug": "ax-lightness"
+"name": "Ax-lightness",
+"slug": "ax-lightness",
+"count": 1
 },
 {
 "name": "Axevo",
-"slug": "axevo"
-},
-{
-"name": "B Twin",
-"slug": "b-twin"
+"slug": "axevo",
+"count": 1
 },
 {
 "name": "Baldiso",
-"slug": "baldiso"
+"slug": "baldiso",
+"count": 1
 },
 {
 "name": "Banshee",
-"slug": "banshee"
+"slug": "banshee",
+"count": 9
 },
 {
 "name": "Barellia",
-"slug": "barellia"
+"slug": "barellia",
+"count": 1
 },
 {
-"name": "Basis",
-"slug": "basis"
+"name": "BASIS",
+"slug": "basis",
+"count": 1
 },
 {
 "name": "Basso",
-"slug": "basso"
+"slug": "basso",
+"count": 77
 },
 {
 "name": "Batavus",
-"slug": "batavus"
+"slug": "batavus",
+"count": 4
 },
 {
 "name": "Batch Bicycles",
-"slug": "batch-bicycles"
+"slug": "batch-bicycles",
+"count": 1
 },
 {
 "name": "Battaglin",
-"slug": "battaglin"
+"slug": "battaglin",
+"count": 6
 },
 {
-"name": "Bbf",
-"slug": "bbf"
+"name": "BBF",
+"slug": "bbf",
+"count": 1
 },
 {
 "name": "BC Flint",
-"slug": "bc-flint"
+"slug": "bc-flint",
+"count": 1
 },
 {
 "name": "Benotti",
-"slug": "benotti"
+"slug": "benotti",
+"count": 1
 },
 {
 "name": "Beone",
-"slug": "beone"
+"slug": "beone",
+"count": 1
 },
 {
 "name": "Bergamont",
-"slug": "bergamont"
+"slug": "bergamont",
+"count": 44
 },
 {
 "name": "Berria",
-"slug": "berria"
+"slug": "berria",
+"count": 61
 },
 {
 "name": "BH",
-"slug": "bh"
+"slug": "bh",
+"count": 160
 },
 {
 "name": "Bianchi",
-"slug": "bianchi"
+"slug": "bianchi",
+"count": 414
 },
 {
 "name": "Bionicon",
-"slug": "bionicon"
+"slug": "bionicon",
+"count": 2
 },
 {
 "name": "Bird",
-"slug": "bird"
+"slug": "bird",
+"count": 2
 },
 {
 "name": "Blue Competition",
-"slug": "blue-competition"
+"slug": "blue-competition",
+"count": 4
 },
 {
-"name": "Bmc",
-"slug": "bmc"
+"name": "BMC",
+"slug": "bmc",
+"count": 291
 },
 {
-"name": "Bmw",
-"slug": "bmw"
+"name": "BMW",
+"slug": "bmw",
+"count": 1
 },
 {
 "name": "Boardman",
-"slug": "boardman"
+"slug": "boardman",
+"count": 2
 },
 {
 "name": "Bold",
-"slug": "bold"
+"slug": "bold",
+"count": 2
 },
 {
 "name": "Bombtrack",
-"slug": "bombtrack"
+"slug": "bombtrack",
+"count": 7
 },
 {
 "name": "Borealis",
-"slug": "borealis"
+"slug": "borealis",
+"count": 3
 },
 {
 "name": "Bossi Bicycles",
-"slug": "bossi-bicycles"
+"slug": "bossi-bicycles",
+"count": 1
 },
 {
 "name": "Bottecchia",
-"slug": "bottecchia"
+"slug": "bottecchia",
+"count": 56
 },
 {
 "name": "Breezer",
-"slug": "breezer"
+"slug": "breezer",
+"count": 3
 },
 {
 "name": "Brera",
-"slug": "brera"
+"slug": "brera",
+"count": 1
 },
 {
 "name": "Bridge Bikeworks",
-"slug": "bridge-bikeworks"
+"slug": "bridge-bikeworks",
+"count": 1
 },
 {
 "name": "Bridgestone",
-"slug": "bridgestone"
+"slug": "bridgestone",
+"count": 2
 },
 {
 "name": "Brixia",
-"slug": "brixia"
+"slug": "brixia",
+"count": 1
 },
 {
 "name": "Brothers",
-"slug": "brothers"
+"slug": "brothers",
+"count": 1
 },
 {
-"name": "Bulls",
-"slug": "bulls"
+"name": "BULLS",
+"slug": "bulls",
+"count": 49
 },
 {
-"name": "Bxt",
-"slug": "bxt"
+"name": "BXT",
+"slug": "bxt",
+"count": 2
 },
 {
-"name": "C B T Italia",
-"slug": "c-b-t-italia"
+"name": "B\u2019TWIN",
+"slug": "b-twin",
+"count": 33
+},
+{
+"name": "C.B.T. Italia",
+"slug": "c-b-t-italia",
+"count": 2
 },
 {
 "name": "C14",
-"slug": "c14"
+"slug": "c14",
+"count": 1
 },
 {
-"name": "C3strom",
-"slug": "c3strom"
+"name": "C3STROM",
+"slug": "c3strom",
+"count": 1
 },
 {
 "name": "C4",
-"slug": "c4"
+"slug": "c4",
+"count": 1
 },
 {
 "name": "Cadex",
-"slug": "cadex"
+"slug": "cadex",
+"count": 1
 },
 {
 "name": "Calfee",
-"slug": "calfee"
+"slug": "calfee",
+"count": 1
 },
 {
 "name": "Calibre",
-"slug": "calibre"
+"slug": "calibre",
+"count": 1
 },
 {
 "name": "Canfield",
-"slug": "canfield"
+"slug": "canfield",
+"count": 1
 },
 {
 "name": "Cannondale",
-"slug": "cannondale"
+"slug": "cannondale",
+"count": 574
 },
 {
 "name": "Canyon",
-"slug": "canyon"
+"slug": "canyon",
+"count": 519
 },
 {
 "name": "Carbon Pro",
-"slug": "carbon-pro"
+"slug": "carbon-pro",
+"count": 2
 },
 {
 "name": "Carbonda",
-"slug": "carbonda"
+"slug": "carbonda",
+"count": 3
 },
 {
 "name": "Carraro",
-"slug": "carraro"
+"slug": "carraro",
+"count": 2
 },
 {
 "name": "Carrera",
-"slug": "carrera"
+"slug": "carrera",
+"count": 21
 },
 {
 "name": "Carver",
-"slug": "carver"
+"slug": "carver",
+"count": 4
 },
 {
 "name": "Casati",
-"slug": "casati"
+"slug": "casati",
+"count": 5
 },
 {
-"name": "Cbk",
-"slug": "cbk"
+"name": "CBK",
+"slug": "cbk",
+"count": 1
 },
 {
-"name": "Cbt Italia",
-"slug": "cbt-italia"
+"name": "CBT Italia",
+"slug": "cbt-italia",
+"count": 3
 },
 {
 "name": "Ceccotti",
-"slug": "ceccotti"
+"slug": "ceccotti",
+"count": 1
 },
 {
 "name": "Ceepo",
-"slug": "ceepo"
+"slug": "ceepo",
+"count": 12
 },
 {
 "name": "Centurion",
-"slug": "centurion"
+"slug": "centurion",
+"count": 17
 },
 {
-"name": "Cero",
-"slug": "cero"
+"name": "CERO",
+"slug": "cero",
+"count": 1
 },
 {
-"name": "Cerv LO",
-"slug": "cerv-lo"
+"name": "Cerv\u00e9lo",
+"slug": "cerv-lo",
+"count": 248
 },
 {
 "name": "Chaka",
-"slug": "chaka"
+"slug": "chaka",
+"count": 1
 },
 {
 "name": "Chapter 2",
-"slug": "chapter-2"
+"slug": "chapter-2",
+"count": 3
 },
 {
-"name": "Checker Pig",
-"slug": "checker-pig"
+"name": "CHECKER PIG",
+"slug": "checker-pig",
+"count": 1
 },
 {
 "name": "Cheetah",
-"slug": "cheetah"
+"slug": "cheetah",
+"count": 1
 },
 {
 "name": "Chesini",
-"slug": "chesini"
+"slug": "chesini",
+"count": 4
 },
 {
 "name": "Chromag",
-"slug": "chromag"
-},
-{
-"name": "CI CC",
-"slug": "ci-cc"
+"slug": "chromag",
+"count": 1
 },
 {
 "name": "Cicli Adriatica",
-"slug": "cicli-adriatica"
+"slug": "cicli-adriatica",
+"count": 3
 },
 {
 "name": "Cilo Swiss",
-"slug": "cilo-swiss"
+"slug": "cilo-swiss",
+"count": 2
 },
 {
 "name": "Cinelli",
-"slug": "cinelli"
+"slug": "cinelli",
+"count": 75
 },
 {
 "name": "Cipollini",
-"slug": "cipollini"
+"slug": "cipollini",
+"count": 37
 },
 {
-"name": "Ckt",
-"slug": "ckt"
+"name": "CI\u00d6CC",
+"slug": "ci-cc",
+"count": 6
 },
 {
-"name": "CO OP",
-"slug": "co-op"
+"name": "CKT",
+"slug": "ckt",
+"count": 4
+},
+{
+"name": "Co-op",
+"slug": "co-op",
+"count": 2
 },
 {
 "name": "Cobalt",
-"slug": "cobalt"
+"slug": "cobalt",
+"count": 1
 },
 {
 "name": "Colnago",
-"slug": "colnago"
+"slug": "colnago",
+"count": 279
 },
 {
 "name": "Coluer",
-"slug": "coluer"
+"slug": "coluer",
+"count": 11
 },
 {
 "name": "Commencal",
-"slug": "commencal"
+"slug": "commencal",
+"count": 91
 },
 {
 "name": "Compel",
-"slug": "compel"
+"slug": "compel",
+"count": 1
 },
 {
 "name": "Concorde",
-"slug": "concorde"
+"slug": "concorde",
+"count": 2
 },
 {
 "name": "Condor",
-"slug": "condor"
+"slug": "condor",
+"count": 2
 },
 {
 "name": "Conor",
-"slug": "conor"
+"slug": "conor",
+"count": 10
 },
 {
 "name": "Conway",
-"slug": "conway"
+"slug": "conway",
+"count": 57
 },
 {
 "name": "Corratec",
-"slug": "corratec"
+"slug": "corratec",
+"count": 32
 },
 {
 "name": "Cortina",
-"slug": "cortina"
+"slug": "cortina",
+"count": 2
 },
 {
 "name": "Cotic",
-"slug": "cotic"
+"slug": "cotic",
+"count": 4
 },
 {
 "name": "Couler",
-"slug": "couler"
+"slug": "couler",
+"count": 3
 },
 {
 "name": "Cowboy",
-"slug": "cowboy"
+"slug": "cowboy",
+"count": 2
 },
 {
 "name": "Crossworx",
-"slug": "crossworx"
+"slug": "crossworx",
+"count": 1
 },
 {
-"name": "Ctm",
-"slug": "ctm"
+"name": "CTM",
+"slug": "ctm",
+"count": 2
 },
 {
-"name": "Cube",
-"slug": "cube"
+"name": "CUBE",
+"slug": "cube",
+"count": 380
 },
 {
 "name": "Cucuma",
-"slug": "cucuma"
+"slug": "cucuma",
+"count": 3
 },
 {
 "name": "Curve",
-"slug": "curve"
+"slug": "curve",
+"count": 2
 },
 {
 "name": "Custom",
-"slug": "custom"
+"slug": "custom",
+"count": 16
 },
 {
-"name": "Cycle OF Good",
-"slug": "cycle-of-good"
+"name": "CYCLE OF GOOD",
+"slug": "cycle-of-good",
+"count": 1
 },
 {
 "name": "Cycletech",
-"slug": "cycletech"
+"slug": "cycletech",
+"count": 1
 },
 {
-"name": "Dabomb",
-"slug": "dabomb"
+"name": "DABOMB",
+"slug": "dabomb",
+"count": 1
 },
 {
 "name": "Daccordi",
-"slug": "daccordi"
+"slug": "daccordi",
+"count": 17
 },
 {
 "name": "Dancelli",
-"slug": "dancelli"
+"slug": "dancelli",
+"count": 2
 },
 {
 "name": "Dartmoor",
-"slug": "dartmoor"
+"slug": "dartmoor",
+"count": 11
 },
 {
-"name": "DE Rosa",
-"slug": "de-rosa"
+"name": "De Rosa",
+"slug": "de-rosa",
+"count": 78
 },
 {
 "name": "Debello",
-"slug": "debello"
+"slug": "debello",
+"count": 1
 },
 {
-"name": "Decathlon",
-"slug": "decathlon"
+"name": "DECATHLON",
+"slug": "decathlon",
+"count": 11
 },
 {
 "name": "Dedacciai",
-"slug": "dedacciai"
+"slug": "dedacciai",
+"count": 4
 },
 {
 "name": "Denago",
-"slug": "denago"
+"slug": "denago",
+"count": 1
 },
 {
-"name": "Denver",
-"slug": "denver"
+"name": "DENVER",
+"slug": "denver",
+"count": 1
 },
 {
 "name": "Deviate",
-"slug": "deviate"
+"slug": "deviate",
+"count": 5
 },
 {
 "name": "Devinci",
-"slug": "devinci"
+"slug": "devinci",
+"count": 14
 },
 {
 "name": "Diamant",
-"slug": "diamant"
+"slug": "diamant",
+"count": 3
 },
 {
 "name": "Diamondback",
-"slug": "diamondback"
+"slug": "diamondback",
+"count": 21
 },
 {
 "name": "Dimond",
-"slug": "dimond"
+"slug": "dimond",
+"count": 1
 },
 {
 "name": "Dizo",
-"slug": "dizo"
+"slug": "dizo",
+"count": 2
 },
 {
-"name": "Dmr",
-"slug": "dmr"
+"name": "DMR",
+"slug": "dmr",
+"count": 4
 },
 {
 "name": "Dolan",
-"slug": "dolan"
-},
-{
-"name": "DR Ssiger",
-"slug": "dr-ssiger"
+"slug": "dolan",
+"count": 4
 },
 {
 "name": "Drag",
-"slug": "drag"
+"slug": "drag",
+"count": 2
+},
+{
+"name": "Dr\u00f6ssiger",
+"slug": "dr-ssiger",
+"count": 3
 },
 {
 "name": "Ducati",
-"slug": "ducati"
+"slug": "ducati",
+"count": 2
 },
 {
 "name": "Dynamics",
-"slug": "dynamics"
+"slug": "dynamics",
+"count": 2
 },
 {
 "name": "Dynatek",
-"slug": "dynatek"
+"slug": "dynatek",
+"count": 7
 },
 {
 "name": "Early Rider",
-"slug": "early-rider"
+"slug": "early-rider",
+"count": 1
 },
 {
 "name": "Eddy Merckx",
-"slug": "eddy-merckx"
+"slug": "eddy-merckx",
+"count": 42
 },
 {
 "name": "Edelsten",
-"slug": "edelsten"
+"slug": "edelsten",
+"count": 1
 },
 {
 "name": "EG",
-"slug": "eg"
+"slug": "eg",
+"count": 1
 },
 {
 "name": "Electra",
-"slug": "electra"
+"slug": "electra",
+"count": 12
 },
 {
 "name": "Electric Bike Technologies",
-"slug": "electric-bike-technologies"
+"slug": "electric-bike-technologies",
+"count": 1
 },
 {
 "name": "Ellsworth",
-"slug": "ellsworth"
+"slug": "ellsworth",
+"count": 1
 },
 {
-"name": "Elops",
-"slug": "elops"
+"name": "ELOPS",
+"slug": "elops",
+"count": 2
 },
 {
 "name": "Elves",
-"slug": "elves"
+"slug": "elves",
+"count": 8
 },
 {
-"name": "Emu Bikes",
-"slug": "emu-bikes"
+"name": "EMU BIKES",
+"slug": "emu-bikes",
+"count": 1
 },
 {
 "name": "Engwe",
-"slug": "engwe"
+"slug": "engwe",
+"count": 1
 },
 {
 "name": "Enigma",
-"slug": "enigma"
+"slug": "enigma",
+"count": 1
 },
 {
 "name": "Enve",
-"slug": "enve"
+"slug": "enve",
+"count": 8
 },
 {
 "name": "Esker",
-"slug": "esker"
+"slug": "esker",
+"count": 1
 },
 {
 "name": "Espin",
-"slug": "espin"
+"slug": "espin",
+"count": 1
 },
 {
-"name": "Evelo",
-"slug": "evelo"
+"name": "EVELO",
+"slug": "evelo",
+"count": 1
 },
 {
 "name": "Evil",
-"slug": "evil"
+"slug": "evil",
+"count": 15
 },
 {
-"name": "Exs",
-"slug": "exs"
+"name": "EXS",
+"slug": "exs",
+"count": 3
 },
 {
-"name": "Fabricbike",
-"slug": "fabricbike"
+"name": "FabricBike",
+"slug": "fabricbike",
+"count": 1
 },
 {
 "name": "Factor",
-"slug": "factor"
+"slug": "factor",
+"count": 98
 },
 {
 "name": "Faggin",
-"slug": "faggin"
+"slug": "faggin",
+"count": 1
 },
 {
 "name": "Fahrradmanufaktur",
-"slug": "fahrradmanufaktur"
+"slug": "fahrradmanufaktur",
+"count": 4
 },
 {
 "name": "Fairdale",
-"slug": "fairdale"
+"slug": "fairdale",
+"count": 2
 },
 {
 "name": "Fairlight Cycles",
-"slug": "fairlight-cycles"
+"slug": "fairlight-cycles",
+"count": 3
 },
 {
 "name": "Fantic",
-"slug": "fantic"
+"slug": "fantic",
+"count": 2
 },
 {
 "name": "Fara",
-"slug": "fara"
+"slug": "fara",
+"count": 3
 },
 {
 "name": "Fausto Coppi",
-"slug": "fausto-coppi"
+"slug": "fausto-coppi",
+"count": 6
 },
 {
 "name": "Felt",
-"slug": "felt"
+"slug": "felt",
+"count": 112
 },
 {
 "name": "Ferri",
-"slug": "ferri"
+"slug": "ferri",
+"count": 2
 },
 {
 "name": "Festka",
-"slug": "festka"
+"slug": "festka",
+"count": 2
 },
 {
 "name": "Fezzari",
-"slug": "fezzari"
+"slug": "fezzari",
+"count": 9
 },
 {
 "name": "Finna",
-"slug": "finna"
+"slug": "finna",
+"count": 2
 },
 {
-"name": "Fixie Inc",
-"slug": "fixie-inc"
+"name": "FIXIE Inc.",
+"slug": "fixie-inc",
+"count": 3
 },
 {
 "name": "Flanders",
-"slug": "flanders"
+"slug": "flanders",
+"count": 4
 },
 {
-"name": "Flx",
-"slug": "flx"
+"name": "FLX",
+"slug": "flx",
+"count": 1
 },
 {
 "name": "Flyer",
-"slug": "flyer"
+"slug": "flyer",
+"count": 5
 },
 {
 "name": "Focus",
-"slug": "focus"
+"slug": "focus",
+"count": 147
 },
 {
 "name": "Foes",
-"slug": "foes"
+"slug": "foes",
+"count": 1
 },
 {
 "name": "Fondriest",
-"slug": "fondriest"
+"slug": "fondriest",
+"count": 26
 },
 {
 "name": "Forbidden",
-"slug": "forbidden"
+"slug": "forbidden",
+"count": 5
 },
 {
 "name": "Formigli",
-"slug": "formigli"
+"slug": "formigli",
+"count": 2
 },
 {
 "name": "Framed",
-"slug": "framed"
+"slug": "framed",
+"count": 6
 },
 {
 "name": "Francesco Moser",
-"slug": "francesco-moser"
+"slug": "francesco-moser",
+"count": 19
 },
 {
-"name": "Freespirit",
-"slug": "freespirit"
+"name": "FREESPIRIT",
+"slug": "freespirit",
+"count": 2
 },
 {
 "name": "Frog",
-"slug": "frog"
+"slug": "frog",
+"count": 1
 },
 {
-"name": "Frw",
-"slug": "frw"
+"name": "FRW",
+"slug": "frw",
+"count": 2
 },
 {
 "name": "Fuji",
-"slug": "fuji"
+"slug": "fuji",
+"count": 80
 },
 {
 "name": "Gary Fisher",
-"slug": "gary-fisher"
+"slug": "gary-fisher",
+"count": 6
 },
 {
-"name": "Gasgas",
-"slug": "gasgas"
+"name": "GASGAS",
+"slug": "gasgas",
+"count": 1
 },
 {
 "name": "Gaulzetti",
-"slug": "gaulzetti"
+"slug": "gaulzetti",
+"count": 1
 },
 {
 "name": "Gazelle",
-"slug": "gazelle"
+"slug": "gazelle",
+"count": 12
 },
 {
 "name": "Genesis",
-"slug": "genesis"
+"slug": "genesis",
+"count": 19
 },
 {
 "name": "Ghost",
-"slug": "ghost"
+"slug": "ghost",
+"count": 120
 },
 {
 "name": "Giant",
-"slug": "giant"
+"slug": "giant",
+"count": 483
 },
 {
 "name": "Gios",
-"slug": "gios"
+"slug": "gios",
+"count": 8
 },
 {
-"name": "Girs",
-"slug": "girs"
+"name": "GIRS",
+"slug": "girs",
+"count": 7
 },
 {
 "name": "Gitane",
-"slug": "gitane"
+"slug": "gitane",
+"count": 9
 },
 {
 "name": "Goka",
-"slug": "goka"
+"slug": "goka",
+"count": 2
 },
 {
 "name": "GT",
-"slug": "gt"
+"slug": "gt",
+"count": 66
 },
 {
 "name": "Guerciotti",
-"slug": "guerciotti"
+"slug": "guerciotti",
+"count": 33
 },
 {
-"name": "Guerciotti Bikes",
-"slug": "guerciotti-bikes"
+"name": "GUERCIOTTI Bikes",
+"slug": "guerciotti-bikes",
+"count": 1
 },
 {
 "name": "Guerrilla Gravity",
-"slug": "guerrilla-gravity"
+"slug": "guerrilla-gravity",
+"count": 2
 },
 {
 "name": "Guru",
-"slug": "guru"
+"slug": "guru",
+"count": 3
 },
 {
 "name": "Haibike",
-"slug": "haibike"
+"slug": "haibike",
+"count": 24
 },
 {
 "name": "Haro",
-"slug": "haro"
+"slug": "haro",
+"count": 11
 },
 {
 "name": "Head",
-"slug": "head"
+"slug": "head",
+"count": 1
 },
 {
 "name": "Hercules",
-"slug": "hercules"
+"slug": "hercules",
+"count": 4
 },
 {
 "name": "Hersh",
-"slug": "hersh"
+"slug": "hersh",
+"count": 1
 },
 {
 "name": "Himiway",
-"slug": "himiway"
+"slug": "himiway",
+"count": 1
 },
 {
 "name": "Holdsworth",
-"slug": "holdsworth"
+"slug": "holdsworth",
+"count": 1
 },
 {
 "name": "Hope Technology",
-"slug": "hope-technology"
+"slug": "hope-technology",
+"count": 3
 },
 {
 "name": "Huffy",
-"slug": "huffy"
+"slug": "huffy",
+"count": 1
 },
 {
 "name": "Husqvarna",
-"slug": "husqvarna"
+"slug": "husqvarna",
+"count": 2
 },
 {
 "name": "Ibis",
-"slug": "ibis"
+"slug": "ibis",
+"count": 39
 },
 {
-"name": "Ican",
-"slug": "ican"
+"name": "ICAN",
+"slug": "ican",
+"count": 2
 },
 {
 "name": "Ideal",
-"slug": "ideal"
+"slug": "ideal",
+"count": 1
 },
 {
 "name": "Intec",
-"slug": "intec"
+"slug": "intec",
+"count": 1
 },
 {
 "name": "Intense",
-"slug": "intense"
+"slug": "intense",
+"count": 31
 },
 {
 "name": "IS Passoni",
-"slug": "is-passoni"
+"slug": "is-passoni",
+"count": 2
 },
 {
 "name": "Isaac",
-"slug": "isaac"
+"slug": "isaac",
+"count": 26
 },
 {
-"name": "Izip",
-"slug": "izip"
+"name": "IZIP",
+"slug": "izip",
+"count": 1
 },
 {
 "name": "J Guillem",
-"slug": "j-guillem"
+"slug": "j-guillem",
+"count": 1
 },
 {
 "name": "Jamis",
-"slug": "jamis"
+"slug": "jamis",
+"count": 18
 },
 {
 "name": "Jetson",
-"slug": "jetson"
+"slug": "jetson",
+"count": 2
 },
 {
 "name": "Jokfil",
-"slug": "jokfil"
+"slug": "jokfil",
+"count": 7
 },
 {
 "name": "Juiced Bikes",
-"slug": "juiced-bikes"
+"slug": "juiced-bikes",
+"count": 3
 },
 {
 "name": "Juliana",
-"slug": "juliana"
+"slug": "juliana",
+"count": 3
 },
 {
 "name": "K2",
-"slug": "k2"
+"slug": "k2",
+"count": 2
 },
 {
 "name": "Kaiser",
-"slug": "kaiser"
+"slug": "kaiser",
+"count": 1
 },
 {
 "name": "Kalkhoff",
-"slug": "kalkhoff"
+"slug": "kalkhoff",
+"count": 3
 },
 {
 "name": "Kellys",
-"slug": "kellys"
+"slug": "kellys",
+"count": 10
 },
 {
 "name": "Kestrel",
-"slug": "kestrel"
+"slug": "kestrel",
+"count": 6
 },
 {
 "name": "Kettler",
-"slug": "kettler"
+"slug": "kettler",
+"count": 3
 },
 {
-"name": "Khs",
-"slug": "khs"
+"name": "KHS",
+"slug": "khs",
+"count": 14
 },
 {
 "name": "Klaasen",
-"slug": "klaasen"
+"slug": "klaasen",
+"count": 2
 },
 {
 "name": "Klein",
-"slug": "klein"
+"slug": "klein",
+"count": 12
 },
 {
 "name": "Knolly",
-"slug": "knolly"
+"slug": "knolly",
+"count": 4
 },
 {
 "name": "Kocmo",
-"slug": "kocmo"
+"slug": "kocmo",
+"count": 2
 },
 {
 "name": "Koga",
-"slug": "koga"
+"slug": "koga",
+"count": 33
 },
 {
 "name": "Kona",
-"slug": "kona"
+"slug": "kona",
+"count": 50
 },
 {
 "name": "Kross",
-"slug": "kross"
+"slug": "kross",
+"count": 28
 },
 {
-"name": "Krush",
-"slug": "krush"
+"name": "KRUSH",
+"slug": "krush",
+"count": 2
 },
 {
 "name": "KS Cycling",
-"slug": "ks-cycling"
+"slug": "ks-cycling",
+"count": 2
 },
 {
-"name": "Ktm",
-"slug": "ktm"
+"name": "KTM",
+"slug": "ktm",
+"count": 123
 },
 {
-"name": "KU Cycle Bike",
-"slug": "ku-cycle-bike"
+"name": "KU Cycle bike",
+"slug": "ku-cycle-bike",
+"count": 1
 },
 {
 "name": "Kuota",
-"slug": "kuota"
+"slug": "kuota",
+"count": 21
 },
 {
-"name": "Kyklos BY Danilo DI Luca",
-"slug": "kyklos-by-danilo-di-luca"
+"name": "Kyklos by Danilo di Luca",
+"slug": "kyklos-by-danilo-di-luca",
+"count": 1
 },
 {
-"name": "Labici",
-"slug": "labici"
+"name": "LaBici",
+"slug": "labici",
+"count": 3
 },
 {
-"name": "Lamere Cycles",
-"slug": "lamere-cycles"
+"name": "LaMere Cycles",
+"slug": "lamere-cycles",
+"count": 3
 },
 {
 "name": "Lapierre",
-"slug": "lapierre"
+"slug": "lapierre",
+"count": 182
 },
 {
 "name": "Last",
-"slug": "last"
+"slug": "last",
+"count": 1
 },
 {
 "name": "Lauf",
-"slug": "lauf"
+"slug": "lauf",
+"count": 3
 },
 {
 "name": "Leaderfox",
-"slug": "leaderfox"
+"slug": "leaderfox",
+"count": 1
 },
 {
 "name": "Lectric",
-"slug": "lectric"
+"slug": "lectric",
+"count": 1
 },
 {
-"name": "Lectric Ebikes",
-"slug": "lectric-ebikes"
+"name": "Lectric eBikes",
+"slug": "lectric-ebikes",
+"count": 3
 },
 {
 "name": "Lee Cougan",
-"slug": "lee-cougan"
+"slug": "lee-cougan",
+"count": 30
 },
 {
 "name": "Legend",
-"slug": "legend"
+"slug": "legend",
+"count": 4
 },
 {
 "name": "Legnano",
-"slug": "legnano"
+"slug": "legnano",
+"count": 6
 },
 {
 "name": "Lekker",
-"slug": "lekker"
+"slug": "lekker",
+"count": 1
 },
 {
-"name": "Lemond Bicycles",
-"slug": "lemond-bicycles"
+"name": "LeMond Bicycles",
+"slug": "lemond-bicycles",
+"count": 4
 },
 {
 "name": "Lightweight",
-"slug": "lightweight"
+"slug": "lightweight",
+"count": 6
 },
 {
 "name": "Liotto",
-"slug": "liotto"
+"slug": "liotto",
+"count": 3
 },
 {
 "name": "Litespeed",
-"slug": "litespeed"
+"slug": "litespeed",
+"count": 24
 },
 {
 "name": "Liteville",
-"slug": "liteville"
+"slug": "liteville",
+"count": 7
 },
 {
 "name": "Liv",
-"slug": "liv"
+"slug": "liv",
+"count": 66
 },
 {
 "name": "Lobito",
-"slug": "lobito"
+"slug": "lobito",
+"count": 1
 },
 {
-"name": "Lombardo",
-"slug": "lombardo"
+"name": "LOMBARDO",
+"slug": "lombardo",
+"count": 8
 },
 {
 "name": "Look",
-"slug": "look"
+"slug": "look",
+"count": 138
 },
 {
 "name": "Lynskey",
-"slug": "lynskey"
-},
-{
-"name": "M Sing",
-"slug": "m-sing"
+"slug": "lynskey",
+"count": 12
 },
 {
 "name": "Macario",
-"slug": "macario"
+"slug": "macario",
+"count": 2
 },
 {
 "name": "Marin",
-"slug": "marin"
+"slug": "marin",
+"count": 50
 },
 {
 "name": "Masi",
-"slug": "masi"
+"slug": "masi",
+"count": 13
 },
 {
 "name": "Mason",
-"slug": "mason"
+"slug": "mason",
+"count": 2
 },
 {
 "name": "Massi",
-"slug": "massi"
+"slug": "massi",
+"count": 25
 },
 {
-"name": "Maxfoot",
-"slug": "maxfoot"
+"name": "MAXFOOT",
+"slug": "maxfoot",
+"count": 1
 },
 {
 "name": "Maxx",
-"slug": "maxx"
+"slug": "maxx",
+"count": 1
 },
 {
-"name": "Mbk",
-"slug": "mbk"
+"name": "MBK",
+"slug": "mbk",
+"count": 4
 },
 {
-"name": "Mbm",
-"slug": "mbm"
+"name": "MBM",
+"slug": "mbm",
+"count": 1
 },
 {
-"name": "Mde",
-"slug": "mde"
+"name": "MDE",
+"slug": "mde",
+"count": 3
 },
 {
 "name": "Mees",
-"slug": "mees"
+"slug": "mees",
+"count": 1
 },
 {
 "name": "Megamo",
-"slug": "megamo"
+"slug": "megamo",
+"count": 82
 },
 {
 "name": "Mendiz",
-"slug": "mendiz"
+"slug": "mendiz",
+"count": 23
 },
 {
 "name": "Meral",
-"slug": "meral"
+"slug": "meral",
+"count": 1
 },
 {
-"name": "Mercedes Benz",
-"slug": "mercedes-benz"
+"name": "Mercedes-Benz",
+"slug": "mercedes-benz",
+"count": 1
 },
 {
 "name": "Mercier",
-"slug": "mercier"
+"slug": "mercier",
+"count": 1
 },
 {
 "name": "Merida",
-"slug": "merida"
+"slug": "merida",
+"count": 203
 },
 {
 "name": "Merlin",
-"slug": "merlin"
+"slug": "merlin",
+"count": 7
 },
 {
 "name": "Minerva",
-"slug": "minerva"
+"slug": "minerva",
+"count": 1
 },
 {
 "name": "Mino Denti",
-"slug": "mino-denti"
+"slug": "mino-denti",
+"count": 1
 },
 {
-"name": "Mmr",
-"slug": "mmr"
+"name": "MMR",
+"slug": "mmr",
+"count": 63
 },
 {
-"name": "Mod Bikes",
-"slug": "mod-bikes"
+"name": "MOD BIKES",
+"slug": "mod-bikes",
+"count": 1
 },
 {
 "name": "Moda",
-"slug": "moda"
+"slug": "moda",
+"count": 1
 },
 {
 "name": "Moma",
-"slug": "moma"
+"slug": "moma",
+"count": 1
 },
 {
 "name": "Momentum",
-"slug": "momentum"
+"slug": "momentum",
+"count": 1
 },
 {
 "name": "Mondraker",
-"slug": "mondraker"
+"slug": "mondraker",
+"count": 82
 },
 {
 "name": "Mongoose",
-"slug": "mongoose"
+"slug": "mongoose",
+"count": 8
 },
 {
 "name": "Montana",
-"slug": "montana"
+"slug": "montana",
+"count": 1
 },
 {
 "name": "Moots",
-"slug": "moots"
+"slug": "moots",
+"count": 9
 },
 {
 "name": "Moser",
-"slug": "moser"
+"slug": "moser",
+"count": 2
 },
 {
 "name": "Motobecane",
-"slug": "motobecane"
+"slug": "motobecane",
+"count": 20
 },
 {
-"name": "Msc",
-"slug": "msc"
+"name": "MSC",
+"slug": "msc",
+"count": 1
 },
 {
-"name": "Mtb Cycletech",
-"slug": "mtb-cycletech"
+"name": "MTB Cycletech",
+"slug": "mtb-cycletech",
+"count": 7
 },
 {
 "name": "Muesing",
-"slug": "muesing"
+"slug": "muesing",
+"count": 8
 },
 {
 "name": "Museeuw",
-"slug": "museeuw"
+"slug": "museeuw",
+"count": 1
 },
 {
 "name": "MV",
-"slug": "mv"
+"slug": "mv",
+"count": 1
+},
+{
+"name": "M\u00fcsing",
+"slug": "m-sing",
+"count": 1
 },
 {
 "name": "Nakamura",
-"slug": "nakamura"
+"slug": "nakamura",
+"count": 4
 },
 {
 "name": "Nakita",
-"slug": "nakita"
+"slug": "nakita",
+"count": 2
 },
 {
 "name": "Nakto",
-"slug": "nakto"
+"slug": "nakto",
+"count": 1
 },
 {
-"name": "Ncm",
-"slug": "ncm"
+"name": "NCM",
+"slug": "ncm",
+"count": 1
 },
 {
 "name": "Nicolai",
-"slug": "nicolai"
+"slug": "nicolai",
+"count": 4
 },
 {
 "name": "Niner",
-"slug": "niner"
+"slug": "niner",
+"count": 38
 },
 {
 "name": "Nishiki",
-"slug": "nishiki"
+"slug": "nishiki",
+"count": 5
 },
 {
-"name": "NO 22",
-"slug": "no-22"
+"name": "NO-LOGO",
+"slug": "no-logo",
+"count": 39
 },
 {
-"name": "NO Logo",
-"slug": "no-logo"
+"name": "No. 22",
+"slug": "no-22",
+"count": 1
 },
 {
 "name": "Norco",
-"slug": "norco"
+"slug": "norco",
+"count": 57
 },
 {
 "name": "Nordest",
-"slug": "nordest"
+"slug": "nordest",
+"count": 4
 },
 {
 "name": "Nox",
-"slug": "nox"
+"slug": "nox",
+"count": 2
 },
 {
 "name": "NS",
-"slug": "ns"
+"slug": "ns",
+"count": 30
 },
 {
-"name": "NS Bikes",
-"slug": "ns-bikes"
+"name": "ns bikes",
+"slug": "ns-bikes",
+"count": 5
 },
 {
 "name": "Nukeproof",
-"slug": "nukeproof"
+"slug": "nukeproof",
+"count": 24
 },
 {
 "name": "Obed",
-"slug": "obed"
+"slug": "obed",
+"count": 1
 },
 {
 "name": "Octane One",
-"slug": "octane-one"
+"slug": "octane-one",
+"count": 1
 },
 {
 "name": "Officine Mattio",
-"slug": "officine-mattio"
+"slug": "officine-mattio",
+"count": 3
 },
 {
-"name": "OG Evkin",
-"slug": "og-evkin"
+"name": "OG EVKIN",
+"slug": "og-evkin",
+"count": 1
 },
 {
-"name": "Ohm",
-"slug": "ohm"
+"name": "OHM",
+"slug": "ohm",
+"count": 1
 },
 {
 "name": "Olmo",
-"slug": "olmo"
+"slug": "olmo",
+"count": 27
 },
 {
 "name": "Olympia",
-"slug": "olympia"
+"slug": "olympia",
+"count": 29
 },
 {
-"name": "ON One",
-"slug": "on-one"
+"name": "On-One",
+"slug": "on-one",
+"count": 5
 },
 {
 "name": "Open",
-"slug": "open"
+"slug": "open",
+"count": 25
 },
 {
 "name": "Opera",
-"slug": "opera"
+"slug": "opera",
+"count": 1
 },
 {
 "name": "Orange",
-"slug": "orange"
+"slug": "orange",
+"count": 7
 },
 {
 "name": "Orbea",
-"slug": "orbea"
+"slug": "orbea",
+"count": 315
 },
 {
 "name": "Origine",
-"slug": "origine"
+"slug": "origine",
+"count": 23
 },
 {
 "name": "Orro",
-"slug": "orro"
+"slug": "orro",
+"count": 2
 },
 {
 "name": "Ortler",
-"slug": "ortler"
+"slug": "ortler",
+"count": 1
 },
 {
 "name": "Other Brands",
-"slug": "other-brands"
+"slug": "other-brands",
+"count": 166
 },
 {
 "name": "Otso",
-"slug": "otso"
+"slug": "otso",
+"count": 3
 },
 {
 "name": "Panorama",
-"slug": "panorama"
+"slug": "panorama",
+"count": 1
 },
 {
 "name": "Parapera",
-"slug": "parapera"
+"slug": "parapera",
+"count": 2
 },
 {
 "name": "Parkpre",
-"slug": "parkpre"
+"slug": "parkpre",
+"count": 14
 },
 {
 "name": "Parlee",
-"slug": "parlee"
+"slug": "parlee",
+"count": 14
 },
 {
 "name": "Pashley",
-"slug": "pashley"
+"slug": "pashley",
+"count": 1
 },
 {
 "name": "Pearl",
-"slug": "pearl"
+"slug": "pearl",
+"count": 2
 },
 {
 "name": "Pearson",
-"slug": "pearson"
+"slug": "pearson",
+"count": 1
 },
 {
 "name": "Pegasus",
-"slug": "pegasus"
+"slug": "pegasus",
+"count": 1
 },
 {
 "name": "Pegoretti",
-"slug": "pegoretti"
+"slug": "pegoretti",
+"count": 3
 },
 {
 "name": "Pennarola",
-"slug": "pennarola"
+"slug": "pennarola",
+"count": 2
 },
 {
 "name": "Peugeot",
-"slug": "peugeot"
+"slug": "peugeot",
+"count": 57
 },
 {
 "name": "Pilot",
-"slug": "pilot"
+"slug": "pilot",
+"count": 1
 },
 {
 "name": "Pinarello",
-"slug": "pinarello"
+"slug": "pinarello",
+"count": 324
 },
 {
 "name": "Pinnacle",
-"slug": "pinnacle"
+"slug": "pinnacle",
+"count": 2
 },
 {
 "name": "Piton",
-"slug": "piton"
+"slug": "piton",
+"count": 3
 },
 {
 "name": "Pivot",
-"slug": "pivot"
+"slug": "pivot",
+"count": 87
 },
 {
 "name": "Planet X",
-"slug": "planet-x"
+"slug": "planet-x",
+"count": 14
 },
 {
 "name": "Pole",
-"slug": "pole"
+"slug": "pole",
+"count": 3
 },
 {
 "name": "Polygon",
-"slug": "polygon"
+"slug": "polygon",
+"count": 15
 },
 {
 "name": "Prime",
-"slug": "prime"
+"slug": "prime",
+"count": 2
 },
 {
 "name": "Principia",
-"slug": "principia"
+"slug": "principia",
+"count": 5
 },
 {
 "name": "Priority",
-"slug": "priority"
+"slug": "priority",
+"count": 5
 },
 {
 "name": "Privateer",
-"slug": "privateer"
+"slug": "privateer",
+"count": 3
 },
 {
-"name": "Production Priv E",
-"slug": "production-priv-e"
+"name": "Production Priv\u00e9e",
+"slug": "production-priv-e",
+"count": 11
 },
 {
 "name": "Propain",
-"slug": "propain"
+"slug": "propain",
+"count": 72
 },
 {
 "name": "Prorace",
-"slug": "prorace"
+"slug": "prorace",
+"count": 4
 },
 {
 "name": "Pure",
-"slug": "pure"
+"slug": "pure",
+"count": 3
 },
 {
 "name": "Quantec",
-"slug": "quantec"
+"slug": "quantec",
+"count": 1
 },
 {
-"name": "Quietkat",
-"slug": "quietkat"
+"name": "QuietKat",
+"slug": "quietkat",
+"count": 1
 },
 {
 "name": "Quintana Roo",
-"slug": "quintana-roo"
+"slug": "quintana-roo",
+"count": 16
 },
 {
-"name": "R Raymon",
-"slug": "r-raymon"
+"name": "R RAYMON",
+"slug": "r-raymon",
+"count": 14
 },
 {
-"name": "Raaw",
-"slug": "raaw"
+"name": "RAAW",
+"slug": "raaw",
+"count": 2
 },
 {
-"name": "Race Mountain",
-"slug": "race-mountain"
+"name": "RACE MOUNTAIN",
+"slug": "race-mountain",
+"count": 1
 },
 {
 "name": "Rad Power Bikes",
-"slug": "rad-power-bikes"
+"slug": "rad-power-bikes",
+"count": 2
 },
 {
-"name": "Radio",
-"slug": "radio"
+"name": "RADIO",
+"slug": "radio",
+"count": 4
 },
 {
 "name": "Radon",
-"slug": "radon"
+"slug": "radon",
+"count": 55
 },
 {
 "name": "Ragley",
-"slug": "ragley"
+"slug": "ragley",
+"count": 4
 },
 {
 "name": "Raleigh",
-"slug": "raleigh"
+"slug": "raleigh",
+"count": 16
 },
 {
-"name": "Rdr",
-"slug": "rdr"
+"name": "RDR",
+"slug": "rdr",
+"count": 3
 },
 {
-"name": "Red Bull Rose",
-"slug": "red-bull-rose"
+"name": "Red Bull (Rose)",
+"slug": "red-bull-rose",
+"count": 1
 },
 {
 "name": "Redline",
-"slug": "redline"
+"slug": "redline",
+"count": 1
 },
 {
-"name": "Reeb",
-"slug": "reeb"
+"name": "REEB",
+"slug": "reeb",
+"count": 1
 },
 {
-"name": "Reid",
-"slug": "reid"
+"name": "REID",
+"slug": "reid",
+"count": 3
 },
 {
 "name": "Reilly",
-"slug": "reilly"
+"slug": "reilly",
+"count": 1
 },
 {
 "name": "Rennstahl",
-"slug": "rennstahl"
+"slug": "rennstahl",
+"count": 2
 },
 {
 "name": "Revel",
-"slug": "revel"
+"slug": "revel",
+"count": 12
 },
 {
 "name": "Reven",
-"slug": "reven"
+"slug": "reven",
+"count": 1
 },
 {
 "name": "Ribble",
-"slug": "ribble"
+"slug": "ribble",
+"count": 12
 },
 {
-"name": "Ride1up",
-"slug": "ride1up"
+"name": "Ride1UP",
+"slug": "ride1up",
+"count": 2
 },
 {
 "name": "Ridley",
-"slug": "ridley"
+"slug": "ridley",
+"count": 235
 },
 {
-"name": "Riese M Ller",
-"slug": "riese-m-ller"
+"name": "Riese & M\u00fcller",
+"slug": "riese-m-ller",
+"count": 4
 },
 {
 "name": "Rigi",
-"slug": "rigi"
+"slug": "rigi",
+"count": 1
 },
 {
 "name": "Ritchey",
-"slug": "ritchey"
+"slug": "ritchey",
+"count": 15
 },
 {
 "name": "Ritte",
-"slug": "ritte"
+"slug": "ritte",
+"count": 2
 },
 {
-"name": "Riverside",
-"slug": "riverside"
+"name": "RIVERSIDE",
+"slug": "riverside",
+"count": 5
 },
 {
 "name": "Rock Machine",
-"slug": "rock-machine"
+"slug": "rock-machine",
+"count": 3
 },
 {
-"name": "Rockrider",
-"slug": "rockrider"
+"name": "ROCKRIDER",
+"slug": "rockrider",
+"count": 81
 },
 {
 "name": "Rocky Mountain",
-"slug": "rocky-mountain"
+"slug": "rocky-mountain",
+"count": 58
 },
 {
 "name": "Rodeo Labs",
-"slug": "rodeo-labs"
+"slug": "rodeo-labs",
+"count": 5
 },
 {
 "name": "Rodman",
-"slug": "rodman"
+"slug": "rodman",
+"count": 1
 },
 {
-"name": "Roger Devlaeminck",
-"slug": "roger-devlaeminck"
+"name": "Roger DeVlaeminck",
+"slug": "roger-devlaeminck",
+"count": 1
 },
 {
 "name": "Rondo",
-"slug": "rondo"
+"slug": "rondo",
+"count": 17
 },
 {
 "name": "Rose",
-"slug": "rose"
+"slug": "rose",
+"count": 98
 },
 {
 "name": "Rossignol",
-"slug": "rossignol"
+"slug": "rossignol",
+"count": 3
 },
 {
 "name": "Rossin",
-"slug": "rossin"
+"slug": "rossin",
+"count": 3
 },
 {
 "name": "Rotwild",
-"slug": "rotwild"
+"slug": "rotwild",
+"count": 2
 },
 {
 "name": "Sage",
-"slug": "sage"
+"slug": "sage",
+"count": 1
 },
 {
 "name": "Salsa",
-"slug": "salsa"
+"slug": "salsa",
+"count": 32
 },
 {
 "name": "Santa Cruz",
-"slug": "santa-cruz"
+"slug": "santa-cruz",
+"count": 198
 },
 {
 "name": "Santos",
-"slug": "santos"
+"slug": "santos",
+"count": 3
 },
 {
 "name": "Saracen",
-"slug": "saracen"
+"slug": "saracen",
+"count": 9
 },
 {
 "name": "Sarto",
-"slug": "sarto"
+"slug": "sarto",
+"count": 3
 },
 {
-"name": "Sava",
-"slug": "sava"
+"name": "SAVA",
+"slug": "sava",
+"count": 1
 },
 {
 "name": "Savadeck",
-"slug": "savadeck"
+"slug": "savadeck",
+"count": 2
 },
 {
-"name": "Scapin",
-"slug": "scapin"
+"name": "SCAPIN",
+"slug": "scapin",
+"count": 5
 },
 {
 "name": "Schauff",
-"slug": "schauff"
+"slug": "schauff",
+"count": 1
 },
 {
 "name": "Schindelhauer",
-"slug": "schindelhauer"
+"slug": "schindelhauer",
+"count": 7
 },
 {
 "name": "Schmolke",
-"slug": "schmolke"
+"slug": "schmolke",
+"count": 1
 },
 {
 "name": "Schwinn",
-"slug": "schwinn"
+"slug": "schwinn",
+"count": 21
 },
 {
-"name": "Scor",
-"slug": "scor"
+"name": "SCOR",
+"slug": "scor",
+"count": 10
 },
 {
 "name": "Scott",
-"slug": "scott"
+"slug": "scott",
+"count": 466
 },
 {
-"name": "Scrane",
-"slug": "scrane"
+"name": "SCRANE",
+"slug": "scrane",
+"count": 1
 },
 {
-"name": "SE Bikes",
-"slug": "se-bikes"
+"name": "SE BIKES",
+"slug": "se-bikes",
+"count": 3
 },
 {
 "name": "Sensa",
-"slug": "sensa"
+"slug": "sensa",
+"count": 36
 },
 {
 "name": "Serious",
-"slug": "serious"
+"slug": "serious",
+"count": 10
 },
 {
 "name": "Serotta",
-"slug": "serotta"
+"slug": "serotta",
+"count": 2
 },
 {
 "name": "Seven Cycles",
-"slug": "seven-cycles"
+"slug": "seven-cycles",
+"count": 2
 },
 {
 "name": "Shimano",
-"slug": "shimano"
+"slug": "shimano",
+"count": 13
 },
 {
 "name": "Simplon",
-"slug": "simplon"
+"slug": "simplon",
+"count": 45
 },
 {
 "name": "Sirocco",
-"slug": "sirocco"
+"slug": "sirocco",
+"count": 1
 },
 {
 "name": "Snake",
-"slug": "snake"
+"slug": "snake",
+"count": 1
 },
 {
 "name": "Soma",
-"slug": "soma"
+"slug": "soma",
+"count": 1
 },
 {
 "name": "Somec",
-"slug": "somec"
+"slug": "somec",
+"count": 2
 },
 {
 "name": "Sonder",
-"slug": "sonder"
+"slug": "sonder",
+"count": 4
 },
 {
-"name": "Sondors",
-"slug": "sondors"
+"name": "SONDORS",
+"slug": "sondors",
+"count": 1
 },
 {
 "name": "Spark Bikes",
-"slug": "spark-bikes"
+"slug": "spark-bikes",
+"count": 1
 },
 {
 "name": "Specialized",
-"slug": "specialized"
+"slug": "specialized",
+"count": 991
 },
 {
 "name": "Spot",
-"slug": "spot"
+"slug": "spot",
+"count": 1
 },
 {
 "name": "Staiger",
-"slug": "staiger"
+"slug": "staiger",
+"count": 1
 },
 {
 "name": "Stajvelo",
-"slug": "stajvelo"
+"slug": "stajvelo",
+"count": 1
 },
 {
 "name": "Standert",
-"slug": "standert"
+"slug": "standert",
+"count": 17
 },
 {
 "name": "Stanton",
-"slug": "stanton"
+"slug": "stanton",
+"count": 1
 },
 {
 "name": "Starling",
-"slug": "starling"
+"slug": "starling",
+"count": 1
 },
 {
-"name": "State Bicycle CO",
-"slug": "state-bicycle-co"
+"name": "State Bicycle Co.",
+"slug": "state-bicycle-co",
+"count": 7
 },
 {
 "name": "Stelbel",
-"slug": "stelbel"
+"slug": "stelbel",
+"count": 2
 },
 {
 "name": "Steppenwolf",
-"slug": "steppenwolf"
+"slug": "steppenwolf",
+"count": 3
 },
 {
 "name": "Stevens",
-"slug": "stevens"
+"slug": "stevens",
+"count": 73
 },
 {
-"name": "Stilus",
-"slug": "stilus"
+"name": "STILUS",
+"slug": "stilus",
+"count": 1
 },
 {
 "name": "Stinner",
-"slug": "stinner"
+"slug": "stinner",
+"count": 1
 },
 {
 "name": "Stoll",
-"slug": "stoll"
+"slug": "stoll",
+"count": 3
 },
 {
 "name": "Storck",
-"slug": "storck"
+"slug": "storck",
+"count": 28
 },
 {
 "name": "Stradalli",
-"slug": "stradalli"
+"slug": "stradalli",
+"count": 1
 },
 {
 "name": "Strider",
-"slug": "strider"
+"slug": "strider",
+"count": 1
 },
 {
 "name": "Stromer",
-"slug": "stromer"
+"slug": "stromer",
+"count": 1
 },
 {
-"name": "Sunn",
-"slug": "sunn"
+"name": "SUNN",
+"slug": "sunn",
+"count": 21
 },
 {
-"name": "Sunpeed",
-"slug": "sunpeed"
+"name": "SUNPEED",
+"slug": "sunpeed",
+"count": 2
 },
 {
 "name": "Super73",
-"slug": "super73"
+"slug": "super73",
+"count": 1
 },
 {
 "name": "Superior",
-"slug": "superior"
+"slug": "superior",
+"count": 28
 },
 {
-"name": "Superior Bikes",
-"slug": "superior-bikes"
+"name": "SUPERIOR BIKES",
+"slug": "superior-bikes",
+"count": 2
 },
 {
 "name": "Surly",
-"slug": "surly"
+"slug": "surly",
+"count": 16
 },
 {
 "name": "Swift",
-"slug": "swift"
-},
-{
-"name": "T Red",
-"slug": "t-red"
+"slug": "swift",
+"count": 2
 },
 {
 "name": "Temple",
-"slug": "temple"
+"slug": "temple",
+"count": 1
 },
 {
 "name": "Tern",
-"slug": "tern"
+"slug": "tern",
+"count": 2
 },
 {
 "name": "Test",
-"slug": "test"
+"slug": "test",
+"count": 1
 },
 {
 "name": "Thesis",
-"slug": "thesis"
+"slug": "thesis",
+"count": 1
 },
 {
 "name": "Thoemus",
-"slug": "thoemus"
+"slug": "thoemus",
+"count": 1
 },
 {
 "name": "Thok",
-"slug": "thok"
+"slug": "thok",
+"count": 2
 },
 {
 "name": "Thompson",
-"slug": "thompson"
+"slug": "thompson",
+"count": 8
 },
 {
 "name": "Tifosi",
-"slug": "tifosi"
+"slug": "tifosi",
+"count": 1
 },
 {
 "name": "Time",
-"slug": "time"
+"slug": "time",
+"count": 50
 },
 {
 "name": "Titan",
-"slug": "titan"
+"slug": "titan",
+"count": 1
 },
 {
 "name": "Titici",
-"slug": "titici"
+"slug": "titici",
+"count": 1
 },
 {
 "name": "Titus",
-"slug": "titus"
+"slug": "titus",
+"count": 2
 },
 {
 "name": "Tommasini",
-"slug": "tommasini"
+"slug": "tommasini",
+"count": 5
 },
 {
 "name": "Tommaso",
-"slug": "tommaso"
+"slug": "tommaso",
+"count": 3
 },
 {
 "name": "Torpado",
-"slug": "torpado"
+"slug": "torpado",
+"count": 19
 },
 {
-"name": "Tout Terrain",
-"slug": "tout-terrain"
+"name": "Tout-terrain",
+"slug": "tout-terrain",
+"count": 3
 },
 {
 "name": "Trailcraft",
-"slug": "trailcraft"
+"slug": "trailcraft",
+"count": 2
 },
 {
 "name": "Transition",
-"slug": "transition"
+"slug": "transition",
+"count": 62
 },
 {
 "name": "Trek",
-"slug": "trek"
+"slug": "trek",
+"count": 795
 },
 {
-"name": "Triban",
-"slug": "triban"
+"name": "TRIBAN",
+"slug": "triban",
+"count": 26
 },
 {
 "name": "Tumbleweed",
-"slug": "tumbleweed"
+"slug": "tumbleweed",
+"count": 1
 },
 {
 "name": "Tunturi",
-"slug": "tunturi"
+"slug": "tunturi",
+"count": 1
 },
 {
 "name": "Turner",
-"slug": "turner"
+"slug": "turner",
+"count": 1
 },
 {
 "name": "Twitter",
-"slug": "twitter"
+"slug": "twitter",
+"count": 3
+},
+{
+"name": "T\u00b0Red",
+"slug": "t-red",
+"count": 1
 },
 {
 "name": "Unica",
-"slug": "unica"
+"slug": "unica",
+"count": 3
 },
 {
 "name": "Univega",
-"slug": "univega"
+"slug": "univega",
+"count": 2
 },
 {
 "name": "Urban Arrow",
-"slug": "urban-arrow"
+"slug": "urban-arrow",
+"count": 1
 },
 {
 "name": "Urwahn",
-"slug": "urwahn"
+"slug": "urwahn",
+"count": 1
 },
 {
 "name": "Vaast",
-"slug": "vaast"
+"slug": "vaast",
+"count": 11
 },
 {
 "name": "Van Dessel",
-"slug": "van-dessel"
+"slug": "van-dessel",
+"count": 3
 },
 {
 "name": "Van Nicholas",
-"slug": "van-nicholas"
+"slug": "van-nicholas",
+"count": 8
 },
 {
-"name": "Van Rysel",
-"slug": "van-rysel"
+"name": "Van rysel",
+"slug": "van-rysel",
+"count": 38
 },
 {
 "name": "Vanmoof",
-"slug": "vanmoof"
+"slug": "vanmoof",
+"count": 1
 },
 {
-"name": "Vdv",
-"slug": "vdv"
+"name": "VDV",
+"slug": "vdv",
+"count": 1
 },
 {
-"name": "Velo DE Ville",
-"slug": "velo-de-ville"
+"name": "Velo de Ville",
+"slug": "velo-de-ville",
+"count": 1
 },
 {
 "name": "Veloci",
-"slug": "veloci"
+"slug": "veloci",
+"count": 2
 },
 {
 "name": "Veloheld",
-"slug": "veloheld"
+"slug": "veloheld",
+"count": 1
 },
 {
 "name": "Veneto",
-"slug": "veneto"
+"slug": "veneto",
+"count": 1
 },
 {
 "name": "Ventum",
-"slug": "ventum"
+"slug": "ventum",
+"count": 16
 },
 {
 "name": "Verde",
-"slug": "verde"
+"slug": "verde",
+"count": 1
 },
 {
 "name": "Viathon",
-"slug": "viathon"
+"slug": "viathon",
+"count": 2
 },
 {
 "name": "Victoria",
-"slug": "victoria"
+"slug": "victoria",
+"count": 3
 },
 {
 "name": "Vielo",
-"slug": "vielo"
+"slug": "vielo",
+"count": 1
 },
 {
 "name": "Viner",
-"slug": "viner"
+"slug": "viner",
+"count": 7
 },
 {
 "name": "Vintage",
-"slug": "vintage"
+"slug": "vintage",
+"count": 9
 },
 {
 "name": "Vintage Electric",
-"slug": "vintage-electric"
+"slug": "vintage-electric",
+"count": 1
 },
 {
 "name": "Viper",
-"slug": "viper"
+"slug": "viper",
+"count": 2
 },
 {
 "name": "Vitoria",
-"slug": "vitoria"
+"slug": "vitoria",
+"count": 7
 },
 {
 "name": "Vitus",
-"slug": "vitus"
+"slug": "vitus",
+"count": 44
 },
 {
 "name": "Voodoo",
-"slug": "voodoo"
+"slug": "voodoo",
+"count": 2
 },
 {
 "name": "Votec",
-"slug": "votec"
+"slug": "votec",
+"count": 8
 },
 {
-"name": "Vpace",
-"slug": "vpace"
+"name": "VPACE",
+"slug": "vpace",
+"count": 1
 },
 {
-"name": "Vsf Manufaktur",
-"slug": "vsf-manufaktur"
+"name": "VSF Manufaktur",
+"slug": "vsf-manufaktur",
+"count": 1
 },
 {
 "name": "Wheeler",
-"slug": "wheeler"
+"slug": "wheeler",
+"count": 4
 },
 {
 "name": "Whistle",
-"slug": "whistle"
+"slug": "whistle",
+"count": 21
 },
 {
 "name": "White",
-"slug": "white"
+"slug": "white",
+"count": 4
 },
 {
 "name": "Whyte",
-"slug": "whyte"
+"slug": "whyte",
+"count": 6
 },
 {
-"name": "Wiawis",
-"slug": "wiawis"
+"name": "WIAWIS",
+"slug": "wiawis",
+"count": 1
 },
 {
 "name": "Wilier",
-"slug": "wilier"
+"slug": "wilier",
+"count": 323
 },
 {
 "name": "Winora",
-"slug": "winora"
+"slug": "winora",
+"count": 6
 },
 {
-"name": "Winspace",
-"slug": "winspace"
+"name": "WINSPACE",
+"slug": "winspace",
+"count": 3
 },
 {
 "name": "Wolfbike",
-"slug": "wolfbike"
+"slug": "wolfbike",
+"count": 2
 },
 {
-"name": "Wrc",
-"slug": "wrc"
+"name": "WRC",
+"slug": "wrc",
+"count": 10
 },
 {
-"name": "X",
-"slug": "x"
+"name": "x",
+"slug": "x",
+"count": 5
 },
 {
 "name": "Xtrail",
-"slug": "xtrail"
+"slug": "xtrail",
+"count": 1
 },
 {
 "name": "Yamaha",
-"slug": "yamaha"
+"slug": "yamaha",
+"count": 1
 },
 {
 "name": "Yeti",
-"slug": "yeti"
+"slug": "yeti",
+"count": 68
 },
 {
 "name": "Yoeleo",
-"slug": "yoeleo"
+"slug": "yoeleo",
+"count": 1
 },
 {
 "name": "YT Industries",
-"slug": "yt-industries"
+"slug": "yt-industries",
+"count": 89
 },
 {
 "name": "Zannata",
-"slug": "zannata"
+"slug": "zannata",
+"count": 5
 },
 {
-"name": "Zen",
-"slug": "zen"
+"name": "ZEN",
+"slug": "zen",
+"count": 2
 },
 {
 "name": "Zerode",
-"slug": "zerode"
+"slug": "zerode",
+"count": 4
 },
 {
 "name": "Zipp",
-"slug": "zipp"
+"slug": "zipp",
+"count": 1
 }
 ]
