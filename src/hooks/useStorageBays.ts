@@ -19,13 +19,17 @@ export function useStorageBays(includeInactive = false) {
     let query = supabase
       .from('storage_bays')
       .select('id, name, zone, notes, is_active, sort_order')
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true });
+      .order('sort_order', { ascending: true });
 
     if (!includeInactive) query = query.eq('is_active', true);
 
     const { data } = await query;
-    setBays((data as StorageBay[]) || []);
+    const loaded = (data as StorageBay[]) || [];
+    // Natural alphanumeric sort so A1, A2, A10 come before B1, etc.
+    loaded.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+    setBays(loaded);
     setLoading(false);
   }, [includeInactive]);
 
