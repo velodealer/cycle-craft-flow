@@ -1,26 +1,20 @@
-# Let mechanics assign storage bays (RLS fix)
+# Assign bays from existing list only
 
-## What's happening
+## The problem
 
-Jahan's account has the **mechanic** role. Assigning a bay involves two writes:
+Typing a bay on a bike tries to **create** the bay if it doesn't already exist. Creating bays is admin-only, so Jahan (mechanic) hits a permission error and the assignment fails.
 
-1. Updating the bike's location — mechanics are allowed to do this.
-2. Creating the bay record when the typed bay (e.g. "C7") doesn't exist yet — the row-level security rule on storage bays currently allows **admins only**, so this is blocked and the whole save aborts.
-
-That RLS restriction on creating bays is the blocker.
+Bays shouldn't be created while assigning — they should already exist, and assigning just picks one.
 
 ## Fix
 
-- Replace the admin-only insert rule on storage bays with one that also permits mechanics and detailers.
-- Keep renaming, deactivating and deleting bays admin-only.
-- Confirm the table's access grants allow signed-in staff to insert.
-
-## Extra polish
-
-- In the bay input on the bike page, if saving fails, surface the real error message and revert the field to the previously saved bay so it never shows an unsaved value.
+- Change the bay field on bikes (bike detail, lists, intake) from free-text entry into a **picker of existing bays** — searchable dropdown listing the active bays, plus a "No location" option to clear it.
+- Remove the auto-create behaviour entirely, so assigning only writes `storage_bay_id` on the bike, which mechanics are already allowed to do.
+- Bays continue to be created/edited/deleted by admins in Settings → Storage bays (including the bulk generator).
+- If saving fails, show the real error and revert the field to the previously saved bay.
 
 ## Technical notes
 
-- Migration: drop policy `Admins can insert storage bays` on `public.storage_bays`; create `Staff can insert storage bays` for role `authenticated` with `WITH CHECK (has_any_role(ARRAY['admin','mechanic','detailer']::user_role[]))`.
-- Ensure `GRANT SELECT, INSERT, UPDATE, DELETE ON public.storage_bays TO authenticated` and `GRANT ALL ... TO service_role`.
-- `src/components/bike/LocationSelect.tsx`: on error, reset local bay/number state from `current`.
+- Rewrite `src/components/bike/LocationSelect.tsx` as a shadcn Popover + Command combobox over `useStorageBays()` (active bays, natural sort), with a clear option. Drop the `storage_bays` insert.
+- No database or RLS changes needed; the admin-only insert policy stays as is.
+- Props (`bikeId`, `value`, `onChange`, `className`, `size`) stay unchanged so all current call sites keep working.
