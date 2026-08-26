@@ -576,6 +576,11 @@ export default function BikeDetailView({
           {/* Inspection record */}
           <InspectionTask bike={bike} onUpdate={onUpdate} />
 
+          {/* Stage notes & photos history */}
+          {!inspectionMode && <StageHistory bikeId={bike.id} />}
+
+
+
         </div>
       </div>
 
