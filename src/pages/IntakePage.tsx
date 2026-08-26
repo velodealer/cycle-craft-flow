@@ -31,6 +31,7 @@ export default function IntakePage() {
   const [processBikeId, setProcessBikeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<PendingBike[]>([]);
+  const labelSel = useLabelSelection(pending.map((b) => b.id));
   const [stats, setStats] = useState({ today: 0, week: 0, pending: 0 });
 
   const load = async () => {

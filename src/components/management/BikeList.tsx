@@ -100,6 +100,8 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     return matchesSearch && matchesLocation;
   });
 
+  const labelSel = useLabelSelection(filteredBikes.map((b: any) => b.id));
+
   const handleLocationChange = (bikeId: string, bayId: string | null) => {
     setBikes((prev) => prev.map((b) => (b.id === bikeId ? { ...b, storage_bay_id: bayId } : b)));
   };
@@ -140,7 +142,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <CardTitle>Bikes ({filteredBikes.length})</CardTitle>
           <div className="flex items-center gap-3">
