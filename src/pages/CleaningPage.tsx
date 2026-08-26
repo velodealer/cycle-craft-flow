@@ -1,3 +1,6 @@
+import { Checkbox } from '@/components/ui/checkbox';
+import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
+import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +31,7 @@ export default function CleaningPage() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBike, setSelectedBike] = useState<any>(null);
+  const labelSel = useLabelSelection(bikes.map((b) => b.id));
 
   const loadCleaningBikes = async () => {
     try {
@@ -98,8 +102,15 @@ export default function CleaningPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Bikes in Cleaning ({bikes.length})</CardTitle>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
+              Select all
+            </label>
+            <PrintLabelsButton bikes={bikes as any} selectedIds={labelSel.selected} />
+          </div>
         </CardHeader>
         <CardContent>
           {/* Mobile cards */}
@@ -110,6 +121,11 @@ export default function CleaningPage() {
               bikes.map((bike) => (
                 <ListCard key={bike.id}>
                   <div className="flex gap-3">
+                    <Checkbox
+                      className="mt-1"
+                      checked={labelSel.selected.has(bike.id)}
+                      onCheckedChange={() => labelSel.toggle(bike.id)}
+                    />
                     <BikeThumbnail
                       photos={bike.photos}
                       alt={`${bike.make} ${bike.model}`}

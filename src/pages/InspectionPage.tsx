@@ -1,3 +1,6 @@
+import { Checkbox } from '@/components/ui/checkbox';
+import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
+import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +32,7 @@ export default function InspectionPage() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBike, setSelectedBike] = useState<any>(null);
+  const labelSel = useLabelSelection(bikes.map((b) => b.id));
 
   const loadInspectionBikes = async () => {
     try {
@@ -99,8 +103,15 @@ export default function InspectionPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Awaiting Inspection ({bikes.length})</CardTitle>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
+              Select all
+            </label>
+            <PrintLabelsButton bikes={bikes as any} selectedIds={labelSel.selected} />
+          </div>
         </CardHeader>
         <CardContent>
           {/* Mobile cards */}
@@ -111,6 +122,11 @@ export default function InspectionPage() {
               bikes.map((bike) => (
                 <ListCard key={bike.id}>
                   <div className="flex gap-3">
+                    <Checkbox
+                      className="mt-1"
+                      checked={labelSel.selected.has(bike.id)}
+                      onCheckedChange={() => labelSel.toggle(bike.id)}
+                    />
                     <BikeThumbnail
                       photos={bike.photos}
                       alt={`${bike.make} ${bike.model}`}
@@ -154,6 +170,7 @@ export default function InspectionPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead className="w-20">Photo</TableHead>
                   <TableHead>Bike</TableHead>
                   <TableHead>Frame Number</TableHead>
@@ -165,13 +182,19 @@ export default function InspectionPage() {
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No bikes awaiting inspection
                     </TableCell>
                   </TableRow>
                 ) : (
                   bikes.map((bike) => (
                     <TableRow key={bike.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={labelSel.selected.has(bike.id)}
+                          onCheckedChange={() => labelSel.toggle(bike.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <BikeThumbnail
                           photos={bike.photos}
