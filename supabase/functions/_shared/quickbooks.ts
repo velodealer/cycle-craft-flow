@@ -1,5 +1,6 @@
 // Shared QuickBooks Online helpers for edge functions.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import type { QboTaxCodeRef } from './quickbooks-tax.ts';
 
 export const QBO_INTEGRATION_NAME = 'quickbooks';
 
@@ -17,6 +18,7 @@ export interface QboSettings {
   access_token?: string;
   access_token_expires_at?: string;
   accounts?: QboAccounts;
+  tax_codes?: QboTaxCodeRef;
   connected_at?: string;
 }
 

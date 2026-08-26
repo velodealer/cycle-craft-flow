@@ -1,5 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
+import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -82,6 +83,7 @@ Deno.serve(async (req) => {
     }
 
     const isMargin = bike?.finance_scheme === 'margin_scheme';
+    const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
     const gross = Number(invoice.gross || invoice.total || 0);
     const purchasePrice = Number(bike?.purchase_price || 0);
     const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
@@ -105,7 +107,7 @@ Deno.serve(async (req) => {
           Description: description || 'Bicycle sale',
           SalesItemLineDetail: {
             ItemRef: { value: itemRef },
-            TaxCodeRef: { value: isMargin ? 'NON' : 'TAX' },
+            TaxCodeRef: { value: salesTaxCode },
           },
         },
       ],
