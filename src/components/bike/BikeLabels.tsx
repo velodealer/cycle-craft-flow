@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { bikeRef } from '@/lib/bikeReference';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Download, Loader2 } from 'lucide-react';
+import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
+import { toast } from 'sonner';
 
 export interface LabelBike {
   id: string;
@@ -20,18 +23,39 @@ interface BikeLabelsProps {
 }
 
 export default function BikeLabels({ bikes, onClose }: BikeLabelsProps) {
+  const [downloading, setDownloading] = useState(false);
   const handlePrint = () => window.print();
   const count = bikes.length;
 
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadBikeLabelsPdf(bikes, window.location.origin);
+    } catch (e) {
+      console.error(e);
+      toast.error('Could not generate the PDF');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-auto">
+    <div className="bike-label-print-root fixed inset-0 bg-background z-50 overflow-auto">
       {/* Print Controls - Hidden when printing */}
       <div className="print:hidden sticky top-0 z-10 bg-background border-b p-4 flex flex-wrap gap-2 justify-between items-center">
         <h2 className="text-lg font-semibold">
           {count === 1 ? 'Bike Label Preview' : `${count} labels`} (4" x 6")
         </h2>
         <div className="flex gap-2">
-          <Button onClick={handlePrint} variant="default" disabled={count === 0}>
+          <Button onClick={handleDownload} variant="default" disabled={count === 0 || downloading}>
+            {downloading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Download 4x6 PDF
+          </Button>
+          <Button onClick={handlePrint} variant="outline" disabled={count === 0}>
             <Printer className="h-4 w-4 mr-2" />
             {count === 1 ? 'Print label' : `Print ${count} labels`}
           </Button>
@@ -65,15 +89,29 @@ export default function BikeLabels({ bikes, onClose }: BikeLabelsProps) {
             size: 4in 6in;
             margin: 0;
           }
-          body {
-            margin: 0;
-            padding: 0;
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 4in !important;
+            background: #fff !important;
+          }
+          /* Only the label overlay prints */
+          body > *:not(.bike-label-print-root),
+          #root > *:not(.bike-label-print-root) {
+            display: none !important;
+          }
+          .bike-label-print-root {
+            position: static !important;
+            inset: auto !important;
+            overflow: visible !important;
+            background: #fff !important;
           }
         }
       `}</style>
     </div>
   );
 }
+
 
 export function LabelContent({ bike }: { bike: LabelBike }) {
   const labelUrl = `${window.location.origin}/bikes/${bike.id}`;
