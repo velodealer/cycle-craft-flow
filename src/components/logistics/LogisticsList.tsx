@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, ExternalLink, Copy, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { ListCard, ListCardRow, ListCardActions } from "@/components/ui/list-card";
+
 
 interface Collection {
   id: string;
@@ -299,6 +301,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
     </div>
   );
