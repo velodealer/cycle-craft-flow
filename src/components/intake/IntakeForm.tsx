@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { QrCode, ArrowRight, Search } from 'lucide-react';
-import BikeLabel from '@/components/bike/BikeLabel';
+import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
 
 const intakeSchema = z.object({
   bike_id: z.string().min(1, 'Bike selection is required'),
@@ -58,7 +58,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [labelGenerated, setLabelGenerated] = useState(false);
-  const [showLabel, setShowLabel] = useState(false);
+  
   
   // Checklist state
   const [checklist, setChecklist] = useState({
@@ -160,7 +160,8 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
     (bike.external_owner?.name && bike.external_owner.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const generateLabel = () => {
+  const generateLabel = async () => {
+
     if (!selectedBike) {
       toast({
         title: 'Select a bike',
@@ -180,9 +181,28 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
       return;
     }
 
-    setLabelGenerated(true);
-    setShowLabel(true);
+    try {
+      await downloadBikeLabelsPdf(
+        [
+          {
+            id: selectedBike.id,
+            reference: selectedBike.reference,
+            make: selectedBike.make,
+            model: selectedBike.model,
+            size: selectedBike.size,
+            colour: selectedBike.colour,
+            frame_number: frameNumber,
+          },
+        ],
+        window.location.origin,
+      );
+      setLabelGenerated(true);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Could not generate the label PDF', variant: 'destructive' });
+    }
   };
+
 
   const onSubmit = async (values: z.infer<typeof intakeSchema>) => {
     if (!selectedBike) {
@@ -599,21 +619,6 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
         </form>
       </Form>
 
-      {/* Label Preview/Print */}
-      {showLabel && selectedBike && (
-        <BikeLabel
-          bike={{
-            id: selectedBike.id,
-            reference: selectedBike.reference,
-            make: selectedBike.make,
-            model: selectedBike.model,
-            size: selectedBike.size,
-            colour: selectedBike.colour,
-            frame_number: selectedBike.frame_number,
-          }}
-          onClose={() => setShowLabel(false)}
-        />
-      )}
     </div>
   );
 }

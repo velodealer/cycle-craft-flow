@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2 } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
-import BikeLabel from './BikeLabel';
+import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
+
 
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,7 +51,7 @@ export default function BikeDetailView({
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
   const [showBreak, setShowBreak] = useState(false);
-  const [showLabel, setShowLabel] = useState(false);
+  const [labelBusy, setLabelBusy] = useState(false);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
   const canSeePricing = showPricing && !isMechanic;
@@ -59,7 +60,33 @@ export default function BikeDetailView({
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
   const [bikeComponents, setBikeComponents] = useState<any[]>([]);
 
+  const handleDownloadLabel = async () => {
+    setLabelBusy(true);
+    try {
+      await downloadBikeLabelsPdf(
+        [
+          {
+            id: bike.id,
+            reference: bike.reference,
+            make: bike.make,
+            model: bike.model,
+            size: bike.size,
+            colour: bike.colour,
+            frame_number: bike.frame_number,
+          },
+        ],
+        window.location.origin,
+      );
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Could not generate the label PDF', variant: 'destructive' });
+    } finally {
+      setLabelBusy(false);
+    }
+  };
+
   const refreshCosts = async () => {
+
     if (!bike?.id) return;
     const [{ data: jobs }, { data: parts }, { data: stripped }] = await Promise.all([
       supabase.from('jobs').select('actual_cost, estimated_cost').eq('bike_id', bike.id),
@@ -185,10 +212,20 @@ export default function BikeDetailView({
               <Edit className="h-4 w-4 mr-2" />
               Edit Bike
             </Button>
-            <Button variant="outline" onClick={() => setShowLabel(true)} className="w-full sm:w-auto">
-              <Printer className="h-4 w-4 mr-2" />
-              Print label
+            <Button
+              variant="outline"
+              onClick={handleDownloadLabel}
+              disabled={labelBusy}
+              className="w-full sm:w-auto"
+            >
+              {labelBusy ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4 mr-2" />
+              )}
+              Label (4x6 PDF)
             </Button>
+
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -553,20 +590,6 @@ export default function BikeDetailView({
       )}
 
       <BreakBikeDialog open={showBreak} onOpenChange={setShowBreak} bike={bike} onDone={onUpdate} />
-      {showLabel && (
-        <BikeLabel
-          bike={{
-            id: bike.id,
-            reference: (bike as any).reference,
-            make: bike.make,
-            model: bike.model,
-            size: bike.size,
-            colour: bike.colour,
-            frame_number: bike.frame_number,
-          }}
-          onClose={() => setShowLabel(false)}
-        />
-      )}
     </div>
   );
 }
