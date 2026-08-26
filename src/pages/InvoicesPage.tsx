@@ -139,6 +139,10 @@ export default function InvoicesPage() {
                     <p className="mt-2 text-sm">
                       {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)} · VAT {inv.vat_rate}%
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      QB invoice {inv.quickbooks_invoice_id ? `#${inv.quickbooks_invoice_id}` : '—'} · Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
+                    </p>
+
                     <div className="mt-3 flex gap-2">
                       {inv.bike_id && (
                         <Button asChild variant="outline" size="sm"><Link to={`/bikes/${inv.bike_id}`}>View bike</Link></Button>
