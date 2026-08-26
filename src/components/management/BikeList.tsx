@@ -1,3 +1,4 @@
+import { bikeRef } from '@/lib/bikeReference';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -86,7 +87,8 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
       searchTerm === '' ||
       bike.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bike.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bike.id.toLowerCase().includes(searchTerm.toLowerCase());
+      bike.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (bike as any).reference?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesLocation =
       locationFilter === 'all' ||
@@ -216,6 +218,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                       {bike.make} {bike.model}
                       {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
                     </div>
+                    <div className="text-xs font-mono text-muted-foreground">{bikeRef(bike as any)}</div>
                     <div className="flex flex-wrap gap-2">
                       {getStatusBadge(bike.status)}
                       {getSourceBadge(bike.source)}
@@ -291,6 +294,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                     <TableCell>
                       <div>
                         <div className="font-medium">{bike.make} {bike.model}</div>
+                        <div className="text-xs font-mono text-muted-foreground">{bikeRef(bike as any)}</div>
                         {bike.year && (
                           <div className="text-sm text-muted-foreground">{bike.year}</div>
                         )}

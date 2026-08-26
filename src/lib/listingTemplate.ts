@@ -40,6 +40,7 @@ export const LISTING_FIELDS: ListingField[] = [
   { token: 'asking_price', label: 'Asking price (£)' },
   { token: 'sale_price', label: 'Sale price (£)' },
   { token: 'sku', label: 'SKU' },
+  { token: 'reference', label: 'Bike reference' },
   { token: 'photos', label: 'Photos (newline-joined URLs)' },
   { token: 'components', label: 'Components list (one per line)' },
 ];
@@ -87,6 +88,7 @@ export function buildValues(bike: any, components: any[] = []): Record<string, s
     asking_price: money(bike.asking_price),
     sale_price: money(bike.sale_price),
     sku: bike.sku ?? '',
+    reference: bike.reference ?? '',
     photos: Array.isArray(bike.photos) ? bike.photos.join('\n') : '',
     components: compLines,
   };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { bikeRef } from '@/lib/bikeReference';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -174,7 +175,7 @@ export default function BikeDetailView({
             </h1>
             <p className="text-muted-foreground text-sm">
               {bike.year && `${bike.year} • `}
-              ID: {bike.id.slice(0, 8)}
+              <span className="font-mono">{bikeRef(bike as any)}</span>
             </p>
           </div>
         </div>

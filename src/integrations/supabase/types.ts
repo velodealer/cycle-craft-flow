@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       bike_collections: {
         Row: {
           address_city: string
@@ -169,6 +190,7 @@ export type Database = {
           purchase_cost: number | null
           purchase_date: string | null
           purchase_price: number | null
+          reference: string | null
           sale_price: number | null
           serial_number: string | null
           size: string | null
@@ -216,6 +238,7 @@ export type Database = {
           purchase_cost?: number | null
           purchase_date?: string | null
           purchase_price?: number | null
+          reference?: string | null
           sale_price?: number | null
           serial_number?: string | null
           size?: string | null
@@ -263,6 +286,7 @@ export type Database = {
           purchase_cost?: number | null
           purchase_date?: string | null
           purchase_price?: number | null
+          reference?: string | null
           sale_price?: number | null
           serial_number?: string | null
           size?: string | null
@@ -1199,6 +1223,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_bike_reference: {
+        Args: { _bike_id: string; _make: string; _serial: string }
+        Returns: string
+      }
       get_current_user_role: { Args: never; Returns: string }
       has_any_role: {
         Args: { roles: Database["public"]["Enums"]["user_role"][] }
