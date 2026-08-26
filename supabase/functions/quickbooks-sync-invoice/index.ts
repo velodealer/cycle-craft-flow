@@ -54,8 +54,10 @@ Deno.serve(async (req) => {
     const bikeReference = bike?.reference || bike?.id || '';
     const stockInDoc = bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
     const stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
-    const customerRef = await findOrCreateCustomer(accessToken, realmId, customer);
-    const itemRef = await findOrCreateItem(accessToken, realmId, accounts.sales);
+    const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
+    const customerRef = await findOrCreateCustomer(fetcher, customer);
+    const itemRef = await findOrCreateItem(fetcher, accounts.sales);
+
 
     // 1. Customer invoice. Margin scheme lines carry no VAT.
     const invoicePayload: Record<string, unknown> = {
