@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2 } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
-import BikeLabel from './BikeLabel';
+import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
+
 
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,7 +51,7 @@ export default function BikeDetailView({
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
   const [showBreak, setShowBreak] = useState(false);
-  const [showLabel, setShowLabel] = useState(false);
+  const [labelBusy, setLabelBusy] = useState(false);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
   const canSeePricing = showPricing && !isMechanic;
