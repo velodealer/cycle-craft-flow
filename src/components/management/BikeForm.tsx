@@ -371,28 +371,17 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Storage location</FormLabel>
-                    <Select
-                      onValueChange={(v) => field.onChange(v === 'none' ? '' : v)}
-                      value={field.value || 'none'}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Unassigned" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Unassigned</SelectItem>
-                        {storageBays.map((bay) => (
-                          <SelectItem key={bay.id} value={bay.id}>
-                            {bay.zone ? `${bay.zone} · ${bay.name}` : bay.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <LocationSelect
+                        value={field.value || null}
+                        onChange={(bayId) => field.onChange(bayId ?? '')}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
 
               <FormField
                 control={form.control}
