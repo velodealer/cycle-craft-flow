@@ -60,7 +60,33 @@ export default function BikeDetailView({
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
   const [bikeComponents, setBikeComponents] = useState<any[]>([]);
 
+  const handleDownloadLabel = async () => {
+    setLabelBusy(true);
+    try {
+      await downloadBikeLabelsPdf(
+        [
+          {
+            id: bike.id,
+            reference: bike.reference,
+            make: bike.make,
+            model: bike.model,
+            size: bike.size,
+            colour: bike.colour,
+            frame_number: bike.frame_number,
+          },
+        ],
+        window.location.origin,
+      );
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Could not generate the label PDF', variant: 'destructive' });
+    } finally {
+      setLabelBusy(false);
+    }
+  };
+
   const refreshCosts = async () => {
+
     if (!bike?.id) return;
     const [{ data: jobs }, { data: parts }, { data: stripped }] = await Promise.all([
       supabase.from('jobs').select('actual_cost, estimated_cost').eq('bike_id', bike.id),
