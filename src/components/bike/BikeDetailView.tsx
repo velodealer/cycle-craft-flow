@@ -176,55 +176,61 @@ export default function BikeDetailView({
             </p>
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-          <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Bike
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy listing
+        {!inspectionMode && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+            <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Bike
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy listing
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {PLATFORMS.map((p) => (
+                  <DropdownMenuItem key={p.value} onClick={() => handleCopyListing(p.value)}>
+                    {p.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
+              <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
+                <Wrench className="h-4 w-4 mr-2" />
+                Break bike
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {PLATFORMS.map((p) => (
-                <DropdownMenuItem key={p.value} onClick={() => handleCopyListing(p.value)}>
-                  {p.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
-            <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
-              <Wrench className="h-4 w-4 mr-2" />
-              Break bike
-            </Button>
-          )}
-          {previousStage && (
-            <Button
-              variant="outline"
-              onClick={() => setDialogDirection('back')}
-              className="w-full sm:w-auto"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Move back to {getStageLabel(previousStage)}
-            </Button>
-          )}
-          {nextStage && (
-            <Button onClick={() => setDialogDirection('forward')} className="w-full sm:w-auto">
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Move to {getStageLabel(nextStage)}
-            </Button>
-          )}
-        </div>
+            )}
+            {previousStage && (
+              <Button
+                variant="outline"
+                onClick={() => setDialogDirection('back')}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Move back to {getStageLabel(previousStage)}
+              </Button>
+            )}
+            {nextStage && (
+              <Button onClick={() => setDialogDirection('forward')} className="w-full sm:w-auto">
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Move to {getStageLabel(nextStage)}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Status Progress */}
-      <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
+      {!inspectionMode && (
+        <>
+          {/* Status Progress */}
+          <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
 
-      <Separator />
+          <Separator />
+        </>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
