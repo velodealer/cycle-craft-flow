@@ -191,7 +191,12 @@ export default function InvoicesPage() {
                         <TableCell className="text-right">{currency(inv.gross)}</TableCell>
                         <TableCell>
                           <SyncBadge status={inv.sync_status} />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            QB invoice {inv.quickbooks_invoice_id ? `#${inv.quickbooks_invoice_id}` : '—'}
+                            {' · '}Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
+                          </p>
                           {inv.sync_error && <p className="mt-1 max-w-[240px] truncate text-xs text-destructive" title={inv.sync_error}>{inv.sync_error}</p>}
+
                         </TableCell>
                         <TableCell className="text-right">
                           <Button size="sm" variant="outline" onClick={() => handleSync(inv.id)} disabled={syncingId === inv.id}>
