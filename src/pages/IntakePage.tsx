@@ -15,6 +15,7 @@ import LocationSelect from '@/components/bike/LocationSelect';
 
 interface PendingBike {
   id: string;
+  reference: string | null;
   make: string;
   model: string;
   frame_number: string | null;
@@ -36,7 +37,7 @@ export default function IntakePage() {
     setLoading(true);
     const pendingRes = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, source, status, intake_date, photos, storage_bay_id')
+      .select('id, reference, make, model, frame_number, source, status, intake_date, photos, storage_bay_id')
       .in('status', ['pending_intake', 'intake'])
       .order('intake_date', { ascending: true });
 

@@ -557,6 +557,7 @@ export default function BikeDetailView({
         <BikeLabel
           bike={{
             id: bike.id,
+            reference: (bike as any).reference,
             make: bike.make,
             model: bike.model,
             size: bike.size,
