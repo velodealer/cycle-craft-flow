@@ -26,6 +26,9 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
   const [saving, setSaving] = useState(false);
   const [frameNumber, setFrameNumber] = useState(bike.frame_number || '');
   const [accessories, setAccessories] = useState(bike.accessories_included || '');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [serialPhotos, setSerialPhotos] = useState<string[]>([]);
+  const [registerPhotos, setRegisterPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     setFrameNumber(bike.frame_number || '');
@@ -35,15 +38,21 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('bikes')
-        .update({
-          frame_number: frameNumber.trim() || null,
-          accessories_included: accessories.trim() || null,
-        })
-        .eq('id', bike.id);
+      const newPhotos = [...photos, ...serialPhotos, ...registerPhotos];
+      const update: Record<string, any> = {
+        frame_number: frameNumber.trim() || null,
+        accessories_included: accessories.trim() || null,
+      };
+      if (newPhotos.length > 0) {
+        update.photos = [...((bike.photos as string[] | null) || []), ...newPhotos];
+      }
+
+      const { error } = await supabase.from('bikes').update(update).eq('id', bike.id);
       if (error) throw error;
       toast({ title: 'Saved', description: 'Intake details updated' });
+      setPhotos([]);
+      setSerialPhotos([]);
+      setRegisterPhotos([]);
       setEditing(false);
       onUpdate();
     } catch (error: any) {
@@ -52,6 +61,7 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
       setSaving(false);
     }
   };
+
 
   if (pending) {
     return (
