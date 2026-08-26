@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { copyListing, PLATFORMS, type ListingPlatform } from '@/lib/listingTemplate';
 import { toast } from '@/hooks/use-toast';
+import { stockInDocNumber, stockOutDocNumber } from '@/lib/quickbooks';
+
 
 
 interface BikeDetailViewProps {
@@ -422,7 +424,7 @@ export default function BikeDetailView({
                       <span className="text-muted-foreground">
                         Stock out {stockOutDocNumber(bike.reference) ? `· ${stockOutDocNumber(bike.reference)}` : ''}
                       </span>
-                      <Badge variant={isSold ? 'default' : 'secondary'}>{isSold ? 'Posted on sale' : 'Pending sale'}</Badge>
+                      <Badge variant={bike.status === 'sold' ? 'default' : 'secondary'}>{bike.status === 'sold' ? 'Posted on sale' : 'Pending sale'}</Badge>
                     </div>
                   </div>
                 </div>
