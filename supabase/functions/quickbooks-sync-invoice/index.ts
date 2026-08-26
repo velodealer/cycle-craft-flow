@@ -87,6 +87,9 @@ Deno.serve(async (req) => {
     const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
 
     const description = `${[bike?.make, bike?.model].filter(Boolean).join(' ')} (${bike?.reference || ''})`.trim();
+    const bikeReference = bike?.reference || bike?.id || '';
+    const stockInDoc = bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
+    const stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
     const customerRef = await findOrCreateCustomer(accessToken, realmId, customer);
     const itemRef = await findOrCreateItem(accessToken, realmId, accounts.sales);
 
@@ -106,10 +109,16 @@ Deno.serve(async (req) => {
           },
         },
       ],
-      PrivateNote: isMargin
-        ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
-        : 'Standard VAT sale.',
+      PrivateNote: [
+        isMargin
+          ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
+          : 'Standard VAT sale.',
+        `Bike reference: ${bikeReference || '—'}`,
+        `Stock in journal: ${stockInDoc || '—'}`,
+        `Stock out journal: ${stockOutDoc || '—'}`,
+      ].join(' | '),
     };
+
 
     if (invoice.quickbooks_invoice_id) {
       const existing = await qboFetch(accessToken, realmId, `/invoice/${invoice.quickbooks_invoice_id}?minorversion=70`);
