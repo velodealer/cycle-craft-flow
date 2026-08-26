@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2 } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
+import DeleteBikeDialog from './DeleteBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import RecordSaleDialog from './RecordSaleDialog';
 import CleaningTask from './CleaningTask';
@@ -59,9 +60,11 @@ export default function BikeDetailView({
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
   const [showBreak, setShowBreak] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [labelBusy, setLabelBusy] = useState(false);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
+  const isAdmin = profile?.role === 'admin';
   const canSeePricing = showPricing && !isMechanic;
   const [partsCost, setPartsCost] = useState(0);
   const [jobsCost, setJobsCost] = useState(0);
@@ -254,6 +257,16 @@ export default function BikeDetailView({
               <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
                 <Wrench className="h-4 w-4 mr-2" />
                 Break bike
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                onClick={() => setShowDelete(true)}
+                className="w-full sm:w-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete bike
               </Button>
             )}
             {previousStage && (
@@ -635,6 +648,18 @@ export default function BikeDetailView({
       )}
 
       <BreakBikeDialog open={showBreak} onOpenChange={setShowBreak} bike={bike} onDone={onUpdate} />
+
+      {isAdmin && (
+        <DeleteBikeDialog
+          bike={bike}
+          open={showDelete}
+          onOpenChange={setShowDelete}
+          onDeleted={() => {
+            onUpdate();
+            onBack();
+          }}
+        />
+      )}
     </div>
   );
 }
