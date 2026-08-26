@@ -15,6 +15,8 @@ import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
 import BikePhotoGallery from './BikePhotoGallery';
 import StageHistory from './StageHistory';
+import AdminStatusSelect from './AdminStatusSelect';
+
 
 
 import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
@@ -291,12 +293,15 @@ export default function BikeDetailView({
 
       {!inspectionMode && (
         <>
+          {isAdmin && <AdminStatusSelect bike={bike} onUpdate={onUpdate} />}
+
           {/* Status Progress */}
           <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
 
           <Separator />
         </>
       )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
