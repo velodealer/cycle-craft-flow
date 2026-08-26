@@ -521,26 +521,7 @@ export default function BikeDetailView({
           )}
 
 
-          {/* Photos */}
-          {showPhotos && bike.photos && bike.photos.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Photos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {bike.photos.map((photo: string, index: number) => (
-                    <img
-                      key={index}
-                      src={photo}
-                      alt={`${bike.make} ${bike.model} ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border"
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Descriptions */}
           {showDescriptions && (bike.description || bike.listing_description) && (
