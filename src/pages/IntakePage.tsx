@@ -149,40 +149,60 @@ export default function IntakePage() {
               No bikes are currently awaiting intake.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {pending.map((bike) => (
-                <div
-                  key={bike.id}
-                  className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">
+                <div key={bike.id} className="rounded-lg border p-4 space-y-3">
+                  <div className="flex gap-3">
+                    <BikeThumbnail
+                      photos={bike.photos}
+                      alt={`${bike.make} ${bike.model}`}
+                      className="h-20 w-20 sm:h-16 sm:w-16"
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="font-semibold leading-tight break-words">
                         {bike.make} {bike.model}
-                      </span>
-                      <Badge variant={bike.status === 'pending_intake' ? 'secondary' : 'default'}>
-                        {bike.status === 'pending_intake' ? 'Delivered' : 'Intake'}
-                      </Badge>
-                      <Badge variant="outline">
-                        {bike.source === 'owned' ? 'Owned' : 'Consignment'}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {bike.frame_number && <>Frame: {bike.frame_number} • </>}
-                      Arrived {new Date(bike.intake_date).toLocaleDateString()}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={bike.status === 'pending_intake' ? 'secondary' : 'default'}>
+                          {bike.status === 'pending_intake' ? 'Delivered' : 'Intake'}
+                        </Badge>
+                        <Badge variant="outline">
+                          {bike.source === 'owned' ? 'Owned' : 'Consignment'}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {bike.frame_number && <>Frame: {bike.frame_number} • </>}
+                        Arrived {new Date(bike.intake_date).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => setProcessBikeId(bike.id)}
-                    className="w-full sm:w-auto"
-                  >
-                    Process intake
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex-1 space-y-1">
+                      <span className="text-xs text-muted-foreground">Location</span>
+                      <LocationSelect
+                        bikeId={bike.id}
+                        value={bike.storage_bay_id}
+                        onChange={(bayId) =>
+                          setPending((prev) =>
+                            prev.map((b) => (b.id === bike.id ? { ...b, storage_bay_id: bayId } : b)),
+                          )
+                        }
+                        size="sm"
+                      />
+                    </div>
+                    <Button
+                      onClick={() => setProcessBikeId(bike.id)}
+                      className="w-full sm:w-auto sm:self-end"
+                    >
+                      Process intake
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
+
           )}
         </CardContent>
       </Card>
