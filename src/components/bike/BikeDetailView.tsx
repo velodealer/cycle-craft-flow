@@ -11,6 +11,8 @@ import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
+import StageHistory from './StageHistory';
+
 
 import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
 
