@@ -23,6 +23,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useStorageBays } from '@/hooks/useStorageBays';
+import LocationSelect from '@/components/bike/LocationSelect';
+
 
 const bikeSchema = z.object({
   make: z.string().min(1, 'Make is required'),
