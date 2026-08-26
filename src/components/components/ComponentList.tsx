@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import ComponentForm, { ComponentCategory, ComponentRecord } from './ComponentForm';
 import { toast } from '@/hooks/use-toast';
+import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+
 
 type Row = ComponentRecord & { component_categories: { name: string; slug: string } | null };
 
@@ -70,7 +72,33 @@ export default function ComponentList() {
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />New component</Button>
       </div>
 
-      <div className="rounded-md border">
+      {/* Mobile cards */}
+      <div className="space-y-3 md:hidden">
+        {loading && <ListEmpty message="Loading…" />}
+        {!loading && rows.length === 0 && <ListEmpty message="No components" />}
+        {!loading && rows.map((r) => (
+          <ListCard key={r.id}>
+            <div className="space-y-1">
+              <div className="font-semibold break-words">{r.brand} {r.model}</div>
+              <div className="text-sm text-muted-foreground">{r.component_categories?.name || '—'}</div>
+            </div>
+            <ListCardRow label="MPN" value={r.mpn || '—'} />
+            <ListCardRow label="Weight" value={r.weight_g ? `${r.weight_g} g` : '—'} />
+            <ListCardActions>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setEditing(r)}>
+                  <Pencil className="h-4 w-4 mr-2" />Edit
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={() => remove(r.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" />Delete
+                </Button>
+              </div>
+            </ListCardActions>
+          </ListCard>
+        ))}
+      </div>
+
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

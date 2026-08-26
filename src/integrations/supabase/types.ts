@@ -176,6 +176,7 @@ export type Database = {
           source: Database["public"]["Enums"]["bike_source"]
           spec_values: Json
           status: Database["public"]["Enums"]["bike_status"]
+          storage_bay_id: string | null
           updated_at: string
           weight_kg: number | null
           year: number | null
@@ -222,6 +223,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["bike_source"]
           spec_values?: Json
           status?: Database["public"]["Enums"]["bike_status"]
+          storage_bay_id?: string | null
           updated_at?: string
           weight_kg?: number | null
           year?: number | null
@@ -268,6 +270,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["bike_source"]
           spec_values?: Json
           status?: Database["public"]["Enums"]["bike_status"]
+          storage_bay_id?: string | null
           updated_at?: string
           weight_kg?: number | null
           year?: number | null
@@ -292,6 +295,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bikes_storage_bay_id_fkey"
+            columns: ["storage_bay_id"]
+            isOneToOne: false
+            referencedRelation: "storage_bays"
             referencedColumns: ["id"]
           },
         ]
@@ -1148,6 +1158,39 @@ export type Database = {
           name?: string
           updated_at?: string
           variables?: Json
+        }
+        Relationships: []
+      }
+      storage_bays: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          sort_order: number
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+          zone?: string | null
         }
         Relationships: []
       }

@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+
 
 interface Part {
   id: string;
@@ -171,8 +173,50 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
           </Select>
         </div>
 
-        <div className="rounded-md border">
+        {/* Mobile cards */}
+        <div className="space-y-3 md:hidden">
+          {filteredParts.length === 0 ? (
+            <ListEmpty message="No parts found" />
+          ) : (
+            filteredParts.map((part) => (
+              <ListCard key={part.id}>
+                <div className="space-y-1">
+                  <div className="font-semibold leading-tight break-words">{part.description}</div>
+                  {part.brand && (
+                    <div className="text-sm text-muted-foreground">{part.brand}</div>
+                  )}
+                  {part.part_number && (
+                    <div className="text-xs text-muted-foreground">#{part.part_number}</div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {getTypeBadge(part.type)}
+                  {getStatusBadge(part.stock_status)}
+                </div>
+                <ListCardRow label="Quantity" value={part.quantity} />
+                <ListCardRow
+                  label="Cost"
+                  value={part.cost_price ? `£${part.cost_price.toFixed(2)}` : '—'}
+                />
+                <ListCardRow
+                  label="Sale price"
+                  value={part.sale_price ? `£${part.sale_price.toFixed(2)}` : '—'}
+                />
+                <ListCardRow label="Added" value={new Date(part.created_at).toLocaleDateString()} />
+                <ListCardActions>
+                  <Button variant="outline" className="w-full" onClick={() => onEdit(part)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit part
+                  </Button>
+                </ListCardActions>
+              </ListCard>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block rounded-md border overflow-x-auto">
           <Table>
+
             <TableHeader>
               <TableRow>
                 <TableHead>Part</TableHead>

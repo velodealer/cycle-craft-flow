@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Eye, ClipboardCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import BikeDetailView from '@/components/bike/BikeDetailView';
+import BikeThumbnail from '@/components/bike/BikeThumbnail';
+import LocationSelect from '@/components/bike/LocationSelect';
+import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
 
 interface Bike {
   id: string;
@@ -18,6 +21,8 @@ interface Bike {
   frame_number: string | null;
   created_at: string;
   updated_at: string;
+  photos: string[] | null;
+  storage_bay_id: string | null;
 }
 
 export default function InspectionPage() {
@@ -74,6 +79,9 @@ export default function InspectionPage() {
     loadInspectionBikes();
   };
 
+  const updateLocation = (bikeId: string, bayId: string | null) =>
+    setBikes((prev) => prev.map((b) => (b.id === bikeId ? { ...b, storage_bay_id: bayId } : b)));
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading bikes...</div>;
   }
@@ -95,13 +103,61 @@ export default function InspectionPage() {
           <CardTitle>Awaiting Inspection ({bikes.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {bikes.length === 0 ? (
+              <ListEmpty message="No bikes awaiting inspection" />
+            ) : (
+              bikes.map((bike) => (
+                <ListCard key={bike.id}>
+                  <div className="flex gap-3">
+                    <BikeThumbnail
+                      photos={bike.photos}
+                      alt={`${bike.make} ${bike.model}`}
+                      className="h-20 w-20"
+                    />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="font-semibold leading-tight break-words">
+                        {bike.make} {bike.model}
+                        {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
+                      </div>
+                      <Badge variant="secondary">Inspection</Badge>
+                    </div>
+                  </div>
+                  <ListCardRow label="Frame" value={bike.frame_number || 'Not recorded'} />
+                  <ListCardRow
+                    label="Entered"
+                    value={new Date(bike.updated_at || bike.created_at).toLocaleDateString()}
+                  />
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Location</span>
+                    <LocationSelect
+                      bikeId={bike.id}
+                      value={bike.storage_bay_id}
+                      onChange={(bayId) => updateLocation(bike.id, bayId)}
+                      size="sm"
+                    />
+                  </div>
+                  <ListCardActions>
+                    <Button variant="outline" className="w-full" onClick={() => handleView(bike)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Start inspection
+                    </Button>
+                  </ListCardActions>
+                </ListCard>
+              ))
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-20">Photo</TableHead>
                   <TableHead>Bike</TableHead>
                   <TableHead>Frame Number</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="w-48">Location</TableHead>
                   <TableHead>Entered Inspection</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -109,13 +165,20 @@ export default function InspectionPage() {
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No bikes awaiting inspection
                     </TableCell>
                   </TableRow>
                 ) : (
                   bikes.map((bike) => (
                     <TableRow key={bike.id}>
+                      <TableCell>
+                        <BikeThumbnail
+                          photos={bike.photos}
+                          alt={`${bike.make} ${bike.model}`}
+                          className="h-12 w-12"
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{bike.make} {bike.model}</div>
@@ -130,7 +193,12 @@ export default function InspectionPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">Inspection</Badge>
+                        <LocationSelect
+                          bikeId={bike.id}
+                          value={bike.storage_bay_id}
+                          onChange={(bayId) => updateLocation(bike.id, bayId)}
+                          size="sm"
+                        />
                       </TableCell>
                       <TableCell>
                         {new Date(bike.updated_at || bike.created_at).toLocaleDateString()}
