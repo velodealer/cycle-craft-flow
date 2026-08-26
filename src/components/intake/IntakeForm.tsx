@@ -599,21 +599,6 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
         </form>
       </Form>
 
-      {/* Label Preview/Print */}
-      {showLabel && selectedBike && (
-        <BikeLabel
-          bike={{
-            id: selectedBike.id,
-            reference: selectedBike.reference,
-            make: selectedBike.make,
-            model: selectedBike.model,
-            size: selectedBike.size,
-            colour: selectedBike.colour,
-            frame_number: selectedBike.frame_number,
-          }}
-          onClose={() => setShowLabel(false)}
-        />
-      )}
     </div>
   );
 }
