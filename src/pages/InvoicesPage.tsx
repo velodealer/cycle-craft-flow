@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { syncInvoice } from '@/lib/quickbooks';
+import { stockOutDocNumber, syncInvoice } from '@/lib/quickbooks';
 import { toast } from 'sonner';
 
 interface InvoiceRow {
@@ -22,6 +22,8 @@ interface InvoiceRow {
   sync_status: string;
   sync_error: string | null;
   quickbooks_invoice_id: string | null;
+  quickbooks_journal_id: string | null;
+
   bike_id: string | null;
   bikes: { id: string; make: string; model: string; reference: string | null } | null;
   external_owners: { name: string } | null;
@@ -137,6 +139,10 @@ export default function InvoicesPage() {
                     <p className="mt-2 text-sm">
                       {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)} · VAT {inv.vat_rate}%
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      QB invoice {inv.quickbooks_invoice_id ? `#${inv.quickbooks_invoice_id}` : '—'} · Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
+                    </p>
+
                     <div className="mt-3 flex gap-2">
                       {inv.bike_id && (
                         <Button asChild variant="outline" size="sm"><Link to={`/bikes/${inv.bike_id}`}>View bike</Link></Button>
@@ -185,7 +191,12 @@ export default function InvoicesPage() {
                         <TableCell className="text-right">{currency(inv.gross)}</TableCell>
                         <TableCell>
                           <SyncBadge status={inv.sync_status} />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            QB invoice {inv.quickbooks_invoice_id ? `#${inv.quickbooks_invoice_id}` : '—'}
+                            {' · '}Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
+                          </p>
                           {inv.sync_error && <p className="mt-1 max-w-[240px] truncate text-xs text-destructive" title={inv.sync_error}>{inv.sync_error}</p>}
+
                         </TableCell>
                         <TableCell className="text-right">
                           <Button size="sm" variant="outline" onClick={() => handleSync(inv.id)} disabled={syncingId === inv.id}>

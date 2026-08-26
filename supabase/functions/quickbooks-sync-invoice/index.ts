@@ -87,6 +87,9 @@ Deno.serve(async (req) => {
     const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
 
     const description = `${[bike?.make, bike?.model].filter(Boolean).join(' ')} (${bike?.reference || ''})`.trim();
+    const bikeReference = bike?.reference || bike?.id || '';
+    const stockInDoc = bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
+    const stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
     const customerRef = await findOrCreateCustomer(accessToken, realmId, customer);
     const itemRef = await findOrCreateItem(accessToken, realmId, accounts.sales);
 
@@ -106,10 +109,16 @@ Deno.serve(async (req) => {
           },
         },
       ],
-      PrivateNote: isMargin
-        ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
-        : 'Standard VAT sale.',
+      PrivateNote: [
+        isMargin
+          ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
+          : 'Standard VAT sale.',
+        `Bike reference: ${bikeReference || '—'}`,
+        `Stock in journal: ${stockInDoc || '—'}`,
+        `Stock out journal: ${stockOutDoc || '—'}`,
+      ].join(' | '),
     };
+
 
     if (invoice.quickbooks_invoice_id) {
       const existing = await qboFetch(accessToken, realmId, `/invoice/${invoice.quickbooks_invoice_id}?minorversion=70`);
@@ -129,7 +138,14 @@ Deno.serve(async (req) => {
     // 2. Journal: move stock (purchase price only) to COGS, plus margin VAT to VAT control.
     let journalId = invoice.quickbooks_journal_id as string | null;
     const lines: Record<string, unknown>[] = [];
-    const note = `Sale of ${description || 'bike'} — ${invoice.invoice_number}`;
+    const note = [
+      `Stock out / sale of ${description || 'bike'}`,
+      `Invoice: ${invoice.invoice_number}`,
+      `Bike reference: ${bikeReference || '—'}`,
+      `Stock in journal: ${stockInDoc || '—'}`,
+      `Doc number: ${stockOutDoc || '—'}`,
+    ].join(' | ');
+
 
     if (purchasePrice > 0) {
       lines.push({
@@ -164,10 +180,12 @@ Deno.serve(async (req) => {
 
     if (lines.length > 0) {
       const journalPayload: Record<string, unknown> = {
+        ...(stockOutDoc ? { DocNumber: stockOutDoc } : {}),
         TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
         PrivateNote: note,
         Line: lines,
       };
+
       if (journalId) {
         const existing = await qboFetch(accessToken, realmId, `/journalentry/${journalId}?minorversion=70`);
         if (existing?.JournalEntry) {

@@ -47,6 +47,13 @@ export const saveQuickBooksAccounts = (accounts: QboAccountMap) =>
   invoke<{ ok: true }>('quickbooks-oauth', { action: 'save_accounts', accounts });
 export const disconnectQuickBooks = () => invoke<{ ok: true }>('quickbooks-oauth', { action: 'disconnect' });
 
+/** Readable QuickBooks Doc Numbers (max 21 chars) — must match the edge functions. */
+export const stockInDocNumber = (bikeReference?: string | null) =>
+  bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
+export const stockOutDocNumber = (bikeReference?: string | null) =>
+  bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
+
+
 export const syncBikePurchase = (bikeId: string) =>
   invoke<{ ok: true; journal_id?: string; skipped?: string }>('quickbooks-sync-purchase', { bike_id: bikeId });
 

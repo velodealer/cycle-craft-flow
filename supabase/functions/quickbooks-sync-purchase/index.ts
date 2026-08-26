@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, reference, make, model, purchase_price, purchase_date, quickbooks_purchase_journal_id')
+      .select('id, reference, make, model, frame_number, intake_date, purchase_price, purchase_date, quickbooks_purchase_journal_id')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeError) throw new Error(bikeError.message);
@@ -45,10 +45,22 @@ Deno.serve(async (req) => {
       throw new Error('QuickBooks account mapping is incomplete (Stock and purchase funding accounts are required)');
     }
 
-    const label = `Bike purchase ${bike.reference || bike.id} — ${[bike.make, bike.model].filter(Boolean).join(' ')}`;
+    const reference = bike.reference || bike.id;
+    const docNumber = `STK-IN-${reference}`.slice(0, 21);
+    const label = `Bike purchase ${reference} — ${[bike.make, bike.model].filter(Boolean).join(' ')}`;
+    const note = [
+      'Stock in (bike purchase)',
+      `Bike reference: ${reference}`,
+      `Bike: ${[bike.make, bike.model].filter(Boolean).join(' ') || '—'}`,
+      `Frame number: ${bike.frame_number || '—'}`,
+      `Intake date: ${(bike.intake_date || bike.purchase_date || new Date().toISOString()).slice(0, 10)}`,
+      `Doc number: ${docNumber}`,
+    ].join(' | ');
+
     const payload: Record<string, unknown> = {
+      DocNumber: docNumber,
       TxnDate: (bike.purchase_date || new Date().toISOString()).slice(0, 10),
-      PrivateNote: label,
+      PrivateNote: note,
       Line: [
         {
           Description: label,
@@ -64,6 +76,7 @@ Deno.serve(async (req) => {
         },
       ],
     };
+
 
     // Update in place when we already posted this bike's purchase.
     if (bike.quickbooks_purchase_journal_id) {
