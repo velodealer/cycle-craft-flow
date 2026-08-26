@@ -7,6 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ClipboardCheck, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import BikeThumbnail from '@/components/bike/BikeThumbnail';
+import LocationSelect from '@/components/bike/LocationSelect';
+
 
 interface PendingBike {
   id: string;
@@ -16,6 +19,8 @@ interface PendingBike {
   source: string;
   status: string;
   intake_date: string;
+  photos: string[] | null;
+  storage_bay_id: string | null;
 }
 
 export default function IntakePage() {
@@ -35,7 +40,7 @@ export default function IntakePage() {
     const [pendingRes, todayRes, weekRes] = await Promise.all([
       supabase
         .from('bikes')
-        .select('id, make, model, frame_number, source, status, intake_date')
+        .select('id, make, model, frame_number, source, status, intake_date, photos, storage_bay_id')
         .in('status', ['pending_intake', 'intake'])
         .order('intake_date', { ascending: true }),
       supabase
