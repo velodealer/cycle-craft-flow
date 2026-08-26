@@ -180,9 +180,28 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
       return;
     }
 
-    setLabelGenerated(true);
-    setShowLabel(true);
+    try {
+      await downloadBikeLabelsPdf(
+        [
+          {
+            id: selectedBike.id,
+            reference: selectedBike.reference,
+            make: selectedBike.make,
+            model: selectedBike.model,
+            size: selectedBike.size,
+            colour: selectedBike.colour,
+            frame_number: frameNumber,
+          },
+        ],
+        window.location.origin,
+      );
+      setLabelGenerated(true);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Could not generate the label PDF', variant: 'destructive' });
+    }
   };
+
 
   const onSubmit = async (values: z.infer<typeof intakeSchema>) => {
     if (!selectedBike) {
