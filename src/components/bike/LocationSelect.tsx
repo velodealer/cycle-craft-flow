@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -14,9 +14,16 @@ interface LocationSelectProps {
   size?: 'sm' | 'default';
 }
 
+/** Split a stored bay name like "A12" into its letter and number parts. */
+function splitName(name: string): { bay: string; number: string } {
+  const match = name.trim().match(/^([A-Za-z]*)\s*-?\s*(\d*)$/);
+  if (match) return { bay: match[1].toUpperCase(), number: match[2] };
+  return { bay: name.trim().toUpperCase(), number: '' };
+}
+
 /**
- * Free-text storage location field. Existing bays are offered as suggestions,
- * but any name can be typed; unknown names create a new bay.
+ * Storage location entered as two plain fields: bay letter + number.
+ * Unknown combinations create a new bay automatically.
  */
 export default function LocationSelect({
   bikeId,
@@ -26,23 +33,24 @@ export default function LocationSelect({
   size = 'default',
 }: LocationSelectProps) {
   const { bays, reload } = useStorageBays();
-  const listId = useId();
   const [saving, setSaving] = useState(false);
   const [current, setCurrent] = useState<string | null>(value ?? null);
-  const [text, setText] = useState('');
+  const [bay, setBay] = useState('');
+  const [number, setNumber] = useState('');
 
-  // Keep the input in sync with the resolved bay name.
   useEffect(() => {
     setCurrent(value ?? null);
   }, [value]);
 
   useEffect(() => {
-    const bay = bays.find((b) => b.id === current);
-    setText(bay ? bay.name : '');
+    const found = bays.find((b) => b.id === current);
+    const parts = found ? splitName(found.name) : { bay: '', number: '' };
+    setBay(parts.bay);
+    setNumber(parts.number);
   }, [current, bays]);
 
-  const commit = async () => {
-    const name = text.trim();
+  const commit = async (nextBay: string, nextNumber: string) => {
+    const name = `${nextBay.trim().toUpperCase()}${nextNumber.trim()}`;
     const currentBay = bays.find((b) => b.id === current);
     if (name === (currentBay?.name ?? '')) return;
 
@@ -87,17 +95,18 @@ export default function LocationSelect({
     }
   };
 
+  const inputClass = cn(size === 'sm' ? 'h-8 text-xs' : '', className);
+
   return (
-    <>
+    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
       <Input
-        value={text}
-        list={listId}
+        value={bay}
         disabled={saving}
-        placeholder="Unassigned"
-        className={cn(className ?? (size === 'sm' ? 'h-8 w-full text-xs' : 'w-full'))}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={commit}
+        placeholder="Bay"
+        aria-label="Bay"
+        className={cn(inputClass, 'w-16 uppercase')}
+        onChange={(e) => setBay(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
+        onBlur={() => commit(bay, number)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -105,13 +114,22 @@ export default function LocationSelect({
           }
         }}
       />
-      <datalist id={listId}>
-        {bays.map((bay) => (
-          <option key={bay.id} value={bay.name}>
-            {bay.zone ? `${bay.zone} · ${bay.name}` : bay.name}
-          </option>
-        ))}
-      </datalist>
-    </>
+      <Input
+        value={number}
+        inputMode="numeric"
+        disabled={saving}
+        placeholder="No."
+        aria-label="Bay number"
+        className={cn(inputClass, 'w-16')}
+        onChange={(e) => setNumber(e.target.value.replace(/[^0-9]/g, ''))}
+        onBlur={() => commit(bay, number)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+      />
+    </div>
   );
 }

@@ -7,8 +7,8 @@ interface BikeLabelProps {
     id: string;
     make: string;
     model: string;
-    frame_number?: string;
-    year?: number;
+    size?: string | null;
+    colour?: string | null;
   };
   onClose: () => void;
 }
@@ -63,10 +63,10 @@ export default function BikeLabel({ bike, onClose }: BikeLabelProps) {
 }
 
 function LabelContent({ bike }: { bike: BikeLabelProps['bike'] }) {
-  const labelUrl = `${window.location.origin}/bikes?id=${bike.id}`;
-  
+  const labelUrl = `${window.location.origin}/bikes/${bike.id}`;
+
   return (
-    <div 
+    <div
       className="bg-white text-black"
       style={{
         width: '4in',
@@ -78,53 +78,39 @@ function LabelContent({ bike }: { bike: BikeLabelProps['bike'] }) {
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      {/* Header */}
-      <div className="text-center border-b-2 border-black pb-2">
-        <h1 className="text-2xl font-bold">VeloDealer</h1>
-        <p className="text-sm">Bike Tracking Label</p>
-      </div>
-
       {/* Bike Info */}
-      <div className="flex-1 flex flex-col justify-center space-y-3 py-4">
+      <div className="space-y-3">
         <div>
-          <p className="text-xs font-semibold text-gray-600">MAKE & MODEL</p>
-          <p className="text-xl font-bold">{bike.make} {bike.model}</p>
+          <p className="text-xs font-semibold text-gray-600">BRAND</p>
+          <p className="text-2xl font-bold leading-tight">{bike.make}</p>
         </div>
-        
-        {bike.year && (
-          <div>
-            <p className="text-xs font-semibold text-gray-600">YEAR</p>
-            <p className="text-lg font-semibold">{bike.year}</p>
-          </div>
-        )}
-        
-        {bike.frame_number && (
-          <div>
-            <p className="text-xs font-semibold text-gray-600">FRAME NUMBER</p>
-            <p className="text-base font-mono font-semibold break-all">{bike.frame_number}</p>
-          </div>
-        )}
-        
         <div>
-          <p className="text-xs font-semibold text-gray-600">BIKE ID</p>
-          <p className="text-sm font-mono">{bike.id.slice(0, 8)}</p>
+          <p className="text-xs font-semibold text-gray-600">MODEL</p>
+          <p className="text-xl font-semibold leading-tight">{bike.model}</p>
+        </div>
+        <div className="flex gap-6">
+          <div>
+            <p className="text-xs font-semibold text-gray-600">SIZE</p>
+            <p className="text-lg font-semibold">{bike.size || '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-600">COLOUR</p>
+            <p className="text-lg font-semibold">{bike.colour || '—'}</p>
+          </div>
         </div>
       </div>
 
       {/* QR Code */}
       <div className="flex flex-col items-center border-t-2 border-black pt-3">
-        <QRCodeSVG 
-          value={labelUrl}
-          size={140}
-          level="M"
-          includeMargin={false}
-        />
+        <QRCodeSVG value={labelUrl} size={160} level="M" includeMargin={false} />
         <p className="text-xs mt-2 text-center text-gray-600">Scan to view bike details</p>
       </div>
 
       {/* Footer */}
-      <div className="text-center text-xs text-gray-500 mt-2">
-        <p>{new Date().toLocaleDateString()}</p>
+      <div className="text-center text-xs text-gray-500">
+        <p>
+          {bike.id.slice(0, 8)} • {new Date().toLocaleDateString()}
+        </p>
       </div>
     </div>
   );
