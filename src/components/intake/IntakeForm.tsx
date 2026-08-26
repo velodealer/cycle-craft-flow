@@ -36,6 +36,8 @@ interface Bike {
   model: string;
   year?: number;
   frame_number?: string;
+  size?: string | null;
+  colour?: string | null;
   status: string;
   photos?: string[];
   owner_name?: string;
@@ -88,6 +90,8 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
             model,
             year,
             frame_number,
+            size,
+            colour,
             status,
             photos,
             external_owners!bikes_external_owner_id_fkey (
