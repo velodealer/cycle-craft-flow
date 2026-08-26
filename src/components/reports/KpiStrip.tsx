@@ -56,7 +56,7 @@ export default function KpiStrip({ data, range }: Props) {
     { label: 'Revenue', value: money(stats.revenue), sub: 'Paid invoices in range' },
     { label: 'Bikes sold', value: String(stats.bikesSold), sub: money(stats.saleTotal) + ' booked' },
     { label: 'Gross margin', value: money(stats.margin), sub: pct(stats.marginPct) },
-    { label: 'Stock value', value: money(stats.stockValue), sub: 'At cost, today' },
+    { label: 'Stock value', value: money(stats.stockValue), sub: 'Purchase price only, today' },
   ];
 
   return (

@@ -2,3 +2,6 @@ project_id = "hgztcymscgyuekgsyyfe"
 
 [functions.cycle-courier-webhook]
 verify_jwt = false
+
+[functions.quickbooks-oauth]
+verify_jwt = false

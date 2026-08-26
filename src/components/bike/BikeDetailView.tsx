@@ -8,6 +8,7 @@ import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader
 import StatusProgressBar from './StatusProgressBar';
 import BreakBikeDialog from './BreakBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
+import RecordSaleDialog from './RecordSaleDialog';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
@@ -573,8 +574,20 @@ export default function BikeDetailView({
         </div>
       </div>
 
+      {/* Record sale */}
+      {dialogDirection === 'forward' && nextStage === 'sold' && (
+        <RecordSaleDialog
+          isOpen={true}
+          onClose={() => setDialogDirection(null)}
+          bike={bike}
+          onSuccess={onUpdate}
+        />
+      )}
+
       {/* Advance/Revert Stage Dialog */}
-      {dialogDirection && (dialogDirection === 'forward' ? nextStage : previousStage) && (
+      {dialogDirection &&
+        !(dialogDirection === 'forward' && nextStage === 'sold') &&
+        (dialogDirection === 'forward' ? nextStage : previousStage) && (
         <AdvanceStageDialog
           isOpen={true}
           onClose={() => setDialogDirection(null)}

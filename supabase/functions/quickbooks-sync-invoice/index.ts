@@ -1,0 +1,204 @@
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+async function findOrCreateItem(accessToken: string, realmId: string, incomeAccountId: string) {
+  const name = 'Bicycle sale';
+  const query = encodeURIComponent(`select Id, Name from Item where Name = '${name}'`);
+  const found = await qboFetch(accessToken, realmId, `/query?query=${query}&minorversion=70`);
+  const existing = found?.QueryResponse?.Item?.[0];
+  if (existing) return existing.Id;
+  const created = await qboFetch(accessToken, realmId, '/item?minorversion=70', {
+    method: 'POST',
+    body: JSON.stringify({
+      Name: name,
+      Type: 'Service',
+      IncomeAccountRef: { value: incomeAccountId },
+    }),
+  });
+  return created?.Item?.Id;
+}
+
+async function findOrCreateCustomer(
+  accessToken: string,
+  realmId: string,
+  customer: { name: string; email?: string | null; phone?: string | null; address?: string | null },
+) {
+  const safeName = customer.name.replace(/['\\]/g, '');
+  const query = encodeURIComponent(`select Id, DisplayName from Customer where DisplayName = '${safeName}'`);
+  const found = await qboFetch(accessToken, realmId, `/query?query=${query}&minorversion=70`);
+  const existing = found?.QueryResponse?.Customer?.[0];
+  if (existing) return existing.Id;
+
+  const created = await qboFetch(accessToken, realmId, '/customer?minorversion=70', {
+    method: 'POST',
+    body: JSON.stringify({
+      DisplayName: customer.name,
+      ...(customer.email ? { PrimaryEmailAddr: { Address: customer.email } } : {}),
+      ...(customer.phone ? { PrimaryPhone: { FreeFormNumber: customer.phone } } : {}),
+      ...(customer.address ? { BillAddr: { Line1: customer.address } } : {}),
+    }),
+  });
+  return created?.Customer?.Id;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  const supabase = serviceClient();
+  try {
+    await requireUser(req, supabase);
+  } catch (e) {
+    return json({ error: (e as Error).message }, 401);
+  }
+
+  let invoiceId: string | undefined;
+  try {
+    const body = await req.json().catch(() => ({}));
+    invoiceId = typeof body.invoice_id === 'string' ? body.invoice_id : undefined;
+    if (!invoiceId) return json({ error: 'invoice_id is required' }, 400);
+
+    const { data: invoice, error: invError } = await supabase
+      .from('invoices')
+      .select('*, bikes:bike_id(*), external_owners:external_customer_id(*)')
+      .eq('id', invoiceId)
+      .maybeSingle();
+    if (invError) throw new Error(invError.message);
+    if (!invoice) return json({ error: 'Invoice not found' }, 404);
+
+    const bike: any = invoice.bikes;
+    const customer: any = invoice.external_owners;
+    if (!customer?.name) throw new Error('Invoice has no customer to send to QuickBooks');
+
+    const { accessToken, realmId, settings } = await getQboAuth(supabase);
+    const accounts = ((settings as QboSettings).accounts ?? {});
+    if (!accounts.sales || !accounts.stock || !accounts.cogs) {
+      throw new Error('QuickBooks account mapping is incomplete (Sales, Stock and COGS accounts are required)');
+    }
+
+    const isMargin = bike?.finance_scheme === 'margin_scheme';
+    const gross = Number(invoice.gross || invoice.total || 0);
+    const purchasePrice = Number(bike?.purchase_price || 0);
+    const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
+
+    const description = `${[bike?.make, bike?.model].filter(Boolean).join(' ')} (${bike?.reference || ''})`.trim();
+    const customerRef = await findOrCreateCustomer(accessToken, realmId, customer);
+    const itemRef = await findOrCreateItem(accessToken, realmId, accounts.sales);
+
+    // 1. Customer invoice. Margin scheme lines carry no VAT.
+    const invoicePayload: Record<string, unknown> = {
+      CustomerRef: { value: customerRef },
+      DocNumber: invoice.invoice_number,
+      TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
+      Line: [
+        {
+          Amount: gross,
+          DetailType: 'SalesItemLineDetail',
+          Description: description || 'Bicycle sale',
+          SalesItemLineDetail: {
+            ItemRef: { value: itemRef },
+            TaxCodeRef: { value: isMargin ? 'NON' : 'TAX' },
+          },
+        },
+      ],
+      PrivateNote: isMargin
+        ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
+        : 'Standard VAT sale.',
+    };
+
+    if (invoice.quickbooks_invoice_id) {
+      const existing = await qboFetch(accessToken, realmId, `/invoice/${invoice.quickbooks_invoice_id}?minorversion=70`);
+      if (existing?.Invoice) {
+        invoicePayload.Id = existing.Invoice.Id;
+        invoicePayload.SyncToken = existing.Invoice.SyncToken;
+        invoicePayload.sparse = false;
+      }
+    }
+
+    const invoiceResult = await qboFetch(accessToken, realmId, '/invoice?minorversion=70', {
+      method: 'POST',
+      body: JSON.stringify(invoicePayload),
+    });
+    const qbInvoiceId = invoiceResult?.Invoice?.Id;
+
+    // 2. Journal: move stock (purchase price only) to COGS, plus margin VAT to VAT control.
+    let journalId = invoice.quickbooks_journal_id as string | null;
+    const lines: Record<string, unknown>[] = [];
+    const note = `Sale of ${description || 'bike'} — ${invoice.invoice_number}`;
+
+    if (purchasePrice > 0) {
+      lines.push({
+        Description: `Cost of goods sold — ${description}`,
+        Amount: purchasePrice,
+        DetailType: 'JournalEntryLineDetail',
+        JournalEntryLineDetail: { PostingType: 'Debit', AccountRef: { value: accounts.cogs } },
+      });
+      lines.push({
+        Description: `Stock released — ${description}`,
+        Amount: purchasePrice,
+        DetailType: 'JournalEntryLineDetail',
+        JournalEntryLineDetail: { PostingType: 'Credit', AccountRef: { value: accounts.stock } },
+      });
+    }
+
+    if (marginVat > 0) {
+      if (!accounts.vat) throw new Error('A VAT control account must be mapped for margin scheme sales');
+      lines.push({
+        Description: `Margin scheme VAT — ${description}`,
+        Amount: Number(marginVat.toFixed(2)),
+        DetailType: 'JournalEntryLineDetail',
+        JournalEntryLineDetail: { PostingType: 'Credit', AccountRef: { value: accounts.vat } },
+      });
+      lines.push({
+        Description: `Margin scheme VAT (sales adjustment) — ${description}`,
+        Amount: Number(marginVat.toFixed(2)),
+        DetailType: 'JournalEntryLineDetail',
+        JournalEntryLineDetail: { PostingType: 'Debit', AccountRef: { value: accounts.sales } },
+      });
+    }
+
+    if (lines.length > 0) {
+      const journalPayload: Record<string, unknown> = {
+        TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
+        PrivateNote: note,
+        Line: lines,
+      };
+      if (journalId) {
+        const existing = await qboFetch(accessToken, realmId, `/journalentry/${journalId}?minorversion=70`);
+        if (existing?.JournalEntry) {
+          journalPayload.Id = existing.JournalEntry.Id;
+          journalPayload.SyncToken = existing.JournalEntry.SyncToken;
+          journalPayload.sparse = false;
+        }
+      }
+      const journalResult = await qboFetch(accessToken, realmId, '/journalentry?minorversion=70', {
+        method: 'POST',
+        body: JSON.stringify(journalPayload),
+      });
+      journalId = journalResult?.JournalEntry?.Id ?? journalId;
+    }
+
+    await supabase.from('invoices').update({
+      quickbooks_invoice_id: qbInvoiceId,
+      quickbooks_journal_id: journalId,
+      sync_status: 'synced',
+      sync_error: null,
+    }).eq('id', invoiceId);
+
+    return json({ ok: true, quickbooks_invoice_id: qbInvoiceId, quickbooks_journal_id: journalId, margin_vat: marginVat });
+  } catch (e) {
+    const message = (e as Error).message;
+    console.error('quickbooks-sync-invoice error', message);
+    if (invoiceId) {
+      await supabase.from('invoices')
+        .update({ sync_status: 'failed', sync_error: message })
+        .eq('id', invoiceId);
+    }
+    return json({ error: message }, 500);
+  }
+});

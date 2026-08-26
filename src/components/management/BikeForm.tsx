@@ -17,6 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PhotoUpload from '@/components/PhotoUpload';
+import { tryPostPurchase } from '@/lib/quickbooks';
 import OwnerForm from '@/components/management/OwnerForm';
 import AddInvestorDialog from '@/components/management/AddInvestorDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -214,6 +215,16 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         if (error) throw error;
         bikeId = data.id;
         toast({ title: 'Bike created successfully' });
+
+        // Post the purchase to QuickBooks stock (purchase price only).
+        const posted = await tryPostPurchase(bikeId);
+        if (!posted.ok) {
+          toast({
+            title: 'QuickBooks purchase not posted',
+            description: posted.error,
+            variant: 'destructive',
+          });
+        }
       }
 
       // Arrange collection if requested
