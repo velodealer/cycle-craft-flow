@@ -139,6 +139,36 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
                 onChange={(e) => setAccessories(e.target.value)}
               />
             </div>
+            <div className="space-y-1">
+              <Label>Bike photos</Label>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`bike-${bike.id}/intake`}
+                photos={photos}
+                onChange={setPhotos}
+                maxPhotos={10}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Serial number photo</Label>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`bike-${bike.id}/serial`}
+                photos={serialPhotos}
+                onChange={setSerialPhotos}
+                maxPhotos={3}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Registration document photo</Label>
+              <PhotoUpload
+                bucket="bike-photos"
+                path={`bike-${bike.id}/register`}
+                photos={registerPhotos}
+                onChange={setRegisterPhotos}
+                maxPhotos={3}
+              />
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving} className="flex-1">
                 <Save className="h-4 w-4 mr-2" />
@@ -165,6 +195,22 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
                 <p className="whitespace-pre-wrap">{bike.condition_notes}</p>
               </div>
             )}
+            {Array.isArray(bike.photos) && bike.photos.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-muted-foreground">Intake photos</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {(bike.photos as string[]).slice(0, 8).map((url) => (
+                    <img
+                      key={url}
+                      src={url}
+                      alt={`${bike.make} ${bike.model} intake photo`}
+                      loading="lazy"
+                      className="h-16 w-full rounded object-cover"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                 Edit intake details
@@ -172,6 +218,7 @@ export default function IntakeTask({ bike, onUpdate }: IntakeTaskProps) {
             )}
           </div>
         )}
+
 
         <div className="space-y-1">
           <span className="text-xs text-muted-foreground">Location</span>
