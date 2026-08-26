@@ -22,7 +22,6 @@ interface Bike {
   year: number | null;
   status: string;
   frame_number: string | null;
-  serial_number: string | null;
   created_at: string;
   updated_at: string;
   photos: string[] | null;

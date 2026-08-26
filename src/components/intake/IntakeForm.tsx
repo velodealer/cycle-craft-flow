@@ -36,7 +36,6 @@ interface Bike {
   model: string;
   year?: number;
   frame_number?: string;
-  serial_number?: string | null;
   size?: string | null;
   colour?: string | null;
   status: string;
@@ -92,7 +91,6 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
             model,
             year,
             frame_number,
-            serial_number,
             size,
             colour,
             status,
@@ -608,7 +606,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
             model: selectedBike.model,
             size: selectedBike.size,
             colour: selectedBike.colour,
-            serial_number: selectedBike.serial_number,
+            frame_number: selectedBike.frame_number,
           }}
           onClose={() => setShowLabel(false)}
         />

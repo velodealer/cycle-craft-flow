@@ -10,7 +10,7 @@ export interface LabelBike {
   model: string;
   size?: string | null;
   colour?: string | null;
-  serial_number?: string | null;
+  frame_number?: string | null;
 }
 
 
@@ -113,7 +113,7 @@ export function LabelContent({ bike }: { bike: LabelBike }) {
         </div>
         <div>
           <p className="text-xs font-semibold text-gray-600">SERIAL NUMBER</p>
-          <p className="text-lg font-semibold">{bike.serial_number || '—'}</p>
+          <p className="text-lg font-semibold">{bike.frame_number || '—'}</p>
         </div>
       </div>
 

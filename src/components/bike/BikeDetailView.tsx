@@ -561,7 +561,7 @@ export default function BikeDetailView({
             model: bike.model,
             size: bike.size,
             colour: bike.colour,
-            serial_number: bike.serial_number,
+            frame_number: bike.frame_number,
           }}
           onClose={() => setShowLabel(false)}
         />
