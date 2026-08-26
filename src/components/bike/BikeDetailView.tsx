@@ -11,6 +11,7 @@ import AdvanceStageDialog from './AdvanceStageDialog';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
+import BikePhotoGallery from './BikePhotoGallery';
 import StageHistory from './StageHistory';
 
 

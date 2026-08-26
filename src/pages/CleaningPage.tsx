@@ -249,7 +249,6 @@ export default function CleaningPage() {
               onEdit={() => {}}
               onBack={handleClose}
               onUpdate={loadCleaningBikes}
-              showPhotos={false}
               showPricing={false}
               showDescriptions={false}
             />

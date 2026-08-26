@@ -254,7 +254,6 @@ export default function InspectionPage() {
               onEdit={() => {}}
               onBack={handleClose}
               onUpdate={handleClose}
-              showPhotos={false}
               showPricing={false}
               showDescriptions={false}
               inspectionMode={true}

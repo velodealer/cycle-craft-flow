@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, ExternalLink, Copy, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import BikeThumbnail from "@/components/bike/BikeThumbnail";
 import { ListCard, ListCardRow, ListCardActions } from "@/components/ui/list-card";
 
 
@@ -27,6 +28,7 @@ interface Collection {
     make: string;
     model: string;
     frame_number: string | null;
+    photos: string[] | null;
   } | null;
 }
 
@@ -56,7 +58,8 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
           bikes (
             make,
             model,
-            frame_number
+            frame_number,
+            photos
           )
         `)
         .in("status", statuses)
@@ -147,7 +150,12 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
           {filteredCollections.map((collection) => (
             <ListCard key={collection.id}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <BikeThumbnail
+                  photos={collection.bikes?.photos}
+                  alt={collection.bikes ? `${collection.bikes.make} ${collection.bikes.model}` : 'Bike'}
+                  className="h-16 w-16"
+                />
+                <div className="min-w-0 flex-1">
                   <div className="font-semibold break-words">
                     {collection.bikes ? `${collection.bikes.make} ${collection.bikes.model}` : 'Unknown bike'}
                   </div>
@@ -235,13 +243,20 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                 <TableRow key={collection.id}>
                   <TableCell className="font-medium">
                     {collection.bikes ? (
-                      <div>
+                      <div className="flex items-center gap-3">
+                        <BikeThumbnail
+                          photos={collection.bikes.photos}
+                          alt={`${collection.bikes.make} ${collection.bikes.model}`}
+                          className="h-12 w-12"
+                        />
+                        <div>
                         <div>{collection.bikes.make} {collection.bikes.model}</div>
                         {collection.bikes.frame_number && (
                           <div className="text-xs text-muted-foreground">
                             {collection.bikes.frame_number}
                           </div>
                         )}
+                        </div>
                       </div>
                     ) : (
                       "Unknown"
