@@ -18,7 +18,6 @@ interface PendingBike {
   make: string;
   model: string;
   frame_number: string | null;
-  serial_number: string | null;
   source: string;
   status: string;
   intake_date: string;
@@ -37,7 +36,7 @@ export default function IntakePage() {
     setLoading(true);
     const pendingRes = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, serial_number, source, status, intake_date, photos, storage_bay_id')
+      .select('id, make, model, frame_number, source, status, intake_date, photos, storage_bay_id')
       .in('status', ['pending_intake', 'intake'])
       .order('intake_date', { ascending: true });
 
