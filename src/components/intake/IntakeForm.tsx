@@ -88,6 +88,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
           .from('bikes')
           .select(`
             id,
+            reference,
             make,
             model,
             year,
@@ -603,6 +604,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
         <BikeLabel
           bike={{
             id: selectedBike.id,
+            reference: selectedBike.reference,
             make: selectedBike.make,
             model: selectedBike.model,
             size: selectedBike.size,
