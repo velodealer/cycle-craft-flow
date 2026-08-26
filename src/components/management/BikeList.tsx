@@ -1,3 +1,6 @@
+import { Checkbox } from '@/components/ui/checkbox';
+import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
+import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { bikeRef } from '@/lib/bikeReference';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -140,6 +143,13 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <CardTitle>Bikes ({filteredBikes.length})</CardTitle>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
+              Select all
+            </label>
+            <PrintLabelsButton bikes={filteredBikes as any} selectedIds={labelSel.selected} />
+          </div>
           <Button onClick={onAdd} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Bike
@@ -208,6 +218,11 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             filteredBikes.map((bike) => (
               <ListCard key={bike.id}>
                 <div className="flex gap-3">
+                  <Checkbox
+                    className="mt-1"
+                    checked={labelSel.selected.has(bike.id)}
+                    onCheckedChange={() => labelSel.toggle(bike.id)}
+                  />
                   <BikeThumbnail
                     photos={bike.photos}
                     alt={`${bike.make} ${bike.model}`}
@@ -263,6 +278,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"></TableHead>
                 <TableHead className="w-20">Photo</TableHead>
                 <TableHead>Bike</TableHead>
                 <TableHead>Status</TableHead>
@@ -277,13 +293,19 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             <TableBody>
               {filteredBikes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     No bikes found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredBikes.map((bike) => (
                   <TableRow key={bike.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={labelSel.selected.has(bike.id)}
+                        onCheckedChange={() => labelSel.toggle(bike.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <BikeThumbnail
                         photos={bike.photos}

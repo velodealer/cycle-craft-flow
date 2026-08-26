@@ -165,6 +165,7 @@ export default function CleaningPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead className="w-20">Photo</TableHead>
                   <TableHead>Bike</TableHead>
                   <TableHead>Frame Number</TableHead>
@@ -176,13 +177,19 @@ export default function CleaningPage() {
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No bikes in cleaning queue
                     </TableCell>
                   </TableRow>
                 ) : (
                   bikes.map((bike) => (
                     <TableRow key={bike.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={labelSel.selected.has(bike.id)}
+                          onCheckedChange={() => labelSel.toggle(bike.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <BikeThumbnail
                           photos={bike.photos}
