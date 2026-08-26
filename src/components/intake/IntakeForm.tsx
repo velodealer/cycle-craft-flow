@@ -599,8 +599,8 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
             id: selectedBike.id,
             make: selectedBike.make,
             model: selectedBike.model,
-            frame_number: form.getValues('frame_number'),
-            year: selectedBike.year,
+            size: selectedBike.size,
+            colour: selectedBike.colour,
           }}
           onClose={() => setShowLabel(false)}
         />
