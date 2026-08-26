@@ -10,7 +10,9 @@ export interface LabelBike {
   model: string;
   size?: string | null;
   colour?: string | null;
+  serial_number?: string | null;
 }
+
 
 interface BikeLabelsProps {
   bikes: LabelBike[];
