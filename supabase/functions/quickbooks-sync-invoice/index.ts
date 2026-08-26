@@ -138,7 +138,14 @@ Deno.serve(async (req) => {
     // 2. Journal: move stock (purchase price only) to COGS, plus margin VAT to VAT control.
     let journalId = invoice.quickbooks_journal_id as string | null;
     const lines: Record<string, unknown>[] = [];
-    const note = `Sale of ${description || 'bike'} — ${invoice.invoice_number}`;
+    const note = [
+      `Stock out / sale of ${description || 'bike'}`,
+      `Invoice: ${invoice.invoice_number}`,
+      `Bike reference: ${bikeReference || '—'}`,
+      `Stock in journal: ${stockInDoc || '—'}`,
+      `Doc number: ${stockOutDoc || '—'}`,
+    ].join(' | ');
+
 
     if (purchasePrice > 0) {
       lines.push({
