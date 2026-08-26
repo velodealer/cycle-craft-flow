@@ -7,6 +7,23 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
+async function findOrCreateItem(accessToken: string, realmId: string, incomeAccountId: string) {
+  const name = 'Bicycle sale';
+  const query = encodeURIComponent(`select Id, Name from Item where Name = '${name}'`);
+  const found = await qboFetch(accessToken, realmId, `/query?query=${query}&minorversion=70`);
+  const existing = found?.QueryResponse?.Item?.[0];
+  if (existing) return existing.Id;
+  const created = await qboFetch(accessToken, realmId, '/item?minorversion=70', {
+    method: 'POST',
+    body: JSON.stringify({
+      Name: name,
+      Type: 'Service',
+      IncomeAccountRef: { value: incomeAccountId },
+    }),
+  });
+  return created?.Item?.Id;
+}
+
 async function findOrCreateCustomer(
   accessToken: string,
   realmId: string,
@@ -71,6 +88,7 @@ Deno.serve(async (req) => {
 
     const description = `${[bike?.make, bike?.model].filter(Boolean).join(' ')} (${bike?.reference || ''})`.trim();
     const customerRef = await findOrCreateCustomer(accessToken, realmId, customer);
+    const itemRef = await findOrCreateItem(accessToken, realmId, accounts.sales);
 
     // 1. Customer invoice. Margin scheme lines carry no VAT.
     const invoicePayload: Record<string, unknown> = {
@@ -83,8 +101,8 @@ Deno.serve(async (req) => {
           DetailType: 'SalesItemLineDetail',
           Description: description || 'Bicycle sale',
           SalesItemLineDetail: {
+            ItemRef: { value: itemRef },
             TaxCodeRef: { value: isMargin ? 'NON' : 'TAX' },
-            ...(accounts.sales ? {} : {}),
           },
         },
       ],
