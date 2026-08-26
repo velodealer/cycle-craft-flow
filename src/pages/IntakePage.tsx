@@ -1,3 +1,6 @@
+import { Checkbox } from '@/components/ui/checkbox';
+import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
+import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useEffect, useState } from 'react';
 import IntakeForm from '@/components/intake/IntakeForm';
 import { Button } from '@/components/ui/button';
@@ -28,6 +31,7 @@ export default function IntakePage() {
   const [processBikeId, setProcessBikeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<PendingBike[]>([]);
+  const labelSel = useLabelSelection(pending.map((b) => b.id));
   const [stats, setStats] = useState({ today: 0, week: 0, pending: 0 });
 
   const load = async () => {
@@ -140,8 +144,15 @@ export default function IntakePage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Bikes Awaiting Intake</CardTitle>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
+              Select all
+            </label>
+            <PrintLabelsButton bikes={pending as any} selectedIds={labelSel.selected} />
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -158,6 +169,11 @@ export default function IntakePage() {
               {pending.map((bike) => (
                 <div key={bike.id} className="rounded-lg border p-4 space-y-3">
                   <div className="flex gap-3">
+                    <Checkbox
+                      className="mt-1"
+                      checked={labelSel.selected.has(bike.id)}
+                      onCheckedChange={() => labelSel.toggle(bike.id)}
+                    />
                     <BikeThumbnail
                       photos={bike.photos}
                       alt={`${bike.make} ${bike.model}`}
