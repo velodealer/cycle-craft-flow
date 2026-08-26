@@ -1,3 +1,4 @@
+import { bikeRef } from '@/lib/bikeReference';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
@@ -103,13 +104,14 @@ function LabelContent({ bike }: { bike: BikeLabelProps['bike'] }) {
       {/* QR Code */}
       <div className="flex flex-col items-center border-t-2 border-black pt-3">
         <QRCodeSVG value={labelUrl} size={160} level="M" includeMargin={false} />
-        <p className="text-xs mt-2 text-center text-gray-600">Scan to view bike details</p>
+        <p className="text-sm mt-2 text-center font-mono font-bold">{bikeRef(bike as any)}</p>
+        <p className="text-xs text-center text-gray-600">Scan to view bike details</p>
       </div>
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-500">
         <p>
-          {bike.id.slice(0, 8)} • {new Date().toLocaleDateString()}
+          {bikeRef(bike as any)} • {new Date().toLocaleDateString()}
         </p>
       </div>
     </div>

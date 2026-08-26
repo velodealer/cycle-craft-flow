@@ -3,6 +3,7 @@ import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
+import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -62,6 +63,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="system" className="space-y-4">
+          <BikeReferenceSettings />
           <Card>
             <CardHeader>
               <CardTitle>System Configuration</CardTitle>
