@@ -29,6 +29,7 @@ const bikeSchema = z.object({
   year: z.number().optional(),
   size: z.string().optional(),
   colour: z.string().optional(),
+  storage_bay_id: z.string().optional(),
   condition: z.string().optional(),
   frame_number: z.string().optional(),
   accessories_included: z.string().optional(),
@@ -141,6 +142,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       year: bike?.year || undefined,
       size: bike?.size || '',
       colour: bike?.colour || '',
+      storage_bay_id: bike?.storage_bay_id || '',
       condition: bike?.condition || '',
       frame_number: bike?.frame_number || '',
       accessories_included: bike?.accessories_included || '',
@@ -353,6 +355,35 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                         <SelectItem value="excellent">Excellent</SelectItem>
                         <SelectItem value="good">Good</SelectItem>
                         <SelectItem value="fair">Fair</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="storage_bay_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Storage location</FormLabel>
+                    <Select
+                      onValueChange={(v) => field.onChange(v === 'none' ? '' : v)}
+                      value={field.value || 'none'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Unassigned</SelectItem>
+                        {storageBays.map((bay) => (
+                          <SelectItem key={bay.id} value={bay.id}>
+                            {bay.zone ? `${bay.zone} · ${bay.name}` : bay.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
