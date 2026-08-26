@@ -398,6 +398,36 @@ export default function BikeDetailView({
                   )}
                 </div>
 
+                <div className="mt-4 rounded-lg border p-3">
+                  <div className="text-sm font-medium">QuickBooks postings</div>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        Stock in {stockInDocNumber(bike.reference) ? `· ${stockInDocNumber(bike.reference)}` : ''}
+                      </span>
+                      <Badge variant={bike.purchase_sync_status === 'synced' ? 'default' : bike.purchase_sync_status === 'failed' ? 'destructive' : 'secondary'}>
+                        {bike.purchase_sync_status === 'synced'
+                          ? 'Posted'
+                          : bike.purchase_sync_status === 'failed'
+                            ? 'Failed'
+                            : bike.purchase_sync_status === 'skipped'
+                              ? 'No purchase price'
+                              : 'Not posted'}
+                      </Badge>
+                    </div>
+                    {bike.purchase_sync_error && (
+                      <p className="text-xs text-destructive">{bike.purchase_sync_error}</p>
+                    )}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        Stock out {stockOutDocNumber(bike.reference) ? `· ${stockOutDocNumber(bike.reference)}` : ''}
+                      </span>
+                      <Badge variant={isSold ? 'default' : 'secondary'}>{isSold ? 'Posted on sale' : 'Pending sale'}</Badge>
+                    </div>
+                  </div>
+                </div>
+
+
                 {(() => {
                   const isSold = bike.status === 'sold';
                   const isSplit = bike.status === 'split_for_parts';
