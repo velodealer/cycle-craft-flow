@@ -618,9 +618,12 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId, emb
           </Card>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
+            {!embedded && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            )}
+
             <Button 
               type="submit" 
               disabled={submitting || !isChecklistComplete}
