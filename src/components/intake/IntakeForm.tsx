@@ -52,7 +52,7 @@ interface Bike {
 }
 
 
-export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: IntakeFormProps) {
+export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId, embedded = false }: IntakeFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [serialPhotos, setSerialPhotos] = useState<string[]>([]);
   const [registerPhotos, setRegisterPhotos] = useState<string[]>([]);
