@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { QrCode, ArrowRight, Search } from 'lucide-react';
-import BikeLabel from '@/components/bike/BikeLabel';
+import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
 
 const intakeSchema = z.object({
   bike_id: z.string().min(1, 'Bike selection is required'),
@@ -58,7 +58,7 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [labelGenerated, setLabelGenerated] = useState(false);
-  const [showLabel, setShowLabel] = useState(false);
+  
   
   // Checklist state
   const [checklist, setChecklist] = useState({
@@ -160,7 +160,8 @@ export default function IntakeForm({ onSuccess, onCancel, preselectedBikeId }: I
     (bike.external_owner?.name && bike.external_owner.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const generateLabel = () => {
+  const generateLabel = async () => {
+
     if (!selectedBike) {
       toast({
         title: 'Select a bike',
