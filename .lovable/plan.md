@@ -1,0 +1,60 @@
+# Sell a bike: sale details, invoice, QuickBooks sync
+
+## What you'll get
+
+When you move a bike to **Sold**, instead of the plain "Move to..." dialog you get a **Record sale** dialog:
+
+- Sale price (defaults to asking price, but editable — the actual sale price is what's saved)
+- Sale date
+- Customer: search existing customers, or add a new one inline (name, email, phone, address)
+- VAT scheme shown (margin vs VAT-qualifying), with the VAT figure calculated live
+- Optional notes and photos (same as today's stage dialog)
+
+On save:
+1. The bike is marked sold with `sale_price` and sale date stored.
+2. An invoice is created in the app (numbered, linked to the bike and customer, with net/VAT/gross based on the bike's VAT scheme).
+3. The invoice is pushed to QuickBooks Online, with the VAT entry based on the margin (margin scheme: VAT = (sale price − acquisition cost) × 20/120; VAT-qualifying: standard 20%).
+4. A journal entry is posted in QuickBooks moving the bike's total cost out of the Stock/Inventory account into Cost of Goods Sold.
+5. The bike stops counting in in-app stock value and stock aging reports.
+
+The Invoices page (currently a placeholder) becomes a real list: invoice number, bike, customer, net/VAT/gross, status, QuickBooks sync state, with a retry button if a sync failed.
+
+## QuickBooks setup (what you need to do)
+
+QuickBooks isn't a one-click Lovable connector, so we build the connection ourselves. You'll need to create an app at developer.intuit.com and give me:
+
+- QuickBooks Client ID
+- QuickBooks Client Secret
+- Whether to start in Sandbox or Production
+
+Then in Settings > Integrations you click "Connect QuickBooks", approve in the Intuit window, and pick which QuickBooks accounts map to **Stock/Inventory**, **Cost of Goods Sold**, **Sales income**, and the **VAT/tax code** to use. Those choices are saved so every sale posts consistently.
+
+If QuickBooks isn't connected yet, sales still record and invoice normally — they're just flagged as "not synced" and can be pushed later.
+
+## Technical detail
+
+**Database**
+- `bikes`: add `sold_at` (timestamptz). `sale_price` already exists.
+- `invoices`: add `quickbooks_invoice_id`, `quickbooks_journal_id`, `sync_status` (`pending` | `synced` | `failed`), `sync_error`. Table already has bike, customer, external_customer, type, net/vat_rate/gross, status.
+- New `quickbooks_tokens` row stored in the existing `integrations` table (`name = 'quickbooks'`) holding realm id, refresh token and account mappings in `settings`; access tokens refreshed server-side only. Nothing token-related reaches the browser.
+- Invoice numbering via a Postgres sequence + `INV-000123` format.
+
+**Secrets**: `QUICKBOOKS_CLIENT_ID`, `QUICKBOOKS_CLIENT_SECRET`, `QUICKBOOKS_ENVIRONMENT`.
+
+**Edge functions**
+- `quickbooks-oauth` — start URL + callback exchange, stores refresh token (verify_jwt false only for the callback path).
+- `quickbooks-sync-invoice` — JWT-validated; refreshes access token, creates/updates the QBO Customer, creates the Invoice with the correct tax code/VAT amount, then posts the JournalEntry (credit Stock, debit COGS by total bike cost = acquisition + collection + delivery + parts + labour), and writes ids/errors back onto the invoice row.
+
+**Frontend**
+- New `src/components/bike/RecordSaleDialog.tsx`, wired into `BikeDetailView` in place of `AdvanceStageDialog` when the next stage is `sold`.
+- Customer picker reusing `external_owners` (search + inline create).
+- `src/pages/InvoicesPage.tsx` rebuilt as a real list with detail drawer and "Retry QuickBooks sync".
+- `src/components/settings/QuickBooksIntegration.tsx` for connect/disconnect and account mapping.
+- Reports/stock value: confirm sold bikes are excluded from stock aging and stock value (currently `StockAgingSection` already filters by stock statuses; sold is excluded — will verify sale-date-based reporting uses `sold_at` rather than `updated_at`).
+
+## Build order
+
+1. Migration (invoice sync columns, `sold_at`, invoice numbering).
+2. Record sale dialog + in-app invoice creation + Invoices page.
+3. QuickBooks secrets, OAuth flow and settings screen.
+4. Invoice + journal push, retry handling, reports check.
