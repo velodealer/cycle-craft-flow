@@ -185,10 +185,20 @@ export default function BikeDetailView({
               <Edit className="h-4 w-4 mr-2" />
               Edit Bike
             </Button>
-            <Button variant="outline" onClick={() => setShowLabel(true)} className="w-full sm:w-auto">
-              <Printer className="h-4 w-4 mr-2" />
-              Print label
+            <Button
+              variant="outline"
+              onClick={handleDownloadLabel}
+              disabled={labelBusy}
+              className="w-full sm:w-auto"
+            >
+              {labelBusy ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4 mr-2" />
+              )}
+              Label (4x6 PDF)
             </Button>
+
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
