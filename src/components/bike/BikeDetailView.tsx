@@ -223,10 +223,14 @@ export default function BikeDetailView({
         )}
       </div>
 
-      {/* Status Progress */}
-      <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
+      {!inspectionMode && (
+        <>
+          {/* Status Progress */}
+          <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
 
-      <Separator />
+          <Separator />
+        </>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
