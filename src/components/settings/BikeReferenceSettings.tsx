@@ -138,9 +138,22 @@ export default function BikeReferenceSettings() {
     try {
       await savePrefix(clean);
       const bikes = await fetchAllBikes(false);
-      // Clear existing references first so old values can't block reuse.
+      // Pass 1: park every bike on a temporary unique reference so final values
+      // can't collide with references still held by not-yet-updated bikes.
+      for (const bike of bikes) {
+        await supabase
+          .from('bikes')
+          .update({ reference: `TMP-${bike.id}` })
+          .eq('id', bike.id);
+      }
+      // Pass 2: assign the freshly built references.
       const existing = new Set<string>();
-      const count = await applyReferences(bikes, clean, existing);
+      const count = await applyReferences(
+        bikes.map((b) => ({ ...b, reference: null })),
+        clean,
+        existing,
+      );
+
       toast({
         title: 'References re-generated',
         description: `${count} bike${count === 1 ? '' : 's'} updated to the ${clean} prefix.`,
