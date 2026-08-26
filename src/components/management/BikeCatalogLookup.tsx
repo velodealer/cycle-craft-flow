@@ -89,10 +89,10 @@ export default function BikeCatalogLookup({ onApply }: Props) {
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[320px] overflow-hidden p-0" align="start">
               <Command>
                 <CommandInput placeholder="Search brands..." />
-                <CommandList>
+                <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain touch-pan-y">
                   <CommandEmpty>No brand found.</CommandEmpty>
                   <CommandGroup>
                     {catalogBrands.map((b) => (
@@ -136,10 +136,10 @@ export default function BikeCatalogLookup({ onApply }: Props) {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[320px] overflow-hidden p-0" align="start">
               <Command>
                 <CommandInput placeholder="Search models..." />
-                <CommandList>
+                <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain touch-pan-y">
                   <CommandEmpty>No model found.</CommandEmpty>
                   <CommandGroup>
                     {models.map((m, i) => (
@@ -185,9 +185,9 @@ export default function BikeCatalogLookup({ onApply }: Props) {
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[320px] overflow-hidden p-0" align="start">
               <Command>
-                <CommandList>
+                <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain touch-pan-y">
                   <CommandEmpty>No sizes recorded.</CommandEmpty>
                   <CommandGroup>
                     {sizes.map((s, i) => (
