@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Edit, Mail, Phone } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+
 
 interface Owner {
   id: string;
@@ -103,7 +105,43 @@ export default function OwnerList({ onEdit, onAdd }: OwnerListProps) {
           </div>
         </div>
 
-        <div className="rounded-md border">
+        {/* Mobile cards */}
+        <div className="space-y-3 md:hidden">
+          {filteredOwners.length === 0 ? (
+            <ListEmpty message="No owners found" />
+          ) : (
+            filteredOwners.map((owner) => (
+              <ListCard key={owner.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="font-semibold break-words">{owner.name}</div>
+                  {getContactBadge(owner.preferred_contact)}
+                </div>
+                {owner.email && (
+                  <div className="flex items-center gap-2 text-sm break-all">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    {owner.email}
+                  </div>
+                )}
+                {owner.phone && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-3 w-3 shrink-0" />
+                    {owner.phone}
+                  </div>
+                )}
+                <ListCardRow label="Address" value={owner.address || '—'} />
+                <ListCardRow label="Added" value={new Date(owner.created_at).toLocaleDateString()} />
+                <ListCardActions>
+                  <Button variant="outline" className="w-full" onClick={() => onEdit(owner)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit owner
+                  </Button>
+                </ListCardActions>
+              </ListCard>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
