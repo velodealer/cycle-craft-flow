@@ -114,10 +114,8 @@ export default function QuickBooksIntegration() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await Promise.all([
-        saveQuickBooksAccounts(mapping),
-        saveQuickBooksTaxCodes(taxMapping),
-      ]);
+      await saveQuickBooksAccounts(mapping);
+      await saveQuickBooksTaxCodes(taxMapping);
       toast.success('QuickBooks mapping saved');
       loadStatus();
     } catch (e) {
