@@ -552,6 +552,18 @@ export default function BikeDetailView({
       )}
 
       <BreakBikeDialog open={showBreak} onOpenChange={setShowBreak} bike={bike} onDone={onUpdate} />
+      {showLabel && (
+        <BikeLabel
+          bike={{
+            id: bike.id,
+            make: bike.make,
+            model: bike.model,
+            size: bike.size,
+            colour: bike.colour,
+          }}
+          onClose={() => setShowLabel(false)}
+        />
+      )}
     </div>
   );
 }
