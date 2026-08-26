@@ -96,16 +96,24 @@ export default function BikeLabels({ bikes, onClose }: BikeLabelsProps) {
             background: #fff !important;
           }
           /* Only the label overlay prints */
-          body > *:not(.bike-label-print-root),
-          #root > *:not(.bike-label-print-root) {
-            display: none !important;
+          body * {
+            visibility: hidden !important;
+          }
+          .bike-label-print-root,
+          .bike-label-print-root * {
+            visibility: visible !important;
           }
           .bike-label-print-root {
-            position: static !important;
-            inset: auto !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: auto !important;
+            bottom: auto !important;
+            width: 4in !important;
             overflow: visible !important;
             background: #fff !important;
           }
+
         }
       `}</style>
     </div>
