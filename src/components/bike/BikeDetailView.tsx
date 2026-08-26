@@ -511,6 +511,10 @@ export default function BikeDetailView({
           {bike.status === 'cleaning' && (
             <CleaningTask bike={bike} onUpdate={onUpdate} />
           )}
+
+          {/* Inspection record */}
+          <InspectionTask bike={bike} onUpdate={onUpdate} />
+
         </div>
       </div>
 
