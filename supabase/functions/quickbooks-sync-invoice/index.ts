@@ -180,10 +180,12 @@ Deno.serve(async (req) => {
 
     if (lines.length > 0) {
       const journalPayload: Record<string, unknown> = {
+        ...(stockOutDoc ? { DocNumber: stockOutDoc } : {}),
         TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
         PrivateNote: note,
         Line: lines,
       };
+
       if (journalId) {
         const existing = await qboFetch(accessToken, realmId, `/journalentry/${journalId}?minorversion=70`);
         if (existing?.JournalEntry) {
