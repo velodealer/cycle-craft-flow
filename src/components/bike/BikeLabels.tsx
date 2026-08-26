@@ -130,12 +130,18 @@ export function LabelContent({ bike }: { bike: LabelBike }) {
       style={{
         width: '4in',
         height: '6in',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        margin: 0,
         padding: '0.3in',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         fontFamily: 'Arial, sans-serif',
-      }}
+        printColorAdjust: 'exact',
+        WebkitPrintColorAdjust: 'exact',
+      } as React.CSSProperties}
+
     >
       {/* Bike Info */}
       <div className="space-y-3">
