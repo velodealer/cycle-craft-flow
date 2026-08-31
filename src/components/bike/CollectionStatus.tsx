@@ -42,25 +42,39 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
 
   const handleRetry = async () => {
     if (!collection) return;
-    
+
     setRetrying(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-collection-order', {
-        body: {
-          bike_id: bikeId,
-          sender_name: collection.sender_name,
-          sender_email: collection.sender_email,
-          sender_phone: collection.sender_phone,
-          address_street: collection.address_street,
-          address_city: collection.address_city,
-          address_postcode: collection.address_postcode,
-          delivery_instructions: collection.delivery_instructions
-        }
-      });
-      
+      const { error } = isOutbound
+        ? await supabase.functions.invoke('create-delivery-order', {
+            body: {
+              bike_id: bikeId,
+              receiver_name: collection.receiver_name,
+              receiver_email: collection.receiver_email,
+              receiver_phone: collection.receiver_phone,
+              receiver_street: collection.receiver_street,
+              receiver_city: collection.receiver_city,
+              receiver_postcode: collection.receiver_postcode,
+              receiver_country: collection.receiver_country,
+              delivery_instructions: collection.delivery_instructions,
+            },
+          })
+        : await supabase.functions.invoke('create-collection-order', {
+            body: {
+              bike_id: bikeId,
+              sender_name: collection.sender_name,
+              sender_email: collection.sender_email,
+              sender_phone: collection.sender_phone,
+              address_street: collection.address_street,
+              address_city: collection.address_city,
+              address_postcode: collection.address_postcode,
+              delivery_instructions: collection.delivery_instructions,
+            },
+          });
+
       if (error) throw error;
-      
-      toast({ title: 'Collection rescheduled successfully' });
+
+      toast({ title: isOutbound ? 'Delivery rebooked successfully' : 'Collection rescheduled successfully' });
       loadCollection();
       onUpdate?.();
     } catch (error: any) {
@@ -73,6 +87,7 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
       setRetrying(false);
     }
   };
+
 
   if (loading) return null;
   if (!collection) return null;
