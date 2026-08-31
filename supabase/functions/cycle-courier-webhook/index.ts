@@ -147,6 +147,8 @@ serve(async (req) => {
     console.log('Processing event for collection:', collection.id);
 
     // Process the payload based on event type
+    const isOutbound = collection.direction === 'outbound';
+
     switch (eventType) {
       case 'order.created':
       case 'delivery.created':
@@ -193,7 +195,7 @@ serve(async (req) => {
         
         await supabase
           .from('bikes')
-          .update({ status: 'pending_intake' })
+          .update({ status: isOutbound ? 'collected' : 'pending_intake' })
           .eq('id', collection.bike_id);
         break;
       
@@ -236,13 +238,13 @@ serve(async (req) => {
             bikeStatus = 'collection_in_progress';
             break;
           case 'collected':
-            bikeStatus = 'in_transit';
+            bikeStatus = isOutbound ? 'collected' : 'in_transit';
             break;
           case 'driver_to_delivery':
             bikeStatus = 'in_transit';
             break;
           case 'delivered':
-            bikeStatus = 'pending_intake';
+            bikeStatus = isOutbound ? 'delivered' : 'pending_intake';
             await supabase
               .from('bike_collections')
               .update({ completed_at: new Date().toISOString() })
@@ -272,7 +274,7 @@ serve(async (req) => {
         
         await supabase
           .from('bikes')
-          .update({ status: 'intake' })
+          .update({ status: isOutbound ? 'delivered' : 'intake' })
           .eq('id', collection.bike_id);
         break;
         
