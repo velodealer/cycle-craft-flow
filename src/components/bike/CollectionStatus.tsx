@@ -121,8 +121,9 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Truck className="h-5 w-5" />
-          Collection Status
+          {isOutbound ? 'Delivery Status' : 'Collection Status'}
         </CardTitle>
+
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
