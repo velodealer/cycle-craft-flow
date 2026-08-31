@@ -1,5 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
+import { purchaseFundingAccount } from '../_shared/quickbooks-lines.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, reference, make, model, frame_number, intake_date, purchase_price, purchase_date, quickbooks_purchase_journal_id')
+      .select('id, reference, make, model, frame_number, intake_date, purchase_price, purchase_date, acquired_via, quickbooks_purchase_journal_id')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeError) throw new Error(bikeError.message);
@@ -41,15 +42,17 @@ Deno.serve(async (req) => {
 
     const { accessToken, realmId, settings } = await getQboAuth(supabase);
     const accounts = ((settings as QboSettings).accounts ?? {});
-    if (!accounts.stock || !accounts.purchase_funding) {
+    if (!accounts.stock) {
       throw new Error('QuickBooks account mapping is incomplete (Stock and purchase funding accounts are required)');
     }
+    const isPartExchange = (bike as any).acquired_via === 'part_exchange';
+    const fundingAccount = purchaseFundingAccount((bike as any).acquired_via, accounts);
 
     const reference = bike.reference || bike.id;
     const docNumber = `STK-IN-${reference}`.slice(0, 21);
     const label = `Bike purchase ${reference} — ${[bike.make, bike.model].filter(Boolean).join(' ')}`;
     const note = [
-      'Stock in (bike purchase)',
+      isPartExchange ? 'Stock in (bike taken in part exchange)' : 'Stock in (bike purchase)',
       `Bike reference: ${reference}`,
       `Bike: ${[bike.make, bike.model].filter(Boolean).join(' ') || '—'}`,
       `Frame number: ${bike.frame_number || '—'}`,
@@ -72,7 +75,7 @@ Deno.serve(async (req) => {
           Description: label,
           Amount: amount,
           DetailType: 'JournalEntryLineDetail',
-          JournalEntryLineDetail: { PostingType: 'Credit', AccountRef: { value: accounts.purchase_funding } },
+          JournalEntryLineDetail: { PostingType: 'Credit', AccountRef: { value: fundingAccount } },
         },
       ],
     };
