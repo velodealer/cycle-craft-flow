@@ -50,8 +50,9 @@ Deno.serve(async (req) => {
     const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
     const balanceDue = Number(invoice.gross || invoice.total || 0);
     const partExValue = Number(invoice.part_exchange_value || 0);
+    const deliveryCharge = invoice.delivery_charged_to_customer ? Number(invoice.delivery_charge || 0) : 0;
     // VAT always follows the FULL sale value, part exchange included.
-    const gross = Number(invoice.sale_gross || 0) || balanceDue + partExValue;
+    const gross = Number(invoice.sale_gross || 0) || Math.max(0, balanceDue + partExValue - deliveryCharge);
     const purchasePrice = Number(bike?.purchase_price || 0);
     const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
 
@@ -62,6 +63,13 @@ Deno.serve(async (req) => {
     const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
     const customerRef = await findOrCreateCustomer(fetcher, customer);
     const itemRef = await findOrCreateItem(fetcher, accounts.sales);
+    // Delivery is a standard-rated service even on a margin scheme bike.
+    const deliveryItemRef = deliveryCharge > 0
+      ? await findOrCreateItem(fetcher, accounts.sales, 'Delivery')
+      : undefined;
+    const deliveryTaxCode = deliveryCharge > 0
+      ? taxCodeForScheme(false, (settings as QboSettings).tax_codes)
+      : undefined;
 
     // 1. Customer invoice at the FULL sale value. A part exchange is not a
     // negative line here — its stock-in journal credits this customer's AR,
@@ -70,17 +78,21 @@ Deno.serve(async (req) => {
       CustomerRef: { value: customerRef },
       DocNumber: invoice.invoice_number,
       TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
-      GlobalTaxCalculation: isMargin ? 'NotApplicable' : 'TaxInclusive',
+      GlobalTaxCalculation: isMargin && deliveryCharge <= 0 ? 'NotApplicable' : 'TaxInclusive',
       Line: buildSaleInvoiceLines({
         saleGross: gross,
         description,
         saleItemRef: itemRef,
         saleTaxCode: salesTaxCode,
+        deliveryCharge,
+        deliveryItemRef,
+        deliveryTaxCode,
       }),
       PrivateNote: [
         isMargin
           ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
           : 'Standard VAT sale.',
+        ...(deliveryCharge > 0 ? [`Delivery charged to the customer: ${deliveryCharge.toFixed(2)} (standard rated).`] : []),
         ...(partExValue > 0
           ? [`Part exchange allowance of ${partExValue.toFixed(2)} settled via the part-ex bike's stock-in journal (AR credit); cash balance due ${balanceDue.toFixed(2)}. VAT is on the full sale value.`]
           : []),
@@ -89,6 +101,7 @@ Deno.serve(async (req) => {
         `Stock out journal: ${stockOutDoc || '—'}`,
       ].join(' | '),
     };
+
 
 
 
