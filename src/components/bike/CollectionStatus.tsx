@@ -188,7 +188,7 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
           </div>
         </div>
 
-        </div>
+
 
         {collection.delivery_instructions && (
           <div className="pt-2 border-t">
