@@ -49,6 +49,22 @@ async function queryByName(
   return rows.filter((row) => normaliseName(String(row?.[nameField] ?? '')) === target);
 }
 
+/**
+ * Finds the company's Accounts Receivable account. Used when a part-exchange
+ * bike's stock-in journal credits AR against the customer, settling part of
+ * their sale invoice without a clearing account.
+ */
+export async function findAccountsReceivableAccount(fetcher: QboFetcher): Promise<string> {
+  const query = encodeURIComponent(
+    `select * from Account where AccountType = 'Accounts Receivable' and Active = true maxresults 5`,
+  );
+  const found = await fetcher(`/query?query=${query}&minorversion=70`);
+  const rows: any[] = found?.QueryResponse?.Account ?? [];
+  const id = rows[0]?.Id;
+  if (!id) throw new Error('No active Accounts Receivable account found in QuickBooks');
+  return String(id);
+}
+
 async function reactivate(
   fetcher: QboFetcher,
   entity: 'customer' | 'item',

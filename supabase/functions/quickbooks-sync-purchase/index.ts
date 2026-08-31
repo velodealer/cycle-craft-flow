@@ -1,6 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
 import { purchaseFundingAccount } from '../_shared/quickbooks-lines.ts';
+import { findAccountsReceivableAccount, findOrCreateCustomer } from '../_shared/quickbooks-names.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, reference, make, model, frame_number, intake_date, purchase_price, purchase_date, acquired_via, quickbooks_purchase_journal_id')
+      .select('id, reference, make, model, frame_number, intake_date, purchase_price, purchase_date, acquired_via, part_exchange_invoice_id, quickbooks_purchase_journal_id')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeError) throw new Error(bikeError.message);
@@ -47,16 +48,50 @@ Deno.serve(async (req) => {
     }
     const isPartExchange = (bike as any).acquired_via === 'part_exchange';
     const fundingAccount = purchaseFundingAccount((bike as any).acquired_via, accounts);
+    const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
 
     const reference = bike.reference || bike.id;
     const docNumber = `STK-IN-${reference}`.slice(0, 21);
     const label = `Bike purchase ${reference} — ${[bike.make, bike.model].filter(Boolean).join(' ')}`;
+
+    // Part exchange: credit Accounts Receivable against the sale customer so the
+    // allowance settles part of their (full-value) invoice — no clearing account.
+    let creditLineDetail: Record<string, unknown>;
+    let partExInvoiceNumber: string | null = null;
+    if (isPartExchange) {
+      const invoiceId = (bike as any).part_exchange_invoice_id as string | null;
+      if (!invoiceId) {
+        throw new Error('This part-exchange bike is not linked to a sale invoice, so the AR credit cannot be posted.');
+      }
+      const { data: pxInvoice, error: pxError } = await supabase
+        .from('invoices')
+        .select('invoice_number, external_owners:external_customer_id(name, email, phone, address)')
+        .eq('id', invoiceId)
+        .maybeSingle();
+      if (pxError) throw new Error(pxError.message);
+      const customer: any = (pxInvoice as any)?.external_owners;
+      if (!customer?.name) {
+        throw new Error('The linked sale invoice has no customer, so the AR credit cannot be posted.');
+      }
+      partExInvoiceNumber = (pxInvoice as any)?.invoice_number ?? null;
+      const customerRef = await findOrCreateCustomer(fetcher, customer);
+      const arAccount = await findAccountsReceivableAccount(fetcher);
+      creditLineDetail = {
+        PostingType: 'Credit',
+        AccountRef: { value: arAccount },
+        Entity: { Type: 'Customer', EntityRef: { value: customerRef } },
+      };
+    } else {
+      creditLineDetail = { PostingType: 'Credit', AccountRef: { value: fundingAccount } };
+    }
+
     const note = [
       isPartExchange ? 'Stock in (bike taken in part exchange)' : 'Stock in (bike purchase)',
       `Bike reference: ${reference}`,
       `Bike: ${[bike.make, bike.model].filter(Boolean).join(' ') || '—'}`,
       `Frame number: ${bike.frame_number || '—'}`,
       `Intake date: ${(bike.intake_date || bike.purchase_date || new Date().toISOString()).slice(0, 10)}`,
+      ...(partExInvoiceNumber ? [`Settled against sale invoice: ${partExInvoiceNumber}`] : []),
       `Doc number: ${docNumber}`,
     ].join(' | ');
 
@@ -72,10 +107,12 @@ Deno.serve(async (req) => {
           JournalEntryLineDetail: { PostingType: 'Debit', AccountRef: { value: accounts.stock } },
         },
         {
-          Description: label,
+          Description: isPartExchange
+            ? `Part exchange allowance settled against invoice ${partExInvoiceNumber || ''} — ${label}`.trim()
+            : label,
           Amount: amount,
           DetailType: 'JournalEntryLineDetail',
-          JournalEntryLineDetail: { PostingType: 'Credit', AccountRef: { value: fundingAccount } },
+          JournalEntryLineDetail: creditLineDetail,
         },
       ],
     };

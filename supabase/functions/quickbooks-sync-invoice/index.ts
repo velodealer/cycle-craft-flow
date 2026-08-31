@@ -48,7 +48,6 @@ Deno.serve(async (req) => {
 
     const isMargin = bike?.finance_scheme === 'margin_scheme';
     const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
-    const noVatTaxCode = taxCodeForScheme(true, (settings as QboSettings).tax_codes);
     const balanceDue = Number(invoice.gross || invoice.total || 0);
     const partExValue = Number(invoice.part_exchange_value || 0);
     // VAT always follows the FULL sale value, part exchange included.
@@ -64,16 +63,9 @@ Deno.serve(async (req) => {
     const customerRef = await findOrCreateCustomer(fetcher, customer);
     const itemRef = await findOrCreateItem(fetcher, accounts.sales);
 
-    let partExItemRef: string | undefined;
-    if (partExValue > 0) {
-      if (!accounts.part_exchange) {
-        throw new Error('Map a QuickBooks "Part exchange clearing" account in Settings, then retry this invoice.');
-      }
-      partExItemRef = await findOrCreateItem(fetcher, accounts.part_exchange, 'Part exchange allowance');
-    }
-
-    // 1. Customer invoice. Margin scheme lines carry no VAT; the part exchange
-    // allowance is a negative, VAT-free line so only the cash balance is due.
+    // 1. Customer invoice at the FULL sale value. A part exchange is not a
+    // negative line here — its stock-in journal credits this customer's AR,
+    // which settles that part of the balance (no clearing account).
     const invoicePayload: Record<string, unknown> = {
       CustomerRef: { value: customerRef },
       DocNumber: invoice.invoice_number,
@@ -81,19 +73,16 @@ Deno.serve(async (req) => {
       GlobalTaxCalculation: isMargin ? 'NotApplicable' : 'TaxInclusive',
       Line: buildSaleInvoiceLines({
         saleGross: gross,
-        partExchangeValue: partExValue,
         description,
         saleItemRef: itemRef,
         saleTaxCode: salesTaxCode,
-        partExchangeItemRef: partExItemRef,
-        noVatTaxCode,
       }),
       PrivateNote: [
         isMargin
           ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
           : 'Standard VAT sale.',
         ...(partExValue > 0
-          ? [`Part exchange allowance of ${partExValue.toFixed(2)} taken; balance due ${balanceDue.toFixed(2)}. VAT is on the full sale value.`]
+          ? [`Part exchange allowance of ${partExValue.toFixed(2)} settled via the part-ex bike's stock-in journal (AR credit); cash balance due ${balanceDue.toFixed(2)}. VAT is on the full sale value.`]
           : []),
         `Bike reference: ${bikeReference || '—'}`,
         `Stock in journal: ${stockInDoc || '—'}`,

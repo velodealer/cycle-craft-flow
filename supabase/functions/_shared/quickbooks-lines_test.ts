@@ -3,53 +3,32 @@ import { buildSaleInvoiceLines, purchaseFundingAccount } from './quickbooks-line
 
 Deno.test('purchase funding uses the normal funding account for bought bikes', () => {
   assertEquals(
-    purchaseFundingAccount('purchase', { purchase_funding: '10', part_exchange: '20' }),
+    purchaseFundingAccount('purchase', { purchase_funding: '10' }),
     '10',
   );
 });
 
-Deno.test('purchase funding uses the clearing account for part exchanges', () => {
-  assertEquals(
-    purchaseFundingAccount('part_exchange', { purchase_funding: '10', part_exchange: '20' }),
-    '20',
-  );
-});
-
-Deno.test('purchase funding fails clearly when the clearing account is unmapped', () => {
+Deno.test('purchase funding fails clearly when the funding account is unmapped', () => {
   assertThrows(
-    () => purchaseFundingAccount('part_exchange', { purchase_funding: '10' }),
+    () => purchaseFundingAccount('purchase', {}),
     Error,
-    'Part exchange clearing',
+    'purchase funding',
   );
 });
 
-Deno.test('sale lines carry the full price and a negative no-VAT allowance line', () => {
+Deno.test('part exchanges return null — funded by an AR credit, not a clearing account', () => {
+  assertEquals(purchaseFundingAccount('part_exchange', { purchase_funding: '10' }), null);
+});
+
+Deno.test('sale lines carry the full price only (part exchange settles via AR journal)', () => {
   const lines = buildSaleInvoiceLines({
     saleGross: 4000,
-    partExchangeValue: 1200,
     description: 'Specialized Roubaix',
     saleItemRef: '1',
     saleTaxCode: 'STD',
-    partExchangeItemRef: '2',
-    noVatTaxCode: 'ZERO',
   });
 
-  assertEquals(lines.length, 2);
+  assertEquals(lines.length, 1);
   assertEquals((lines[0] as any).Amount, 4000);
   assertEquals((lines[0] as any).SalesItemLineDetail.TaxCodeRef.value, 'STD');
-  assertEquals((lines[1] as any).Amount, -1200);
-  assertEquals((lines[1] as any).SalesItemLineDetail.ItemRef.value, '2');
-  assertEquals((lines[1] as any).SalesItemLineDetail.TaxCodeRef.value, 'ZERO');
-});
-
-Deno.test('sale lines omit the allowance line without a part exchange', () => {
-  const lines = buildSaleInvoiceLines({
-    saleGross: 2500,
-    partExchangeValue: 0,
-    description: 'Trek Domane',
-    saleItemRef: '1',
-    saleTaxCode: 'NON',
-    noVatTaxCode: 'NON',
-  });
-  assertEquals(lines.length, 1);
 });
