@@ -55,10 +55,15 @@ function SyncBadge({ status }: { status: string }) {
 }
 
 export default function InvoicesPage() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<InvoiceRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
 
   const load = useCallback(async () => {
     setLoading(true);
