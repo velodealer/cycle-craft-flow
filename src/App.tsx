@@ -33,6 +33,8 @@ import SocialScriptsPage from "./pages/social/SocialScriptsPage";
 import SocialAnalyticsPage from "./pages/social/SocialAnalyticsPage";
 import InvestorDashboardPage from "./pages/investor/InvestorDashboardPage";
 import InvestorBikePage from "./pages/investor/InvestorBikePage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,8 @@ const App = () => (
             <Route path="/" element={guarded(<LandingPage />)} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/dashboard" element={guarded(<Layout><BPSDashboard /></Layout>)} />
             <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
             <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />

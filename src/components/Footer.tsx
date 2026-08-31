@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 import { Bike } from 'lucide-react';
 
@@ -29,18 +30,18 @@ export default function Footer() {
             >
               Documentation
             </a>
-            <a 
-              href="#" 
+            <Link
+              to="/privacy"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Privacy Policy
-            </a>
-            <a 
-              href="#" 
+            </Link>
+            <Link
+              to="/terms"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Terms of Service
-            </a>
+            </Link>
           </div>
         </div>
 
