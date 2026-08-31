@@ -530,10 +530,19 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
                 <span>−£{totals.pxValue.toFixed(2)}</span>
               </div>
             )}
+            {fulfilment === 'delivery' && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Delivery {chargeDelivery ? '(charged)' : '(absorbed as a cost)'}
+                </span>
+                <span>{chargeDelivery ? `£${totals.deliveryFee.toFixed(2)}` : `−£${(Number(deliveryCharge) || 0).toFixed(2)} cost`}</span>
+              </div>
+            )}
             <div className="flex justify-between font-medium">
               <span>{hasPartEx ? 'Balance due' : 'Invoice total'}</span>
               <span>£{totals.balance.toFixed(2)}</span>
             </div>
+
             {isMargin && (
               <div className="flex justify-between pt-1 text-muted-foreground">
                 <span>Margin VAT on the full sale price</span>
