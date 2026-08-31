@@ -200,7 +200,18 @@ export default function InvoicesPage() {
                         {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
                       </Button>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setToDelete(inv)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                      )}
                     </div>
+
                     {inv.sync_error && <p className="mt-2 text-xs text-destructive">{inv.sync_error}</p>}
                   </div>
                 ))}
