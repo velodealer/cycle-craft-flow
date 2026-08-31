@@ -89,3 +89,23 @@ export async function tryPostPurchase(bikeId: string) {
     return { ok: false as const, error: (e as Error).message };
   }
 }
+
+export interface ReverseSaleResult {
+  ok: true;
+  invoices_deleted: number;
+  part_exchange_bikes_deleted: number;
+  bike_id: string | null;
+  new_status: string | null;
+}
+
+/**
+ * Reverses a sale: voids the QuickBooks invoice, deletes the stock-out journal
+ * and any part-exchange bike, removes the invoice and resets the bike status.
+ */
+export const reverseSale = (params: { invoiceId?: string; bikeId?: string; newStatus?: string }) =>
+  invoke<ReverseSaleResult>('reverse-sale', {
+    invoice_id: params.invoiceId,
+    bike_id: params.bikeId,
+    new_status: params.newStatus,
+  });
+
