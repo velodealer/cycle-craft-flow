@@ -140,6 +140,13 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         return;
       }
     }
+    if (fulfilment === 'delivery' && bookCourier) {
+      if (!delivery.street.trim() || !delivery.city.trim() || !delivery.postcode.trim()) {
+        toast.error('Enter the delivery street, city and postcode');
+        return;
+      }
+    }
+
 
     setSubmitting(true);
     try {
