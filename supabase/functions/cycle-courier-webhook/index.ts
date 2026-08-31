@@ -147,6 +147,8 @@ serve(async (req) => {
     console.log('Processing event for collection:', collection.id);
 
     // Process the payload based on event type
+    const isOutbound = collection.direction === 'outbound';
+
     switch (eventType) {
       case 'order.created':
       case 'delivery.created':
