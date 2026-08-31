@@ -13,6 +13,7 @@ interface Stage {
   key: string;
   label: string;
   isCollection?: boolean;
+  aliases?: string[];
 }
 
 export default function StatusProgressBar({ currentStatus, className, bikeId }: StatusProgressBarProps) {
