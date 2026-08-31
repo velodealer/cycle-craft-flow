@@ -422,6 +422,88 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
             </div>
           )}
 
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label>Fulfilment</Label>
+              <p className="text-xs text-muted-foreground">How the customer gets the bike</p>
+            </div>
+            <Select value={fulfilment} onValueChange={(v) => setFulfilment(v as 'collection' | 'delivery')}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="collection">Ready for collection</SelectItem>
+                <SelectItem value="delivery">Book a delivery</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {fulfilment === 'delivery' && (
+              <div className="grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="delivery-charge">Delivery charge</Label>
+                  <Input
+                    id="delivery-charge"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={deliveryCharge}
+                    onChange={(e) => setDeliveryCharge(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:pt-6">
+                  <div>
+                    <Label htmlFor="charge-delivery">Charge the customer</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {chargeDelivery ? 'Added to the invoice' : 'Absorbed as a cost on the bike'}
+                    </p>
+                  </div>
+                  <Switch id="charge-delivery" checked={chargeDelivery} onCheckedChange={setChargeDelivery} />
+                </div>
+
+                <div className="flex items-center justify-between gap-3 sm:col-span-2">
+                  <div>
+                    <Label htmlFor="book-courier">Book with Cycle Courier Co</Label>
+                    <p className="text-xs text-muted-foreground">Creates the outbound courier order now</p>
+                  </div>
+                  <Switch id="book-courier" checked={bookCourier} onCheckedChange={setBookCourier} />
+                </div>
+
+                {bookCourier && (
+                  <>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="del-street">Delivery street</Label>
+                      <Input id="del-street" value={delivery.street} onChange={(e) => setDelivery({ ...delivery, street: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="del-city">City</Label>
+                      <Input id="del-city" value={delivery.city} onChange={(e) => setDelivery({ ...delivery, city: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="del-postcode">Postcode</Label>
+                      <Input id="del-postcode" value={delivery.postcode} onChange={(e) => setDelivery({ ...delivery, postcode: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="del-country">Country</Label>
+                      <Input id="del-country" value={delivery.country} onChange={(e) => setDelivery({ ...delivery, country: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="del-instructions">Delivery instructions (optional)</Label>
+                      <Textarea
+                        id="del-instructions"
+                        rows={2}
+                        value={delivery.instructions}
+                        onChange={(e) => setDelivery({ ...delivery, instructions: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+
           <div className="space-y-1.5">
             <Label htmlFor="sale-notes">Notes (optional)</Label>
             <Textarea id="sale-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
