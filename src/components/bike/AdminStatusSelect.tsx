@@ -19,8 +19,10 @@ import {
 const STATUSES: { value: string; label: string }[] = [
   { value: 'pending_intake', label: 'Pending intake' },
   { value: 'awaiting_collection', label: 'Awaiting collection' },
-  { value: 'collection_in_progress', label: 'Collection in progress' },
+  { value: 'collected', label: 'Collected' },
   { value: 'in_transit', label: 'In transit' },
+  { value: 'delivered', label: 'Delivered' },
+
   { value: 'intake', label: 'Intake' },
   { value: 'cleaning', label: 'Cleaning' },
   { value: 'inspection', label: 'Inspection' },
