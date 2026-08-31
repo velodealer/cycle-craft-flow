@@ -225,12 +225,17 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         await supabase.from('bikes').update({ part_exchange_invoice_id: invoice.id }).eq('id', partExBikeId);
       }
 
+      const absorbedDelivery = fulfilment === 'delivery' && !chargeDelivery ? Number(deliveryCharge) || 0 : 0;
       const { error: bikeError } = await supabase
         .from('bikes')
         .update({
           status: 'sold',
           sale_price: totals.gross,
           sold_at: issuedAt,
+          fulfillment_type: fulfilment === 'delivery' ? 'delivery' : 'collection',
+          ...(absorbedDelivery > 0
+            ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
+            : {}),
           condition_notes: notes.trim()
             ? `${bike.condition_notes ? `${bike.condition_notes}\n\n` : ''}Sale note: ${notes.trim()}`
             : bike.condition_notes,
@@ -254,8 +259,31 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         }
       }
 
+      if (fulfilment === 'delivery' && bookCourier) {
+        const chosen = customers.find((c) => c.id === externalCustomerId);
+        const { data: booking, error: bookingError } = await supabase.functions.invoke('create-delivery-order', {
+          body: {
+            bike_id: bike.id,
+            receiver_name: chosen?.name ?? newCustomer.name.trim(),
+            receiver_email: chosen?.email ?? newCustomer.email.trim(),
+            receiver_phone: chosen?.phone ?? newCustomer.phone.trim(),
+            receiver_street: delivery.street.trim(),
+            receiver_city: delivery.city.trim(),
+            receiver_postcode: delivery.postcode.trim(),
+            receiver_country: delivery.country.trim() || 'UK',
+            delivery_instructions: delivery.instructions.trim(),
+          },
+        });
+        if (bookingError || (booking as any)?.error) {
+          toast.warning(`Sale saved, but the delivery booking failed: ${(booking as any)?.error ?? bookingError?.message}`);
+        } else {
+          toast.success('Delivery booked with Cycle Courier Co');
+        }
+      }
+
       onSuccess();
       onClose();
+
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
