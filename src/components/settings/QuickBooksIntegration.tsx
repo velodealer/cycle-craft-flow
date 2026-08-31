@@ -28,7 +28,7 @@ const ACCOUNT_FIELDS: { key: keyof QboAccountMap; label: string; hint: string }[
   { key: 'cogs', label: 'Cost of goods sold', hint: 'Debited on sale with the bike purchase price.' },
   { key: 'sales', label: 'Sales income', hint: 'Income account used on the customer invoice.' },
   { key: 'vat', label: 'VAT control / liability', hint: 'Credited with margin scheme VAT (1/6 of the margin).' },
-  { key: 'part_exchange', label: 'Part exchange clearing', hint: 'Used for part exchanges: the allowance line on the invoice and the stock-in for the incoming bike both hit this account, so it nets to zero. Must be an income-type clearing account.' },
+  
 ];
 
 

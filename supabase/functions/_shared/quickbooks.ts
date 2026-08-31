@@ -10,7 +10,6 @@ export interface QboAccounts {
   sales?: string;
   vat?: string;
   purchase_funding?: string;
-  part_exchange?: string;
 }
 
 

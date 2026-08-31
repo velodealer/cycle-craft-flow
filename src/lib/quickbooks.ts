@@ -7,7 +7,6 @@ export interface QboAccountMap {
   sales?: string;
   vat?: string;
   purchase_funding?: string;
-  part_exchange?: string;
 }
 
 

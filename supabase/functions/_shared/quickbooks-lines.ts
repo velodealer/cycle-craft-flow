@@ -3,14 +3,14 @@ import type { QboAccounts } from './quickbooks.ts';
 
 /**
  * Which account funds a bike's stock-in journal.
- * Part exchanges are funded by the sale, via the part-exchange clearing account.
+ * Part exchanges have no funding account — they are funded by the sale itself:
+ * the stock-in journal credits Accounts Receivable against the customer, which
+ * reduces the balance due on the full-value sale invoice. Returns null for
+ * part exchanges so the caller builds that AR credit line instead.
  */
-export function purchaseFundingAccount(acquiredVia: string | null | undefined, accounts: QboAccounts): string {
+export function purchaseFundingAccount(acquiredVia: string | null | undefined, accounts: QboAccounts): string | null {
   if (acquiredVia === 'part_exchange') {
-    if (!accounts.part_exchange) {
-      throw new Error('Map a QuickBooks "Part exchange clearing" account in Settings, then retry this posting.');
-    }
-    return accounts.part_exchange;
+    return null;
   }
   if (!accounts.purchase_funding) {
     throw new Error('QuickBooks account mapping is incomplete (Stock and purchase funding accounts are required)');
@@ -20,21 +20,19 @@ export function purchaseFundingAccount(acquiredVia: string | null | undefined, a
 
 export interface SaleLineInput {
   saleGross: number;
-  partExchangeValue: number;
   description: string;
   saleItemRef: string;
   saleTaxCode: string;
-  partExchangeItemRef?: string;
-  noVatTaxCode: string;
 }
 
 /**
- * Customer invoice lines: the bike at its full price (VAT applies to the full
- * amount) and, when there is a part exchange, a negative allowance line with no
- * VAT so the balance due drops but output VAT does not.
+ * Customer invoice lines: the bike at its full price. VAT applies to the full
+ * amount, part exchange included. A part exchange is NOT a negative invoice
+ * line — it settles part of the balance via the AR credit on the part-ex
+ * bike's stock-in journal.
  */
 export function buildSaleInvoiceLines(input: SaleLineInput): Record<string, unknown>[] {
-  const lines: Record<string, unknown>[] = [
+  return [
     {
       Amount: Number(input.saleGross.toFixed(2)),
       DetailType: 'SalesItemLineDetail',
@@ -45,21 +43,4 @@ export function buildSaleInvoiceLines(input: SaleLineInput): Record<string, unkn
       },
     },
   ];
-
-  if (input.partExchangeValue > 0) {
-    if (!input.partExchangeItemRef) {
-      throw new Error('A part exchange item is required to invoice a part exchange allowance');
-    }
-    lines.push({
-      Amount: -Number(input.partExchangeValue.toFixed(2)),
-      DetailType: 'SalesItemLineDetail',
-      Description: `Part exchange allowance — ${input.description || 'bike taken in part exchange'}`,
-      SalesItemLineDetail: {
-        ItemRef: { value: input.partExchangeItemRef },
-        TaxCodeRef: { value: input.noVatTaxCode },
-      },
-    });
-  }
-
-  return lines;
 }
