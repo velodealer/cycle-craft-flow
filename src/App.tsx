@@ -33,6 +33,8 @@ import SocialScriptsPage from "./pages/social/SocialScriptsPage";
 import SocialAnalyticsPage from "./pages/social/SocialAnalyticsPage";
 import InvestorDashboardPage from "./pages/investor/InvestorDashboardPage";
 import InvestorBikePage from "./pages/investor/InvestorBikePage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
