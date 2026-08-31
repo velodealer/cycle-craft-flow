@@ -7,8 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { stockOutDocNumber, syncInvoice } from '@/lib/quickbooks';
+import { stockOutDocNumber, syncInvoice, reverseSale } from '@/lib/quickbooks';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 interface InvoiceRow {
   id: string;
