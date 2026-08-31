@@ -47,10 +47,27 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
   const [pending, setPending] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const isReversal = bike.status === 'sold' && pending !== null && pending !== 'sold';
+
   const applyChange = async () => {
     if (!pending) return;
     setSaving(true);
     try {
+      if (isReversal) {
+        const result = await reverseSale({ bikeId: bike.id, newStatus: pending });
+        toast({
+          title: 'Sale reversed',
+          description: `${result.invoices_deleted} invoice(s) deleted${
+            result.part_exchange_bikes_deleted
+              ? `, ${result.part_exchange_bikes_deleted} part-exchange bike(s) removed`
+              : ''
+          }. Bike set to ${labelFor(pending)}.`,
+        });
+        setPending(null);
+        onUpdate();
+        return;
+      }
+
       const { error } = await supabase
         .from('bikes')
         .update({ status: pending as any })
@@ -75,7 +92,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
       onUpdate();
     } catch (e: any) {
       toast({
-        title: 'Could not update status',
+        title: isReversal ? 'Could not reverse the sale' : 'Could not update status',
         description: e.message,
         variant: 'destructive',
       });
@@ -83,6 +100,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
       setSaving(false);
     }
   };
+
 
   return (
     <div className="space-y-2">
