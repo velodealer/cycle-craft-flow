@@ -274,7 +274,7 @@ serve(async (req) => {
         
         await supabase
           .from('bikes')
-          .update({ status: 'intake' })
+          .update({ status: isOutbound ? 'delivered' : 'intake' })
           .eq('id', collection.bike_id);
         break;
         
