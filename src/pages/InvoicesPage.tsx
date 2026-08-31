@@ -261,11 +261,25 @@ export default function InvoicesPage() {
 
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="outline" onClick={() => handleSync(inv.id)} disabled={syncingId === inv.id}>
-                            {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleSync(inv.id)} disabled={syncingId === inv.id}>
+                              {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
+                            </Button>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setToDelete(inv)}
+                                aria-label={`Delete invoice ${inv.invoice_number}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
+
                       </TableRow>
                     ))}
                   </TableBody>
