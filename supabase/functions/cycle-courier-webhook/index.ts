@@ -238,13 +238,13 @@ serve(async (req) => {
             bikeStatus = 'collection_in_progress';
             break;
           case 'collected':
-            bikeStatus = 'in_transit';
+            bikeStatus = isOutbound ? 'collected' : 'in_transit';
             break;
           case 'driver_to_delivery':
             bikeStatus = 'in_transit';
             break;
           case 'delivered':
-            bikeStatus = 'pending_intake';
+            bikeStatus = isOutbound ? 'delivered' : 'pending_intake';
             await supabase
               .from('bike_collections')
               .update({ completed_at: new Date().toISOString() })
