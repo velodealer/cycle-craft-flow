@@ -2,6 +2,8 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
 import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
+import { buildSaleInvoiceLines } from '../_shared/quickbooks-lines.ts';
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -46,7 +48,11 @@ Deno.serve(async (req) => {
 
     const isMargin = bike?.finance_scheme === 'margin_scheme';
     const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
-    const gross = Number(invoice.gross || invoice.total || 0);
+    const noVatTaxCode = taxCodeForScheme(true, (settings as QboSettings).tax_codes);
+    const balanceDue = Number(invoice.gross || invoice.total || 0);
+    const partExValue = Number(invoice.part_exchange_value || 0);
+    // VAT always follows the FULL sale value, part exchange included.
+    const gross = Number(invoice.sale_gross || 0) || balanceDue + partExValue;
     const purchasePrice = Number(bike?.purchase_price || 0);
     const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
 
@@ -58,33 +64,43 @@ Deno.serve(async (req) => {
     const customerRef = await findOrCreateCustomer(fetcher, customer);
     const itemRef = await findOrCreateItem(fetcher, accounts.sales);
 
+    let partExItemRef: string | undefined;
+    if (partExValue > 0) {
+      if (!accounts.part_exchange) {
+        throw new Error('Map a QuickBooks "Part exchange clearing" account in Settings, then retry this invoice.');
+      }
+      partExItemRef = await findOrCreateItem(fetcher, accounts.part_exchange, 'Part exchange allowance');
+    }
 
-    // 1. Customer invoice. Margin scheme lines carry no VAT.
+    // 1. Customer invoice. Margin scheme lines carry no VAT; the part exchange
+    // allowance is a negative, VAT-free line so only the cash balance is due.
     const invoicePayload: Record<string, unknown> = {
       CustomerRef: { value: customerRef },
       DocNumber: invoice.invoice_number,
       TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
       GlobalTaxCalculation: isMargin ? 'NotApplicable' : 'TaxInclusive',
-      Line: [
-        {
-          Amount: gross,
-          DetailType: 'SalesItemLineDetail',
-          Description: description || 'Bicycle sale',
-          SalesItemLineDetail: {
-            ItemRef: { value: itemRef },
-            TaxCodeRef: { value: salesTaxCode },
-          },
-        },
-      ],
+      Line: buildSaleInvoiceLines({
+        saleGross: gross,
+        partExchangeValue: partExValue,
+        description,
+        saleItemRef: itemRef,
+        saleTaxCode: salesTaxCode,
+        partExchangeItemRef: partExItemRef,
+        noVatTaxCode,
+      }),
       PrivateNote: [
         isMargin
           ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
           : 'Standard VAT sale.',
+        ...(partExValue > 0
+          ? [`Part exchange allowance of ${partExValue.toFixed(2)} taken; balance due ${balanceDue.toFixed(2)}. VAT is on the full sale value.`]
+          : []),
         `Bike reference: ${bikeReference || '—'}`,
         `Stock in journal: ${stockInDoc || '—'}`,
         `Stock out journal: ${stockOutDoc || '—'}`,
       ].join(' | '),
     };
+
 
 
     if (invoice.quickbooks_invoice_id) {

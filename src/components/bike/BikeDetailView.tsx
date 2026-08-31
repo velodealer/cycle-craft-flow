@@ -361,10 +361,14 @@ export default function BikeDetailView({
               
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Source</label>
-                <div className="mt-1">
+                <div className="mt-1 flex flex-wrap items-center gap-2">
                   {getSourceBadge(bike.source)}
+                  {bike.acquired_via === 'part_exchange' && (
+                    <Badge variant="outline">Taken in part exchange</Badge>
+                  )}
                 </div>
               </div>
+
 
               {bike.accessories_included && (
                 <div>
