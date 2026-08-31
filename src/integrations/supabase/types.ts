@@ -157,6 +157,7 @@ export type Database = {
       bikes: {
         Row: {
           accessories_included: string | null
+          acquired_via: string
           asking_price: number | null
           barcode: string | null
           bike_type: string | null
@@ -185,6 +186,7 @@ export type Database = {
           make: string
           model: string
           owner_id: string | null
+          part_exchange_invoice_id: string | null
           photos: string[] | null
           profit_share_pct: number | null
           purchase_cost: number | null
@@ -209,6 +211,7 @@ export type Database = {
         }
         Insert: {
           accessories_included?: string | null
+          acquired_via?: string
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
@@ -237,6 +240,7 @@ export type Database = {
           make: string
           model: string
           owner_id?: string | null
+          part_exchange_invoice_id?: string | null
           photos?: string[] | null
           profit_share_pct?: number | null
           purchase_cost?: number | null
@@ -261,6 +265,7 @@ export type Database = {
         }
         Update: {
           accessories_included?: string | null
+          acquired_via?: string
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
@@ -289,6 +294,7 @@ export type Database = {
           make?: string
           model?: string
           owner_id?: string | null
+          part_exchange_invoice_id?: string | null
           photos?: string[] | null
           profit_share_pct?: number | null
           purchase_cost?: number | null
@@ -331,6 +337,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bikes_part_exchange_invoice_id_fkey"
+            columns: ["part_exchange_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
@@ -598,8 +611,11 @@ export type Database = {
           job_id: string | null
           net: number
           paid_at: string | null
+          part_exchange_bike_id: string | null
+          part_exchange_value: number | null
           quickbooks_invoice_id: string | null
           quickbooks_journal_id: string | null
+          sale_gross: number | null
           status: Database["public"]["Enums"]["invoice_status"]
           sync_error: string | null
           sync_status: string
@@ -621,8 +637,11 @@ export type Database = {
           job_id?: string | null
           net: number
           paid_at?: string | null
+          part_exchange_bike_id?: string | null
+          part_exchange_value?: number | null
           quickbooks_invoice_id?: string | null
           quickbooks_journal_id?: string | null
+          sale_gross?: number | null
           status?: Database["public"]["Enums"]["invoice_status"]
           sync_error?: string | null
           sync_status?: string
@@ -644,8 +663,11 @@ export type Database = {
           job_id?: string | null
           net?: number
           paid_at?: string | null
+          part_exchange_bike_id?: string | null
+          part_exchange_value?: number | null
           quickbooks_invoice_id?: string | null
           quickbooks_journal_id?: string | null
+          sale_gross?: number | null
           status?: Database["public"]["Enums"]["invoice_status"]
           sync_error?: string | null
           sync_status?: string
@@ -681,6 +703,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_part_exchange_bike_id_fkey"
+            columns: ["part_exchange_bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
             referencedColumns: ["id"]
           },
         ]
