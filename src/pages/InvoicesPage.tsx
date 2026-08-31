@@ -107,6 +107,27 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      const result = await reverseSale({ invoiceId: toDelete.id, newStatus: 'ready' });
+      toast.success(
+        `Invoice deleted${result.part_exchange_bikes_deleted ? ` and ${result.part_exchange_bikes_deleted} part-exchange bike(s) removed` : ''}${
+          result.bike_id ? '. The bike is back in stock as Ready for sale.' : '.'
+        }`,
+      );
+      setToDelete(null);
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
