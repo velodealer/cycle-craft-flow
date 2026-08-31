@@ -55,9 +55,9 @@ export default function StatusProgressBar({ currentStatus, className, bikeId }: 
 
   // Collection stages (prepended if collection exists)
   const collectionStages: Stage[] = [
-    { key: 'awaiting_collection', label: 'Awaiting Collection', isCollection: true },
-    { key: 'in_transit', label: 'Collected', isCollection: true },
-    { key: 'pending_intake', label: 'Delivered', isCollection: true }
+    { key: 'awaiting_collection', label: 'Awaiting Collection', isCollection: true, aliases: ['collection_in_progress'] },
+    { key: 'collected', label: 'Collected', isCollection: true, aliases: ['in_transit'] },
+    { key: 'delivered', label: 'Delivered', isCollection: true, aliases: ['pending_intake'] }
   ];
 
   // Build final stages array
@@ -65,7 +65,10 @@ export default function StatusProgressBar({ currentStatus, className, bikeId }: 
     ? [...collectionStages, ...standardStages]
     : standardStages;
 
-  const currentIndex = stages.findIndex(stage => stage.key === currentStatus);
+  const currentIndex = stages.findIndex(
+    stage => stage.key === currentStatus || stage.aliases?.includes(currentStatus)
+  );
+
 
   if (loading) {
     return (
