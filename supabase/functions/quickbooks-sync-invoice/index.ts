@@ -2,6 +2,8 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
 import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
+import { buildSaleInvoiceLines } from '../_shared/quickbooks-lines.ts';
+
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
