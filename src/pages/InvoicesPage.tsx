@@ -17,6 +17,9 @@ interface InvoiceRow {
   status: string;
   net: number;
   gross: number;
+  sale_gross: number | null;
+  part_exchange_value: number | null;
+  part_exchange_bike_id: string | null;
   vat_rate: number;
   issued_at: string | null;
   sync_status: string;
@@ -26,6 +29,7 @@ interface InvoiceRow {
 
   bike_id: string | null;
   bikes: { id: string; make: string; model: string; reference: string | null } | null;
+  part_exchange_bikes: { id: string; make: string; model: string; reference: string | null } | null;
   external_owners: { name: string } | null;
 }
 
@@ -47,7 +51,7 @@ export default function InvoicesPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from('invoices')
-      .select('*, bikes:bike_id(id, make, model, reference), external_owners:external_customer_id(name)')
+      .select('*, bikes:bike_id(id, make, model, reference), part_exchange_bikes:part_exchange_bike_id(id, make, model, reference), external_owners:external_customer_id(name)')
       .order('created_at', { ascending: false });
     if (error) toast.error(error.message);
     setInvoices((data as unknown as InvoiceRow[]) ?? []);
@@ -139,6 +143,12 @@ export default function InvoicesPage() {
                     <p className="mt-2 text-sm">
                       {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)} · VAT {inv.vat_rate}%
                     </p>
+                    {Number(inv.part_exchange_value || 0) > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Sale {currency(inv.sale_gross ?? inv.gross)} · part exchange −{currency(inv.part_exchange_value ?? 0)}
+                        {inv.part_exchange_bikes ? ` (${inv.part_exchange_bikes.make} ${inv.part_exchange_bikes.model})` : ''}
+                      </p>
+                    )}
                     <p className="mt-1 text-xs text-muted-foreground">
                       QB invoice {inv.quickbooks_invoice_id ? `#${inv.quickbooks_invoice_id}` : '—'} · Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
                     </p>
@@ -168,7 +178,7 @@ export default function InvoicesPage() {
                       <TableHead>Bike</TableHead>
                       <TableHead className="text-right">Net</TableHead>
                       <TableHead className="text-right">VAT</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="text-right">Balance due</TableHead>
                       <TableHead>QuickBooks</TableHead>
                       <TableHead />
                     </TableRow>
@@ -185,6 +195,19 @@ export default function InvoicesPage() {
                               {inv.bikes.make} {inv.bikes.model}
                             </Link>
                           ) : '—'}
+                          {Number(inv.part_exchange_value || 0) > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Sale {currency(inv.sale_gross ?? inv.gross)} · PX −{currency(inv.part_exchange_value ?? 0)}
+                              {inv.part_exchange_bikes && (
+                                <>
+                                  {' '}
+                                  <Link className="hover:underline" to={`/bikes/${inv.part_exchange_bikes.id}`}>
+                                    {inv.part_exchange_bikes.reference || `${inv.part_exchange_bikes.make} ${inv.part_exchange_bikes.model}`}
+                                  </Link>
+                                </>
+                              )}
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">{currency(inv.net)}</TableCell>
                         <TableCell className="text-right">{inv.vat_rate}%</TableCell>
