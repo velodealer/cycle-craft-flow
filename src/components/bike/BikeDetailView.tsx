@@ -607,6 +607,7 @@ export default function BikeDetailView({
         <div className="space-y-6">
           {/* Show collection status if bike has collection */}
           {!inspectionMode && <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />}
+          {!inspectionMode && <CollectionStatus bikeId={bike.id} direction="outbound" onUpdate={onUpdate} />}
 
           {/* Intake */}
           {!inspectionMode && <IntakeTask bike={bike} onUpdate={onUpdate} />}
