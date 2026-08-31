@@ -159,25 +159,35 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
         )}
 
         <div className="space-y-2 pt-2 border-t">
-          <p className="text-sm font-medium">Pickup Details</p>
+          <p className="text-sm font-medium">{isOutbound ? 'Delivery Address' : 'Pickup Details'}</p>
           <div className="space-y-1 text-sm text-muted-foreground">
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div>
-                <p>{collection.sender_name}</p>
-                <p>{collection.address_street}</p>
-                <p>{collection.address_city}, {collection.address_postcode}</p>
+                <p>{isOutbound ? collection.receiver_name : collection.sender_name}</p>
+                <p>{isOutbound ? collection.receiver_street : collection.address_street}</p>
+                <p>
+                  {isOutbound ? collection.receiver_city : collection.address_city}
+                  {', '}
+                  {isOutbound ? collection.receiver_postcode : collection.address_postcode}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              <p>{collection.sender_phone}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <p>{collection.sender_email}</p>
-            </div>
+            {(isOutbound ? collection.receiver_phone : collection.sender_phone) && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                <p>{isOutbound ? collection.receiver_phone : collection.sender_phone}</p>
+              </div>
+            )}
+            {(isOutbound ? collection.receiver_email : collection.sender_email) && (
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                <p>{isOutbound ? collection.receiver_email : collection.sender_email}</p>
+              </div>
+            )}
           </div>
+        </div>
+
         </div>
 
         {collection.delivery_instructions && (
