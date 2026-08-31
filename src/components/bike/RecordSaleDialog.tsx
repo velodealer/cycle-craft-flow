@@ -49,6 +49,18 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
     finance_scheme: 'margin_scheme' as 'margin_scheme' | 'vat_qualifying',
   });
 
+  const [fulfilment, setFulfilment] = useState<'collection' | 'delivery'>('collection');
+  const [deliveryCharge, setDeliveryCharge] = useState('75');
+  const [chargeDelivery, setChargeDelivery] = useState(true);
+  const [bookCourier, setBookCourier] = useState(true);
+  const [delivery, setDelivery] = useState({
+    street: '',
+    city: '',
+    postcode: '',
+    country: 'UK',
+    instructions: '',
+  });
+
   const isMargin = bike?.finance_scheme === 'margin_scheme';
 
   useEffect(() => {
@@ -58,20 +70,51 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       .select('id, name, email, phone, address')
       .order('name')
       .then(({ data }) => setCustomers(data ?? []));
+    supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'default_delivery_charge')
+      .maybeSingle()
+      .then(({ data }) => {
+        const value = Number(data?.value as any);
+        if (Number.isFinite(value) && value >= 0) setDeliveryCharge(String(value));
+      });
   }, [isOpen]);
 
   const totals = useMemo(() => {
     const gross = Number(salePrice) || 0;
     const pxValue = hasPartEx ? Number(partEx.value) || 0 : 0;
-    const balance = Math.max(0, gross - pxValue);
+    const deliveryFee = fulfilment === 'delivery' && chargeDelivery ? Number(deliveryCharge) || 0 : 0;
+    const balance = Math.max(0, gross + deliveryFee - pxValue);
     if (isMargin) {
       const purchase = Number(bike?.purchase_price || 0);
       const marginVat = Math.max(0, gross - purchase) * 20 / 120;
-      return { gross, pxValue, balance, net: gross, vatRate: 0, invoiceVat: 0, marginVat };
+      // Delivery is standard rated even on a margin scheme bike.
+      const deliveryVat = deliveryFee - deliveryFee / 1.2;
+      return {
+        gross,
+        pxValue,
+        deliveryFee,
+        balance,
+        net: gross + deliveryFee - deliveryVat,
+        vatRate: 0,
+        invoiceVat: deliveryVat,
+        marginVat,
+      };
     }
-    const net = gross / 1.2;
-    return { gross, pxValue, balance, net, vatRate: 20, invoiceVat: gross - net, marginVat: 0 };
-  }, [salePrice, isMargin, bike?.purchase_price, hasPartEx, partEx.value]);
+    const net = (gross + deliveryFee) / 1.2;
+    return {
+      gross,
+      pxValue,
+      deliveryFee,
+      balance,
+      net,
+      vatRate: 20,
+      invoiceVat: gross + deliveryFee - net,
+      marginVat: 0,
+    };
+  }, [salePrice, isMargin, bike?.purchase_price, hasPartEx, partEx.value, fulfilment, chargeDelivery, deliveryCharge]);
+
 
   const handleSubmit = async () => {
     const gross = Number(salePrice);
