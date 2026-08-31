@@ -7,8 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { stockOutDocNumber, syncInvoice } from '@/lib/quickbooks';
+import { stockOutDocNumber, syncInvoice, reverseSale } from '@/lib/quickbooks';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 interface InvoiceRow {
   id: string;
@@ -42,10 +55,15 @@ function SyncBadge({ status }: { status: string }) {
 }
 
 export default function InvoicesPage() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<InvoiceRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,6 +106,27 @@ export default function InvoicesPage() {
       load();
     }
   };
+
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      const result = await reverseSale({ invoiceId: toDelete.id, newStatus: 'ready' });
+      toast.success(
+        `Invoice deleted${result.part_exchange_bikes_deleted ? ` and ${result.part_exchange_bikes_deleted} part-exchange bike(s) removed` : ''}${
+          result.bike_id ? '. The bike is back in stock as Ready for sale.' : '.'
+        }`,
+      );
+      setToDelete(null);
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+
 
   return (
     <div className="space-y-6">
@@ -161,7 +200,18 @@ export default function InvoicesPage() {
                         {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
                       </Button>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setToDelete(inv)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                      )}
                     </div>
+
                     {inv.sync_error && <p className="mt-2 text-xs text-destructive">{inv.sync_error}</p>}
                   </div>
                 ))}
@@ -222,11 +272,25 @@ export default function InvoicesPage() {
 
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="outline" onClick={() => handleSync(inv.id)} disabled={syncingId === inv.id}>
-                            {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleSync(inv.id)} disabled={syncingId === inv.id}>
+                              {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
+                            </Button>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setToDelete(inv)}
+                                aria-label={`Delete invoice ${inv.invoice_number}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
+
                       </TableRow>
                     ))}
                   </TableBody>
@@ -236,6 +300,38 @@ export default function InvoicesPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete invoice {toDelete?.invoice_number}?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>This reverses the whole sale:</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>The QuickBooks invoice is voided and the stock-out journal deleted.</li>
+                  <li>The bike goes back into stock as Ready for sale, with its sale price cleared.</li>
+                  {Number(toDelete?.part_exchange_value || 0) > 0 && (
+                    <li>The part-exchange bike taken in on this sale is deleted along with its stock posting.</li>
+                  )}
+                  <li>Any booked delivery for this sale is cancelled.</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete invoice'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }

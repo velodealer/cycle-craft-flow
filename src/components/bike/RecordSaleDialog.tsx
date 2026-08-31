@@ -49,6 +49,18 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
     finance_scheme: 'margin_scheme' as 'margin_scheme' | 'vat_qualifying',
   });
 
+  const [fulfilment, setFulfilment] = useState<'collection' | 'delivery'>('collection');
+  const [deliveryCharge, setDeliveryCharge] = useState('75');
+  const [chargeDelivery, setChargeDelivery] = useState(true);
+  const [bookCourier, setBookCourier] = useState(true);
+  const [delivery, setDelivery] = useState({
+    street: '',
+    city: '',
+    postcode: '',
+    country: 'UK',
+    instructions: '',
+  });
+
   const isMargin = bike?.finance_scheme === 'margin_scheme';
 
   useEffect(() => {
@@ -58,20 +70,51 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       .select('id, name, email, phone, address')
       .order('name')
       .then(({ data }) => setCustomers(data ?? []));
+    supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'default_delivery_charge')
+      .maybeSingle()
+      .then(({ data }) => {
+        const value = Number(data?.value as any);
+        if (Number.isFinite(value) && value >= 0) setDeliveryCharge(String(value));
+      });
   }, [isOpen]);
 
   const totals = useMemo(() => {
     const gross = Number(salePrice) || 0;
     const pxValue = hasPartEx ? Number(partEx.value) || 0 : 0;
-    const balance = Math.max(0, gross - pxValue);
+    const deliveryFee = fulfilment === 'delivery' && chargeDelivery ? Number(deliveryCharge) || 0 : 0;
+    const balance = Math.max(0, gross + deliveryFee - pxValue);
     if (isMargin) {
       const purchase = Number(bike?.purchase_price || 0);
       const marginVat = Math.max(0, gross - purchase) * 20 / 120;
-      return { gross, pxValue, balance, net: gross, vatRate: 0, invoiceVat: 0, marginVat };
+      // Delivery is standard rated even on a margin scheme bike.
+      const deliveryVat = deliveryFee - deliveryFee / 1.2;
+      return {
+        gross,
+        pxValue,
+        deliveryFee,
+        balance,
+        net: gross + deliveryFee - deliveryVat,
+        vatRate: 0,
+        invoiceVat: deliveryVat,
+        marginVat,
+      };
     }
-    const net = gross / 1.2;
-    return { gross, pxValue, balance, net, vatRate: 20, invoiceVat: gross - net, marginVat: 0 };
-  }, [salePrice, isMargin, bike?.purchase_price, hasPartEx, partEx.value]);
+    const net = (gross + deliveryFee) / 1.2;
+    return {
+      gross,
+      pxValue,
+      deliveryFee,
+      balance,
+      net,
+      vatRate: 20,
+      invoiceVat: gross + deliveryFee - net,
+      marginVat: 0,
+    };
+  }, [salePrice, isMargin, bike?.purchase_price, hasPartEx, partEx.value, fulfilment, chargeDelivery, deliveryCharge]);
+
 
   const handleSubmit = async () => {
     const gross = Number(salePrice);
@@ -97,6 +140,13 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         return;
       }
     }
+    if (fulfilment === 'delivery' && bookCourier) {
+      if (!delivery.street.trim() || !delivery.city.trim() || !delivery.postcode.trim()) {
+        toast.error('Enter the delivery street, city and postcode');
+        return;
+      }
+    }
+
 
     setSubmitting(true);
     try {
@@ -158,9 +208,12 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           net: Number(totals.net.toFixed(2)),
           gross: Number(totals.balance.toFixed(2)),
           sale_gross: Number(totals.gross.toFixed(2)),
+          delivery_charge: fulfilment === 'delivery' ? Number((Number(deliveryCharge) || 0).toFixed(2)) : 0,
+          delivery_charged_to_customer: fulfilment === 'delivery' && chargeDelivery,
           part_exchange_bike_id: partExBikeId,
           part_exchange_value: hasPartEx ? Number(totals.pxValue.toFixed(2)) : null,
           vat_rate: totals.vatRate,
+
           status: 'issued',
           issued_at: issuedAt,
         })
@@ -172,12 +225,17 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         await supabase.from('bikes').update({ part_exchange_invoice_id: invoice.id }).eq('id', partExBikeId);
       }
 
+      const absorbedDelivery = fulfilment === 'delivery' && !chargeDelivery ? Number(deliveryCharge) || 0 : 0;
       const { error: bikeError } = await supabase
         .from('bikes')
         .update({
           status: 'sold',
           sale_price: totals.gross,
           sold_at: issuedAt,
+          fulfillment_type: fulfilment === 'delivery' ? 'delivery' : 'collection',
+          ...(absorbedDelivery > 0
+            ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
+            : {}),
           condition_notes: notes.trim()
             ? `${bike.condition_notes ? `${bike.condition_notes}\n\n` : ''}Sale note: ${notes.trim()}`
             : bike.condition_notes,
@@ -201,8 +259,31 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         }
       }
 
+      if (fulfilment === 'delivery' && bookCourier) {
+        const chosen = customers.find((c) => c.id === externalCustomerId);
+        const { data: booking, error: bookingError } = await supabase.functions.invoke('create-delivery-order', {
+          body: {
+            bike_id: bike.id,
+            receiver_name: chosen?.name ?? newCustomer.name.trim(),
+            receiver_email: chosen?.email ?? newCustomer.email.trim(),
+            receiver_phone: chosen?.phone ?? newCustomer.phone.trim(),
+            receiver_street: delivery.street.trim(),
+            receiver_city: delivery.city.trim(),
+            receiver_postcode: delivery.postcode.trim(),
+            receiver_country: delivery.country.trim() || 'UK',
+            delivery_instructions: delivery.instructions.trim(),
+          },
+        });
+        if (bookingError || (booking as any)?.error) {
+          toast.warning(`Sale saved, but the delivery booking failed: ${(booking as any)?.error ?? bookingError?.message}`);
+        } else {
+          toast.success('Delivery booked with Cycle Courier Co');
+        }
+      }
+
       onSuccess();
       onClose();
+
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -341,6 +422,88 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
             </div>
           )}
 
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label>Fulfilment</Label>
+              <p className="text-xs text-muted-foreground">How the customer gets the bike</p>
+            </div>
+            <Select value={fulfilment} onValueChange={(v) => setFulfilment(v as 'collection' | 'delivery')}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="collection">Ready for collection</SelectItem>
+                <SelectItem value="delivery">Book a delivery</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {fulfilment === 'delivery' && (
+              <div className="grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="delivery-charge">Delivery charge</Label>
+                  <Input
+                    id="delivery-charge"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={deliveryCharge}
+                    onChange={(e) => setDeliveryCharge(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:pt-6">
+                  <div>
+                    <Label htmlFor="charge-delivery">Charge the customer</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {chargeDelivery ? 'Added to the invoice' : 'Absorbed as a cost on the bike'}
+                    </p>
+                  </div>
+                  <Switch id="charge-delivery" checked={chargeDelivery} onCheckedChange={setChargeDelivery} />
+                </div>
+
+                <div className="flex items-center justify-between gap-3 sm:col-span-2">
+                  <div>
+                    <Label htmlFor="book-courier">Book with Cycle Courier Co</Label>
+                    <p className="text-xs text-muted-foreground">Creates the outbound courier order now</p>
+                  </div>
+                  <Switch id="book-courier" checked={bookCourier} onCheckedChange={setBookCourier} />
+                </div>
+
+                {bookCourier && (
+                  <>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="del-street">Delivery street</Label>
+                      <Input id="del-street" value={delivery.street} onChange={(e) => setDelivery({ ...delivery, street: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="del-city">City</Label>
+                      <Input id="del-city" value={delivery.city} onChange={(e) => setDelivery({ ...delivery, city: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="del-postcode">Postcode</Label>
+                      <Input id="del-postcode" value={delivery.postcode} onChange={(e) => setDelivery({ ...delivery, postcode: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="del-country">Country</Label>
+                      <Input id="del-country" value={delivery.country} onChange={(e) => setDelivery({ ...delivery, country: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="del-instructions">Delivery instructions (optional)</Label>
+                      <Textarea
+                        id="del-instructions"
+                        rows={2}
+                        value={delivery.instructions}
+                        onChange={(e) => setDelivery({ ...delivery, instructions: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+
           <div className="space-y-1.5">
             <Label htmlFor="sale-notes">Notes (optional)</Label>
             <Textarea id="sale-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
@@ -367,10 +530,19 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
                 <span>−£{totals.pxValue.toFixed(2)}</span>
               </div>
             )}
+            {fulfilment === 'delivery' && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Delivery {chargeDelivery ? '(charged)' : '(absorbed as a cost)'}
+                </span>
+                <span>{chargeDelivery ? `£${totals.deliveryFee.toFixed(2)}` : `−£${(Number(deliveryCharge) || 0).toFixed(2)} cost`}</span>
+              </div>
+            )}
             <div className="flex justify-between font-medium">
               <span>{hasPartEx ? 'Balance due' : 'Invoice total'}</span>
               <span>£{totals.balance.toFixed(2)}</span>
             </div>
+
             {isMargin && (
               <div className="flex justify-between pt-1 text-muted-foreground">
                 <span>Margin VAT on the full sale price</span>

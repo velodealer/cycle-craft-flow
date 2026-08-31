@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { reverseSale } from '@/lib/quickbooks';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -47,10 +49,27 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
   const [pending, setPending] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const isReversal = bike.status === 'sold' && pending !== null && pending !== 'sold';
+
   const applyChange = async () => {
     if (!pending) return;
     setSaving(true);
     try {
+      if (isReversal) {
+        const result = await reverseSale({ bikeId: bike.id, newStatus: pending });
+        toast({
+          title: 'Sale reversed',
+          description: `${result.invoices_deleted} invoice(s) deleted${
+            result.part_exchange_bikes_deleted
+              ? `, ${result.part_exchange_bikes_deleted} part-exchange bike(s) removed`
+              : ''
+          }. Bike set to ${labelFor(pending)}.`,
+        });
+        setPending(null);
+        onUpdate();
+        return;
+      }
+
       const { error } = await supabase
         .from('bikes')
         .update({ status: pending as any })
@@ -75,7 +94,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
       onUpdate();
     } catch (e: any) {
       toast({
-        title: 'Could not update status',
+        title: isReversal ? 'Could not reverse the sale' : 'Could not update status',
         description: e.message,
         variant: 'destructive',
       });
@@ -83,6 +102,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
       setSaving(false);
     }
   };
+
 
   return (
     <div className="space-y-2">
@@ -109,21 +129,43 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Change status from {labelFor(bike.status)} to {pending ? labelFor(pending) : ''}?
+              {isReversal
+                ? `Reverse this sale and set the bike to ${pending ? labelFor(pending) : ''}?`
+                : `Change status from ${labelFor(bike.status)} to ${pending ? labelFor(pending) : ''}?`}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              This only changes the bike's status. It does not create invoices, QuickBooks
-              postings or collection records. Use Record Sale for genuine sales.
+            <AlertDialogDescription asChild>
+              {isReversal ? (
+                <div className="space-y-2 text-sm">
+                  <p>This undoes the sale completely:</p>
+                  <ul className="list-disc space-y-1 pl-5">
+                    <li>The sale invoice is deleted.</li>
+                    <li>The QuickBooks invoice is voided and the stock-out journal deleted.</li>
+                    <li>Any part-exchange bike taken in on the sale is deleted, along with its stock posting.</li>
+                    <li>The sale price and sold date are cleared and any booked delivery is cancelled.</li>
+                  </ul>
+                  <p>If QuickBooks cannot be reversed, nothing is deleted and you can retry.</p>
+                </div>
+              ) : (
+                <span>
+                  This only changes the bike's status. It does not create invoices, QuickBooks
+                  postings or collection records. Use Record Sale for genuine sales.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); applyChange(); }} disabled={saving}>
-              {saving ? 'Saving...' : 'Change status'}
+            <AlertDialogAction
+              className={isReversal ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+              onClick={(e) => { e.preventDefault(); applyChange(); }}
+              disabled={saving}
+            >
+              {saving ? 'Working...' : isReversal ? 'Reverse sale' : 'Change status'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   );
 }

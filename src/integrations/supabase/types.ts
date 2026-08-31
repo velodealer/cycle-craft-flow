@@ -45,9 +45,17 @@ export type Database = {
           completed_at: string | null
           created_at: string
           delivery_instructions: string | null
+          direction: string
           error_message: string | null
           id: string
           order_id: string | null
+          receiver_city: string | null
+          receiver_country: string | null
+          receiver_email: string | null
+          receiver_name: string | null
+          receiver_phone: string | null
+          receiver_postcode: string | null
+          receiver_street: string | null
           retry_count: number | null
           scheduled_date: string | null
           sender_email: string
@@ -66,9 +74,17 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           delivery_instructions?: string | null
+          direction?: string
           error_message?: string | null
           id?: string
           order_id?: string | null
+          receiver_city?: string | null
+          receiver_country?: string | null
+          receiver_email?: string | null
+          receiver_name?: string | null
+          receiver_phone?: string | null
+          receiver_postcode?: string | null
+          receiver_street?: string | null
           retry_count?: number | null
           scheduled_date?: string | null
           sender_email: string
@@ -87,9 +103,17 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           delivery_instructions?: string | null
+          direction?: string
           error_message?: string | null
           id?: string
           order_id?: string | null
+          receiver_city?: string | null
+          receiver_country?: string | null
+          receiver_email?: string | null
+          receiver_name?: string | null
+          receiver_phone?: string | null
+          receiver_postcode?: string | null
+          receiver_street?: string | null
           retry_count?: number | null
           scheduled_date?: string | null
           sender_email?: string
@@ -167,6 +191,7 @@ export type Database = {
           condition_notes: string | null
           created_at: string
           delivery_cost: number | null
+          delivery_method: string | null
           description: string | null
           external_owner_id: string | null
           finance_scheme: Database["public"]["Enums"]["finance_scheme"]
@@ -221,6 +246,7 @@ export type Database = {
           condition_notes?: string | null
           created_at?: string
           delivery_cost?: number | null
+          delivery_method?: string | null
           description?: string | null
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
@@ -275,6 +301,7 @@ export type Database = {
           condition_notes?: string | null
           created_at?: string
           delivery_cost?: number | null
+          delivery_method?: string | null
           description?: string | null
           external_owner_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"]
@@ -602,6 +629,8 @@ export type Database = {
           bike_id: string | null
           created_at: string
           customer_id: string | null
+          delivery_charge: number
+          delivery_charged_to_customer: boolean
           due_date: string | null
           external_customer_id: string | null
           gross: number
@@ -628,6 +657,8 @@ export type Database = {
           bike_id?: string | null
           created_at?: string
           customer_id?: string | null
+          delivery_charge?: number
+          delivery_charged_to_customer?: boolean
           due_date?: string | null
           external_customer_id?: string | null
           gross: number
@@ -654,6 +685,8 @@ export type Database = {
           bike_id?: string | null
           created_at?: string
           customer_id?: string | null
+          delivery_charge?: number
+          delivery_charged_to_customer?: boolean
           due_date?: string | null
           external_customer_id?: string | null
           gross?: number

@@ -5,6 +5,7 @@ import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
+import DeliverySettings from '@/components/settings/DeliverySettings';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -65,6 +66,7 @@ export default function SettingsPage() {
 
         <TabsContent value="system" className="space-y-4">
           <BikeReferenceSettings />
+          <DeliverySettings />
           <Card>
             <CardHeader>
               <CardTitle>System Configuration</CardTitle>

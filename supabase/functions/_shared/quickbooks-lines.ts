@@ -23,16 +23,21 @@ export interface SaleLineInput {
   description: string;
   saleItemRef: string;
   saleTaxCode: string;
+  /** Delivery charged to the customer; omitted or 0 when absorbed as a cost. */
+  deliveryCharge?: number;
+  deliveryItemRef?: string;
+  /** Delivery is always standard rated, even on a margin scheme bike. */
+  deliveryTaxCode?: string;
 }
 
 /**
- * Customer invoice lines: the bike at its full price. VAT applies to the full
- * amount, part exchange included. A part exchange is NOT a negative invoice
- * line — it settles part of the balance via the AR credit on the part-ex
- * bike's stock-in journal.
+ * Customer invoice lines: the bike at its full price, plus an optional
+ * delivery charge. VAT applies to the full amount, part exchange included. A
+ * part exchange is NOT a negative invoice line — it settles part of the
+ * balance via the AR credit on the part-ex bike's stock-in journal.
  */
 export function buildSaleInvoiceLines(input: SaleLineInput): Record<string, unknown>[] {
-  return [
+  const lines: Record<string, unknown>[] = [
     {
       Amount: Number(input.saleGross.toFixed(2)),
       DetailType: 'SalesItemLineDetail',
@@ -43,4 +48,20 @@ export function buildSaleInvoiceLines(input: SaleLineInput): Record<string, unkn
       },
     },
   ];
+
+  const delivery = Number(input.deliveryCharge || 0);
+  if (delivery > 0 && input.deliveryItemRef) {
+    lines.push({
+      Amount: Number(delivery.toFixed(2)),
+      DetailType: 'SalesItemLineDetail',
+      Description: 'Delivery',
+      SalesItemLineDetail: {
+        ItemRef: { value: input.deliveryItemRef },
+        TaxCodeRef: { value: input.deliveryTaxCode ?? input.saleTaxCode },
+      },
+    });
+  }
+
+  return lines;
 }
+
