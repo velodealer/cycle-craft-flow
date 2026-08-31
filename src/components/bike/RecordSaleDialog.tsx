@@ -208,9 +208,12 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           net: Number(totals.net.toFixed(2)),
           gross: Number(totals.balance.toFixed(2)),
           sale_gross: Number(totals.gross.toFixed(2)),
+          delivery_charge: fulfilment === 'delivery' ? Number((Number(deliveryCharge) || 0).toFixed(2)) : 0,
+          delivery_charged_to_customer: fulfilment === 'delivery' && chargeDelivery,
           part_exchange_bike_id: partExBikeId,
           part_exchange_value: hasPartEx ? Number(totals.pxValue.toFixed(2)) : null,
           vat_rate: totals.vatRate,
+
           status: 'issued',
           issued_at: issuedAt,
         })
