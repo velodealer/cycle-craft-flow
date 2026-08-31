@@ -8,32 +8,37 @@ import { toast } from '@/hooks/use-toast';
 
 interface CollectionStatusProps {
   bikeId: string;
+  /** 'inbound' = collection from the seller, 'outbound' = delivery to the buyer. */
+  direction?: 'inbound' | 'outbound';
   onUpdate?: () => void;
 }
 
-export function CollectionStatus({ bikeId, onUpdate }: CollectionStatusProps) {
+export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: CollectionStatusProps) {
   const [collection, setCollection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const isOutbound = direction === 'outbound';
 
   useEffect(() => {
     loadCollection();
-  }, [bikeId]);
+  }, [bikeId, direction]);
 
   const loadCollection = async () => {
     const { data, error } = await supabase
       .from('bike_collections')
       .select('*')
       .eq('bike_id', bikeId)
+      .eq('direction', direction)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    
-    if (!error && data) {
-      setCollection(data);
+
+    if (!error) {
+      setCollection(data ?? null);
     }
     setLoading(false);
   };
+
 
   const handleRetry = async () => {
     if (!collection) return;
