@@ -300,6 +300,38 @@ export default function InvoicesPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete invoice {toDelete?.invoice_number}?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>This reverses the whole sale:</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>The QuickBooks invoice is voided and the stock-out journal deleted.</li>
+                  <li>The bike goes back into stock as Ready for sale, with its sale price cleared.</li>
+                  {Number(toDelete?.part_exchange_value || 0) > 0 && (
+                    <li>The part-exchange bike taken in on this sale is deleted along with its stock posting.</li>
+                  )}
+                  <li>Any booked delivery for this sale is cancelled.</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete invoice'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
