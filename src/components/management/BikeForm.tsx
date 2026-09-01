@@ -26,6 +26,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import LocationSelect from '@/components/bike/LocationSelect';
 import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
+import { saveCatalogBike, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
+
 
 
 
