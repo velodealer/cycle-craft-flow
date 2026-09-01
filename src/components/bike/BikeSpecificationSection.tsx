@@ -151,10 +151,21 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle>Specification</CardTitle>
+        <Button variant="outline" size="sm" onClick={() => setSpokesOpen(true)}>
+          <Sparkles className="h-4 w-4 mr-2" />
+          Fill from 99spokes
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
+        <SpokesApplyDialog
+          bike={bike}
+          open={spokesOpen}
+          onOpenChange={setSpokesOpen}
+          onApplied={() => { reloadComponents(); onUpdate(); }}
+        />
+
         {/* General */}
         <div className="rounded-md border p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
