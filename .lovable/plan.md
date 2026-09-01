@@ -19,8 +19,18 @@ auto-fills the full specification, and add the same lookup to bikes that already
   current value vs 99spokes value, with a tick per row. Rows where you already have a value
   are unticked by default; empty rows are ticked. Apply writes only the ticked rows.
 
+**Your own growing catalogue**
+- Every 99spokes bike you actually use is saved into a local `catalog_bikes` table
+  (brand, model, year, variant, size options, thumbnail, full spec payload, source id).
+- Search checks your own catalogue first and shows those results in a "Saved" group above the
+  live 99spokes results, so repeat bikes are instant and keep working even if the API is down.
+- Every component in an applied spec is upserted into your existing `components` library
+  (matched on category + brand + model, so nothing duplicates) and linked to the bike via
+  `bike_components`. Over time your components list builds itself.
+
 **If 99spokes has nothing**
 - The existing open bicycle catalog stays as a fallback tab so nothing regresses.
+
 
 ## Technical notes
 
@@ -45,4 +55,12 @@ auto-fills the full specification, and add the same lookup to bikes that already
   - `src/components/bike/SpokesApplyDialog.tsx` — the field-by-field review/apply table,
     launched from `BikeSpecificationSection.tsx`; writes `spec_values` plus the changed bike
     columns in a single update.
-- No database changes: everything lands in existing `bikes` columns and the `spec_values` JSONB.
+- **Database** (one migration):
+  - `catalog_bikes` — `source` ('99spokes'), `source_id` (unique), brand, model, year, variant,
+    bike_type, thumbnail_url, sizes jsonb, spec jsonb, raw jsonb, timestamps. Grants for
+    `authenticated` (read/write) and `service_role`; RLS allows any signed-in staff member to
+    read and insert/update, plus a trigram/`ilike` index on brand+model for fast local search.
+  - Component upsert uses the existing `components` table and its category-scoped uniqueness,
+    via a small `upsertComponents` helper in `src/lib/spokes.ts` that maps 99spokes component
+    slots to `component_categories.slug` and then writes `bike_components` rows for the bike.
+
