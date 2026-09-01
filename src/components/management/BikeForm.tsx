@@ -190,8 +190,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               collection_sender_phone, collection_address_street, collection_address_city,
               collection_address_postcode, collection_instructions, purchase_date, ...bikeFields } = values;
 
+      // Spec/flags pulled from a 99spokes lookup (make/model/size/year already
+      // live in the form fields, so they are stripped out here).
+      const spokesExtras: Record<string, any> = {};
+      if (spokesFill) {
+        const { make, model, year, size, ...rest } = spokesFill.mapped.bikeFields;
+        Object.assign(spokesExtras, rest);
+        spokesExtras.spec_values = {
+          ...(bike?.spec_values || {}),
+          ...spokesFill.mapped.specValues,
+        };
+      }
+
       const bikeData = {
         ...bikeFields,
+        ...spokesExtras,
         external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
         investor_id: bikeFields.source === 'investor' ? bikeFields.investor_id : null,
         profit_share_pct: bikeFields.source === 'investor' ? bikeFields.profit_share_pct : null,
@@ -202,6 +215,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         storage_bay_id: bikeFields.storage_bay_id || null,
         photos,
       };
+
 
       let bikeId = bike?.id;
 
