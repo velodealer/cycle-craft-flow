@@ -17,7 +17,13 @@ const DETAIL_INCLUDE = [
   'colors',
 ].join(',');
 
-const SEARCH_INCLUDE = ['thumbnailUrl', 'suspension'].join(',');
+const SEARCH_INCLUDE = ['thumbnailUrl', 'suspension', 'components'].join(',');
+
+function partLabel(part: any): string | null {
+  if (!part) return null;
+  const label = [part.maker, part.model].filter(Boolean).join(' ').trim();
+  return label || part.display || part.description || null;
+}
 
 const detailCache = new Map<string, { at: number; data: unknown }>();
 const CACHE_MS = 10 * 60 * 1000;
@@ -64,19 +70,24 @@ Deno.serve(async (req) => {
         include: SEARCH_INCLUDE,
       });
       const data = await spokes(`/bikes?${params.toString()}`);
-      const items = (data?.items ?? []).map((b: any) => ({
-        id: b.id,
-        maker: b.maker,
-        model: b.model,
-        family: b.family,
-        year: b.year,
-        category: b.category,
-        subcategory: b.subcategory,
-        isEbike: b.isEbike,
-        isFrameset: b.isFrameset,
-        thumbnailUrl: b.thumbnailUrl ?? null,
-        url: b.url ?? null,
-      }));
+      const items = (data?.items ?? []).map((b: any) => {
+        const c = b.components || {};
+        return {
+          id: b.id,
+          maker: b.maker,
+          model: b.model,
+          family: b.family,
+          year: b.year,
+          category: b.category,
+          subcategory: b.subcategory,
+          isEbike: b.isEbike,
+          isFrameset: b.isFrameset,
+          thumbnailUrl: b.thumbnailUrl ?? null,
+          url: b.url ?? null,
+          groupset: partLabel(c.rearDerailleur) ?? partLabel(c.shifters),
+          wheelset: partLabel(c.rims),
+        };
+      });
       return json({ items, total: data?.total ?? items.length });
     }
 

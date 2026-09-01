@@ -125,12 +125,17 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">
+                <div className="text-sm font-medium break-words">
                   {r.year ? `${r.year} ` : ''}{r.maker} {[r.family, r.model].filter(Boolean).join(' ')}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
                   {[r.category, r.subcategory].filter(Boolean).join(' · ')}
                 </div>
+                {(r.groupset || r.wheelset) && (
+                  <div className="text-xs text-muted-foreground break-words">
+                    {[r.groupset, r.wheelset].filter(Boolean).join(' · ')}
+                  </div>
+                )}
               </div>
               {r.local && (
                 <Badge variant="secondary" className="gap-1 shrink-0">
@@ -153,6 +158,11 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
               <div className="text-xs text-muted-foreground">
                 {[selected.category, selected.subcategory].filter(Boolean).join(' · ')}
               </div>
+              {(selected.groupset || selected.wheelset) && (
+                <div className="text-xs text-muted-foreground">
+                  {[selected.groupset, selected.wheelset].filter(Boolean).join(' · ')}
+                </div>
+              )}
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={() => { setSelected(null); setRaw(null); }}>
               Change

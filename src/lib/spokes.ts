@@ -21,6 +21,8 @@ export interface SpokesSearchItem {
   isFrameset?: boolean;
   thumbnailUrl?: string | null;
   url?: string | null;
+  groupset?: string | null;
+  wheelset?: string | null;
   /** Present when the result came from our own saved catalogue. */
   local?: boolean;
   localId?: string;
@@ -78,12 +80,18 @@ export async function searchLocalCatalog(query: string, limit = 10): Promise<Spo
   if (q.length < 2) return [];
   const { data, error } = await supabase
     .from('catalog_bikes')
-    .select('id, source_id, brand, model, family, year, category, subcategory, is_ebike, thumbnail_url, url')
+    .select('id, source_id, brand, model, family, year, category, subcategory, is_ebike, thumbnail_url, url, components')
     .or(`brand.ilike.%${q}%,model.ilike.%${q}%,family.ilike.%${q}%`)
     .order('use_count', { ascending: false })
     .limit(limit);
   if (error) return [];
-  return (data || []).map((r: any) => ({
+  return (data || []).map((r: any) => {
+    const comps: MappedComponent[] = Array.isArray(r.components) ? r.components : [];
+    const compLabel = (slug: string) => {
+      const c = comps.find((x) => x.categorySlug === slug);
+      return c ? [c.brand, c.model].filter(Boolean).join(' ') : null;
+    };
+    return {
     id: r.source_id,
     localId: r.id,
     local: true,
@@ -93,10 +101,13 @@ export async function searchLocalCatalog(query: string, limit = 10): Promise<Spo
     year: r.year,
     category: r.category,
     subcategory: r.subcategory,
-    isEbike: r.is_ebike,
-    thumbnailUrl: r.thumbnail_url,
-    url: r.url,
-  }));
+      isEbike: r.is_ebike,
+      thumbnailUrl: r.thumbnail_url,
+      url: r.url,
+      groupset: compLabel('rear_derailleur') ?? compLabel('shifters'),
+      wheelset: compLabel('wheels'),
+    };
+  });
 }
 
 /** Returns the stored raw 99spokes record if we already have this bike saved. */
