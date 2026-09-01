@@ -247,6 +247,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         }
       }
 
+      // Grow our own catalogue + components library from the 99spokes record.
+      if (spokesFill && bikeId) {
+        try {
+          await saveCatalogBike(spokesFill.raw, spokesFill.mapped);
+          const linked = await upsertComponentsForBike(bikeId, spokesFill.mapped.components);
+          if (linked > 0) {
+            toast({ title: `${linked} components added to the bike` });
+          }
+        } catch (e: any) {
+          toast({ title: 'Spec saved, components not linked', description: e.message, variant: 'destructive' });
+        }
+      }
+
+
+
       // Arrange collection if requested
       if (arrange_collection && bikeId) {
         const { data: collectionData, error: collectionError } = await supabase.functions.invoke('create-collection-order', {
