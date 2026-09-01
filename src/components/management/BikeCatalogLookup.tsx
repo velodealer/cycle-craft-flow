@@ -219,4 +219,29 @@ export default function BikeCatalogLookup({ onApply, onSpokesSelect }: Props) {
       </div>
     </div>
   );
+
+  return (
+    <div className="rounded-lg border border-dashed p-4 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Search className="h-4 w-4 text-muted-foreground" />
+        Look up bike
+      </div>
+
+      {onSpokesSelect ? (
+        <Tabs defaultValue="spokes">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="spokes">99spokes</TabsTrigger>
+            <TabsTrigger value="open">Open catalog</TabsTrigger>
+          </TabsList>
+          <TabsContent value="spokes" className="pt-3">
+            <SpokesLookup onSelect={onSpokesSelect} confirmLabel="Fill bike from 99spokes" />
+          </TabsContent>
+          <TabsContent value="open" className="pt-3">{openCatalog}</TabsContent>
+        </Tabs>
+      ) : (
+        openCatalog
+      )}
+    </div>
+  );
 }
+
