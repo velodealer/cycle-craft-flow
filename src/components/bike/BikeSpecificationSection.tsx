@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
 import StripComponentDialog from './StripComponentDialog';
-import { PackageMinus } from 'lucide-react';
+import { PackageMinus, Sparkles } from 'lucide-react';
+import SpokesApplyDialog from './SpokesApplyDialog';
 import {
   BIKE_TYPES, FRAME_MATERIALS, GENDERS, CONDITIONS,
   SPEC_SECTIONS, applyTypeDefaults, getAtPath, setAtPath,
@@ -30,6 +31,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [bikeComponents, setBikeComponents] = useState<Record<string, string>>({}); // slot -> component_id
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
+  const [spokesOpen, setSpokesOpen] = useState(false);
 
   const reloadComponents = () => {
     if (!bike?.id) return;
@@ -151,10 +153,21 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle>Specification</CardTitle>
+        <Button variant="outline" size="sm" onClick={() => setSpokesOpen(true)}>
+          <Sparkles className="h-4 w-4 mr-2" />
+          Fill from 99spokes
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
+        <SpokesApplyDialog
+          bike={bike}
+          open={spokesOpen}
+          onOpenChange={setSpokesOpen}
+          onApplied={() => { reloadComponents(); onUpdate(); }}
+        />
+
         {/* General */}
         <div className="rounded-md border p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

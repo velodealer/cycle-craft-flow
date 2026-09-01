@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SpokesLookup from '@/components/management/SpokesLookup';
+import type { MappedBike } from '@/lib/spokes';
 import { cn } from '@/lib/utils';
+
 import {
   catalogBrands,
   loadBrandModels,
@@ -24,9 +28,12 @@ export interface CatalogSelection {
 
 interface Props {
   onApply: (selection: CatalogSelection) => void;
+  /** When provided, a 99spokes tab is shown that fills the full specification. */
+  onSpokesSelect?: (payload: { raw: any; mapped: MappedBike; size: string | null }) => void;
 }
 
-export default function BikeCatalogLookup({ onApply }: Props) {
+export default function BikeCatalogLookup({ onApply, onSpokesSelect }: Props) {
+
   const [brand, setBrand] = useState<CatalogBrand | null>(null);
   const [models, setModels] = useState<CatalogModel[]>([]);
   const [model, setModel] = useState<CatalogModel | null>(null);
@@ -68,19 +75,15 @@ export default function BikeCatalogLookup({ onApply }: Props) {
     onApply({ make: brand.name, model: model.model, size, summary: modelSummary(model) });
   };
 
-  return (
-    <div className="rounded-lg border border-dashed p-4 space-y-3">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        Look up bike
-        <span className="text-xs font-normal text-muted-foreground">
-          Autofill make, model and size from the open bicycle catalog
-        </span>
-      </div>
+  const openCatalog = (
+
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">Autofill make, model and size from the open bicycle catalog</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Brand */}
         <div className="space-y-1">
+
           <Label className="text-xs text-muted-foreground">Brand</Label>
           <Popover open={brandOpen} onOpenChange={setBrandOpen}>
             <PopoverTrigger asChild>
@@ -220,4 +223,29 @@ export default function BikeCatalogLookup({ onApply }: Props) {
       </div>
     </div>
   );
+
+  return (
+    <div className="rounded-lg border border-dashed p-4 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Search className="h-4 w-4 text-muted-foreground" />
+        Look up bike
+      </div>
+
+      {onSpokesSelect ? (
+        <Tabs defaultValue="spokes">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="spokes">99spokes</TabsTrigger>
+            <TabsTrigger value="open">Open catalog</TabsTrigger>
+          </TabsList>
+          <TabsContent value="spokes" className="pt-3">
+            <SpokesLookup onSelect={onSpokesSelect} confirmLabel="Fill bike from 99spokes" />
+          </TabsContent>
+          <TabsContent value="open" className="pt-3">{openCatalog}</TabsContent>
+        </Tabs>
+      ) : (
+        openCatalog
+      )}
+    </div>
+  );
 }
+

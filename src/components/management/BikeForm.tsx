@@ -26,6 +26,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import LocationSelect from '@/components/bike/LocationSelect';
 import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
+import { saveCatalogBike, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
+
 
 
 
@@ -115,8 +117,10 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [investors, setInvestors] = useState<Array<{ user_id: string; name: string; email: string }>>([]);
   const [showOwnerDialog, setShowOwnerDialog] = useState(false);
   const [showInvestorDialog, setShowInvestorDialog] = useState(false);
+  const [spokesFill, setSpokesFill] = useState<{ raw: any; mapped: MappedBike; size: string | null } | null>(null);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
+
 
   const loadOwners = async () => {
     const { data, error } = await supabase
@@ -186,8 +190,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               collection_sender_phone, collection_address_street, collection_address_city,
               collection_address_postcode, collection_instructions, purchase_date, ...bikeFields } = values;
 
+      // Spec/flags pulled from a 99spokes lookup (make/model/size/year already
+      // live in the form fields, so they are stripped out here).
+      const spokesExtras: Record<string, any> = {};
+      if (spokesFill) {
+        const { make, model, year, size, ...rest } = spokesFill.mapped.bikeFields;
+        Object.assign(spokesExtras, rest);
+        spokesExtras.spec_values = {
+          ...(bike?.spec_values || {}),
+          ...spokesFill.mapped.specValues,
+        };
+      }
+
       const bikeData = {
         ...bikeFields,
+        ...spokesExtras,
         external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
         investor_id: bikeFields.source === 'investor' ? bikeFields.investor_id : null,
         profit_share_pct: bikeFields.source === 'investor' ? bikeFields.profit_share_pct : null,
@@ -198,6 +215,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         storage_bay_id: bikeFields.storage_bay_id || null,
         photos,
       };
+
 
       let bikeId = bike?.id;
 
@@ -228,6 +246,21 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           });
         }
       }
+
+      // Grow our own catalogue + components library from the 99spokes record.
+      if (spokesFill && bikeId) {
+        try {
+          await saveCatalogBike(spokesFill.raw, spokesFill.mapped);
+          const linked = await upsertComponentsForBike(bikeId, spokesFill.mapped.components);
+          if (linked > 0) {
+            toast({ title: `${linked} components added to the bike` });
+          }
+        } catch (e: any) {
+          toast({ title: 'Spec saved, components not linked', description: e.message, variant: 'destructive' });
+        }
+      }
+
+
 
       // Arrange collection if requested
       if (arrange_collection && bikeId) {
@@ -295,7 +328,35 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   }
                   toast({ title: 'Bike details filled from catalog' });
                 }}
+                onSpokesSelect={(payload) => {
+                  const { mapped, size } = payload;
+                  const f = mapped.bikeFields;
+                  if (f.make) form.setValue('make', f.make, { shouldDirty: true, shouldValidate: true });
+                  if (f.model) form.setValue('model', f.model, { shouldDirty: true, shouldValidate: true });
+                  if (f.year) form.setValue('year', f.year, { shouldDirty: true });
+                  if (size) form.setValue('size', size, { shouldDirty: true });
+                  if (f.colour && !form.getValues('colour')?.trim()) {
+                    form.setValue('colour', f.colour, { shouldDirty: true });
+                  }
+                  setSpokesFill(payload);
+                  toast({
+                    title: 'Specification loaded from 99spokes',
+                    description: `${mapped.components.length} components will be added when you save.`,
+                  });
+                }}
               />
+
+              {spokesFill && (
+                <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground flex items-center justify-between gap-2">
+                  <span>
+                    99spokes specification attached — {spokesFill.mapped.components.length} components will be linked on save.
+                  </span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setSpokesFill(null)}>
+                    Remove
+                  </Button>
+                </div>
+              )}
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 

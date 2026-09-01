@@ -382,6 +382,81 @@ export type Database = {
           },
         ]
       }
+      catalog_bikes: {
+        Row: {
+          bike_fields: Json
+          bike_type: string | null
+          brand: string
+          category: string | null
+          components: Json
+          created_at: string
+          created_by: string | null
+          family: string | null
+          id: string
+          is_ebike: boolean
+          model: string
+          raw: Json | null
+          sizes: Json
+          source: string
+          source_id: string
+          spec: Json
+          subcategory: string | null
+          thumbnail_url: string | null
+          updated_at: string
+          url: string | null
+          use_count: number
+          year: number | null
+        }
+        Insert: {
+          bike_fields?: Json
+          bike_type?: string | null
+          brand: string
+          category?: string | null
+          components?: Json
+          created_at?: string
+          created_by?: string | null
+          family?: string | null
+          id?: string
+          is_ebike?: boolean
+          model: string
+          raw?: Json | null
+          sizes?: Json
+          source?: string
+          source_id: string
+          spec?: Json
+          subcategory?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          url?: string | null
+          use_count?: number
+          year?: number | null
+        }
+        Update: {
+          bike_fields?: Json
+          bike_type?: string | null
+          brand?: string
+          category?: string | null
+          components?: Json
+          created_at?: string
+          created_by?: string | null
+          family?: string | null
+          id?: string
+          is_ebike?: boolean
+          model?: string
+          raw?: Json | null
+          sizes?: Json
+          source?: string
+          source_id?: string
+          spec?: Json
+          subcategory?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          url?: string | null
+          use_count?: number
+          year?: number | null
+        }
+        Relationships: []
+      }
       component_categories: {
         Row: {
           created_at: string
