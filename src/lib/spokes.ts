@@ -101,10 +101,13 @@ export async function searchLocalCatalog(query: string, limit = 10): Promise<Spo
     year: r.year,
     category: r.category,
     subcategory: r.subcategory,
-    isEbike: r.is_ebike,
-    thumbnailUrl: r.thumbnail_url,
-    url: r.url,
-  }));
+      isEbike: r.is_ebike,
+      thumbnailUrl: r.thumbnail_url,
+      url: r.url,
+      groupset: compLabel('rear_derailleur') ?? compLabel('shifters'),
+      wheelset: compLabel('wheels'),
+    };
+  });
 }
 
 /** Returns the stored raw 99spokes record if we already have this bike saved. */
