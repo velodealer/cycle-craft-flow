@@ -55,4 +55,12 @@ auto-fills the full specification, and add the same lookup to bikes that already
   - `src/components/bike/SpokesApplyDialog.tsx` — the field-by-field review/apply table,
     launched from `BikeSpecificationSection.tsx`; writes `spec_values` plus the changed bike
     columns in a single update.
-- No database changes: everything lands in existing `bikes` columns and the `spec_values` JSONB.
+- **Database** (one migration):
+  - `catalog_bikes` — `source` ('99spokes'), `source_id` (unique), brand, model, year, variant,
+    bike_type, thumbnail_url, sizes jsonb, spec jsonb, raw jsonb, timestamps. Grants for
+    `authenticated` (read/write) and `service_role`; RLS allows any signed-in staff member to
+    read and insert/update, plus a trigram/`ilike` index on brand+model for fast local search.
+  - Component upsert uses the existing `components` table and its category-scoped uniqueness,
+    via a small `upsertComponents` helper in `src/lib/spokes.ts` that maps 99spokes component
+    slots to `component_categories.slug` and then writes `bike_components` rows for the bike.
+
