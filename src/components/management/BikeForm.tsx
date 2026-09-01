@@ -328,7 +328,35 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   }
                   toast({ title: 'Bike details filled from catalog' });
                 }}
+                onSpokesSelect={(payload) => {
+                  const { mapped, size } = payload;
+                  const f = mapped.bikeFields;
+                  if (f.make) form.setValue('make', f.make, { shouldDirty: true, shouldValidate: true });
+                  if (f.model) form.setValue('model', f.model, { shouldDirty: true, shouldValidate: true });
+                  if (f.year) form.setValue('year', f.year, { shouldDirty: true });
+                  if (size) form.setValue('size', size, { shouldDirty: true });
+                  if (f.colour && !form.getValues('colour')?.trim()) {
+                    form.setValue('colour', f.colour, { shouldDirty: true });
+                  }
+                  setSpokesFill(payload);
+                  toast({
+                    title: 'Specification loaded from 99spokes',
+                    description: `${mapped.components.length} components will be added when you save.`,
+                  });
+                }}
               />
+
+              {spokesFill && (
+                <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground flex items-center justify-between gap-2">
+                  <span>
+                    99spokes specification attached — {spokesFill.mapped.components.length} components will be linked on save.
+                  </span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setSpokesFill(null)}>
+                    Remove
+                  </Button>
+                </div>
+              )}
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
