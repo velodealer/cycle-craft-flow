@@ -72,18 +72,14 @@ export default function BikeCatalogLookup({ onApply, onSpokesSelect }: Props) {
   };
 
   return (
-    <div className="rounded-lg border border-dashed p-4 space-y-3">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        Look up bike
-        <span className="text-xs font-normal text-muted-foreground">
-          Autofill make, model and size from the open bicycle catalog
-        </span>
-      </div>
+  const openCatalog = (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">Autofill make, model and size from the open bicycle catalog</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Brand */}
         <div className="space-y-1">
+
           <Label className="text-xs text-muted-foreground">Brand</Label>
           <Popover open={brandOpen} onOpenChange={setBrandOpen}>
             <PopoverTrigger asChild>
