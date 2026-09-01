@@ -19,8 +19,18 @@ auto-fills the full specification, and add the same lookup to bikes that already
   current value vs 99spokes value, with a tick per row. Rows where you already have a value
   are unticked by default; empty rows are ticked. Apply writes only the ticked rows.
 
+**Your own growing catalogue**
+- Every 99spokes bike you actually use is saved into a local `catalog_bikes` table
+  (brand, model, year, variant, size options, thumbnail, full spec payload, source id).
+- Search checks your own catalogue first and shows those results in a "Saved" group above the
+  live 99spokes results, so repeat bikes are instant and keep working even if the API is down.
+- Every component in an applied spec is upserted into your existing `components` library
+  (matched on category + brand + model, so nothing duplicates) and linked to the bike via
+  `bike_components`. Over time your components list builds itself.
+
 **If 99spokes has nothing**
 - The existing open bicycle catalog stays as a fallback tab so nothing regresses.
+
 
 ## Technical notes
 
