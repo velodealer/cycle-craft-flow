@@ -24,9 +24,12 @@ export interface CatalogSelection {
 
 interface Props {
   onApply: (selection: CatalogSelection) => void;
+  /** When provided, a 99spokes tab is shown that fills the full specification. */
+  onSpokesSelect?: (payload: { raw: any; mapped: MappedBike; size: string | null }) => void;
 }
 
-export default function BikeCatalogLookup({ onApply }: Props) {
+export default function BikeCatalogLookup({ onApply, onSpokesSelect }: Props) {
+
   const [brand, setBrand] = useState<CatalogBrand | null>(null);
   const [models, setModels] = useState<CatalogModel[]>([]);
   const [model, setModel] = useState<CatalogModel | null>(null);
