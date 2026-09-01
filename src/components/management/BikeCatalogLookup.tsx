@@ -71,8 +71,8 @@ export default function BikeCatalogLookup({ onApply, onSpokesSelect }: Props) {
     onApply({ make: brand.name, model: model.model, size, summary: modelSummary(model) });
   };
 
-  return (
   const openCatalog = (
+
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">Autofill make, model and size from the open bicycle catalog</p>
 
