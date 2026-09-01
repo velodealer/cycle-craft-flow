@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
 import StripComponentDialog from './StripComponentDialog';
-import { PackageMinus } from 'lucide-react';
+import { PackageMinus, Sparkles } from 'lucide-react';
+import SpokesApplyDialog from './SpokesApplyDialog';
 import {
   BIKE_TYPES, FRAME_MATERIALS, GENDERS, CONDITIONS,
   SPEC_SECTIONS, applyTypeDefaults, getAtPath, setAtPath,
@@ -30,6 +31,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [bikeComponents, setBikeComponents] = useState<Record<string, string>>({}); // slot -> component_id
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
+  const [spokesOpen, setSpokesOpen] = useState(false);
 
   const reloadComponents = () => {
     if (!bike?.id) return;
