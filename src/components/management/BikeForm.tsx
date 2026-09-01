@@ -115,8 +115,10 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const [investors, setInvestors] = useState<Array<{ user_id: string; name: string; email: string }>>([]);
   const [showOwnerDialog, setShowOwnerDialog] = useState(false);
   const [showInvestorDialog, setShowInvestorDialog] = useState(false);
+  const [spokesFill, setSpokesFill] = useState<{ raw: any; mapped: MappedBike; size: string | null } | null>(null);
   const { profile } = useAuth();
   const isMechanic = profile?.role === 'mechanic';
+
 
   const loadOwners = async () => {
     const { data, error } = await supabase
