@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SpokesLookup from '@/components/management/SpokesLookup';
+import type { MappedBike } from '@/lib/spokes';
 import { cn } from '@/lib/utils';
+
 import {
   catalogBrands,
   loadBrandModels,
