@@ -72,6 +72,32 @@ export default function BikeDetailView({
   const [jobsCost, setJobsCost] = useState(0);
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
   const [bikeComponents, setBikeComponents] = useState<any[]>([]);
+  const [saleDraft, setSaleDraft] = useState<any | null>(null);
+  const [forceSaleDialog, setForceSaleDialog] = useState(false);
+
+  useEffect(() => {
+    if (!bike?.id || inspectionMode) return;
+    let active = true;
+    supabase
+      .from('sale_drafts')
+      .select('payload, updated_at')
+      .eq('bike_id', bike.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setSaleDraft(data ?? null);
+      });
+    return () => { active = false; };
+  }, [bike?.id, inspectionMode, bike?.status]);
+
+  const discardSaleDraft = async () => {
+    const { error } = await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
+    if (error) {
+      toast({ title: 'Could not discard the draft', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setSaleDraft(null);
+    toast({ title: 'Sale draft discarded' });
+  };
 
   const handleDownloadLabel = async () => {
     setLabelBusy(true);
@@ -605,6 +631,25 @@ export default function BikeDetailView({
 
         {/* Tasks & Timeline */}
         <div className="space-y-6">
+          {/* Saved sale draft */}
+          {!inspectionMode && saleDraft && bike.status !== 'sold' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Sale draft saved</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <p className="text-muted-foreground">
+                  Nothing has been invoiced yet. Sale price £{Number(saleDraft.payload?.salePrice || 0).toFixed(2)}
+                  {saleDraft.payload?.newCustomer?.name ? ` · ${saleDraft.payload.newCustomer.name}` : ''}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => setForceSaleDialog(true)}>Continue sale</Button>
+                  <Button size="sm" variant="outline" onClick={discardSaleDraft}>Discard draft</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Show collection status if bike has collection */}
           {!inspectionMode && <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />}
           {!inspectionMode && <CollectionStatus bikeId={bike.id} direction="outbound" onUpdate={onUpdate} />}
@@ -630,12 +675,16 @@ export default function BikeDetailView({
       </div>
 
       {/* Record sale */}
-      {dialogDirection === 'forward' && nextStage === 'sold' && (
+      {(forceSaleDialog || (dialogDirection === 'forward' && nextStage === 'sold')) && (
         <RecordSaleDialog
           isOpen={true}
-          onClose={() => setDialogDirection(null)}
+          onClose={() => { setDialogDirection(null); setForceSaleDialog(false); }}
           bike={bike}
-          onSuccess={onUpdate}
+          onSuccess={() => {
+            supabase.from('sale_drafts').select('payload, updated_at').eq('bike_id', bike.id).maybeSingle()
+              .then(({ data }) => setSaleDraft(data ?? null));
+            onUpdate();
+          }}
         />
       )}
 

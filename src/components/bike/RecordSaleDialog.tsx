@@ -37,6 +37,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
   const [saleDate, setSaleDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const [hasPartEx, setHasPartEx] = useState(false);
   const [partEx, setPartEx] = useState({
@@ -79,7 +80,67 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         const value = Number(data?.value as any);
         if (Number.isFinite(value) && value >= 0) setDeliveryCharge(String(value));
       });
-  }, [isOpen]);
+    if (bike?.id) {
+      supabase
+        .from('sale_drafts')
+        .select('payload')
+        .eq('bike_id', bike.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          const d = data?.payload as any;
+          if (!d) return;
+          if (d.customerId) setCustomerId(d.customerId);
+          if (d.newCustomer) setNewCustomer(d.newCustomer);
+          if (d.salePrice !== undefined) setSalePrice(d.salePrice);
+          if (d.saleDate) setSaleDate(d.saleDate);
+          if (d.notes !== undefined) setNotes(d.notes);
+          if (d.hasPartEx !== undefined) setHasPartEx(d.hasPartEx);
+          if (d.partEx) setPartEx(d.partEx);
+          if (d.fulfilment) setFulfilment(d.fulfilment);
+          if (d.deliveryCharge !== undefined) setDeliveryCharge(d.deliveryCharge);
+          if (d.chargeDelivery !== undefined) setChargeDelivery(d.chargeDelivery);
+          if (d.bookCourier !== undefined) setBookCourier(d.bookCourier);
+          if (d.delivery) setDelivery(d.delivery);
+        });
+    }
+  }, [isOpen, bike?.id]);
+
+  const draftPayload = () => ({
+    customerId,
+    newCustomer,
+    salePrice,
+    saleDate,
+    notes,
+    hasPartEx,
+    partEx,
+    fulfilment,
+    deliveryCharge,
+    chargeDelivery,
+    bookCourier,
+    delivery,
+  });
+
+  const handleSaveDraft = async () => {
+    if (!bike?.id) return;
+    setSavingDraft(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('sale_drafts')
+        .upsert(
+          { bike_id: bike.id, payload: draftPayload(), created_by: userData.user?.id ?? null },
+          { onConflict: 'bike_id' },
+        );
+      if (error) throw error;
+      toast.success('Sale saved as a draft — nothing has been invoiced yet');
+      onSuccess();
+      onClose();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingDraft(false);
+    }
+  };
 
   const totals = useMemo(() => {
     const gross = Number(salePrice) || 0;
@@ -232,7 +293,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           status: 'sold',
           sale_price: totals.gross,
           sold_at: issuedAt,
-          fulfillment_type: fulfilment === 'delivery' ? 'delivery' : 'collection',
+          delivery_method: fulfilment === 'delivery' ? 'delivery' : 'collection',
           ...(absorbedDelivery > 0
             ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
             : {}),
@@ -242,6 +303,8 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         })
         .eq('id', bike.id);
       if (bikeError) throw bikeError;
+
+      await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
 
       toast.success(`Sale recorded — invoice ${invoice.invoice_number}`);
 
@@ -552,9 +615,13 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={onClose} disabled={submitting || savingDraft}>Cancel</Button>
+          <Button variant="secondary" onClick={handleSaveDraft} disabled={submitting || savingDraft}>
+            {savingDraft && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save as draft
+          </Button>
+          <Button onClick={handleSubmit} disabled={submitting || savingDraft}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Record sale
           </Button>
