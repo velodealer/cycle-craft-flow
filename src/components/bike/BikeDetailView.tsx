@@ -72,6 +72,32 @@ export default function BikeDetailView({
   const [jobsCost, setJobsCost] = useState(0);
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
   const [bikeComponents, setBikeComponents] = useState<any[]>([]);
+  const [saleDraft, setSaleDraft] = useState<any | null>(null);
+  const [forceSaleDialog, setForceSaleDialog] = useState(false);
+
+  useEffect(() => {
+    if (!bike?.id || inspectionMode) return;
+    let active = true;
+    supabase
+      .from('sale_drafts')
+      .select('payload, updated_at')
+      .eq('bike_id', bike.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setSaleDraft(data ?? null);
+      });
+    return () => { active = false; };
+  }, [bike?.id, inspectionMode, bike?.status]);
+
+  const discardSaleDraft = async () => {
+    const { error } = await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
+    if (error) {
+      toast({ title: 'Could not discard the draft', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setSaleDraft(null);
+    toast({ title: 'Sale draft discarded' });
+  };
 
   const handleDownloadLabel = async () => {
     setLabelBusy(true);
