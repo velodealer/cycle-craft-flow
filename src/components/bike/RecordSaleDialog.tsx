@@ -79,7 +79,67 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         const value = Number(data?.value as any);
         if (Number.isFinite(value) && value >= 0) setDeliveryCharge(String(value));
       });
-  }, [isOpen]);
+    if (bike?.id) {
+      supabase
+        .from('sale_drafts')
+        .select('payload')
+        .eq('bike_id', bike.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          const d = data?.payload as any;
+          if (!d) return;
+          if (d.customerId) setCustomerId(d.customerId);
+          if (d.newCustomer) setNewCustomer(d.newCustomer);
+          if (d.salePrice !== undefined) setSalePrice(d.salePrice);
+          if (d.saleDate) setSaleDate(d.saleDate);
+          if (d.notes !== undefined) setNotes(d.notes);
+          if (d.hasPartEx !== undefined) setHasPartEx(d.hasPartEx);
+          if (d.partEx) setPartEx(d.partEx);
+          if (d.fulfilment) setFulfilment(d.fulfilment);
+          if (d.deliveryCharge !== undefined) setDeliveryCharge(d.deliveryCharge);
+          if (d.chargeDelivery !== undefined) setChargeDelivery(d.chargeDelivery);
+          if (d.bookCourier !== undefined) setBookCourier(d.bookCourier);
+          if (d.delivery) setDelivery(d.delivery);
+        });
+    }
+  }, [isOpen, bike?.id]);
+
+  const draftPayload = () => ({
+    customerId,
+    newCustomer,
+    salePrice,
+    saleDate,
+    notes,
+    hasPartEx,
+    partEx,
+    fulfilment,
+    deliveryCharge,
+    chargeDelivery,
+    bookCourier,
+    delivery,
+  });
+
+  const handleSaveDraft = async () => {
+    if (!bike?.id) return;
+    setSavingDraft(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('sale_drafts')
+        .upsert(
+          { bike_id: bike.id, payload: draftPayload(), created_by: userData.user?.id ?? null },
+          { onConflict: 'bike_id' },
+        );
+      if (error) throw error;
+      toast.success('Sale saved as a draft — nothing has been invoiced yet');
+      onSuccess();
+      onClose();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingDraft(false);
+    }
+  };
 
   const totals = useMemo(() => {
     const gross = Number(salePrice) || 0;
