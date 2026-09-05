@@ -613,9 +613,13 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={onClose} disabled={submitting || savingDraft}>Cancel</Button>
+          <Button variant="secondary" onClick={handleSaveDraft} disabled={submitting || savingDraft}>
+            {savingDraft && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save as draft
+          </Button>
+          <Button onClick={handleSubmit} disabled={submitting || savingDraft}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Record sale
           </Button>
