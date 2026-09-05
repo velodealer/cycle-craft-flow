@@ -1106,6 +1106,41 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_drafts: {
+        Row: {
+          bike_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          bike_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          bike_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_drafts_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: true
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_post_checklist: {
         Row: {
           done: boolean
