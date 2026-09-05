@@ -675,12 +675,16 @@ export default function BikeDetailView({
       </div>
 
       {/* Record sale */}
-      {dialogDirection === 'forward' && nextStage === 'sold' && (
+      {(forceSaleDialog || (dialogDirection === 'forward' && nextStage === 'sold')) && (
         <RecordSaleDialog
           isOpen={true}
-          onClose={() => setDialogDirection(null)}
+          onClose={() => { setDialogDirection(null); setForceSaleDialog(false); }}
           bike={bike}
-          onSuccess={onUpdate}
+          onSuccess={() => {
+            supabase.from('sale_drafts').select('payload, updated_at').eq('bike_id', bike.id).maybeSingle()
+              .then(({ data }) => setSaleDraft(data ?? null));
+            onUpdate();
+          }}
         />
       )}
 
