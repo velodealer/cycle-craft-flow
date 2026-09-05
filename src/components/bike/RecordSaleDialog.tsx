@@ -37,6 +37,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
   const [saleDate, setSaleDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const [hasPartEx, setHasPartEx] = useState(false);
   const [partEx, setPartEx] = useState({
