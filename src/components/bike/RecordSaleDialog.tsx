@@ -304,6 +304,8 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         .eq('id', bike.id);
       if (bikeError) throw bikeError;
 
+      await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
+
       toast.success(`Sale recorded — invoice ${invoice.invoice_number}`);
 
       try {
