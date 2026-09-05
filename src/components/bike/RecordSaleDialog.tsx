@@ -232,7 +232,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           status: 'sold',
           sale_price: totals.gross,
           sold_at: issuedAt,
-          fulfillment_type: fulfilment === 'delivery' ? 'delivery' : 'collection',
+          delivery_method: fulfilment === 'delivery' ? 'delivery' : 'collection',
           ...(absorbedDelivery > 0
             ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
             : {}),
