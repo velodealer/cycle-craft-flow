@@ -94,6 +94,29 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
     }
   };
 
+  const callFunction = async (name: string, successTitle: string, successDescription: string) => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(name, { body: { bike_id: bike.id } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      await loadInspection();
+      onUpdate();
+      toast({ title: successTitle, description: successDescription });
+    } catch (e: any) {
+      toast({ title: 'InspectABike error', description: e.message, variant: 'destructive' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const sendToInspectABike = () =>
+    callFunction('inspectabike-create', 'Sent to InspectABike', 'The inspection has been created and linked.');
+
+  const refreshFromInspectABike = () =>
+    callFunction('inspectabike-sync', 'Results updated', 'Latest inspection results pulled in.');
+
+
   const handleSave = async () => {
     if (!inspection) return;
     if (reportUrl && !isValidUrl(reportUrl)) {
