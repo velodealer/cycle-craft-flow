@@ -1,38 +1,35 @@
-# Send bikes to Bike Checker Pro for inspection
+# InspectABike integration for the inspection step
 
-One button on a bike sends it to Bike Checker Pro, the mechanic inspects it there, and the findings come back automatically as a costed job list awaiting approval.
-
-## A note on the connection
-
-I can see Bike Checker Pro in your workspace, but I cannot read or change its code from here — the two apps are separate projects with separate databases. So this plan builds the whole VeloDealer side plus the two small endpoints Bike Checker Pro must call and be called on. Once this is approved, the matching piece in Bike Checker Pro is a short follow-up job done in that project, using exactly the contract below.
+Send a bike for inspection with one button, let the mechanic work in InspectABike, and get faults back automatically with parts and labour prices for approval — feeding straight into the bike's costs.
 
 ## What you will see
 
-1. **Send for inspection** button on any bike in the inspection stage (and a bulk version on the Inspection page). It creates the inspection over in Bike Checker Pro and stores the returned link.
-2. The **Inspection section** shows the live link, so the mechanic taps straight through to the checklist on their phone.
-3. The mechanic completes the inspection in Bike Checker Pro:
-   - No faults: the bike moves to **Ready for sale** by itself.
-   - Faults found: the bike moves to **Awaiting approval** and the findings arrive as a list of proposed parts and labour, each with a price.
-4. On the bike page, a **Proposed work** panel lists each item with its cost. Admin and owner can approve or reject items (all at once or line by line). Mechanics see it read-only.
-5. Approved items become real parts and labour on the bike, so they flow into the existing cost total, stand-in value and margin on the finance side. Rejected items are kept for the record but cost nothing.
+1. **Send to InspectABike** button on a bike in the inspection stage (and on the Inspection queue page). It creates the inspection over there and saves the link back.
+2. The **Inspection section** shows the report link, the inspector's name, the overall grade (1-5) and the stolen-check result once available, plus a **Refresh** button to pull the latest.
+3. The mechanic completes the inspection on that link. Faults arrive here automatically as they are raised.
+4. Any fault puts the bike into **Awaiting approval** with a **Faults** panel listing each fault, its parts cost and labour cost. If the inspection finishes with no faults, the bike moves to **Ready for sale** on its own.
+5. Admin and owner can **Approve** or **Decline** each fault (with an optional note). The decision is sent back to InspectABike. Mechanics see the list read-only.
+6. Approved faults become real costs on the bike — parts cost and labour cost — so they roll into the existing cost total, stand-in value and margin figures on the finance side. Declined faults cost nothing.
+7. Once every fault is repaired or declined, the bike is released from Awaiting approval to Ready for sale.
 
 ## Technical detail
 
-**New data**
-- `inspections`: add `external_id`, `external_status`, `provider` (default `bike_checker_pro`), `synced_at`. `report_url` continues to hold the mechanic's link.
-- New `inspection_findings`: `inspection_id`, `bike_id`, `external_item_id`, `kind` (`part` | `labour`), `title`, `description`, `severity`, `quantity`, `unit_cost`, `labour_hours`, `labour_rate`, `total_cost`, `status` (`proposed` | `approved` | `rejected`), `approved_by`, `approved_at`, `part_id`, `job_id`, timestamps. Grants for `authenticated` and `service_role`, RLS: staff read; only admin/owner update status; writes from the webhook use the service role.
+**Secrets**: `INSPECTABIKE_API_KEY`, `INSPECTABIKE_WEBHOOK_SECRET` (the second must match the value entered in InspectABike). Base URL `https://gotuhdjrkxtwwcezgbjo.supabase.co/functions/v1`, auth header `x-api-key`.
 
-**Outbound: create inspection**
-- Edge function `bike-checker-create-inspection` (JWT validated in code, admin/mechanic only). Posts bike reference, make/model/year, size, colour, frame number, photos and the callback URL to Bike Checker Pro, stores `external_id` and `report_url` on the inspection row, creating the inspection row if absent. Handles retry and surfaces failures in the UI.
+**Database**
+- `inspections`: add `external_inspection_id`, `external_reference`, `overall_grade`, `inspector_name`, `stolen_status`, `synced_at`. `report_url` holds the InspectABike link.
+- New `inspection_faults`: `id`, `inspection_id`, `bike_id`, `external_fault_id` (unique), `title`, `description`, `component`, `severity`, `parts_cost`, `labour_cost`, `status` (`reported` | `approved` | `declined` | `awaiting_part` | `repaired`), `decision_note`, `decided_by`, `decided_at`, `part_id`, `job_id`, `raw` jsonb, timestamps. Grants for `authenticated` and `service_role`; RLS: staff read, admin/owner update, webhook writes via service role.
 
-**Inbound: results**
-- Edge function `bike-checker-webhook` with `verify_jwt = false`, HMAC SHA-256 signature check against a shared secret (same pattern as the Cycle Courier Co webhook). Accepts a completion payload, upserts findings by `external_item_id` (idempotent), marks the inspection completed, sets `has_issues`, and moves the bike to `ready` or `pending_approval`.
+**Edge functions**
+- `inspectabike-create` — JWT validated in code, admin/mechanic only. Uses the bike reference as `reference` (idempotent), posts `serial_number` (frame number), `bike_make`, `bike_model`, `bike_type` (mapped from the bike's type/electric/carbon fields to `standard|carbon|ebike|mountain`), `bike_year`, `customer_name`, `notes`. Stores `inspection_id` and `report_url` on the inspection row, creating it if absent.
+- `inspectabike-sync` — calls `GET /partner-inspection?id=` and refreshes grade, inspector, stolen status, documents and the full fault list.
+- `inspectabike-webhook` — `verify_jwt = false`. Verifies `x-inspectabike-signature` as hex HMAC-SHA256 of the raw body keyed with the webhook secret before parsing, returns 200 immediately, then upserts the fault by `external_inspection_id` + fault id for `fault.created` / `fault.updated` / `fault.repaired`, and removes it on `fault.deleted`. Recomputes bike status: any open fault means `pending_approval`; all repaired or declined means `ready`.
+- `inspectabike-decision` — admin/owner only; posts `{ fault_id, decision, note, actor_name: "Cycle Craft Flow" }` to `/partner-fault-decision` and mirrors the status locally. Costs are never sent — InspectABike owns pricing.
 
-**Contract Bike Checker Pro must satisfy**
-- `POST /inspections` → `{ id, url }`, authenticated by an API key VeloDealer holds.
-- On completion, `POST` to the VeloDealer webhook URL with `{ inspection_id, external_id, status, has_issues, report_url, notes, items: [{ id, kind, title, description, severity, quantity, unit_cost, labour_hours, labour_rate }] }` plus the HMAC signature header.
+**UI**
+- Rework `src/components/bike/InspectionTask.tsx`: replace the manual inspectabike.com link and manual "issues found" checkbox with the send/refresh actions, grade and stolen-check summary, and the report link.
+- New `src/components/bike/InspectionFaults.tsx` for the fault list, costs, approve/decline. Shown on the bike page and inside the inspection dialog.
+- Approving a fault writes a `parts` row (parts cost) and a `jobs` row with `actual_cost` (labour cost) linked to the bike, so `BikeCostsSection` totals pick them up with no change to the finance maths.
+- The Inspection queue page gets a per-bike Send button and shows fault counts.
 
-**Secrets to add**: `BIKE_CHECKER_API_URL`, `BIKE_CHECKER_API_KEY`, `BIKE_CHECKER_WEBHOOK_SECRET`. A default labour rate goes in `app_settings` for items sent as hours only.
-
-**Approval**
-- Component `InspectionFindings.tsx` on the bike page. Approving a part inserts into `parts` linked to the bike; approving labour creates a `jobs` row with `actual_cost`, so `BikeCostsSection` totals pick both up with no change to the finance maths. Once no proposed items remain, the bike can be advanced out of Awaiting approval as it is today.
+**Errors**: 400 validation, 401 bad key, 404 not found, 500 server — each surfaced as a plain message in the UI with a retry.
