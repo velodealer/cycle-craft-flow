@@ -6,6 +6,7 @@ import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
+import InspectABikeBackfill from '@/components/settings/InspectABikeBackfill';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
