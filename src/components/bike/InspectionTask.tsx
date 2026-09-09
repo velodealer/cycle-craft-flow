@@ -10,9 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ClipboardCheck, ExternalLink, Save, CheckCircle } from 'lucide-react';
+import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw } from 'lucide-react';
+import InspectionFaults from './InspectionFaults';
 
-const INSPECTABIKE_URL = 'https://www.inspectabike.com';
 
 interface InspectionTaskProps {
   bike: any;
