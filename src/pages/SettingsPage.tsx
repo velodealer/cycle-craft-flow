@@ -6,6 +6,7 @@ import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
+import InspectABikeBackfill from '@/components/settings/InspectABikeBackfill';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -95,6 +96,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4">
             <CycleCourierIntegration />
             <QuickBooksIntegration />
+            <InspectABikeBackfill />
 
 
             
