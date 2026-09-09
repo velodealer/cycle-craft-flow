@@ -606,44 +606,157 @@ export type Database = {
           },
         ]
       }
+      inspection_faults: {
+        Row: {
+          bike_id: string
+          component: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          description: string | null
+          external_fault_id: string
+          id: string
+          inspection_id: string
+          job_id: string | null
+          labour_cost: number
+          part_id: string | null
+          parts_cost: number
+          raw: Json
+          severity: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bike_id: string
+          component?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          description?: string | null
+          external_fault_id: string
+          id?: string
+          inspection_id: string
+          job_id?: string | null
+          labour_cost?: number
+          part_id?: string | null
+          parts_cost?: number
+          raw?: Json
+          severity?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          bike_id?: string
+          component?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          description?: string | null
+          external_fault_id?: string
+          id?: string
+          inspection_id?: string
+          job_id?: string | null
+          labour_cost?: number
+          part_id?: string | null
+          parts_cost?: number
+          raw?: Json
+          severity?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_faults_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_faults_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_faults_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_faults_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspections: {
         Row: {
           bike_id: string
           completed_at: string | null
           created_at: string
+          external_inspection_id: string | null
+          external_reference: string | null
           has_issues: boolean
           id: string
           inspected_by: string | null
+          inspector_name: string | null
           notes: string | null
+          overall_grade: number | null
           report_url: string | null
           started_at: string
           status: string
+          stolen_status: string | null
+          synced_at: string | null
           updated_at: string
         }
         Insert: {
           bike_id: string
           completed_at?: string | null
           created_at?: string
+          external_inspection_id?: string | null
+          external_reference?: string | null
           has_issues?: boolean
           id?: string
           inspected_by?: string | null
+          inspector_name?: string | null
           notes?: string | null
+          overall_grade?: number | null
           report_url?: string | null
           started_at?: string
           status?: string
+          stolen_status?: string | null
+          synced_at?: string | null
           updated_at?: string
         }
         Update: {
           bike_id?: string
           completed_at?: string | null
           created_at?: string
+          external_inspection_id?: string | null
+          external_reference?: string | null
           has_issues?: boolean
           id?: string
           inspected_by?: string | null
+          inspector_name?: string | null
           notes?: string | null
+          overall_grade?: number | null
           report_url?: string | null
           started_at?: string
           status?: string
+          stolen_status?: string | null
+          synced_at?: string | null
           updated_at?: string
         }
         Relationships: [
