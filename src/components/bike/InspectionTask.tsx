@@ -10,9 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ClipboardCheck, ExternalLink, Save, CheckCircle } from 'lucide-react';
+import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw } from 'lucide-react';
+import InspectionFaults from './InspectionFaults';
 
-const INSPECTABIKE_URL = 'https://www.inspectabike.com';
 
 interface InspectionTaskProps {
   bike: any;
@@ -36,6 +36,7 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
   const [hasIssues, setHasIssues] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const canEdit = !!profile && ['admin', 'mechanic'].includes(profile.role);
 
@@ -92,6 +93,29 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
       setLoading(false);
     }
   };
+
+  const callFunction = async (name: string, successTitle: string, successDescription: string) => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(name, { body: { bike_id: bike.id } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      await loadInspection();
+      onUpdate();
+      toast({ title: successTitle, description: successDescription });
+    } catch (e: any) {
+      toast({ title: 'InspectABike error', description: e.message, variant: 'destructive' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const sendToInspectABike = () =>
+    callFunction('inspectabike-create', 'Sent to InspectABike', 'The inspection has been created and linked.');
+
+  const refreshFromInspectABike = () =>
+    callFunction('inspectabike-sync', 'Results updated', 'Latest inspection results pulled in.');
+
 
   const handleSave = async () => {
     if (!inspection) return;
@@ -193,6 +217,7 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
   const readOnly = completed || !canEdit;
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
@@ -210,16 +235,60 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!readOnly && (
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => window.open(INSPECTABIKE_URL, '_blank', 'noopener,noreferrer')}
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open inspectabike.com
-          </Button>
-        )}
+        <div className="rounded-md border p-3 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium">InspectABike</p>
+            {inspection.external_inspection_id ? (
+              <Badge variant="secondary">Sent</Badge>
+            ) : (
+              <Badge variant="outline">Not sent</Badge>
+            )}
+          </div>
+
+          {(inspection.overall_grade != null || inspection.inspector_name || inspection.stolen_status) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {inspection.overall_grade != null && <span>Grade: <strong>{inspection.overall_grade}/5</strong></span>}
+              {inspection.inspector_name && <span>Inspector: <strong>{inspection.inspector_name}</strong></span>}
+              {inspection.stolen_status && <span>Stolen check: <strong>{inspection.stolen_status}</strong></span>}
+            </div>
+          )}
+
+          {inspection.report_url && (
+            <a
+              href={inspection.report_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-primary underline break-all"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open inspection report
+            </a>
+          )}
+
+          {canEdit && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              {!inspection.external_inspection_id && (
+                <Button variant="outline" className="flex-1" disabled={syncing} onClick={sendToInspectABike}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send to InspectABike
+                </Button>
+              )}
+              {inspection.external_inspection_id && (
+                <Button variant="outline" className="flex-1" disabled={syncing} onClick={refreshFromInspectABike}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                  Refresh results
+                </Button>
+              )}
+            </div>
+          )}
+
+          {inspection.synced_at && (
+            <p className="text-xs text-muted-foreground">
+              Last synced {new Date(inspection.synced_at).toLocaleString()}
+            </p>
+          )}
+        </div>
+
 
         <div className="space-y-2">
           <Label htmlFor="inspection-url">Inspection report URL</Label>
@@ -305,5 +374,7 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
         )}
       </CardContent>
     </Card>
+    <InspectionFaults bikeId={bike.id} onUpdate={() => { loadInspection(); onUpdate(); }} />
+    </>
   );
 }

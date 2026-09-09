@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.quickbooks-oauth]
 verify_jwt = false
+
+[functions.inspectabike-webhook]
+verify_jwt = false
