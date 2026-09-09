@@ -96,6 +96,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4">
             <CycleCourierIntegration />
             <QuickBooksIntegration />
+            <InspectABikeBackfill />
 
 
             
