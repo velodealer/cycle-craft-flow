@@ -31,6 +31,7 @@ interface Bike {
   photos: string[] | null;
   storage_bay_id: string | null;
   frame_number: string | null;
+  serial_number?: string | null;
 }
 
 
@@ -52,7 +53,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     try {
       let query = supabase
         .from('bikes')
-        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number')
+        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number, serial_number')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
