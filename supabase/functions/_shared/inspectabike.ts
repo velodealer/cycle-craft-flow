@@ -118,6 +118,53 @@ export function isOpenFault(status: string) {
 }
 
 /**
+ * Upsert fault rows keyed by external_fault_id, merging statuses so local
+ * decisions are never reset by remote updates. Repairs set repaired_at and
+ * complete the linked workshop job.
+ */
+export async function upsertFaults(
+  supabase: ReturnType<typeof serviceClient>,
+  rows: Array<Record<string, any>>,
+) {
+  if (!rows.length) return;
+  const ids = rows.map((r) => r.external_fault_id).filter(Boolean);
+  const { data: existing } = await supabase
+    .from('inspection_faults')
+    .select('id, external_fault_id, status, job_id, repaired_at')
+    .in('external_fault_id', ids);
+  const byExternal = new Map((existing || []).map((e: any) => [e.external_fault_id, e]));
+
+  const now = new Date().toISOString();
+  const merged = rows.map((row) => {
+    const local: any = byExternal.get(row.external_fault_id);
+    const status = local ? mergeFaultStatus(local.status, row.status) : row.status;
+    return {
+      ...row,
+      status,
+      ...(local?.id ? { id: local.id } : {}),
+      ...(status === 'repaired' && !local?.repaired_at ? { repaired_at: now } : {}),
+    };
+  });
+
+  const { error } = await supabase
+    .from('inspection_faults')
+    .upsert(merged, { onConflict: 'external_fault_id' });
+  if (error) throw new Error(error.message);
+
+  // Complete linked jobs for faults that just became repaired.
+  for (const row of merged) {
+    const local: any = byExternal.get(row.external_fault_id);
+    if (row.status === 'repaired' && local?.job_id && local.status !== 'repaired') {
+      await supabase
+        .from('jobs')
+        .update({ status: 'completed', completed_at: now })
+        .eq('id', local.job_id)
+        .neq('status', 'completed');
+    }
+  }
+}
+
+/**
  * Recalculate the bike's workflow status from its faults.
  * Any open fault keeps it in pending_approval; all repaired/declined releases it to ready.
  */
