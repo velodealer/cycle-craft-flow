@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { AlertTriangle, Check, X } from 'lucide-react';
+import { AlertTriangle, Check, Undo2, X } from 'lucide-react';
 
 interface Props {
   bikeId: string;
@@ -68,6 +68,27 @@ export default function InspectionFaults({ bikeId, onUpdate }: Props) {
       onUpdate?.();
     } catch (e: any) {
       toast({ title: 'Could not send decision', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const undo = async (fault: any) => {
+    setBusy(fault.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('inspectabike-undo-decision', {
+        body: { fault_row_id: fault.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: 'Decision undone',
+        description: 'The fault is back to awaiting approval and any costs added were removed.',
+      });
+      await load();
+      onUpdate?.();
+    } catch (e: any) {
+      toast({ title: 'Could not undo decision', description: e.message, variant: 'destructive' });
     } finally {
       setBusy(null);
     }
@@ -137,6 +158,12 @@ export default function InspectionFaults({ bikeId, onUpdate }: Props) {
                   </Button>
                 </div>
               </div>
+            )}
+
+            {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
+              <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
+                <Undo2 className="h-4 w-4 mr-1" />Undo decision
+              </Button>
             )}
           </div>
         ))}
