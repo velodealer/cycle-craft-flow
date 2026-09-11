@@ -115,6 +115,12 @@ export default function InspectionFaults({ bikeId, onUpdate }: Props) {
               <p className="text-xs text-muted-foreground">Note: {f.decision_note}</p>
             )}
 
+            {f.status === 'repaired' && f.repaired_at && (
+              <p className="text-xs text-muted-foreground">
+                Repair completed {new Date(f.repaired_at).toLocaleString()}
+              </p>
+            )}
+
             {canDecide && f.status === 'reported' && (
               <div className="flex flex-col sm:flex-row gap-2">
                 <Input

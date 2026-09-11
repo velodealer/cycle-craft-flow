@@ -1,6 +1,8 @@
 // Receives fault events from InspectABike. Signature-verified, no JWT.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient, normaliseFault, syncBikeStatusFromFaults } from '../_shared/inspectabike.ts';
+import {
+  serviceClient, normaliseFault, upsertFaults, syncBikeStatusFromFaults, isOpenFault,
+} from '../_shared/inspectabike.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -28,6 +30,18 @@ async function verify(rawBody: string, signature: string, secret: string) {
   );
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
   return timingSafeEqual(toHex(sig).toLowerCase(), signature.trim().replace(/^sha256=/i, '').toLowerCase());
+}
+
+/** Recompute has_issues from the actual fault rows for this inspection. */
+async function recomputeHasIssues(supabase: ReturnType<typeof serviceClient>, inspectionId: string) {
+  const { count } = await supabase
+    .from('inspection_faults')
+    .select('id', { count: 'exact', head: true })
+    .eq('inspection_id', inspectionId);
+  await supabase
+    .from('inspections')
+    .update({ has_issues: (count ?? 0) > 0, synced_at: new Date().toISOString() })
+    .eq('id', inspectionId);
 }
 
 Deno.serve(async (req) => {
@@ -59,16 +73,15 @@ Deno.serve(async (req) => {
   const externalInspectionId = payload?.external_inspection_id != null
     ? String(payload.external_inspection_id)
     : '';
-  const fault = payload?.fault ?? null;
 
   const supabase = serviceClient();
 
   try {
-    if (!externalInspectionId || !fault) return json({ received: true });
+    if (!externalInspectionId) return json({ received: true });
 
     const { data: inspection } = await supabase
       .from('inspections')
-      .select('id, bike_id, status')
+      .select('id, bike_id, status, completed_at')
       .or(`external_inspection_id.eq.${externalInspectionId},external_reference.eq.${externalInspectionId}`)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -79,25 +92,59 @@ Deno.serve(async (req) => {
       return json({ received: true });
     }
 
+    if (event === 'inspection.faults_completed') {
+      // All faults are repaired or declined — fires once, but handle idempotently.
+      const faults: any[] = Array.isArray(payload?.faults) ? payload.faults : [];
+      const rows = faults
+        .map((f) => normaliseFault(f, inspection.id, inspection.bike_id, 'fault.updated'))
+        .filter((r) => r.external_fault_id);
+      await upsertFaults(supabase, rows);
+
+      const remote = payload?.inspection ?? {};
+      await supabase
+        .from('inspections')
+        .update({
+          status: 'completed',
+          completed_at: inspection.completed_at ?? new Date().toISOString(),
+          synced_at: new Date().toISOString(),
+          ...(remote?.overall_grade != null ? { overall_grade: Number(remote.overall_grade) } : {}),
+          ...(remote?.inspector_name ? { inspector_name: String(remote.inspector_name) } : {}),
+        })
+        .eq('id', inspection.id);
+
+      await recomputeHasIssues(supabase, inspection.id);
+      await syncBikeStatusFromFaults(supabase, inspection.bike_id, true);
+      return json({ received: true });
+    }
+
+    const fault = payload?.fault ?? null;
+    if (!fault) return json({ received: true });
+
     const faultId = String(fault?.id ?? fault?.fault_id ?? '');
     if (!faultId) return json({ received: true });
 
     if (event === 'fault.deleted') {
       await supabase.from('inspection_faults').delete().eq('external_fault_id', faultId);
+    } else if (event === 'fault.created' || event === 'fault.updated' || event === 'fault.repaired') {
+      const row = normaliseFault(fault, inspection.id, inspection.bike_id, event);
+      await upsertFaults(supabase, [row]);
     } else {
-      const row = normaliseFault(fault, inspection.id, inspection.bike_id);
-      const { error } = await supabase
-        .from('inspection_faults')
-        .upsert(row, { onConflict: 'external_fault_id' });
-      if (error) throw new Error(error.message);
+      return json({ received: true });
     }
 
-    await supabase
-      .from('inspections')
-      .update({ synced_at: new Date().toISOString(), has_issues: true })
-      .eq('id', inspection.id);
+    await recomputeHasIssues(supabase, inspection.id);
 
-    await syncBikeStatusFromFaults(supabase, inspection.bike_id, inspection.status === 'completed');
+    // Defensive: confirm no open faults remain locally before releasing the bike.
+    const { data: faultsNow } = await supabase
+      .from('inspection_faults')
+      .select('status')
+      .eq('bike_id', inspection.bike_id);
+    const hasOpen = (faultsNow || []).some((f: any) => isOpenFault(f.status));
+    await syncBikeStatusFromFaults(
+      supabase,
+      inspection.bike_id,
+      inspection.status === 'completed' || !hasOpen,
+    );
 
     return json({ received: true });
   } catch (e) {

@@ -81,9 +81,23 @@ export function mapBikeType(bike: any): 'standard' | 'carbon' | 'ebike' | 'mount
 
 const OPEN_STATUSES = new Set(['reported', 'approved', 'awaiting_part']);
 
-export function normaliseFault(fault: any, inspectionId: string, bikeId: string) {
+const VALID_FAULT_STATUSES = ['reported', 'approved', 'declined', 'awaiting_part', 'repaired'];
+
+/**
+ * Merge a local fault status with an incoming remote one.
+ * Never downgrades a decision: approved/declined/awaiting_part/repaired survive
+ * a remote 'reported'. A remote 'repaired' always wins.
+ */
+export function mergeFaultStatus(localStatus: string, incomingStatus: string): string {
+  if (incomingStatus === 'repaired') return 'repaired';
+  if (localStatus !== 'reported' && incomingStatus === 'reported') return localStatus;
+  return VALID_FAULT_STATUSES.includes(incomingStatus) ? incomingStatus : localStatus;
+}
+
+export function normaliseFault(fault: any, inspectionId: string, bikeId: string, event?: string) {
   const id = String(fault?.id ?? fault?.fault_id ?? '');
-  const status = String(fault?.status ?? 'reported').toLowerCase();
+  let status = String(fault?.status ?? 'reported').toLowerCase();
+  if (event === 'fault.repaired') status = 'repaired';
   return {
     inspection_id: inspectionId,
     bike_id: bikeId,
@@ -94,15 +108,60 @@ export function normaliseFault(fault: any, inspectionId: string, bikeId: string)
     severity: fault?.severity ?? null,
     parts_cost: Number(fault?.parts_cost ?? 0) || 0,
     labour_cost: Number(fault?.labour_cost ?? 0) || 0,
-    status: ['reported', 'approved', 'declined', 'awaiting_part', 'repaired'].includes(status)
-      ? status
-      : 'reported',
+    status: VALID_FAULT_STATUSES.includes(status) ? status : 'reported',
     raw: fault ?? {},
   };
 }
 
 export function isOpenFault(status: string) {
   return OPEN_STATUSES.has(status);
+}
+
+/**
+ * Upsert fault rows keyed by external_fault_id, merging statuses so local
+ * decisions are never reset by remote updates. Repairs set repaired_at and
+ * complete the linked workshop job.
+ */
+export async function upsertFaults(
+  supabase: ReturnType<typeof serviceClient>,
+  rows: Array<Record<string, any>>,
+) {
+  if (!rows.length) return;
+  const ids = rows.map((r) => r.external_fault_id).filter(Boolean);
+  const { data: existing } = await supabase
+    .from('inspection_faults')
+    .select('id, external_fault_id, status, job_id, repaired_at')
+    .in('external_fault_id', ids);
+  const byExternal = new Map((existing || []).map((e: any) => [e.external_fault_id, e]));
+
+  const now = new Date().toISOString();
+  const merged = rows.map((row) => {
+    const local: any = byExternal.get(row.external_fault_id);
+    const status = local ? mergeFaultStatus(local.status, row.status) : row.status;
+    return {
+      ...row,
+      status,
+      ...(local?.id ? { id: local.id } : {}),
+      ...(status === 'repaired' && !local?.repaired_at ? { repaired_at: now } : {}),
+    };
+  });
+
+  const { error } = await supabase
+    .from('inspection_faults')
+    .upsert(merged, { onConflict: 'external_fault_id' });
+  if (error) throw new Error(error.message);
+
+  // Complete linked jobs for faults that just became repaired.
+  for (const row of merged) {
+    const local: any = byExternal.get(row.external_fault_id);
+    if (row.status === 'repaired' && local?.job_id && local.status !== 'repaired') {
+      await supabase
+        .from('jobs')
+        .update({ status: 'completed', completed_at: now })
+        .eq('id', local.job_id)
+        .neq('status', 'completed');
+    }
+  }
 }
 
 /**

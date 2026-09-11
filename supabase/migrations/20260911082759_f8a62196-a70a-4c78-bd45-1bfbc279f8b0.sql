@@ -1,0 +1,1 @@
+ALTER TABLE public.inspection_faults ADD COLUMN IF NOT EXISTS repaired_at timestamp with time zone;
