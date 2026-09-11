@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, Check, PoundSterling, X } from 'lucide-react';
+import { AlertTriangle, Check, PoundSterling, Undo2, X } from 'lucide-react';
 
 const fmt = (n: number | null | undefined) => `£${Number(n ?? 0).toFixed(2)}`;
 
@@ -120,6 +120,26 @@ export default function RepairsPage() {
       await load();
     } catch (e: any) {
       toast({ title: 'Could not send decision', description: e.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const undo = async (fault: any) => {
+    setBusy(fault.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('inspectabike-undo-decision', {
+        body: { fault_row_id: fault.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: 'Decision undone',
+        description: 'The repair is back to awaiting approval and any costs added were removed.',
+      });
+      await load();
+    } catch (e: any) {
+      toast({ title: 'Could not undo decision', description: e.message, variant: 'destructive' });
     } finally {
       setBusy(null);
     }
@@ -271,6 +291,12 @@ export default function RepairsPage() {
                             </Button>
                           </div>
                         </div>
+                      )}
+
+                      {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
+                        <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
+                          <Undo2 className="h-4 w-4 mr-1" />Undo decision
+                        </Button>
                       )}
                     </div>
                   ))}
