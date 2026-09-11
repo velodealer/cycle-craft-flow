@@ -108,9 +108,7 @@ export function normaliseFault(fault: any, inspectionId: string, bikeId: string,
     severity: fault?.severity ?? null,
     parts_cost: Number(fault?.parts_cost ?? 0) || 0,
     labour_cost: Number(fault?.labour_cost ?? 0) || 0,
-    status: ['reported', 'approved', 'declined', 'awaiting_part', 'repaired'].includes(status)
-      ? status
-      : 'reported',
+    status: VALID_FAULT_STATUSES.includes(status) ? status : 'reported',
     raw: fault ?? {},
   };
 }
