@@ -89,12 +89,16 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   };
 
   const filteredBikes = bikes.filter((bike) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
       searchTerm === '' ||
-      bike.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bike.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bike.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (bike as any).reference?.toLowerCase().includes(searchTerm.toLowerCase());
+      bike.make.toLowerCase().includes(term) ||
+      bike.model.toLowerCase().includes(term) ||
+      bike.id.toLowerCase().includes(term) ||
+      `${bike.make} ${bike.model}`.toLowerCase().includes(term) ||
+      bike.frame_number?.toLowerCase().includes(term) ||
+      (bike as any).serial_number?.toLowerCase().includes(term) ||
+      (bike as any).reference?.toLowerCase().includes(term);
 
     const matchesLocation =
       locationFilter === 'all' ||

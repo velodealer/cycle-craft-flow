@@ -76,7 +76,7 @@ export function useBikeSearch(term: string, minLength = 2) {
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
-call:
+
     };
   }, [term, minLength]);
 
