@@ -61,6 +61,7 @@ const App = () => (
             <Route path="/intake" element={guarded(<Layout><IntakePage /></Layout>)} />
             <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
             <Route path="/inspection" element={guarded(<Layout><InspectionPage /></Layout>)} />
+            <Route path="/repairs" element={guarded(<Layout><RepairsPage /></Layout>)} />
 
             <Route path="/logistics" element={guarded(<Layout><LogisticsPage /></Layout>)} />
             <Route path="/parts" element={guarded(<Layout><PartsPage /></Layout>)} />
