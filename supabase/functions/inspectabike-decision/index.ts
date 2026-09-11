@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     if (!fault) return json({ error: 'Fault not found' }, 404);
 
     // Tell InspectABike first — they own the pricing and fault state.
-    await iabFetch('/partner-fault-decision', {
+    const remote = await iabFetch('/partner-fault-decision', {
       method: 'POST',
       body: JSON.stringify({
         fault_id: fault.external_fault_id,
@@ -49,11 +49,19 @@ Deno.serve(async (req) => {
       }),
     });
 
+    // Adopt the status InspectABike returns when it supplies one, so both sides agree.
+    const remoteStatus = String(
+      remote?.status ?? remote?.fault?.status ?? decision,
+    ).toLowerCase();
+    const effectiveStatus = ['approved', 'declined', 'awaiting_part', 'repaired', 'reported']
+      .includes(remoteStatus) ? remoteStatus : decision;
+
     const update: Record<string, unknown> = {
-      status: decision,
+      status: effectiveStatus,
       decision_note: note ?? null,
       decided_by: profile.id,
       decided_at: new Date().toISOString(),
+      ...(effectiveStatus === 'repaired' ? { repaired_at: new Date().toISOString() } : {}),
     };
 
     if (decision === 'approved') {
