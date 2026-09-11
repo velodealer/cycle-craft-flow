@@ -31,6 +31,7 @@ interface Bike {
   photos: string[] | null;
   storage_bay_id: string | null;
   frame_number: string | null;
+  serial_number?: string | null;
 }
 
 
@@ -52,7 +53,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     try {
       let query = supabase
         .from('bikes')
-        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number')
+        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number, serial_number')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -89,12 +90,16 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   };
 
   const filteredBikes = bikes.filter((bike) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
       searchTerm === '' ||
-      bike.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bike.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bike.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (bike as any).reference?.toLowerCase().includes(searchTerm.toLowerCase());
+      bike.make.toLowerCase().includes(term) ||
+      bike.model.toLowerCase().includes(term) ||
+      bike.id.toLowerCase().includes(term) ||
+      `${bike.make} ${bike.model}`.toLowerCase().includes(term) ||
+      bike.frame_number?.toLowerCase().includes(term) ||
+      (bike as any).serial_number?.toLowerCase().includes(term) ||
+      (bike as any).reference?.toLowerCase().includes(term);
 
     const matchesLocation =
       locationFilter === 'all' ||
