@@ -623,6 +623,7 @@ export type Database = {
           part_id: string | null
           parts_cost: number
           raw: Json
+          repaired_at: string | null
           severity: string | null
           status: string
           title: string
@@ -644,6 +645,7 @@ export type Database = {
           part_id?: string | null
           parts_cost?: number
           raw?: Json
+          repaired_at?: string | null
           severity?: string | null
           status?: string
           title?: string
@@ -665,6 +667,7 @@ export type Database = {
           part_id?: string | null
           parts_cost?: number
           raw?: Json
+          repaired_at?: string | null
           severity?: string | null
           status?: string
           title?: string
