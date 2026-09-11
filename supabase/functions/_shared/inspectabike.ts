@@ -146,8 +146,10 @@ export async function upsertFaults(
     return {
       ...row,
       status,
-      ...(local?.id ? { id: local.id } : {}),
-      ...(status === 'repaired' && !local?.repaired_at ? { repaired_at: now } : {}),
+      // Every row must carry an id: PostgREST unifies columns across a batch,
+      // so a missing id on one row is sent as an explicit NULL for all of them.
+      id: local?.id ?? crypto.randomUUID(),
+      repaired_at: status === 'repaired' ? (local?.repaired_at ?? now) : (local?.repaired_at ?? null),
     };
   });
 
