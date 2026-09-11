@@ -39,6 +39,7 @@ const navigationItems = [
   { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
   { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
   { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
+  { title: "Repairs", url: "/repairs", icon: Wrench, roles: ['admin', 'owner'] },
 
   { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
   { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant'] },

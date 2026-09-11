@@ -15,6 +15,7 @@ import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
 import InspectionPage from "./pages/InspectionPage";
+import RepairsPage from "./pages/RepairsPage";
 
 import PartsPage from "./pages/PartsPage";
 import ComponentsPage from "./pages/ComponentsPage";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/intake" element={guarded(<Layout><IntakePage /></Layout>)} />
             <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
             <Route path="/inspection" element={guarded(<Layout><InspectionPage /></Layout>)} />
+            <Route path="/repairs" element={guarded(<Layout><RepairsPage /></Layout>)} />
 
             <Route path="/logistics" element={guarded(<Layout><LogisticsPage /></Layout>)} />
             <Route path="/parts" element={guarded(<Layout><PartsPage /></Layout>)} />
