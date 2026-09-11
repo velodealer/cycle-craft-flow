@@ -81,9 +81,23 @@ export function mapBikeType(bike: any): 'standard' | 'carbon' | 'ebike' | 'mount
 
 const OPEN_STATUSES = new Set(['reported', 'approved', 'awaiting_part']);
 
-export function normaliseFault(fault: any, inspectionId: string, bikeId: string) {
+const VALID_FAULT_STATUSES = ['reported', 'approved', 'declined', 'awaiting_part', 'repaired'];
+
+/**
+ * Merge a local fault status with an incoming remote one.
+ * Never downgrades a decision: approved/declined/awaiting_part/repaired survive
+ * a remote 'reported'. A remote 'repaired' always wins.
+ */
+export function mergeFaultStatus(localStatus: string, incomingStatus: string): string {
+  if (incomingStatus === 'repaired') return 'repaired';
+  if (localStatus !== 'reported' && incomingStatus === 'reported') return localStatus;
+  return VALID_FAULT_STATUSES.includes(incomingStatus) ? incomingStatus : localStatus;
+}
+
+export function normaliseFault(fault: any, inspectionId: string, bikeId: string, event?: string) {
   const id = String(fault?.id ?? fault?.fault_id ?? '');
-  const status = String(fault?.status ?? 'reported').toLowerCase();
+  let status = String(fault?.status ?? 'reported').toLowerCase();
+  if (event === 'fault.repaired') status = 'repaired';
   return {
     inspection_id: inspectionId,
     bike_id: bikeId,
