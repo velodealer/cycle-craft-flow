@@ -117,6 +117,11 @@ export function isOpenFault(status: string) {
   return OPEN_STATUSES.has(status);
 }
 
+/** A fault still waiting on an approve/decline decision. */
+export function needsDecision(status: string) {
+  return status === 'reported';
+}
+
 /**
  * Upsert fault rows keyed by external_fault_id, merging statuses so local
  * decisions are never reset by remote updates. Repairs set repaired_at and
@@ -188,10 +193,12 @@ export async function syncBikeStatusFromFaults(
     .eq('bike_id', bikeId);
 
   const list = faults || [];
-  const hasOpen = list.some((f: any) => isOpenFault(f.status));
+  const undecided = list.some((f: any) => needsDecision(f.status));
+  const inProgress = list.some((f: any) => f.status === 'approved' || f.status === 'awaiting_part');
 
   let next: string | null = null;
-  if (hasOpen) next = 'pending_approval';
+  if (undecided) next = 'pending_approval';
+  else if (inProgress) next = 'repair';
   else if (inspectionCompleted) next = 'ready';
 
   if (next && next !== bike.status) {
