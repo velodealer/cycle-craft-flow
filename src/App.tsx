@@ -15,6 +15,7 @@ import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
 import InspectionPage from "./pages/InspectionPage";
+import RepairsPage from "./pages/RepairsPage";
 
 import PartsPage from "./pages/PartsPage";
 import ComponentsPage from "./pages/ComponentsPage";
