@@ -1,6 +1,7 @@
 import PlaceholderPage from '@/components/PlaceholderPage';
 import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
+import TypeformIntegration from '@/components/settings/TypeformIntegration';
 import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
@@ -95,6 +96,7 @@ export default function SettingsPage() {
         <TabsContent value="integrations" className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
             <CycleCourierIntegration />
+            <TypeformIntegration />
             <QuickBooksIntegration />
             <InspectABikeBackfill />
 

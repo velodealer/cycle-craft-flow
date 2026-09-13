@@ -1,4 +1,5 @@
-import { 
+import {
+  Inbox,
   LayoutDashboard, 
   Bike, 
   Package, 
@@ -36,6 +37,7 @@ import {
 
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'social_manager'] },
+  { title: "Submissions", url: "/submissions", icon: Inbox, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner'] },
   { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
   { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
   { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
