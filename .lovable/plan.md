@@ -17,6 +17,8 @@ Connect a Typeform account in Settings, choose which forms to listen to, map eac
 
 ## Technical plan
 
+**Connection model (confirming the applications guide)**: the flow follows https://www.typeform.com/developers/get-started/applications/ — a Typeform OAuth app uses the authorization-code flow (`https://api.typeform.com/oauth/authorize` with `scopes=forms:read webhooks:read webhooks:write`, token exchange at `https://api.typeform.com/oauth/token`, refresh tokens stored). Any admin/owner signed into VeloDealer can click Connect and approve **their own** Typeform account in the popup; tokens are stored per connection in the existing `integrations` table (name `typeform`), exactly like the QuickBooks integration already does. Submissions from that account feed the shared review inbox. There is no pre-built Typeform connector, so the OAuth is implemented directly (same pattern as QuickBooks).
+
 **Secrets**: `TYPEFORM_CLIENT_ID`, `TYPEFORM_CLIENT_SECRET` (from a Typeform OAuth app the user registers at developer.typeform.com), plus a generated `TYPEFORM_WEBHOOK_SECRET` used as the Typeform webhook signing secret.
 
 **Database migration**
