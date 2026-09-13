@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.inspectabike-webhook]
 verify_jwt = false
+
+[functions.typeform-oauth]
+verify_jwt = false
+
+[functions.typeform-webhook]
+verify_jwt = false
