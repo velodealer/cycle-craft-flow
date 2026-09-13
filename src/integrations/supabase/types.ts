@@ -1530,6 +1530,129 @@ export type Database = {
         }
         Relationships: []
       }
+      typeform_forms: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          field_map: Json
+          form_id: string
+          id: string
+          title: string
+          updated_at: string
+          webhook_tag: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          field_map?: Json
+          form_id: string
+          id?: string
+          title: string
+          updated_at?: string
+          webhook_tag?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          field_map?: Json
+          form_id?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          webhook_tag?: string
+        }
+        Relationships: []
+      }
+      typeform_submissions: {
+        Row: {
+          asking_price: number | null
+          bike_id: string | null
+          bike_make: string | null
+          bike_model: string | null
+          bike_year: number | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          form_id: string
+          frame_number: string | null
+          id: string
+          notes: string | null
+          photo_urls: string[]
+          postcode: string | null
+          raw_payload: Json
+          response_id: string
+          reviewed_by: string | null
+          status: string
+          submission_type: string | null
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          asking_price?: number | null
+          bike_id?: string | null
+          bike_make?: string | null
+          bike_model?: string | null
+          bike_year?: number | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          form_id: string
+          frame_number?: string | null
+          id?: string
+          notes?: string | null
+          photo_urls?: string[]
+          postcode?: string | null
+          raw_payload: Json
+          response_id: string
+          reviewed_by?: string | null
+          status?: string
+          submission_type?: string | null
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          asking_price?: number | null
+          bike_id?: string | null
+          bike_make?: string | null
+          bike_model?: string | null
+          bike_year?: number | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          form_id?: string
+          frame_number?: string | null
+          id?: string
+          notes?: string | null
+          photo_urls?: string[]
+          postcode?: string | null
+          raw_payload?: Json
+          response_id?: string
+          reviewed_by?: string | null
+          status?: string
+          submission_type?: string | null
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "typeform_submissions_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "typeform_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
