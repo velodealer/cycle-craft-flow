@@ -169,14 +169,18 @@ export async function convertSubmissionToBike(sub: TypeformSubmission): Promise<
     .single();
   if (error) throw error;
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('user_id', (await supabase.auth.getUser()).data.user!.id)
+    .maybeSingle();
+
   const { error: updateError } = await supabase
     .from('typeform_submissions')
     .update({
       status: 'converted',
       bike_id: (bike as { id: string }).id,
-      reviewed_by: (await supabase.auth.getUser()).data.user?.id
-        ? (await supabase.from('profiles').select('id').eq('user_id', (await supabase.auth.getUser()).data.user!.id).maybeSingle()).data?.id
-        : null,
+      reviewed_by: (profile as { id: string } | null)?.id ?? null,
     })
     .eq('id', sub.id);
   if (updateError) throw updateError;
