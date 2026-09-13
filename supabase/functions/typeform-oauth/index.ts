@@ -149,6 +149,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'form_fields') {
+      const formId = String(body.form_id ?? '').trim();
+      if (!formId) return json({ error: 'form_id is required' }, 400);
+      const { accessToken } = await getTypeformAuth(supabase);
+      const data = await typeformFetch(accessToken, `/forms/${formId}`);
+      const fields = (data?.fields ?? []).map((f: any) => ({
+        ref: f.ref || f.id,
+        title: f.title,
+        type: f.type,
+      }));
+      return json({ fields });
+    }
+
     if (action === 'set_form_enabled') {
       const formId = String(body.form_id ?? '').trim();
       const title = String(body.title ?? '').trim() || formId;
