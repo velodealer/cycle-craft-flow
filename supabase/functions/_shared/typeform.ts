@@ -89,7 +89,7 @@ async function refreshAccessToken(refreshToken: string) {
 export async function getTypeformAuth(supabase: ReturnType<typeof serviceClient>) {
   const integration = await loadIntegration(supabase);
   const settings = (integration?.settings ?? {}) as TypeformSettings;
-  if (!integration?.is_active || !settings.refresh_token) {
+  if (!integration?.is_active || (!settings.refresh_token && !settings.access_token)) {
     throw new Error('Typeform is not connected');
   }
 
@@ -97,6 +97,11 @@ export async function getTypeformAuth(supabase: ReturnType<typeof serviceClient>
   if (settings.access_token && expiresAt - Date.now() > 60_000) {
     return { accessToken: settings.access_token, settings };
   }
+
+  if (!settings.refresh_token) {
+    throw new Error('Your Typeform session has expired — please reconnect Typeform in Settings.');
+  }
+
 
   const tokens = await refreshAccessToken(settings.refresh_token);
   const updated = await saveSettings(supabase, {

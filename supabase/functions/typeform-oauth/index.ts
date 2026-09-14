@@ -119,8 +119,11 @@ Deno.serve(async (req) => {
     if (action === 'status') {
       const integration = await loadIntegration(supabase);
       const settings = (integration?.settings ?? {}) as TypeformSettings;
+      const expiresAt = settings.access_token_expires_at ? Date.parse(settings.access_token_expires_at) : 0;
+      const accessValid = Boolean(settings.access_token && expiresAt > Date.now());
       return json({
-        connected: Boolean(integration?.is_active && settings.refresh_token),
+        connected: Boolean(integration?.is_active && (settings.refresh_token || accessValid)),
+        needs_reconnect: Boolean(integration?.is_active && !settings.refresh_token),
         account_name: settings.account_display_name ?? null,
         connected_at: settings.connected_at ?? null,
         redirect_uri: redirectUri(),
@@ -133,7 +136,7 @@ Deno.serve(async (req) => {
       const params = new URLSearchParams({
         client_id: clientId,
         response_type: 'code',
-        scope: 'forms:read webhooks:read webhooks:write',
+        scope: 'forms:read webhooks:read webhooks:write offline',
         redirect_uri: redirectUri(),
         state: encodeURIComponent(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
       });

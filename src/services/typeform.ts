@@ -3,6 +3,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 
 export interface TypeformStatus {
   connected: boolean;
+  needs_reconnect?: boolean;
   account_name: string | null;
   connected_at: string | null;
   redirect_uri: string;
