@@ -36,7 +36,8 @@ async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> 
 }
 
 export const getTypeformStatus = () => invoke<TypeformStatus>('typeform-oauth', { action: 'status' });
-export const getTypeformAuthUrl = () => invoke<{ url: string }>('typeform-oauth', { action: 'auth_url' });
+export const getTypeformAuthUrl = () =>
+  invoke<{ url: string }>('typeform-oauth', { action: 'auth_url', app_origin: window.location.origin });
 export const listTypeformForms = () => invoke<{ forms: TypeformForm[] }>('typeform-oauth', { action: 'forms' });
 export const listTypeformFormFields = (formId: string) =>
   invoke<{ fields: TypeformField[] }>('typeform-oauth', { action: 'form_fields', form_id: formId });

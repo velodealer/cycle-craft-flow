@@ -21,8 +21,25 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const html = (body: string, status = 200) =>
-  new Response(body, { status, headers: { 'Content-Type': 'text/html' } });
+const FALLBACK_APP_ORIGIN = 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
+
+/** Only allow http(s) origins we received from the app itself. */
+function safeOrigin(state: string | null): string {
+  if (!state) return FALLBACK_APP_ORIGIN;
+  try {
+    const u = new URL(decodeURIComponent(state));
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
+  } catch { /* ignore */ }
+  return FALLBACK_APP_ORIGIN;
+}
+
+const backToApp = (origin: string, params: Record<string, string>) => {
+  const qs = new URLSearchParams({ tab: 'integrations', ...params });
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${origin}/settings?${qs}` },
+  });
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -77,19 +94,13 @@ Deno.serve(async (req) => {
         connected_at: new Date().toISOString(),
       });
 
-      return html(
-        `<!doctype html><html><body style="font-family:system-ui;padding:2rem">
-         <h2>Typeform connected</h2><p>You can close this window.</p>
-         <script>window.opener&&window.opener.postMessage({type:'typeform-connected'},'*');setTimeout(()=>window.close(),1200)</script>
-         </body></html>`,
-      );
+      return backToApp(safeOrigin(url.searchParams.get('state')), { typeform: 'connected' });
     } catch (e) {
       console.error('Typeform callback error', e);
-      return html(
-        `<!doctype html><html><body style="font-family:system-ui;padding:2rem">
-         <h2>Typeform connection failed</h2><pre>${String((e as Error).message)}</pre></body></html>`,
-        500,
-      );
+      return backToApp(safeOrigin(url.searchParams.get('state')), {
+        typeform: 'error',
+        message: String((e as Error).message).slice(0, 300),
+      });
     }
   }
 
@@ -124,7 +135,7 @@ Deno.serve(async (req) => {
         response_type: 'code',
         scope: 'forms:read webhooks:read webhooks:write',
         redirect_uri: redirectUri(),
-        state: crypto.randomUUID(),
+        state: encodeURIComponent(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
       });
       return json({ url: `https://api.typeform.com/oauth/authorize?${params}` });
     }
