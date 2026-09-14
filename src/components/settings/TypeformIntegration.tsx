@@ -19,6 +19,7 @@ import {
   getTypeformWebhookStatus,
   reregisterTypeformWebhook,
   fetchTypeformResponses,
+  rehostTypeformPhotos,
   TYPEFORM_FIELD_KEYS,
   type TypeformStatus,
   type TypeformForm,
@@ -39,6 +40,7 @@ export default function TypeformIntegration() {
   const [error, setError] = useState<string | null>(null);
   const [hookStatus, setHookStatus] = useState<Record<string, TypeformWebhookStatus | { error: string }>>({});
   const [busyForm, setBusyForm] = useState<string | null>(null);
+  const [fixingPhotos, setFixingPhotos] = useState(false);
 
   const loadHookStatus = useCallback(async (formId: string) => {
     try {
@@ -188,6 +190,24 @@ export default function TypeformIntegration() {
       setBusyForm(null);
     }
   };
+
+  const handleFixPhotos = async () => {
+    setFixingPhotos(true);
+    try {
+      const result = await rehostTypeformPhotos();
+      toast.success(
+        result.fixed > 0
+          ? `Photos fixed on ${result.fixed} submission${result.fixed === 1 ? '' : 's'}`
+          : 'All submission photos are already showing correctly',
+      );
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setFixingPhotos(false);
+    }
+  };
+
+
 
   const openMapping = async (form: TypeformForm) => {
     if (openMap === form.id) {
