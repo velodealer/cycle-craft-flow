@@ -68,6 +68,7 @@ export default function TypeformIntegration() {
     try {
       const { forms: list } = await listTypeformForms();
       setForms(list);
+      for (const f of list) if (f.enabled) loadHookStatus(f.id);
       setMaps((prev) => {
         const next = { ...prev };
         for (const f of list) if (!next[f.id]) next[f.id] = f.field_map ?? {};
