@@ -1,7 +1,8 @@
 // Receives form responses from Typeform. Signature-verified, no JWT.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient } from '../_shared/typeform.ts';
+import { serviceClient, getTypeformAuth } from '../_shared/typeform.ts';
 import { extractFromFormResponse } from '../_shared/typeform-extract.ts';
+import { rehostTypeformFiles } from '../_shared/typeform-files.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {

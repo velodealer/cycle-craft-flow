@@ -15,6 +15,7 @@ import {
   type TypeformSettings,
 } from '../_shared/typeform.ts';
 import { extractFromFormResponse } from '../_shared/typeform-extract.ts';
+import { rehostTypeformFiles } from '../_shared/typeform-files.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -357,6 +358,16 @@ Deno.serve(async (req) => {
 
         const formResponse = { ...item, form_id: formId };
         const extracted = extractFromFormResponse(formResponse, fieldMap);
+        try {
+          extracted.photo_urls = await rehostTypeformFiles(
+            supabase,
+            accessToken,
+            responseId,
+            extracted.photo_urls,
+          );
+        } catch (err) {
+          console.error('fetch_responses: photo copy failed', err);
+        }
         const { error } = await supabase.from('typeform_submissions').insert({
           form_id: formId,
           response_id: responseId,
@@ -371,6 +382,43 @@ Deno.serve(async (req) => {
 
       return json({ ok: true, imported, skipped, total: items.length });
     }
+
+    if (action === 'rehost_photos') {
+      const { accessToken } = await getTypeformAuth(supabase);
+      const { data: rows, error: loadError } = await supabase
+        .from('typeform_submissions')
+        .select('id, response_id, photo_urls')
+        .limit(500);
+      if (loadError) throw new Error(loadError.message);
+
+      let fixed = 0;
+      let failed = 0;
+      for (const row of rows ?? []) {
+        const urls = ((row as any).photo_urls ?? []) as string[];
+        if (!urls.some((u) => u?.includes('api.typeform.com'))) continue;
+        try {
+          const rehosted = await rehostTypeformFiles(
+            supabase,
+            accessToken,
+            (row as any).response_id,
+            urls,
+          );
+          if (rehosted.some((u) => u.includes('api.typeform.com'))) failed++;
+          const { error } = await supabase
+            .from('typeform_submissions')
+            .update({ photo_urls: rehosted })
+            .eq('id', (row as any).id);
+          if (error) throw new Error(error.message);
+          fixed++;
+        } catch (err) {
+          console.error('rehost_photos failed for submission', (row as any).id, err);
+          failed++;
+        }
+      }
+
+      return json({ ok: true, fixed, failed });
+    }
+
 
     if (action === 'disconnect') {
       const integration = await loadIntegration(supabase);
