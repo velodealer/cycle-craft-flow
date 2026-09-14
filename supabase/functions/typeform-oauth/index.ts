@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
       const params = new URLSearchParams({
         client_id: clientId,
         response_type: 'code',
-        scope: 'forms:read webhooks:read webhooks:write offline',
+        scope: 'forms:read responses:read webhooks:read webhooks:write offline',
         redirect_uri: redirectUri(),
         state: encodeURIComponent(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
       });
@@ -327,7 +327,19 @@ Deno.serve(async (req) => {
       const fieldMap = ((stored as any)?.field_map ?? {}) as Record<string, string>;
 
       const { accessToken } = await getTypeformAuth(supabase);
-      const data = await typeformFetch(accessToken, `/forms/${formId}/responses?page_size=25`);
+      let data: any;
+      try {
+        data = await typeformFetch(accessToken, `/forms/${formId}/responses?page_size=25`);
+      } catch (err) {
+        const message = (err as Error).message;
+        if (message.includes('[403]') || message.includes('INSUFFICIENT_PERMISSIONS')) {
+          return json({
+            error:
+              'Typeform has not granted permission to read responses. Press Disconnect, then Connect Typeform again and approve — the new approval screen includes reading responses.',
+          }, 403);
+        }
+        throw err;
+      }
       const items: any[] = data?.items ?? [];
 
       let imported = 0;
