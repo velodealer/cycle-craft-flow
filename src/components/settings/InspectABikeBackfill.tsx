@@ -169,6 +169,29 @@ export default function InspectABikeBackfill() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2 rounded-md border p-3">
+          <Label htmlFor="iab-base-url" className="flex items-center gap-2">
+            <Link2 className="h-4 w-4" />
+            Report link address
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            InspectABike's system sends report links on its own preview address
+            (inspectabike.lovable.app). Ask them for their real public web address, enter it
+            here, and every report link — including existing ones — will use it instead.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="iab-base-url"
+              placeholder="https://app.inspectabike.com"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+            />
+            <Button variant="secondary" onClick={saveBaseUrl} disabled={savingBase}>
+              {savingBase ? 'Saving…' : 'Save & fix links'}
+            </Button>
+          </div>
+        </div>
+
         <Button onClick={run} disabled={running}>
           <RefreshCw className={`h-4 w-4 mr-2 ${running ? 'animate-spin' : ''}`} />
           {running ? 'Backfilling…' : 'Backfill from InspectABike'}
