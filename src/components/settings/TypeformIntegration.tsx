@@ -266,12 +266,16 @@ export default function TypeformIntegration() {
               Receive bike sale and part-exchange submissions from your Typeform forms into the Submissions inbox.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {connected ? (
               <>
                 <Button variant="outline" size="sm" onClick={loadForms} disabled={loadingForms}>
                   {loadingForms ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Refresh forms
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleFixPhotos} disabled={fixingPhotos}>
+                  {fixingPhotos ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Fix submission photos
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDisconnect}>
                   <Unlink className="mr-2 h-4 w-4" /> Disconnect
