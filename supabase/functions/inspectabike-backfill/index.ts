@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const supabase = serviceClient();
+  const reportBase = await getReportBaseUrl(supabase);
   try {
     await requireRole(req, supabase, ['admin', 'owner']);
   } catch (e) {
