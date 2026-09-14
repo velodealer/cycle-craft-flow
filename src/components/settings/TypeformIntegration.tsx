@@ -19,6 +19,7 @@ import {
   getTypeformWebhookStatus,
   reregisterTypeformWebhook,
   fetchTypeformResponses,
+  rehostTypeformPhotos,
   TYPEFORM_FIELD_KEYS,
   type TypeformStatus,
   type TypeformForm,
@@ -39,6 +40,7 @@ export default function TypeformIntegration() {
   const [error, setError] = useState<string | null>(null);
   const [hookStatus, setHookStatus] = useState<Record<string, TypeformWebhookStatus | { error: string }>>({});
   const [busyForm, setBusyForm] = useState<string | null>(null);
+  const [fixingPhotos, setFixingPhotos] = useState(false);
 
   const loadHookStatus = useCallback(async (formId: string) => {
     try {
@@ -189,6 +191,24 @@ export default function TypeformIntegration() {
     }
   };
 
+  const handleFixPhotos = async () => {
+    setFixingPhotos(true);
+    try {
+      const result = await rehostTypeformPhotos();
+      toast.success(
+        result.fixed > 0
+          ? `Photos fixed on ${result.fixed} submission${result.fixed === 1 ? '' : 's'}`
+          : 'All submission photos are already showing correctly',
+      );
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setFixingPhotos(false);
+    }
+  };
+
+
+
   const openMapping = async (form: TypeformForm) => {
     if (openMap === form.id) {
       setOpenMap(null);
@@ -246,12 +266,16 @@ export default function TypeformIntegration() {
               Receive bike sale and part-exchange submissions from your Typeform forms into the Submissions inbox.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {connected ? (
               <>
                 <Button variant="outline" size="sm" onClick={loadForms} disabled={loadingForms}>
                   {loadingForms ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Refresh forms
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleFixPhotos} disabled={fixingPhotos}>
+                  {fixingPhotos ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Fix submission photos
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDisconnect}>
                   <Unlink className="mr-2 h-4 w-4" /> Disconnect

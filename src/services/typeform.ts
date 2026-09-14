@@ -65,6 +65,8 @@ export const fetchTypeformResponses = (formId: string) =>
     action: 'fetch_responses',
     form_id: formId,
   });
+export const rehostTypeformPhotos = () =>
+  invoke<{ ok: true; fixed: number; failed: number }>('typeform-oauth', { action: 'rehost_photos' });
 
 export const TYPEFORM_FIELD_KEYS: { key: string; label: string; hint: string }[] = [
   { key: 'submission_type', label: 'Submission type', hint: 'Selling or part exchange — e.g. a choice question.' },

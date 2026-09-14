@@ -1,7 +1,8 @@
 // Receives form responses from Typeform. Signature-verified, no JWT.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient } from '../_shared/typeform.ts';
+import { serviceClient, getTypeformAuth } from '../_shared/typeform.ts';
 import { extractFromFormResponse } from '../_shared/typeform-extract.ts';
+import { rehostTypeformFiles } from '../_shared/typeform-files.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -101,6 +102,21 @@ Deno.serve(async (req) => {
     const fieldMap = ((formRow as any)?.field_map ?? {}) as Record<string, string>;
     const extracted = extractFromFormResponse(formResponse, fieldMap);
     const submittedAt = formResponse?.submitted_at ?? new Date().toISOString();
+
+    if (extracted.photo_urls.length) {
+      try {
+        const { accessToken } = await getTypeformAuth(supabase);
+        extracted.photo_urls = await rehostTypeformFiles(
+          supabase,
+          accessToken,
+          responseId,
+          extracted.photo_urls,
+        );
+      } catch (err) {
+        console.error('typeform-webhook: could not copy photos', err);
+      }
+    }
+
 
     const { error } = await supabase.from('typeform_submissions').insert({
       form_id: formId,
