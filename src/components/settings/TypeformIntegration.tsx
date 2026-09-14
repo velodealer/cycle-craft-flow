@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Loader2, Link2, Unlink, AlertCircle, ChevronDown, Map } from 'lucide-react';
+import { Loader2, Link2, Unlink, AlertCircle, ChevronDown, Map, RefreshCw, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getTypeformStatus,
@@ -16,10 +16,14 @@ import {
   setTypeformFormEnabled,
   saveTypeformFieldMap,
   disconnectTypeform,
+  getTypeformWebhookStatus,
+  reregisterTypeformWebhook,
+  fetchTypeformResponses,
   TYPEFORM_FIELD_KEYS,
   type TypeformStatus,
   type TypeformForm,
   type TypeformField,
+  type TypeformWebhookStatus,
 } from '@/services/typeform';
 
 export default function TypeformIntegration() {
