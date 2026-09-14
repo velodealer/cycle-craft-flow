@@ -48,6 +48,24 @@ export const saveTypeformFieldMap = (formId: string, title: string, fieldMap: Re
   invoke<{ ok: true }>('typeform-oauth', { action: 'save_field_map', form_id: formId, title, field_map: fieldMap });
 export const disconnectTypeform = () => invoke<{ ok: true }>('typeform-oauth', { action: 'disconnect' });
 
+export interface TypeformWebhookStatus {
+  registered: boolean;
+  enabled: boolean;
+  url?: string | null;
+  url_matches?: boolean;
+  expected_url: string;
+}
+
+export const getTypeformWebhookStatus = (formId: string) =>
+  invoke<TypeformWebhookStatus>('typeform-oauth', { action: 'webhook_status', form_id: formId });
+export const reregisterTypeformWebhook = (formId: string, title: string) =>
+  invoke<{ ok: true }>('typeform-oauth', { action: 'reregister_webhook', form_id: formId, title });
+export const fetchTypeformResponses = (formId: string) =>
+  invoke<{ ok: true; imported: number; skipped: number; total: number }>('typeform-oauth', {
+    action: 'fetch_responses',
+    form_id: formId,
+  });
+
 export const TYPEFORM_FIELD_KEYS: { key: string; label: string; hint: string }[] = [
   { key: 'submission_type', label: 'Submission type', hint: 'Selling or part exchange — e.g. a choice question.' },
   { key: 'customer_name', label: 'Customer name', hint: 'Full name of the person submitting.' },

@@ -14,6 +14,7 @@ import {
   setTypeformWebhook,
   type TypeformSettings,
 } from '../_shared/typeform.ts';
+import { extractFromFormResponse } from '../_shared/typeform-extract.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -191,7 +192,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       const tag = (existing as any)?.webhook_tag || 'velodealer';
 
-      await setTypeformWebhook(accessToken, formId, tag, enabled);
+      // If Typeform refuses, do NOT record the form as enabled — the error surfaces to the UI.
+      try {
+        await setTypeformWebhook(accessToken, formId, tag, enabled);
+      } catch (err) {
+        console.error(`Failed to ${enabled ? 'register' : 'remove'} Typeform webhook for ${formId}`, err);
+        return json({
+          error: `Typeform would not ${enabled ? 'set up' : 'remove'} the response notification: ${(err as Error).message}`,
+        }, 400);
+      }
 
       if (existing) {
         const { error } = await supabase
@@ -239,6 +248,116 @@ Deno.serve(async (req) => {
         if (error) throw new Error(error.message);
       }
       return json({ ok: true, field_map: fieldMap });
+    }
+
+    // Live state of the response notification registered at Typeform.
+    if (action === 'webhook_status') {
+      const formId = String(body.form_id ?? '').trim();
+      if (!formId) return json({ error: 'form_id is required' }, 400);
+
+      const { data: stored } = await supabase
+        .from('typeform_forms')
+        .select('webhook_tag')
+        .eq('form_id', formId)
+        .maybeSingle();
+      const tag = (stored as any)?.webhook_tag || 'velodealer';
+      const expectedUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/typeform-webhook`;
+
+      const { accessToken } = await getTypeformAuth(supabase);
+      try {
+        const hook = await typeformFetch(accessToken, `/forms/${formId}/webhooks/${encodeURIComponent(tag)}`);
+        return json({
+          registered: true,
+          enabled: Boolean(hook?.enabled),
+          url: hook?.url ?? null,
+          url_matches: hook?.url === expectedUrl,
+          verify_ssl: hook?.verify_ssl ?? null,
+          expected_url: expectedUrl,
+        });
+      } catch (err) {
+        const message = (err as Error).message;
+        if (message.includes('[404]')) {
+          return json({ registered: false, enabled: false, expected_url: expectedUrl });
+        }
+        return json({ error: message }, 400);
+      }
+    }
+
+    // Re-create the notification at Typeform (repairs a lost or stale registration).
+    if (action === 'reregister_webhook') {
+      const formId = String(body.form_id ?? '').trim();
+      if (!formId) return json({ error: 'form_id is required' }, 400);
+
+      const { data: stored } = await supabase
+        .from('typeform_forms')
+        .select('id, webhook_tag')
+        .eq('form_id', formId)
+        .maybeSingle();
+      const tag = (stored as any)?.webhook_tag || 'velodealer';
+
+      const { accessToken } = await getTypeformAuth(supabase);
+      await setTypeformWebhook(accessToken, formId, tag, true);
+
+      if (stored) {
+        await supabase
+          .from('typeform_forms')
+          .update({ enabled: true, updated_at: new Date().toISOString() })
+          .eq('id', (stored as any).id);
+      } else {
+        await supabase.from('typeform_forms').insert({
+          form_id: formId,
+          title: String(body.title ?? '').trim() || formId,
+          enabled: true,
+          webhook_tag: tag,
+        });
+      }
+      return json({ ok: true });
+    }
+
+    // Pulls recent responses straight from Typeform and files any we are missing.
+    if (action === 'fetch_responses') {
+      const formId = String(body.form_id ?? '').trim();
+      if (!formId) return json({ error: 'form_id is required' }, 400);
+
+      const { data: stored } = await supabase
+        .from('typeform_forms')
+        .select('field_map')
+        .eq('form_id', formId)
+        .maybeSingle();
+      const fieldMap = ((stored as any)?.field_map ?? {}) as Record<string, string>;
+
+      const { accessToken } = await getTypeformAuth(supabase);
+      const data = await typeformFetch(accessToken, `/forms/${formId}/responses?page_size=25`);
+      const items: any[] = data?.items ?? [];
+
+      let imported = 0;
+      let skipped = 0;
+      for (const item of items) {
+        const responseId = item?.response_id || item?.token;
+        if (!responseId) continue;
+
+        const { data: existing } = await supabase
+          .from('typeform_submissions')
+          .select('id')
+          .eq('response_id', responseId)
+          .maybeSingle();
+        if (existing) { skipped++; continue; }
+
+        const formResponse = { ...item, form_id: formId };
+        const extracted = extractFromFormResponse(formResponse, fieldMap);
+        const { error } = await supabase.from('typeform_submissions').insert({
+          form_id: formId,
+          response_id: responseId,
+          submitted_at: item?.submitted_at ?? new Date().toISOString(),
+          raw_payload: { event_type: 'fetched', form_response: formResponse },
+          ...extracted,
+          status: 'new',
+        });
+        if (error) throw new Error(error.message);
+        imported++;
+      }
+
+      return json({ ok: true, imported, skipped, total: items.length });
     }
 
     if (action === 'disconnect') {

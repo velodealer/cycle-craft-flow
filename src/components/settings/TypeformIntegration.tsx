@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Loader2, Link2, Unlink, AlertCircle, ChevronDown, Map } from 'lucide-react';
+import { Loader2, Link2, Unlink, AlertCircle, ChevronDown, Map, RefreshCw, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getTypeformStatus,
@@ -16,10 +16,14 @@ import {
   setTypeformFormEnabled,
   saveTypeformFieldMap,
   disconnectTypeform,
+  getTypeformWebhookStatus,
+  reregisterTypeformWebhook,
+  fetchTypeformResponses,
   TYPEFORM_FIELD_KEYS,
   type TypeformStatus,
   type TypeformForm,
   type TypeformField,
+  type TypeformWebhookStatus,
 } from '@/services/typeform';
 
 export default function TypeformIntegration() {
@@ -33,6 +37,17 @@ export default function TypeformIntegration() {
   const [maps, setMaps] = useState<Record<string, Record<string, string>>>({});
   const [savingMap, setSavingMap] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hookStatus, setHookStatus] = useState<Record<string, TypeformWebhookStatus | { error: string }>>({});
+  const [busyForm, setBusyForm] = useState<string | null>(null);
+
+  const loadHookStatus = useCallback(async (formId: string) => {
+    try {
+      const result = await getTypeformWebhookStatus(formId);
+      setHookStatus((prev) => ({ ...prev, [formId]: result }));
+    } catch (e) {
+      setHookStatus((prev) => ({ ...prev, [formId]: { error: (e as Error).message } }));
+    }
+  }, []);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -53,6 +68,7 @@ export default function TypeformIntegration() {
     try {
       const { forms: list } = await listTypeformForms();
       setForms(list);
+      for (const f of list) if (f.enabled) loadHookStatus(f.id);
       setMaps((prev) => {
         const next = { ...prev };
         for (const f of list) if (!next[f.id]) next[f.id] = f.field_map ?? {};
@@ -63,7 +79,7 @@ export default function TypeformIntegration() {
     } finally {
       setLoadingForms(false);
     }
-  }, []);
+  }, [loadHookStatus]);
 
   useEffect(() => {
     loadStatus().then((s) => {
@@ -132,10 +148,44 @@ export default function TypeformIntegration() {
       await setTypeformFormEnabled(form.id, form.title, enabled);
       setForms((prev) => prev.map((f) => (f.id === form.id ? { ...f, enabled } : f)));
       toast.success(enabled ? `Receiving responses from "${form.title}"` : `Stopped receiving responses from "${form.title}"`);
+      if (enabled) loadHookStatus(form.id);
+      else setHookStatus((prev) => ({ ...prev, [form.id]: { registered: false, enabled: false, expected_url: '' } }));
+    } catch (e) {
+      toast.error((e as Error).message);
+      // Typeform refused — the switch stays where it was.
+      if (enabled) loadHookStatus(form.id);
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  const handleReregister = async (form: TypeformForm) => {
+    setBusyForm(form.id);
+    try {
+      await reregisterTypeformWebhook(form.id, form.title);
+      setForms((prev) => prev.map((f) => (f.id === form.id ? { ...f, enabled: true } : f)));
+      await loadHookStatus(form.id);
+      toast.success(`Response notifications re-connected for "${form.title}"`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
-      setToggling(null);
+      setBusyForm(null);
+    }
+  };
+
+  const handleFetchResponses = async (form: TypeformForm) => {
+    setBusyForm(form.id);
+    try {
+      const result = await fetchTypeformResponses(form.id);
+      toast.success(
+        result.imported > 0
+          ? `${result.imported} response${result.imported === 1 ? '' : 's'} added to Submissions`
+          : `No new responses found (${result.total} checked)`,
+      );
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyForm(null);
     }
   };
 
@@ -248,6 +298,10 @@ export default function TypeformIntegration() {
               const map = maps[form.id] ?? {};
               const mappedCount = TYPEFORM_FIELD_KEYS.filter((f) => map[f.key]).length;
               const formFields = fields[form.id] ?? [];
+              const hook = hookStatus[form.id];
+              const hookError = hook && 'error' in hook ? hook.error : null;
+              const live = hook && !('error' in hook) ? hook : null;
+              const liveOk = live?.registered && live.enabled && live.url_matches !== false;
               return (
                 <div key={form.id} className="rounded-lg border">
                   <div className="flex flex-wrap items-center justify-between gap-3 p-3">
@@ -257,8 +311,50 @@ export default function TypeformIntegration() {
                         {form.enabled ? 'Receiving responses' : 'Not receiving responses'}
                         {mappedCount > 0 && ` · ${mappedCount} field${mappedCount === 1 ? '' : 's'} mapped`}
                       </p>
+                      {form.enabled && (
+                        <p className="mt-1 text-xs">
+                          {hookError ? (
+                            <span className="text-destructive">Could not check Typeform: {hookError}</span>
+                          ) : !hook ? (
+                            <span className="text-muted-foreground">Checking Typeform…</span>
+                          ) : liveOk ? (
+                            <span className="text-green-600 dark:text-green-500">Confirmed live at Typeform</span>
+                          ) : live?.registered ? (
+                            <span className="text-destructive">
+                              Set up at Typeform but {live.enabled ? 'pointing somewhere else' : 'switched off'} — re-connect it
+                            </span>
+                          ) : (
+                            <span className="text-destructive">Not set up at Typeform — responses will not arrive</span>
+                          )}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {form.enabled && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busyForm === form.id}
+                            onClick={() => handleReregister(form)}
+                          >
+                            {busyForm === form.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                            )}
+                            Re-connect notifications
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busyForm === form.id}
+                            onClick={() => handleFetchResponses(form)}
+                          >
+                            <Download className="mr-2 h-4 w-4" /> Fetch recent responses
+                          </Button>
+                        </>
+                      )}
                       <Collapsible open={openMap === form.id} onOpenChange={() => openMapping(form)}>
                         <CollapsibleTrigger asChild>
                           <Button variant="outline" size="sm">
