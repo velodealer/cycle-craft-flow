@@ -148,10 +148,44 @@ export default function TypeformIntegration() {
       await setTypeformFormEnabled(form.id, form.title, enabled);
       setForms((prev) => prev.map((f) => (f.id === form.id ? { ...f, enabled } : f)));
       toast.success(enabled ? `Receiving responses from "${form.title}"` : `Stopped receiving responses from "${form.title}"`);
+      if (enabled) loadHookStatus(form.id);
+      else setHookStatus((prev) => ({ ...prev, [form.id]: { registered: false, enabled: false, expected_url: '' } }));
+    } catch (e) {
+      toast.error((e as Error).message);
+      // Typeform refused — the switch stays where it was.
+      if (enabled) loadHookStatus(form.id);
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  const handleReregister = async (form: TypeformForm) => {
+    setBusyForm(form.id);
+    try {
+      await reregisterTypeformWebhook(form.id, form.title);
+      setForms((prev) => prev.map((f) => (f.id === form.id ? { ...f, enabled: true } : f)));
+      await loadHookStatus(form.id);
+      toast.success(`Response notifications re-connected for "${form.title}"`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
-      setToggling(null);
+      setBusyForm(null);
+    }
+  };
+
+  const handleFetchResponses = async (form: TypeformForm) => {
+    setBusyForm(form.id);
+    try {
+      const result = await fetchTypeformResponses(form.id);
+      toast.success(
+        result.imported > 0
+          ? `${result.imported} response${result.imported === 1 ? '' : 's'} added to Submissions`
+          : `No new responses found (${result.total} checked)`,
+      );
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyForm(null);
     }
   };
 
