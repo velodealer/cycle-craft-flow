@@ -79,7 +79,7 @@ export default function TypeformIntegration() {
     } finally {
       setLoadingForms(false);
     }
-  }, []);
+  }, [loadHookStatus]);
 
   useEffect(() => {
     loadStatus().then((s) => {
