@@ -94,19 +94,13 @@ Deno.serve(async (req) => {
         connected_at: new Date().toISOString(),
       });
 
-      return html(
-        `<!doctype html><html><body style="font-family:system-ui;padding:2rem">
-         <h2>Typeform connected</h2><p>You can close this window.</p>
-         <script>window.opener&&window.opener.postMessage({type:'typeform-connected'},'*');setTimeout(()=>window.close(),1200)</script>
-         </body></html>`,
-      );
+      return backToApp(safeOrigin(url.searchParams.get('state')), { typeform: 'connected' });
     } catch (e) {
       console.error('Typeform callback error', e);
-      return html(
-        `<!doctype html><html><body style="font-family:system-ui;padding:2rem">
-         <h2>Typeform connection failed</h2><pre>${String((e as Error).message)}</pre></body></html>`,
-        500,
-      );
+      return backToApp(safeOrigin(url.searchParams.get('state')), {
+        typeform: 'error',
+        message: String((e as Error).message).slice(0, 300),
+      });
     }
   }
 
