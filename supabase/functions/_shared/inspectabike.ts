@@ -207,3 +207,35 @@ export async function syncBikeStatusFromFaults(
     await supabase.from('bikes').update({ status: next }).eq('id', bikeId);
   }
 }
+
+/**
+ * Rewrite the origin of an InspectABike report URL using the base URL saved in
+ * the integrations row (settings.report_base_url). InspectABike's API returns
+ * links on its own preview domain; this swaps in their real public domain.
+ * Returns the URL unchanged when no base is configured or either URL is invalid.
+ */
+export function rewriteReportUrl(url: string | null | undefined, base: string | null | undefined): string | null {
+  if (!url) return null;
+  if (!base) return url;
+  try {
+    const b = new URL(base.trim());
+    if (b.protocol !== 'http:' && b.protocol !== 'https:') return url;
+    const u = new URL(url);
+    u.protocol = b.protocol;
+    u.host = b.host;
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Read the configured report-link base URL for InspectABike, or null. */
+export async function getReportBaseUrl(supabase: ReturnType<typeof serviceClient>): Promise<string | null> {
+  const { data } = await supabase
+    .from('integrations')
+    .select('settings')
+    .eq('name', 'inspectabike')
+    .maybeSingle();
+  const base = (data?.settings as Record<string, unknown> | null)?.report_base_url;
+  return typeof base === 'string' && base.trim() ? base.trim() : null;
+}
