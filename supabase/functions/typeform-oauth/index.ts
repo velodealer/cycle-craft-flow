@@ -191,7 +191,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       const tag = (existing as any)?.webhook_tag || 'velodealer';
 
-      await setTypeformWebhook(accessToken, formId, tag, enabled);
+      // If Typeform refuses, do NOT record the form as enabled — the error surfaces to the UI.
+      try {
+        await setTypeformWebhook(accessToken, formId, tag, enabled);
+      } catch (err) {
+        console.error(`Failed to ${enabled ? 'register' : 'remove'} Typeform webhook for ${formId}`, err);
+        return json({
+          error: `Typeform would not ${enabled ? 'set up' : 'remove'} the response notification: ${(err as Error).message}`,
+        }, 400);
+      }
 
       if (existing) {
         const { error } = await supabase
