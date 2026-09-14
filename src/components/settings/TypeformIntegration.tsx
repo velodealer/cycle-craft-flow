@@ -298,6 +298,10 @@ export default function TypeformIntegration() {
               const map = maps[form.id] ?? {};
               const mappedCount = TYPEFORM_FIELD_KEYS.filter((f) => map[f.key]).length;
               const formFields = fields[form.id] ?? [];
+              const hook = hookStatus[form.id];
+              const hookError = hook && 'error' in hook ? hook.error : null;
+              const live = hook && !('error' in hook) ? hook : null;
+              const liveOk = live?.registered && live.enabled && live.url_matches !== false;
               return (
                 <div key={form.id} className="rounded-lg border">
                   <div className="flex flex-wrap items-center justify-between gap-3 p-3">
@@ -307,8 +311,50 @@ export default function TypeformIntegration() {
                         {form.enabled ? 'Receiving responses' : 'Not receiving responses'}
                         {mappedCount > 0 && ` · ${mappedCount} field${mappedCount === 1 ? '' : 's'} mapped`}
                       </p>
+                      {form.enabled && (
+                        <p className="mt-1 text-xs">
+                          {hookError ? (
+                            <span className="text-destructive">Could not check Typeform: {hookError}</span>
+                          ) : !hook ? (
+                            <span className="text-muted-foreground">Checking Typeform…</span>
+                          ) : liveOk ? (
+                            <span className="text-green-600 dark:text-green-500">Confirmed live at Typeform</span>
+                          ) : live?.registered ? (
+                            <span className="text-destructive">
+                              Set up at Typeform but {live.enabled ? 'pointing somewhere else' : 'switched off'} — re-connect it
+                            </span>
+                          ) : (
+                            <span className="text-destructive">Not set up at Typeform — responses will not arrive</span>
+                          )}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {form.enabled && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busyForm === form.id}
+                            onClick={() => handleReregister(form)}
+                          >
+                            {busyForm === form.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                            )}
+                            Re-connect notifications
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busyForm === form.id}
+                            onClick={() => handleFetchResponses(form)}
+                          >
+                            <Download className="mr-2 h-4 w-4" /> Fetch recent responses
+                          </Button>
+                        </>
+                      )}
                       <Collapsible open={openMap === form.id} onOpenChange={() => openMapping(form)}>
                         <CollapsibleTrigger asChild>
                           <Button variant="outline" size="sm">
