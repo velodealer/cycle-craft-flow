@@ -1,6 +1,7 @@
 // Receives form responses from Typeform. Signature-verified, no JWT.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient } from '../_shared/typeform.ts';
+import { extractFromFormResponse } from '../_shared/typeform-extract.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -34,101 +35,6 @@ async function verify(rawBody: string, signature: string, secret: string) {
   return timingSafeEqual(toBase64(sig), signature.trim().replace(/^sha256=/i, ''));
 }
 
-interface Answer {
-  type: string;
-  field?: { id?: string; ref?: string };
-  text?: string;
-  email?: string;
-  phone_number?: string;
-  number?: number;
-  choice?: { label?: string; other?: string; choices?: string[] };
-  boolean?: boolean;
-  date?: string;
-  file_url?: string;
-  payment?: { amount?: number };
-}
-
-/** Picks the best string value from a Typeform answer. */
-function answerText(a: Answer | undefined): string {
-  if (!a) return '';
-  if (a.text) return a.text;
-  if (a.email) return a.email;
-  if (a.phone_number) return a.phone_number;
-  if (a.choice) {
-    return a.choice.other || a.choice.label || (a.choice.choices ?? []).join(', ') || '';
-  }
-  if (typeof a.number === 'number') return String(a.number);
-  if (a.boolean !== undefined) return a.boolean ? 'Yes' : 'No';
-  if (a.date) return a.date;
-  if (a.file_url) return a.file_url;
-  return '';
-}
-
-function answerIsPhoto(a: Answer | undefined): boolean {
-  return Boolean(a?.file_url);
-}
-
-interface Extracted {
-  submission_type: string | null;
-  customer_name: string | null;
-  customer_email: string | null;
-  customer_phone: string | null;
-  postcode: string | null;
-  bike_make: string | null;
-  bike_model: string | null;
-  bike_year: number | null;
-  frame_number: string | null;
-  asking_price: number | null;
-  photo_urls: string[];
-}
-
-function extract(raw: any, fieldMap: Record<string, string>): Extracted {
-  const answers: Answer[] = raw?.form_response?.answers ?? [];
-  const byFieldId = new Map<string, Answer>();
-  for (const a of answers) {
-    const id = a.field?.ref || a.field?.id;
-    if (id) byFieldId.set(id, a);
-  }
-  // Hidden fields can also carry values (e.g. source tags).
-  const hidden: Record<string, string> = raw?.form_response?.hidden ?? {};
-
-  const get = (key: string): Answer | undefined => {
-    const ref = fieldMap[key];
-    if (!ref) return undefined;
-    return byFieldId.get(ref);
-  };
-  const str = (key: string): string => answerText(get(key)) || (hidden[key] ?? '');
-
-  const photoUrls: string[] = [];
-  for (const a of answers) {
-    if (answerIsPhoto(a) && a.file_url) photoUrls.push(a.file_url);
-  }
-
-  const yearRaw = str('bike_year');
-  const year = yearRaw ? parseInt(yearRaw.replace(/[^0-9]/g, ''), 10) : NaN;
-  const priceRaw = str('asking_price');
-  const price = priceRaw ? parseFloat(priceRaw.replace(/[^0-9.]/g, '')) : NaN;
-
-  const typeRaw = (str('submission_type') || '').toLowerCase();
-  let submissionType: string | null = null;
-  if (typeRaw.includes('part')) submissionType = 'part_exchange';
-  else if (typeRaw.includes('sell') || typeRaw.includes('sale')) submissionType = 'sale';
-
-  return {
-    submission_type: submissionType,
-    customer_name: str('customer_name') || null,
-    customer_email: str('customer_email') || null,
-    customer_phone: str('customer_phone') || null,
-    postcode: str('postcode') || null,
-    bike_make: str('bike_make') || null,
-    bike_model: str('bike_model') || null,
-    bike_year: Number.isFinite(year) && year > 1900 && year < 2200 ? year : null,
-    frame_number: str('frame_number') || null,
-    asking_price: Number.isFinite(price) && price > 0 ? price : null,
-    photo_urls: photoUrls,
-  };
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
@@ -136,21 +42,32 @@ Deno.serve(async (req) => {
     });
   }
 
+  console.log(`typeform-webhook: received ${req.method} request`);
+
   const secret = Deno.env.get('TYPEFORM_WEBHOOK_SECRET');
-  if (!secret) return json({ error: 'Webhook secret not configured' }, 500);
+  if (!secret) {
+    console.error('typeform-webhook: TYPEFORM_WEBHOOK_SECRET is not configured');
+    return json({ error: 'Webhook secret not configured' }, 500);
+  }
 
   const signature = req.headers.get('typeform-signature') || '';
   const rawBody = await req.text();
 
   if (!signature || !(await verify(rawBody, signature, secret))) {
+    console.error(
+      `typeform-webhook: rejected — ${signature ? 'signature mismatch' : 'no typeform-signature header'} (body ${rawBody.length} bytes)`,
+    );
     return json({ error: 'Invalid signature' }, 401);
   }
 
   try {
     const payload = JSON.parse(rawBody);
-    const formId: string | undefined = payload?.form_response?.form_id;
-    const responseId: string | undefined = payload?.form_response?.response_id;
+    const formResponse = payload?.form_response;
+    const formId: string | undefined = formResponse?.form_id;
+    const responseId: string | undefined = formResponse?.response_id;
     const eventType: string | undefined = payload?.event_type;
+
+    console.log(`typeform-webhook: verified event=${eventType} form=${formId} response=${responseId}`);
 
     if (!formId || !responseId) return json({ error: 'Missing form_id or response_id' }, 400);
     if (eventType && eventType !== 'form_response') return json({ ok: true, skipped: eventType });
@@ -163,7 +80,10 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('response_id', responseId)
       .maybeSingle();
-    if (existing) return json({ ok: true, duplicate: true });
+    if (existing) {
+      console.log(`typeform-webhook: duplicate response ${responseId} ignored`);
+      return json({ ok: true, duplicate: true });
+    }
 
     // Load the stored field map for this form.
     const { data: formRow } = await supabase
@@ -172,9 +92,15 @@ Deno.serve(async (req) => {
       .eq('form_id', formId)
       .maybeSingle();
 
+    if (!formRow) {
+      console.warn(`typeform-webhook: no stored form row for ${formId} — saving with no field mapping`);
+    } else if (!(formRow as any).enabled) {
+      console.warn(`typeform-webhook: form ${formId} is switched off locally — saving anyway`);
+    }
+
     const fieldMap = ((formRow as any)?.field_map ?? {}) as Record<string, string>;
-    const extracted = extract(payload, fieldMap);
-    const submittedAt = payload?.form_response?.submitted_at ?? new Date().toISOString();
+    const extracted = extractFromFormResponse(formResponse, fieldMap);
+    const submittedAt = formResponse?.submitted_at ?? new Date().toISOString();
 
     const { error } = await supabase.from('typeform_submissions').insert({
       form_id: formId,
@@ -186,10 +112,10 @@ Deno.serve(async (req) => {
     });
     if (error) throw new Error(error.message);
 
+    console.log(`typeform-webhook: saved submission for response ${responseId}`);
     return json({ ok: true });
   } catch (e) {
     console.error('typeform-webhook error', e);
-    // Return 200 to prevent Typeform retries on permanent errors; log for diagnosis.
     return json({ error: (e as Error).message }, 500);
   }
 });
