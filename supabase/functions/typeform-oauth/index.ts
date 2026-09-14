@@ -21,8 +21,25 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const html = (body: string, status = 200) =>
-  new Response(body, { status, headers: { 'Content-Type': 'text/html' } });
+const FALLBACK_APP_ORIGIN = 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
+
+/** Only allow http(s) origins we received from the app itself. */
+function safeOrigin(state: string | null): string {
+  if (!state) return FALLBACK_APP_ORIGIN;
+  try {
+    const u = new URL(decodeURIComponent(state));
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
+  } catch { /* ignore */ }
+  return FALLBACK_APP_ORIGIN;
+}
+
+const backToApp = (origin: string, params: Record<string, string>) => {
+  const qs = new URLSearchParams({ tab: 'integrations', ...params });
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${origin}/settings?${qs}` },
+  });
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
