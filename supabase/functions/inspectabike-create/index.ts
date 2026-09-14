@@ -1,6 +1,6 @@
 // Creates (idempotently) an InspectABike inspection for a bike and stores the link.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient, requireRole, iabFetch, mapBikeType } from '../_shared/inspectabike.ts';
+import { serviceClient, requireRole, iabFetch, mapBikeType, rewriteReportUrl, getReportBaseUrl } from '../_shared/inspectabike.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     });
 
     const externalId = result?.inspection_id ?? result?.inspection?.id ?? null;
-    const reportUrl = result?.report_url ?? result?.inspection?.report_url ?? null;
+    const reportUrl = rewriteReportUrl(result?.report_url ?? result?.inspection?.report_url ?? null, await getReportBaseUrl(supabase));
 
     const { data: updated, error: updateError } = await supabase
       .from('inspections')

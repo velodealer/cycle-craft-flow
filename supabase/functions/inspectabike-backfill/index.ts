@@ -1,7 +1,7 @@
 // Retrospectively links existing inspections to InspectABike and pulls faults.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
-  serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults,
+  serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults, rewriteReportUrl, getReportBaseUrl,
 } from '../_shared/inspectabike.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
           .update({
             external_inspection_id: externalId,
             external_reference: inspection.external_reference ?? bike?.reference ?? null,
-            report_url: remote?.report_url ?? inspection.report_url,
+            report_url: rewriteReportUrl(remote?.report_url ?? null, reportBase) ?? inspection.report_url,
             overall_grade: remote?.overall_grade ?? inspection.overall_grade,
             inspector_name: remote?.inspector_name ?? inspection.inspector_name,
             stolen_status: typeof stolen === 'string'
