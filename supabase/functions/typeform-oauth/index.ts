@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
         response_type: 'code',
         scope: 'forms:read webhooks:read webhooks:write',
         redirect_uri: redirectUri(),
-        state: crypto.randomUUID(),
+        state: encodeURIComponent(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
       });
       return json({ url: `https://api.typeform.com/oauth/authorize?${params}` });
     }
