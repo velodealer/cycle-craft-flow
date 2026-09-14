@@ -51,7 +51,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="users" className="w-full">
+      <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') ?? 'users'} className="w-full">
         <TabsList className="flex w-full flex-wrap h-auto gap-1 md:grid md:grid-cols-6">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
