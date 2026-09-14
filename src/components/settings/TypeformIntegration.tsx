@@ -37,6 +37,17 @@ export default function TypeformIntegration() {
   const [maps, setMaps] = useState<Record<string, Record<string, string>>>({});
   const [savingMap, setSavingMap] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hookStatus, setHookStatus] = useState<Record<string, TypeformWebhookStatus | { error: string }>>({});
+  const [busyForm, setBusyForm] = useState<string | null>(null);
+
+  const loadHookStatus = useCallback(async (formId: string) => {
+    try {
+      const result = await getTypeformWebhookStatus(formId);
+      setHookStatus((prev) => ({ ...prev, [formId]: result }));
+    } catch (e) {
+      setHookStatus((prev) => ({ ...prev, [formId]: { error: (e as Error).message } }));
+    }
+  }, []);
 
   const loadStatus = useCallback(async () => {
     try {
