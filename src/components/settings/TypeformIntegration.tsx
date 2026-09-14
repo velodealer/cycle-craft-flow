@@ -84,10 +84,32 @@ export default function TypeformIntegration() {
     return () => window.removeEventListener('message', handler);
   }, [loadStatus, loadForms]);
 
+  // Handle the return trip from Typeform's sign-in page.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('typeform');
+    if (!result) return;
+
+    if (result === 'connected') {
+      toast.success('Typeform connected');
+      loadStatus().then((s) => {
+        if (s?.connected) loadForms();
+      });
+    } else {
+      toast.error(params.get('message') || 'Could not connect Typeform');
+    }
+
+    params.delete('typeform');
+    params.delete('message');
+    const query = params.toString();
+    window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+  }, [loadStatus, loadForms]);
+
   const handleConnect = async () => {
     try {
       const { url } = await getTypeformAuthUrl();
-      window.open(url, 'typeform-oauth', 'width=620,height=760');
+      const popup = window.open(url, 'typeform-oauth', 'width=620,height=760');
+      if (!popup) window.location.href = url;
     } catch (e) {
       toast.error((e as Error).message);
     }
