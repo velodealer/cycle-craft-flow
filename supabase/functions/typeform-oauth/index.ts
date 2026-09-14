@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
       const params = new URLSearchParams({
         client_id: clientId,
         response_type: 'code',
-        scope: 'forms:read webhooks:read webhooks:write offline',
+        scope: 'forms:read responses:read webhooks:read webhooks:write offline',
         redirect_uri: redirectUri(),
         state: encodeURIComponent(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
       });
