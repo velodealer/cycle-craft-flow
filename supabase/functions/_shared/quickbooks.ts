@@ -21,6 +21,16 @@ export interface QboSettings {
   accounts?: QboAccounts;
   tax_codes?: QboTaxCodeRef;
   connected_at?: string;
+  oauth_state?: string;
+  auth_error?: string;
+}
+
+/** Thrown when Intuit rejects the refresh token (expired/revoked) — user must reconnect. */
+export class QboReconnectRequired extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'QboReconnectRequired';
+  }
 }
 
 export function serviceClient() {
@@ -81,7 +91,9 @@ export async function saveSettings(
   return merged;
 }
 
-async function refreshAccessToken(refreshToken: string) {
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function refreshAccessTokenOnce(refreshToken: string) {
   const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID')!;
   const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET')!;
   const basic = btoa(`${clientId}:${clientSecret}`);
@@ -95,12 +107,36 @@ async function refreshAccessToken(refreshToken: string) {
     body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }),
   });
   const body = await res.text();
-  if (!res.ok) throw new Error(`QuickBooks token refresh failed [${res.status}]: ${body}`);
+  if (!res.ok) {
+    if (body.includes('invalid_grant')) {
+      throw new QboReconnectRequired(`QuickBooks refresh token expired or was revoked: ${body}`);
+    }
+    throw new Error(`QuickBooks token refresh failed [${res.status}]: ${body}`);
+  }
   return JSON.parse(body) as {
     access_token: string;
     expires_in: number;
     refresh_token: string;
   };
+}
+
+/** Refresh with a single retry on transient failures (network errors, 5xx). */
+async function refreshAccessToken(refreshToken: string) {
+  try {
+    return await refreshAccessTokenOnce(refreshToken);
+  } catch (e) {
+    if (e instanceof QboReconnectRequired) throw e;
+    await sleep(1500);
+    return await refreshAccessTokenOnce(refreshToken);
+  }
+}
+
+/** Mark the integration as needing reconnection so the UI can prompt the user. */
+export async function markReconnectRequired(
+  supabase: ReturnType<typeof serviceClient>,
+  message: string,
+) {
+  await saveSettings(supabase, { auth_error: message }, false);
 }
 
 /** Returns a valid access token + realm id, refreshing and persisting when needed. */
@@ -116,13 +152,21 @@ export async function getQboAuth(supabase: ReturnType<typeof serviceClient>) {
     return { accessToken: settings.access_token, realmId: settings.realm_id, settings };
   }
 
-  const tokens = await refreshAccessToken(settings.refresh_token);
-  const updated = await saveSettings(supabase, {
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token || settings.refresh_token,
-    access_token_expires_at: new Date(Date.now() + (tokens.expires_in - 60) * 1000).toISOString(),
-  });
-  return { accessToken: tokens.access_token, realmId: settings.realm_id, settings: updated as QboSettings };
+  try {
+    const tokens = await refreshAccessToken(settings.refresh_token);
+    const updated = await saveSettings(supabase, {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token || settings.refresh_token,
+      access_token_expires_at: new Date(Date.now() + (tokens.expires_in - 60) * 1000).toISOString(),
+      auth_error: undefined,
+    });
+    return { accessToken: tokens.access_token, realmId: settings.realm_id, settings: updated as QboSettings };
+  } catch (e) {
+    if (e instanceof QboReconnectRequired) {
+      await markReconnectRequired(supabase, e.message);
+    }
+    throw e;
+  }
 }
 
 export async function qboFetch(
