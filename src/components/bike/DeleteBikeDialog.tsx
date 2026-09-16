@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { syncShopifyQuietly } from '@/services/shopify';
 import { toast } from '@/hooks/use-toast';
 import { bikeRef } from '@/lib/bikeReference';
 
