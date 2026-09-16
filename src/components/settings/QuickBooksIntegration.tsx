@@ -44,6 +44,30 @@ export default function QuickBooksIntegration() {
   const [saving, setSaving] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingFeatures, setCheckingFeatures] = useState(false);
+
+  const ACCOUNT_LABELS: Record<string, string> = {
+    stock: 'Stock / inventory',
+    cogs: 'Cost of goods sold',
+    sales: 'Sales income',
+    vat: 'VAT control',
+    purchase_funding: 'Purchase funding',
+  };
+
+  const handleCheckFeatures = async () => {
+    setCheckingFeatures(true);
+    try {
+      await checkQuickBooksCapabilities(true);
+      await loadStatus();
+      toast.success('QuickBooks features re-checked');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCheckingFeatures(false);
+    }
+  };
+
+
 
   const loadStatus = useCallback(async () => {
     try {
