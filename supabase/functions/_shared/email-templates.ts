@@ -14,7 +14,13 @@ function money(value: unknown): string {
   return `£${n.toFixed(2)}`;
 }
 
-export function layout(title: string, bodyHtml: string, ctaLabel?: string, ctaUrl?: string): string {
+export function layout(
+  title: string,
+  bodyHtml: string,
+  ctaLabel?: string,
+  ctaUrl?: string,
+  footer = 'You are receiving this because you are set as a notification recipient in VeloDealer settings.',
+): string {
   const cta = ctaLabel && ctaUrl
     ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="background:#14532d;color:#ffffff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">${escapeHtml(ctaLabel)}</a></p>`
     : '';
@@ -24,8 +30,25 @@ export function layout(title: string, bodyHtml: string, ctaLabel?: string, ctaUr
     <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3">${escapeHtml(title)}</h1>
     ${bodyHtml}
     ${cta}
-    <p style="margin:28px 0 0;font-size:12px;color:#78716c">You are receiving this because you are set as a notification recipient in VeloDealer settings.</p>
+    <p style="margin:28px 0 0;font-size:12px;color:#78716c">${escapeHtml(footer)}</p>
   </div></body></html>`;
+}
+
+export function passwordResetEmail(resetUrl: string) {
+  const subject = 'Reset your VeloDealer password';
+  const body = `<p style="margin:0 0 12px;font-size:15px;line-height:1.5">We received a request to reset the password on your VeloDealer account.</p>
+  <p style="margin:0;font-size:15px;line-height:1.5">Use the button below to choose a new password. The link can only be used once and expires shortly.</p>
+  <p style="margin:20px 0 0;font-size:13px;color:#78716c;word-break:break-all">If the button does not work, paste this into your browser:<br>${escapeHtml(resetUrl)}</p>`;
+  return {
+    subject,
+    html: layout(
+      subject,
+      body,
+      'Choose a new password',
+      resetUrl,
+      'If you did not ask for a password reset you can safely ignore this email.',
+    ),
+  };
 }
 
 function rows(pairs: Array<[string, unknown]>): string {

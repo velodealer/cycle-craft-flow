@@ -28,14 +28,17 @@ export default function Auth() {
       window.location.hostname === 'localhost'
         ? 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app'
         : window.location.origin;
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${siteUrl}/reset-password`,
+    const { error } = await supabase.functions.invoke('send-password-reset', {
+      body: { email: resetEmail, origin: siteUrl },
     });
     setResetLoading(false);
     if (error) {
       toast({ title: "Error sending reset email", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Password reset email sent", description: "Check your inbox for the reset link." });
+      toast({
+        title: "Password reset email sent",
+        description: "If that address has an account, a reset link is on its way.",
+      });
       setResetOpen(false);
       setResetEmail('');
     }

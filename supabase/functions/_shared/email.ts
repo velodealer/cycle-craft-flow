@@ -131,6 +131,40 @@ export async function sendNotification(
   }
 }
 
+/**
+ * Sends to an explicit address (account emails such as password resets).
+ * Ignores per-notification toggles; honours the master switch and sender address.
+ */
+export async function sendDirect(
+  supabase: Client,
+  to: string,
+  subject: string,
+  html: string,
+): Promise<SendResult> {
+  try {
+    const settings = await loadEmailSettings(supabase);
+    if (settings.enabled === false) return { sent: false, reason: 'Email sending is switched off' };
+    const apiKey = Deno.env.get('RESEND_API_KEY');
+    if (!apiKey) return { sent: false, reason: 'RESEND_API_KEY is not configured' };
+
+    const from = (settings.from_address || DEFAULT_FROM).trim();
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ from, to: [to], subject, html }),
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      console.error(`Resend request failed [${response.status}]: ${body}`);
+      return { sent: false, reason: `Resend error ${response.status}` };
+    }
+    return { sent: true, recipients: [to] };
+  } catch (e) {
+    console.error('email: direct send failed', (e as Error).message);
+    return { sent: false, reason: (e as Error).message };
+  }
+}
+
 /** Convenience: email admins about newly reported faults on a bike. Never throws. */
 export async function notifyFaultsAwaitingApproval(
   supabase: Client,
