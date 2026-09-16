@@ -165,6 +165,13 @@ Deno.serve(async (req) => {
       })
       .eq('id', delivery.id);
 
+    await notifyLogistics(supabase as any, bikeId, {
+      direction: 'outbound',
+      status: `booked (${responseData.status || 'scheduled'})`,
+      trackingNumber: responseData.trackingNumber,
+      orderId: responseData.id,
+    });
+
     return json({ ok: true, delivery_id: delivery.id, order_id: responseData.id, tracking_number: responseData.trackingNumber });
   } catch (e) {
     const message = (e as Error).message;
