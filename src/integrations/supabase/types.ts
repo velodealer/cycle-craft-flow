@@ -1465,6 +1465,36 @@ export type Database = {
           },
         ]
       }
+      shopify_compliance_events: {
+        Row: {
+          created_at: string
+          handled_at: string
+          id: string
+          outcome: string | null
+          payload_summary: Json
+          shop_domain: string | null
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          handled_at?: string
+          id?: string
+          outcome?: string | null
+          payload_summary?: Json
+          shop_domain?: string | null
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          handled_at?: string
+          id?: string
+          outcome?: string | null
+          payload_summary?: Json
+          shop_domain?: string | null
+          topic?: string
+        }
+        Relationships: []
+      }
       shopify_listings: {
         Row: {
           bike_id: string
