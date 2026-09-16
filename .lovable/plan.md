@@ -11,10 +11,11 @@ Entries come from what the app already records:
 - Stage moves — moved a bike from intake to cleaning, cleaning to inspection, etc., including the note typed and any photos attached at the time.
 - Inspections — inspection started and inspection completed.
 - Repair decisions — a fault approved or declined, with the note.
-- Repairs finished — a fault marked repaired (these come back from InspectABike, so the timestamp is shown without a named person).
+- Repairs finished — a fault marked repaired at InspectABike, attributed to the mechanic name InspectABike sends with that fault, timed by their repaired-at stamp. So Jahan's repairs on a day show up even though the work was logged in InspectABike, not here.
 - Job changes — a repair job assigned to that person, and when its record last changed.
 
-Above the timeline, a small summary for the day: number of bikes touched, stage moves, inspections done, repair decisions.
+Above the timeline, a small summary for the day: number of bikes touched, stage moves, inspections done, repair decisions, repairs completed, and the labour value of those repairs.
+
 
 There is also an "Everyone" view for the chosen day, grouped by person, so you can see the whole team's day on one screen.
 
@@ -26,7 +27,9 @@ Admin and owner can pick any person. Everyone else sees only their own day — t
 
 Checked the live data before writing this:
 
-- Repair jobs carry an assigned person but no start or finish times at all (0 of 77 jobs have them), so the page can show that work was assigned to someone, not how long it took or exactly when it was done. Capturing start/finish would need mechanics to press Start and Finish on a job — out of scope here, but it is the natural next step if the timeline looks too thin.
+- InspectABike does not send booked time or hours on a fault — checked the stored fault payloads, which carry mechanic name, description, parts cost, labour cost and repaired-at only. So the page can show who repaired what and when it was completed, and the labour value of that work, but not hours spent. If you want hours, InspectABike would need to include a time field in the webhook.
+- Repair jobs in VeloDealer carry an assigned person but no start or finish times at all (0 of 77 jobs have them), so job entries show assignment, not duration.
+
 - Only 13 stage moves have ever been recorded in total (8 by Jahan), so early days will look sparse. That is a record-keeping gap, not a bug in the page.
 - Photo uploads and notes made during a stage move are attached to that stage move, so they will appear.
 
