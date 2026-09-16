@@ -10,6 +10,17 @@ export interface QboAccountMap {
 }
 
 
+export interface QboCapabilities {
+  sales_tax: boolean;
+  tax_codes: string[];
+  journal_entries: boolean;
+  multicurrency: boolean;
+  accounts_present: string[];
+  accounts_missing: string[];
+  country?: string;
+  home_currency?: string;
+}
+
 export interface QboStatus {
   connected: boolean;
   environment: string;
@@ -18,8 +29,12 @@ export interface QboStatus {
   tax_codes: QboTaxCodeMap;
   connected_at: string | null;
   auth_error: string | null;
+  capabilities: QboCapabilities | null;
+  capabilities_checked_at: string | null;
+  capabilities_error: string | null;
   redirect_uri: string;
 }
+
 
 export interface QboAccount {
   id: string;
@@ -64,6 +79,16 @@ export const listQuickBooksTaxCodes = () =>
 export const saveQuickBooksTaxCodes = (taxCodes: QboTaxCodeMap) =>
   invoke<{ ok: true }>('quickbooks-oauth', { action: 'save_tax_codes', tax_codes: taxCodes });
 export const disconnectQuickBooks = () => invoke<{ ok: true }>('quickbooks-oauth', { action: 'disconnect' });
+
+/** Re-reads which QuickBooks features this company currently has. */
+export const checkQuickBooksCapabilities = (force = false) =>
+  invoke<{
+    connected: boolean;
+    capabilities: QboCapabilities | null;
+    checked_at?: string | null;
+    error?: string | null;
+  }>('quickbooks-capabilities', { force });
+
 
 /** Readable QuickBooks Doc Numbers (max 21 chars) — must match the edge functions. */
 export const stockInDocNumber = (bikeReference?: string | null) =>

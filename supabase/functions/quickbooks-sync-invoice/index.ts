@@ -1,8 +1,20 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
+import {
+  serviceClient,
+  getQboAuth,
+  qboFetch,
+  requireUser,
+  ensureCapabilities,
+  requireCapability,
+  refreshCapabilities,
+  isFeatureFault,
+  QboFeatureUnavailable,
+  type QboSettings,
+} from '../_shared/quickbooks.ts';
 import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
 import { buildSaleInvoiceLines } from '../_shared/quickbooks-lines.ts';
+
 
 
 const json = (body: unknown, status = 200) =>
@@ -45,6 +57,10 @@ Deno.serve(async (req) => {
     if (!accounts.sales || !accounts.stock || !accounts.cogs) {
       throw new Error('QuickBooks account mapping is incomplete (Sales, Stock and COGS accounts are required)');
     }
+    // The company's QuickBooks version may have changed since the last sync.
+    const capabilities = await ensureCapabilities(supabase, settings as QboSettings);
+    requireCapability(capabilities, { journalEntries: true, accounts: ['sales', 'stock', 'cogs'] });
+
 
     const isMargin = bike?.finance_scheme === 'margin_scheme';
     const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
@@ -195,13 +211,25 @@ Deno.serve(async (req) => {
 
     return json({ ok: true, quickbooks_invoice_id: qbInvoiceId, quickbooks_journal_id: journalId, margin_vat: marginVat });
   } catch (e) {
-    const message = (e as Error).message;
+    let message = (e as Error).message;
     console.error('quickbooks-sync-invoice error', message);
+    // A feature or account the company no longer has: hold the posting rather
+    // than failing it, and re-read what this QuickBooks version supports.
+    let pending = e instanceof QboFeatureUnavailable;
+    if (!pending && isFeatureFault(message)) {
+      pending = true;
+      await refreshCapabilities(supabase).catch(() => null);
+      message =
+        'This posting is waiting on QuickBooks: the company\'s current QuickBooks version rejected part of it. ' +
+        'Check Settings → Integrations → QuickBooks for the feature or account that is missing, then retry. ' +
+        `QuickBooks said: ${message}`;
+    }
     if (invoiceId) {
       await supabase.from('invoices')
-        .update({ sync_status: 'failed', sync_error: message })
+        .update({ sync_status: pending ? 'pending_feature' : 'failed', sync_error: message })
         .eq('id', invoiceId);
     }
-    return json({ error: message }, 500);
+    return json({ error: message, pending_feature: pending }, pending ? 409 : 500);
   }
+
 });

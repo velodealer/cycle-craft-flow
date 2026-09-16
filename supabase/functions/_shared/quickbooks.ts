@@ -13,6 +13,22 @@ export interface QboAccounts {
 }
 
 
+/**
+ * What the connected QuickBooks company can actually do right now.
+ * Customers change QuickBooks Online subscriptions at any time, so we read this
+ * from the company itself instead of assuming a product level.
+ */
+export interface QboCapabilities {
+  sales_tax: boolean;
+  tax_codes: string[];
+  journal_entries: boolean;
+  multicurrency: boolean;
+  accounts_present: string[];
+  accounts_missing: string[];
+  country?: string;
+  home_currency?: string;
+}
+
 export interface QboSettings {
   realm_id?: string;
   refresh_token?: string;
@@ -23,6 +39,9 @@ export interface QboSettings {
   connected_at?: string;
   oauth_state?: string;
   auth_error?: string;
+  capabilities?: QboCapabilities;
+  capabilities_checked_at?: string;
+  capabilities_error?: string;
 }
 
 /** Thrown when Intuit rejects the refresh token (expired/revoked) — user must reconnect. */
@@ -32,6 +51,15 @@ export class QboReconnectRequired extends Error {
     this.name = 'QboReconnectRequired';
   }
 }
+
+/** Thrown when the company's current QuickBooks version cannot do what we need. */
+export class QboFeatureUnavailable extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'QboFeatureUnavailable';
+  }
+}
+
 
 export function serviceClient() {
   return createClient(
@@ -224,4 +252,147 @@ export async function requireUser(req: Request, supabase: ReturnType<typeof serv
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) throw new Error('Invalid or expired session');
   return data.user;
+}
+
+/** How long a stored capability profile is trusted before we re-read it. */
+const CAPABILITIES_TTL_MS = 24 * 60 * 60 * 1000;
+
+const ACCOUNT_LABELS: Record<string, string> = {
+  stock: 'Stock / inventory asset account',
+  cogs: 'Cost of goods sold account',
+  sales: 'Sales income account',
+  vat: 'VAT control account',
+  purchase_funding: 'Purchase funding account',
+};
+
+/**
+ * Reads the company's preferences and chart of accounts so the integration
+ * follows what this QuickBooks company can do today, not what it could do when
+ * it was first connected.
+ */
+export async function fetchCapabilities(
+  accessToken: string,
+  realmId: string,
+  accounts: QboAccounts = {},
+): Promise<QboCapabilities> {
+  const prefs = await qboFetch(accessToken, realmId, '/preferences?minorversion=70').catch((e) => {
+    console.error('Could not read QuickBooks preferences:', (e as Error).message);
+    return null;
+  });
+  const p = prefs?.Preferences ?? {};
+  const salesTax = Boolean(p?.TaxPrefs?.UsingSalesTax);
+  const multicurrency = Boolean(p?.CurrencyPrefs?.MultiCurrencyEnabled);
+  const homeCurrency = p?.CurrencyPrefs?.HomeCurrency?.value;
+
+  const taxQuery = encodeURIComponent('select Id, Name from TaxCode maxresults 100');
+  const taxRes = await qboFetch(
+    accessToken,
+    realmId,
+    `/query?query=${taxQuery}&minorversion=70`,
+  ).catch(() => null);
+  const taxCodes: string[] = (taxRes?.QueryResponse?.TaxCode ?? [])
+    .map((t: { Name?: string }) => t?.Name)
+    .filter(Boolean);
+
+  const info = await qboFetch(accessToken, realmId, `/companyinfo/${realmId}?minorversion=70`).catch(() => null);
+  const country = info?.CompanyInfo?.Country;
+
+  // Confirm the accounts we post to still exist in this company.
+  const present: string[] = [];
+  const missing: string[] = [];
+  for (const [key, id] of Object.entries(accounts)) {
+    if (!id) continue;
+    const found = await qboFetch(accessToken, realmId, `/account/${id}?minorversion=70`).catch(() => null);
+    const active = found?.Account && found.Account.Active !== false;
+    (active ? present : missing).push(key);
+  }
+
+  // Journal entries are the one posting type we cannot work without; probe read
+  // access rather than assuming it from the subscription level.
+  const jeQuery = encodeURIComponent('select Id from JournalEntry maxresults 1');
+  const jeRes = await qboFetch(accessToken, realmId, `/query?query=${jeQuery}&minorversion=70`)
+    .then(() => true)
+    .catch(() => false);
+
+  return {
+    sales_tax: salesTax,
+    tax_codes: taxCodes,
+    journal_entries: jeRes,
+    multicurrency,
+    accounts_present: present,
+    accounts_missing: missing,
+    country,
+    home_currency: homeCurrency,
+  };
+}
+
+/** Re-reads and stores the capability profile. */
+export async function refreshCapabilities(supabase: ReturnType<typeof serviceClient>) {
+  const { accessToken, realmId, settings } = await getQboAuth(supabase);
+  try {
+    const capabilities = await fetchCapabilities(accessToken, realmId, settings.accounts ?? {});
+    await saveSettings(supabase, {
+      capabilities,
+      capabilities_checked_at: new Date().toISOString(),
+      capabilities_error: undefined,
+    });
+    return capabilities;
+  } catch (e) {
+    const message = (e as Error).message;
+    await saveSettings(supabase, { capabilities_error: message });
+    throw e;
+  }
+}
+
+/** Returns the capability profile, refreshing it when missing or older than a day. */
+export async function ensureCapabilities(
+  supabase: ReturnType<typeof serviceClient>,
+  settings: QboSettings,
+  force = false,
+): Promise<QboCapabilities | null> {
+  const checked = settings.capabilities_checked_at ? Date.parse(settings.capabilities_checked_at) : 0;
+  const fresh = settings.capabilities && Date.now() - checked < CAPABILITIES_TTL_MS;
+  if (fresh && !force) return settings.capabilities ?? null;
+  try {
+    return await refreshCapabilities(supabase);
+  } catch (e) {
+    console.error('Capability refresh failed:', (e as Error).message);
+    return settings.capabilities ?? null;
+  }
+}
+
+/** Throws a friendly QboFeatureUnavailable when the company cannot do something we need. */
+export function requireCapability(
+  capabilities: QboCapabilities | null,
+  needs: { journalEntries?: boolean; accounts?: string[] },
+) {
+  if (!capabilities) return;
+  if (needs.journalEntries && capabilities.journal_entries === false) {
+    throw new QboFeatureUnavailable(
+      'This QuickBooks company cannot accept journal entries on its current plan, so the stock and VAT postings are on hold. Upgrade the QuickBooks subscription or ask an admin to grant journal entry access, then retry the sync.',
+    );
+  }
+  for (const key of needs.accounts ?? []) {
+    if (capabilities.accounts_missing.includes(key)) {
+      throw new QboFeatureUnavailable(
+        `The ${ACCOUNT_LABELS[key] ?? key} mapped in VeloDealer no longer exists in QuickBooks, so this posting is on hold. Re-map it in Settings → Integrations → QuickBooks and retry.`,
+      );
+    }
+  }
+}
+
+/** True when a QuickBooks fault is about a feature or account the company no longer has. */
+export function isFeatureFault(message: string) {
+  const m = message.toLowerCase();
+  return (
+    m.includes('feature') ||
+    m.includes('not supported') ||
+    m.includes('unsupported') ||
+    m.includes('invalid account') ||
+    m.includes('account period closed') ||
+    m.includes('invalid reference id') ||
+    m.includes('taxcode') ||
+    m.includes('tax code') ||
+    m.includes('subscription')
+  );
 }

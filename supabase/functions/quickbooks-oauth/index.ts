@@ -7,6 +7,8 @@ import {
   redirectUri,
   qboEnv,
   requireUser,
+  refreshCapabilities,
+
   type QboSettings,
 } from '../_shared/quickbooks.ts';
 import { mapSalesTaxCodes, type QboTaxCodeRef } from '../_shared/quickbooks-tax.ts';
@@ -68,6 +70,13 @@ Deno.serve(async (req) => {
         auth_error: undefined,
       });
 
+      // Read what this company's QuickBooks version can do right now.
+      await refreshCapabilities(supabase).catch((e) =>
+        console.error('Capability check after connect failed:', (e as Error).message),
+      );
+
+
+
       return new Response(
         `<!doctype html><html><body style="font-family:system-ui;padding:2rem">
          <h2>QuickBooks connected</h2><p>You can close this window.</p>
@@ -107,7 +116,11 @@ Deno.serve(async (req) => {
         tax_codes: settings.tax_codes ?? {},
         connected_at: settings.connected_at ?? null,
         auth_error: settings.auth_error ?? null,
+        capabilities: settings.capabilities ?? null,
+        capabilities_checked_at: settings.capabilities_checked_at ?? null,
+        capabilities_error: settings.capabilities_error ?? null,
         redirect_uri: redirectUri(),
+
       });
     }
 
