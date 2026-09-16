@@ -153,27 +153,29 @@ export default function EmailNotifications() {
           <Switch checked={settings.enabled} onCheckedChange={(v) => setSettings((s) => ({ ...s, enabled: v }))} />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="from-address">From address</Label>
-            <Input
-              id="from-address"
-              value={settings.from_address}
-              onChange={(e) => setSettings((s) => ({ ...s, from_address: e.target.value }))}
-              placeholder="VeloDealer &lt;notifications@velodealer.com&gt;"
-            />
-            <p className="text-xs text-muted-foreground">The domain must be verified in your Resend account.</p>
+        {superAdmin && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="from-address">From address</Label>
+              <Input
+                id="from-address"
+                value={settings.from_address}
+                onChange={(e) => setSettings((s) => ({ ...s, from_address: e.target.value }))}
+                placeholder="VeloDealer &lt;notifications@velodealer.com&gt;"
+              />
+              <p className="text-xs text-muted-foreground">The domain must be verified in your Resend account.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="app-url">Link address used in emails</Label>
+              <Input
+                id="app-url"
+                value={settings.app_url}
+                onChange={(e) => setSettings((s) => ({ ...s, app_url: e.target.value }))}
+                placeholder="https://velodealer.com"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="app-url">Link address used in emails</Label>
-            <Input
-              id="app-url"
-              value={settings.app_url}
-              onChange={(e) => setSettings((s) => ({ ...s, app_url: e.target.value }))}
-              placeholder="https://velodealer.com"
-            />
-          </div>
-        </div>
+        )}
 
         <Separator />
 
