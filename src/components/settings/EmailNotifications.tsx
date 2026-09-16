@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { isSuperAdmin } from '@/lib/superAdmin';
 import { Mail, Save, Send } from 'lucide-react';
 
 type Mode = 'roles' | 'addresses';
