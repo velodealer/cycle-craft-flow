@@ -8,6 +8,8 @@ import {
   qboEnv,
   requireUser,
   refreshCapabilities,
+  logIntegrationError,
+  qboErrorInfo,
 
   type QboSettings,
 } from '../_shared/quickbooks.ts';
@@ -215,6 +217,14 @@ Deno.serve(async (req) => {
     return json({ error: `Unknown action: ${action}` }, 400);
   } catch (e) {
     console.error('quickbooks-oauth error', e);
+    const info = qboErrorInfo(e);
+    await logIntegrationError(supabase, {
+      integration: 'quickbooks',
+      operation: 'oauth',
+      status: info.status,
+      intuit_tid: info.intuitTid,
+      message: (e as Error).message,
+    });
     return json({ error: (e as Error).message }, 500);
   }
 });
