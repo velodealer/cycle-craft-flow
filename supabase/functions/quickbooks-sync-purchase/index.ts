@@ -9,6 +9,8 @@ import {
   refreshCapabilities,
   isFeatureFault,
   QboFeatureUnavailable,
+  logIntegrationError,
+  qboErrorInfo,
   type QboSettings,
 } from '../_shared/quickbooks.ts';
 
