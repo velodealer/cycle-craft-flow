@@ -3,6 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
   serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults, upsertFaults, rewriteReportUrl, getReportBaseUrl,
 } from '../_shared/inspectabike.ts';
+import { notifyFaultsAwaitingApproval } from '../_shared/email.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
