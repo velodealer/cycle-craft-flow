@@ -31,6 +31,15 @@ Deno.serve(async (req) => {
       const realmId = url.searchParams.get('realmId');
       if (!realmId) throw new Error('Missing realmId in callback');
 
+      // CSRF protection: the state returned by Intuit must match the one we stored
+      // when generating the auth URL.
+      const state = url.searchParams.get('state');
+      const integration = await loadIntegration(supabase);
+      const expectedState = ((integration?.settings ?? {}) as QboSettings).oauth_state;
+      if (!expectedState || !state || state !== expectedState) {
+        throw new Error('Invalid OAuth state — please start the connection again from Settings.');
+      }
+
       const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID')!;
       const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET')!;
       const res = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
@@ -56,6 +65,8 @@ Deno.serve(async (req) => {
         access_token: tokens.access_token,
         access_token_expires_at: new Date(Date.now() + (tokens.expires_in - 60) * 1000).toISOString(),
         connected_at: new Date().toISOString(),
+        oauth_state: undefined,
+        auth_error: undefined,
       });
 
       return new Response(
