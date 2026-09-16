@@ -55,7 +55,7 @@ export function submissionEmail(sub: any, appUrl: string) {
 }
 
 export function faultsEmail(bike: any, faults: any[], appUrl: string) {
-  const ref = bike?.reference_id || bike?.id || 'Bike';
+  const ref = bike?.reference || bike?.id || 'Bike';
   const list = faults.map((f) => {
     const costs = [
       f.parts_cost ? `parts ${money(f.parts_cost)}` : null,
@@ -83,7 +83,7 @@ export function logisticsEmail(opts: {
   orderId?: string | null;
   appUrl: string;
 }) {
-  const ref = opts.bike?.reference_id || '';
+  const ref = opts.bike?.reference || '';
   const label = opts.direction === 'outbound' ? 'Delivery to customer' : 'Collection from seller';
   const body = rows([
     ['Bike', [ref, opts.bike?.make, opts.bike?.model].filter(Boolean).join(' · ')],
