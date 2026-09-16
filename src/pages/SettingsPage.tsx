@@ -2,6 +2,7 @@ import PlaceholderPage from '@/components/PlaceholderPage';
 import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
 import TypeformIntegration from '@/components/settings/TypeformIntegration';
+import ShopifyIntegration from '@/components/settings/ShopifyIntegration';
 import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
@@ -98,6 +99,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4">
             <CycleCourierIntegration />
             <TypeformIntegration />
+            <ShopifyIntegration />
             <QuickBooksIntegration />
             <InspectABikeBackfill />
             <EmailNotifications />

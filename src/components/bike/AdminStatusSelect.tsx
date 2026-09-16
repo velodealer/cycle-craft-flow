@@ -6,6 +6,7 @@ import { reverseSale } from '@/lib/quickbooks';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+import { syncShopifyQuietly } from '@/services/shopify';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -79,6 +80,13 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
         .update({ status: pending as any })
         .eq('id', bike.id);
       if (error) throw error;
+
+      if (pending === 'ready' || pending === 'listed') {
+        void syncShopifyQuietly(bike.id, 'list');
+      } else if (['sold', 'split_for_parts', 'delivered', 'collected'].includes(pending)) {
+        void syncShopifyQuietly(bike.id, 'sold_out');
+      }
+
 
       if (profile?.id && FULFILMENT_STAGES.includes(pending)) {
         const { error: eventError } = await supabase.from('fulfilment_events').insert({

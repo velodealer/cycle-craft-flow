@@ -10,6 +10,7 @@ import PhotoUpload from '@/components/PhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { syncShopifyQuietly } from '@/services/shopify';
 
 const advanceStageSchema = z.object({
   notes: z.string().optional(),
@@ -73,6 +74,11 @@ export default function AdvanceStageDialog({
         .eq('id', bike.id);
 
       if (bikeError) throw bikeError;
+
+      if (nextStage === 'ready' || nextStage === 'listed') {
+        void syncShopifyQuietly(bike.id, 'list');
+      }
+
 
       // Record a fulfilment event so notes/photos aren't lost
       const FULFILMENT_STAGES = ['intake', 'cleaning', 'inspection', 'repair', 'ready'];

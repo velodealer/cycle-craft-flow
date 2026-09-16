@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { SPEC_SECTIONS } from '@/lib/bikeSpec';
+import { syncShopifyQuietly } from '@/services/shopify';
 
 interface Props {
   open: boolean;
@@ -309,6 +310,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         .update({ status: 'split_for_parts' as any })
         .eq('id', bike.id);
       if (bikeErr) throw bikeErr;
+      void syncShopifyQuietly(bike.id, 'sold_out');
       toast({ title: 'Bike broken for parts' });
       onOpenChange(false);
       onDone();
