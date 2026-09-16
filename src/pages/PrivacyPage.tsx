@@ -73,9 +73,36 @@ export default function PrivacyPage() {
             <strong>Supabase</strong> — hosting of our database, authentication and file storage.
           </li>
           <li>
+            <strong>Lovable</strong> — application hosting and content delivery.
+          </li>
+          <li>
+            <strong>Resend</strong> — delivery of notification and password-reset emails.
+          </li>
+          <li>
+            <strong>InspectABike</strong> — bicycle details and frame numbers for inspections and fault
+            reports.
+          </li>
+          <li>
+            <strong>Typeform</strong> — customer submission forms and the photographs uploaded with
+            them.
+          </li>
+          <li>
+            <strong>Shopify</strong> and <strong>eBay</strong> — listing content for bicycles you choose
+            to publish, and buyer contact details returned with orders.
+          </li>
+          <li>
+            <strong>99Spokes</strong> — bicycle make, model and year for specification lookups; no
+            personal data.
+          </li>
+          <li>
             Professional advisers, or authorities where required by law.
           </li>
         </ul>
+        <p>
+          A full subprocessor list, including each provider's role and location, is set out in section
+          14 of our End-User Licence Agreement. Cookies and browser storage are described in our Cookie
+          Policy.
+        </p>
       </section>
 
       <section>

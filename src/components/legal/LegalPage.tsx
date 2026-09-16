@@ -70,6 +70,9 @@ export default function LegalPage({ title, description, lastUpdated, children }:
           <Link to="/privacy" className="text-muted-foreground transition-colors hover:text-foreground">
             Privacy Policy
           </Link>
+          <Link to="/cookies" className="text-muted-foreground transition-colors hover:text-foreground">
+            Cookie Policy
+          </Link>
         </nav>
       </main>
     </div>
