@@ -1,7 +1,10 @@
 // Shared helpers for the InspectABike partner API.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
-export const INSPECTABIKE_BASE_URL = 'https://gotuhdjrkxtwwcezgbjo.supabase.co/functions/v1';
+export const INSPECTABIKE_BASE_URL =
+  (Deno.env.get('INSPECTABIKE_BASE_URL') || 'https://api.inspectabike.com/functions/v1')
+    .trim()
+    .replace(/\/+$/, '');
 
 export function serviceClient() {
   return createClient(
