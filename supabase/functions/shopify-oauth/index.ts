@@ -44,9 +44,11 @@ const backToApp = (origin: string, params: Record<string, string>) => {
 };
 
 const WEBHOOK_TOPICS = ['orders/paid', 'orders/cancelled', 'refunds/create'];
+const COMPLIANCE_TOPICS = ['app/uninstalled'];
 
 async function registerWebhooks(settings: { shop_domain: string; access_token: string }) {
   const address = webhookUrl();
+  const complianceAddress = `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-compliance`;
   let existing: any = null;
   try {
     existing = await shopifyRest(settings, '/webhooks.json?limit=250');
