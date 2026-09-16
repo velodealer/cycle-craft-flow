@@ -100,6 +100,7 @@ export default function SettingsPage() {
             <TypeformIntegration />
             <QuickBooksIntegration />
             <InspectABikeBackfill />
+            <EmailNotifications />
 
 
             
