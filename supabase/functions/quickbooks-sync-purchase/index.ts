@@ -58,6 +58,10 @@ Deno.serve(async (req) => {
     if (!accounts.stock) {
       throw new Error('QuickBooks account mapping is incomplete (Stock and purchase funding accounts are required)');
     }
+    // The company's QuickBooks version may have changed since the last sync.
+    const capabilities = await ensureCapabilities(supabase, settings as QboSettings);
+    requireCapability(capabilities, { journalEntries: true, accounts: ['stock'] });
+
     const isPartExchange = (bike as any).acquired_via === 'part_exchange';
     const fundingAccount = purchaseFundingAccount((bike as any).acquired_via, accounts);
     const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
