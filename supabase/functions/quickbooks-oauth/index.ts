@@ -68,6 +68,13 @@ Deno.serve(async (req) => {
         auth_error: undefined,
       });
 
+      // Read what this company's QuickBooks version can do right now.
+      await refreshCapabilities(supabase).catch((e) =>
+        console.error('Capability check after connect failed:', (e as Error).message),
+      );
+
+
+
       return new Response(
         `<!doctype html><html><body style="font-family:system-ui;padding:2rem">
          <h2>QuickBooks connected</h2><p>You can close this window.</p>
