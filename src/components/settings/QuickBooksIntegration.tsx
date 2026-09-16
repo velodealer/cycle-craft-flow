@@ -15,6 +15,8 @@ import {
   listQuickBooksTaxCodes,
   saveQuickBooksTaxCodes,
   disconnectQuickBooks,
+  checkQuickBooksCapabilities,
+
   type QboAccount,
   type QboAccountMap,
   type QboStatus,
