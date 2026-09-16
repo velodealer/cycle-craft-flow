@@ -284,6 +284,78 @@ export default function QuickBooksIntegration() {
                 ))}
               </div>
             </div>
+
+            <div className="border-t pt-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div>
+                  <h4 className="font-medium">QuickBooks features in this company</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Checked automatically when you connect and once a day, so the app follows what this
+                    QuickBooks plan can do today.
+                    {status.capabilities_checked_at
+                      ? ` Last checked ${new Date(status.capabilities_checked_at).toLocaleString()}.`
+                      : ''}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleCheckFeatures} disabled={checkingFeatures}>
+                  {checkingFeatures ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                  )}
+                  Re-check features
+                </Button>
+              </div>
+
+              {status.capabilities ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant={status.capabilities.journal_entries ? 'secondary' : 'destructive'}>
+                      Journal entries {status.capabilities.journal_entries ? 'available' : 'unavailable'}
+                    </Badge>
+                    <Badge variant={status.capabilities.sales_tax ? 'secondary' : 'outline'}>
+                      VAT {status.capabilities.sales_tax ? 'enabled' : 'off'}
+                    </Badge>
+                    <Badge variant="outline">
+                      {status.capabilities.tax_codes.length} VAT code
+                      {status.capabilities.tax_codes.length === 1 ? '' : 's'}
+                    </Badge>
+                    {status.capabilities.multicurrency && <Badge variant="outline">Multi-currency</Badge>}
+                    {status.capabilities.home_currency && (
+                      <Badge variant="outline">{status.capabilities.home_currency}</Badge>
+                    )}
+                  </div>
+
+                  {status.capabilities.accounts_missing.length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        These accounts are no longer in QuickBooks:{' '}
+                        {status.capabilities.accounts_missing
+                          .map((key) => ACCOUNT_LABELS[key] ?? key)
+                          .join(', ')}
+                        . Postings that need them are on hold until you pick replacements above and save.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {!status.capabilities.journal_entries && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        This QuickBooks company cannot accept journal entries at the moment, so stock and VAT
+                        postings are held until the plan allows them again.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {status.capabilities_error ?? 'No feature check has run yet.'}
+                </p>
+              )}
+            </div>
+
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save account mapping
