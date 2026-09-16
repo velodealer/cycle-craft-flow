@@ -10,7 +10,9 @@ import {
   normaliseShopDomain,
   redirectUri,
   webhookUrl,
-  shopifyRest,
+  fetchShopName,
+  fetchLocations,
+  ensureWebhooks,
   requireUser,
   requireRole,
   hmacHex,
@@ -25,7 +27,18 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const FALLBACK_APP_ORIGIN = 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
+const FALLBACK_APP_ORIGIN = Deno.env.get('SHOPIFY_APP_ORIGIN')
+  || 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
+
+/** True when the install started on Shopify (no VeloDealer session to return to). */
+function isInstallState(state: string | null): boolean {
+  if (!state) return false;
+  try {
+    return decodeURIComponent(state).startsWith('install|');
+  } catch {
+    return false;
+  }
+}
 
 function safeOrigin(state: string | null): string {
   if (!state) return FALLBACK_APP_ORIGIN;
@@ -43,36 +56,18 @@ const backToApp = (origin: string, params: Record<string, string>) => {
   return new Response(null, { status: 302, headers: { Location: `${origin}/settings?${qs}` } });
 };
 
+/** Merchants arriving from a Shopify install land on sign-in/sign-up with the store carried across. */
+const toSignUp = (shop: string, params: Record<string, string> = {}) => {
+  const qs = new URLSearchParams({ shopify: 'connected', shop, ...params });
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${FALLBACK_APP_ORIGIN}/auth?${qs}` },
+  });
+};
+
 const WEBHOOK_TOPICS = ['orders/paid', 'orders/cancelled', 'refunds/create'];
 // Compliance topics (customers/data_request, customers/redact, shop/redact) and
 // app/uninstalled are declared in the Partner Dashboard app configuration, not here.
-
-async function registerWebhooks(settings: { shop_domain: string; access_token: string }) {
-  const address = webhookUrl();
-  let existing: any = null;
-  try {
-    existing = await shopifyRest(settings, '/webhooks.json?limit=250');
-  } catch (e) {
-    console.error('Could not list Shopify webhooks:', (e as Error).message);
-  }
-  const current: any[] = existing?.webhooks ?? [];
-  const wanted: Array<{ topic: string; target: string }> = WEBHOOK_TOPICS.map((topic) => ({
-    topic,
-    target: address,
-  }));
-
-  for (const { topic, target } of wanted) {
-    if (current.some((w) => w.topic === topic && w.address === target)) continue;
-    try {
-      await shopifyRest(settings, '/webhooks.json', {
-        method: 'POST',
-        body: JSON.stringify({ webhook: { topic, address: target, format: 'json' } }),
-      });
-    } catch (e) {
-      console.error(`Could not register Shopify webhook ${topic}:`, (e as Error).message);
-    }
-  }
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
