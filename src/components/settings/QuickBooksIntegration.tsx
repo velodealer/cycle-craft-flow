@@ -146,6 +146,8 @@ export default function QuickBooksIntegration() {
               QuickBooks Online
               {status?.connected ? (
                 <Badge variant="default">Connected</Badge>
+              ) : status?.auth_error ? (
+                <Badge variant="destructive">Reconnect needed</Badge>
               ) : (
                 <Badge variant="secondary">Not connected</Badge>
               )}

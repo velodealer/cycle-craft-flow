@@ -17,6 +17,7 @@ export interface QboStatus {
   accounts: QboAccountMap;
   tax_codes: QboTaxCodeMap;
   connected_at: string | null;
+  auth_error: string | null;
   redirect_uri: string;
 }
 
