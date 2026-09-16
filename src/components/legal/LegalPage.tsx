@@ -49,15 +49,9 @@ export default function LegalPage({ title, description, lastUpdated, children }:
         <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
 
-        <div className="mt-6 rounded-md border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground">
-          This document is a template provided for transparency and should be reviewed by the business
-          (and its legal advisers) before final publication. Placeholders in square brackets must be
-          completed with your company details.
-        </div>
-
         <Separator className="my-8" />
 
-        <article className="space-y-8 text-sm leading-relaxed text-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:tracking-tight [&_p]:mt-2 [&_p]:text-muted-foreground [&_li]:text-muted-foreground [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
+        <article className="space-y-8 text-sm leading-relaxed text-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:tracking-tight [&_p]:mt-2 [&_p]:text-muted-foreground [&_li]:text-muted-foreground [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5 [&_table]:mt-3 [&_table]:w-full [&_table]:border-collapse [&_table]:text-left [&_table]:text-sm [&_th]:border [&_th]:px-3 [&_th]:py-2 [&_th]:font-semibold [&_th]:text-foreground [&_td]:border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-muted-foreground">
           {children}
         </article>
 
