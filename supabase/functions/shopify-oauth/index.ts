@@ -44,11 +44,11 @@ const backToApp = (origin: string, params: Record<string, string>) => {
 };
 
 const WEBHOOK_TOPICS = ['orders/paid', 'orders/cancelled', 'refunds/create'];
-const COMPLIANCE_TOPICS = ['app/uninstalled'];
+// Compliance topics (customers/data_request, customers/redact, shop/redact) and
+// app/uninstalled are declared in the Partner Dashboard app configuration, not here.
 
 async function registerWebhooks(settings: { shop_domain: string; access_token: string }) {
   const address = webhookUrl();
-  const complianceAddress = `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-compliance`;
   let existing: any = null;
   try {
     existing = await shopifyRest(settings, '/webhooks.json?limit=250');
@@ -56,10 +56,11 @@ async function registerWebhooks(settings: { shop_domain: string; access_token: s
     console.error('Could not list Shopify webhooks:', (e as Error).message);
   }
   const current: any[] = existing?.webhooks ?? [];
-  const wanted: Array<{ topic: string; target: string }> = [
-    ...WEBHOOK_TOPICS.map((topic) => ({ topic, target: address })),
-    ...COMPLIANCE_TOPICS.map((topic) => ({ topic, target: complianceAddress })),
-  ];
+  const wanted: Array<{ topic: string; target: string }> = WEBHOOK_TOPICS.map((topic) => ({
+    topic,
+    target: address,
+  }));
+
   for (const { topic, target } of wanted) {
     if (current.some((w) => w.topic === topic && w.address === target)) continue;
     try {
