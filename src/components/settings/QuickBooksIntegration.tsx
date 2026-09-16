@@ -146,6 +146,8 @@ export default function QuickBooksIntegration() {
               QuickBooks Online
               {status?.connected ? (
                 <Badge variant="default">Connected</Badge>
+              ) : status?.auth_error ? (
+                <Badge variant="destructive">Reconnect needed</Badge>
               ) : (
                 <Badge variant="secondary">Not connected</Badge>
               )}
@@ -179,6 +181,16 @@ export default function QuickBooksIntegration() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {!status?.connected && status?.auth_error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Your QuickBooks connection expired or was revoked. Please reconnect using the
+              Connect QuickBooks button above — your account mapping is saved and will carry over.
+            </AlertDescription>
           </Alert>
         )}
 
