@@ -74,6 +74,11 @@ export default function AdvanceStageDialog({
 
       if (bikeError) throw bikeError;
 
+      if (nextStage === 'ready' || nextStage === 'listed') {
+        void syncShopifyQuietly(bike.id, 'list');
+      }
+
+
       // Record a fulfilment event so notes/photos aren't lost
       const FULFILMENT_STAGES = ['intake', 'cleaning', 'inspection', 'repair', 'ready'];
       if (FULFILMENT_STAGES.includes(nextStage)) {
