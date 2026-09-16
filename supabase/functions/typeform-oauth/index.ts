@@ -2,6 +2,8 @@
 // GET  with ?code=...  → OAuth callback from Typeform (browser redirect, no JWT)
 // POST { action }      → authenticated JSON API
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { sendNotification, loadEmailSettings, appUrl } from '../_shared/email.ts';
+import { submissionEmail } from '../_shared/email-templates.ts';
 import {
   serviceClient,
   loadIntegration,
