@@ -73,6 +73,7 @@ export default function DeleteBikeDialog({ bike, open, onOpenChange, onDeleted }
 
   const handleDelete = async () => {
     setDeleting(true);
+    await syncShopifyQuietly(bike.id, 'unlist');
     const { data, error } = await supabase.functions.invoke('delete-bike', {
       body: { bike_id: bike.id },
     });
