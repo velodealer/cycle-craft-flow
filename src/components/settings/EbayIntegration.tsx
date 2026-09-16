@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Link2, Unlink, AlertCircle, Tag, Search } from 'lucide-react';
+import { Loader2, Link2, Unlink, AlertCircle, Tag, Search, ExternalLink, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getEbayStatus,
@@ -50,6 +50,7 @@ export default function EbayIntegration() {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [categories, setCategories] = useState<PolicyOption[]>([]);
   const [searchingCategories, setSearchingCategories] = useState(false);
+  const [refreshingPolicies, setRefreshingPolicies] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -133,6 +134,22 @@ export default function EbayIntegration() {
     }
   };
 
+  const policiesUrl = status?.environment === 'production'
+    ? 'https://www.bizpolicy.ebay.co.uk/businesspolicy/manage'
+    : 'https://www.bizpolicy.sandbox.ebay.co.uk/businesspolicy/manage';
+
+  const handleRefreshPolicies = async () => {
+    setRefreshingPolicies(true);
+    try {
+      setPolicies(await getEbayPolicies());
+      toast.success('Policies refreshed');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRefreshingPolicies(false);
+    }
+  };
+
   const handleCategorySearch = async () => {
     setSearchingCategories(true);
     try {
@@ -193,6 +210,23 @@ export default function EbayIntegration() {
               <Switch checked={autoList} onCheckedChange={setAutoList} />
             </div>
 
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+              <p className="mr-auto text-xs text-muted-foreground">
+                Postage, payment and returns policies are created on eBay.
+              </p>
+              <Button variant="outline" size="sm" asChild>
+                <a href={policiesUrl} target="_blank" rel="noreferrer">
+                  Create or edit policies on eBay <ExternalLink className="ml-1 h-3 w-3" />
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleRefreshPolicies} disabled={refreshingPolicies}>
+                {refreshingPolicies
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <RefreshCw className="mr-2 h-4 w-4" />}
+                Refresh policies
+              </Button>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Postage policy</Label>
@@ -228,7 +262,7 @@ export default function EbayIntegration() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Item condition</Label>
+                <Label>Default item condition</Label>
                 <Select value={condition} onValueChange={setCondition}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -248,13 +282,16 @@ export default function EbayIntegration() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ebay-category">eBay category number</Label>
+                <Label htmlFor="ebay-category">Default eBay category number</Label>
                 <Input
                   id="ebay-category"
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                   placeholder="177831"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Each bike can use a different condition and category on its own page.
+                </p>
               </div>
             </div>
 
