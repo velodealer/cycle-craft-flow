@@ -116,7 +116,11 @@ Deno.serve(async (req) => {
         tax_codes: settings.tax_codes ?? {},
         connected_at: settings.connected_at ?? null,
         auth_error: settings.auth_error ?? null,
+        capabilities: settings.capabilities ?? null,
+        capabilities_checked_at: settings.capabilities_checked_at ?? null,
+        capabilities_error: settings.capabilities_error ?? null,
         redirect_uri: redirectUri(),
+
       });
     }
 

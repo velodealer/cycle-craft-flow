@@ -10,6 +10,17 @@ export interface QboAccountMap {
 }
 
 
+export interface QboCapabilities {
+  sales_tax: boolean;
+  tax_codes: string[];
+  journal_entries: boolean;
+  multicurrency: boolean;
+  accounts_present: string[];
+  accounts_missing: string[];
+  country?: string;
+  home_currency?: string;
+}
+
 export interface QboStatus {
   connected: boolean;
   environment: string;
@@ -18,8 +29,12 @@ export interface QboStatus {
   tax_codes: QboTaxCodeMap;
   connected_at: string | null;
   auth_error: string | null;
+  capabilities: QboCapabilities | null;
+  capabilities_checked_at: string | null;
+  capabilities_error: string | null;
   redirect_uri: string;
 }
+
 
 export interface QboAccount {
   id: string;
