@@ -79,7 +79,7 @@ export default function CookiePolicyPage() {
       <section>
         <h2>6. Contact</h2>
         <p>
-          [Company Name], [Registered Address]. Email: [Contact Email].
+          VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@inspectabike.com.
         </p>
       </section>
     </LegalPage>

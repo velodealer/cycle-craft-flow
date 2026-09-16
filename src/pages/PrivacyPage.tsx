@@ -10,10 +10,10 @@ export default function PrivacyPage() {
       <section>
         <h2>1. Who we are</h2>
         <p>
-          VeloDealer is operated by [Company Name], a company registered in England and Wales with
-          registered office at [Registered Address]. We are the data controller for personal data
+          VeloDealer is operated by VDMS Ltd, a company registered in England and Wales with
+          registered office at 30 Wake Green Road, Birmingham, B13 9PB. We are the data controller for personal data
           about our account holders, and a data processor for personal data our customers enter about
-          their own customers and suppliers. Contact: [Contact Email].
+          their own customers and suppliers. Contact: info@inspectabike.com.
         </p>
       </section>
 
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
         <p>
           Under UK GDPR you may request access to your personal data, correction, erasure,
           restriction, portability, or object to processing based on legitimate interests. Contact
-          [Contact Email] to exercise these rights. You may also complain to the Information
+          info@inspectabike.com to exercise these rights. You may also complain to the Information
           Commissioner's Office (ico.org.uk).
         </p>
       </section>
@@ -159,7 +159,7 @@ export default function PrivacyPage() {
 
       <section>
         <h2>11. Contact</h2>
-        <p>[Company Name], [Registered Address]. Email: [Contact Email].</p>
+        <p>VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@inspectabike.com.</p>
       </section>
     </LegalPage>
   );
