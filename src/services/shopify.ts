@@ -38,12 +38,8 @@ async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> 
 
 export const getShopifyStatus = () => invoke<ShopifyStatus>('shopify-oauth', { action: 'status' });
 
-export const getShopifyAuthUrl = (shopDomain: string) =>
-  invoke<{ url: string }>('shopify-oauth', {
-    action: 'auth_url',
-    shop_domain: shopDomain,
-    origin: window.location.origin,
-  });
+export const getShopifyAuthUrl = () =>
+  invoke<{ url: string }>('shopify-oauth', { action: 'auth_url' });
 
 export const disconnectShopify = () => invoke<{ ok: true }>('shopify-oauth', { action: 'disconnect' });
 

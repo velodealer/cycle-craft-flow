@@ -17,7 +17,6 @@ import {
   requireRole,
   hmacHex,
   timingSafeEqual,
-  SHOPIFY_SCOPES,
   type ShopifySettings,
 } from '../_shared/shopify.ts';
 
