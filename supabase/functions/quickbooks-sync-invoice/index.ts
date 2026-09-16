@@ -9,6 +9,8 @@ import {
   refreshCapabilities,
   isFeatureFault,
   QboFeatureUnavailable,
+  logIntegrationError,
+  qboErrorInfo,
   type QboSettings,
 } from '../_shared/quickbooks.ts';
 import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
@@ -229,6 +231,15 @@ Deno.serve(async (req) => {
         .update({ sync_status: pending ? 'pending_feature' : 'failed', sync_error: message })
         .eq('id', invoiceId);
     }
+    const info = qboErrorInfo(e);
+    await logIntegrationError(supabase, {
+      integration: 'quickbooks',
+      operation: 'invoice.sync',
+      entity_ref: invoiceId ?? null,
+      status: info.status,
+      intuit_tid: info.intuitTid,
+      message,
+    });
     return json({ error: message, pending_feature: pending }, pending ? 409 : 500);
   }
 

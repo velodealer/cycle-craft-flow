@@ -8,6 +8,8 @@ import {
   loadIntegration,
   ensureCapabilities,
   refreshCapabilities,
+  logIntegrationError,
+  qboErrorInfo,
   type QboSettings,
 } from '../_shared/quickbooks.ts';
 
@@ -63,6 +65,14 @@ Deno.serve(async (req) => {
   } catch (e) {
     const message = (e as Error).message;
     console.error('quickbooks-capabilities error', message);
+    const info = qboErrorInfo(e);
+    await logIntegrationError(supabase, {
+      integration: 'quickbooks',
+      operation: 'capabilities',
+      status: info.status,
+      intuit_tid: info.intuitTid,
+      message,
+    });
     return json({ error: message }, 500);
   }
 });

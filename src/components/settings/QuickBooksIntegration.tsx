@@ -16,7 +16,9 @@ import {
   saveQuickBooksTaxCodes,
   disconnectQuickBooks,
   checkQuickBooksCapabilities,
+  listRecentQuickBooksErrors,
 
+  type IntegrationErrorRow,
   type QboAccount,
   type QboAccountMap,
   type QboStatus,
@@ -45,6 +47,7 @@ export default function QuickBooksIntegration() {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingFeatures, setCheckingFeatures] = useState(false);
+  const [qboErrors, setQboErrors] = useState<IntegrationErrorRow[]>([]);
 
   const ACCOUNT_LABELS: Record<string, string> = {
     stock: 'Stock / inventory',
@@ -106,7 +109,28 @@ export default function QuickBooksIntegration() {
     }
   }, []);
 
-  useEffect(() => { loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } }); }, [loadStatus, loadAccounts, loadTaxCodes]);
+  const loadErrors = useCallback(async () => {
+    try {
+      setQboErrors(await listRecentQuickBooksErrors());
+    } catch {
+      // Panel is informational only — never block the settings page on it.
+    }
+  }, []);
+
+  useEffect(() => { loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } }); loadErrors(); }, [loadStatus, loadAccounts, loadTaxCodes, loadErrors]);
+
+  const copyErrorLog = async () => {
+    const text = qboErrors
+      .map((row) =>
+        [
+          `${new Date(row.created_at).toISOString()} [${row.operation}] status=${row.status ?? 'n/a'} intuit_tid=${row.intuit_tid ?? 'n/a'}${row.entity_ref ? ` ref=${row.entity_ref}` : ''}`,
+          row.message,
+        ].join('\n'),
+      )
+      .join('\n\n');
+    await navigator.clipboard.writeText(text || 'No QuickBooks errors recorded.');
+    toast.success('Error log copied — paste it into your message to Intuit support');
+  };
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -353,6 +377,42 @@ export default function QuickBooksIntegration() {
                 <p className="text-sm text-muted-foreground">
                   {status.capabilities_error ?? 'No feature check has run yet.'}
                 </p>
+              )}
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div>
+                  <h4 className="font-medium">Recent QuickBooks errors</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Every failed QuickBooks call is logged with its Intuit transaction ID (intuit_tid) so
+                    Intuit support can trace it. Copy the log when raising a support case.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={copyErrorLog} disabled={qboErrors.length === 0}>
+                  Copy log
+                </Button>
+              </div>
+              {qboErrors.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No QuickBooks errors recorded.</p>
+              ) : (
+                <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-3">
+                  {qboErrors.map((row) => (
+                    <div key={row.id} className="text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {new Date(row.created_at).toLocaleString()}
+                        </span>
+                        <Badge variant="outline">{row.operation}</Badge>
+                        {row.status && <Badge variant="destructive">{row.status}</Badge>}
+                        {row.intuit_tid && (
+                          <span className="font-mono text-muted-foreground">tid: {row.intuit_tid}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 break-words">{row.message}</p>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 

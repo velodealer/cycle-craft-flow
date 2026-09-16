@@ -889,6 +889,42 @@ export type Database = {
           },
         ]
       }
+      integration_error_log: {
+        Row: {
+          created_at: string
+          detail: Json | null
+          entity_ref: string | null
+          id: string
+          integration: string
+          intuit_tid: string | null
+          message: string
+          operation: string
+          status: number | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json | null
+          entity_ref?: string | null
+          id?: string
+          integration: string
+          intuit_tid?: string | null
+          message: string
+          operation: string
+          status?: number | null
+        }
+        Update: {
+          created_at?: string
+          detail?: Json | null
+          entity_ref?: string | null
+          id?: string
+          integration?: string
+          intuit_tid?: string | null
+          message?: string
+          operation?: string
+          status?: number | null
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           api_key: string | null

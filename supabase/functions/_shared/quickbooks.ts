@@ -214,13 +214,56 @@ export async function qboFetch(
     },
   });
   const text = await res.text();
+  const tid = res.headers.get('intuit_tid') || res.headers.get('intuit-tid');
   if (!res.ok) {
-    console.error(`QuickBooks request failed [${res.status}] ${path}: ${text}`);
-    const err = new Error(`QuickBooks request failed [${res.status}]: ${text}`);
-    (err as Error & { status?: number }).status = res.status;
-    throw err;
+    console.error(`QuickBooks request failed [${res.status}] ${path}: ${text} intuit_tid: ${tid ?? 'n/a'}`);
+    const err = new Error(`QuickBooks request failed [${res.status}]: ${text} (intuit_tid: ${tid ?? 'n/a'})`);
+    const tagged = err as Error & { status?: number; intuitTid?: string | null };
+    tagged.status = res.status;
+    tagged.intuitTid = tid;
+    throw tagged;
   }
+  if (tid) console.log(`QuickBooks ${init.method ?? 'GET'} ${path} -> ${res.status} intuit_tid: ${tid}`);
   return text ? JSON.parse(text) : null;
+}
+
+export interface IntegrationErrorEntry {
+  integration: string;
+  operation: string;
+  entity_ref?: string | null;
+  status?: number | null;
+  intuit_tid?: string | null;
+  message: string;
+  detail?: Record<string, unknown> | null;
+}
+
+/**
+ * Fire-and-forget write to the central integration error log.
+ * Never throws — logging must not break the caller.
+ */
+export async function logIntegrationError(
+  supabase: ReturnType<typeof serviceClient>,
+  entry: IntegrationErrorEntry,
+) {
+  try {
+    await supabase.from('integration_error_log').insert({
+      integration: entry.integration,
+      operation: entry.operation,
+      entity_ref: entry.entity_ref ?? null,
+      status: entry.status ?? null,
+      intuit_tid: entry.intuit_tid ?? null,
+      message: entry.message.slice(0, 2000),
+      detail: entry.detail ?? null,
+    });
+  } catch (e) {
+    console.error('Failed to write integration error log:', (e as Error).message);
+  }
+}
+
+/** Pull status and intuit_tid off an error thrown by qboFetch, if present. */
+export function qboErrorInfo(e: unknown): { status: number | null; intuitTid: string | null } {
+  const tagged = e as Error & { status?: number; intuitTid?: string | null };
+  return { status: tagged?.status ?? null, intuitTid: tagged?.intuitTid ?? null };
 }
 
 /**

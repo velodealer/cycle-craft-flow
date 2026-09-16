@@ -9,6 +9,8 @@ import {
   refreshCapabilities,
   isFeatureFault,
   QboFeatureUnavailable,
+  logIntegrationError,
+  qboErrorInfo,
   type QboSettings,
 } from '../_shared/quickbooks.ts';
 
@@ -179,6 +181,15 @@ Deno.serve(async (req) => {
         .update({ purchase_sync_status: pending ? 'pending_feature' : 'failed', purchase_sync_error: message })
         .eq('id', bikeId);
     }
+    const info = qboErrorInfo(e);
+    await logIntegrationError(supabase, {
+      integration: 'quickbooks',
+      operation: 'purchase.sync',
+      entity_ref: bikeId ?? null,
+      status: info.status,
+      intuit_tid: info.intuitTid,
+      message,
+    });
     return json({ error: message, pending_feature: pending }, pending ? 409 : 500);
   }
 
