@@ -130,3 +130,47 @@ export async function sendNotification(
     return { sent: false, reason: (e as Error).message };
   }
 }
+
+/** Convenience: email admins about newly reported faults on a bike. Never throws. */
+export async function notifyFaultsAwaitingApproval(
+  supabase: Client,
+  bikeId: string,
+  faults: any[],
+): Promise<void> {
+  try {
+    const pending = (faults || []).filter((f) => String(f?.status ?? 'reported') === 'reported');
+    if (!pending.length) return;
+    const { faultsEmail } = await import('./email-templates.ts');
+    const { data: bike } = await supabase
+      .from('bikes')
+      .select('id, reference, make, model')
+      .eq('id', bikeId)
+      .maybeSingle();
+    const settings = await loadEmailSettings(supabase);
+    const { subject, html } = faultsEmail(bike ?? { id: bikeId }, pending, appUrl(settings));
+    await sendNotification(supabase, 'faults_awaiting_approval', subject, html);
+  } catch (e) {
+    console.error('email: fault notification failed', (e as Error).message);
+  }
+}
+
+/** Convenience: email admins about a collection/delivery status change. Never throws. */
+export async function notifyLogistics(
+  supabase: Client,
+  bikeId: string,
+  opts: { direction: string; status: string; trackingNumber?: string | null; orderId?: string | null },
+): Promise<void> {
+  try {
+    const { logisticsEmail } = await import('./email-templates.ts');
+    const { data: bike } = await supabase
+      .from('bikes')
+      .select('id, reference, make, model')
+      .eq('id', bikeId)
+      .maybeSingle();
+    const settings = await loadEmailSettings(supabase);
+    const { subject, html } = logisticsEmail({ bike: bike ?? { id: bikeId }, ...opts, appUrl: appUrl(settings) });
+    await sendNotification(supabase, 'logistics_update', subject, html);
+  } catch (e) {
+    console.error('email: logistics notification failed', (e as Error).message);
+  }
+}
