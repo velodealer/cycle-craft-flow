@@ -184,6 +184,16 @@ export default function QuickBooksIntegration() {
           </Alert>
         )}
 
+        {!status?.connected && status?.auth_error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Your QuickBooks connection expired or was revoked. Please reconnect using the
+              Connect QuickBooks button above — your account mapping is saved and will carry over.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {!status?.connected && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
