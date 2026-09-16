@@ -13,6 +13,22 @@ export interface QboAccounts {
 }
 
 
+/**
+ * What the connected QuickBooks company can actually do right now.
+ * Customers change QuickBooks Online subscriptions at any time, so we read this
+ * from the company itself instead of assuming a product level.
+ */
+export interface QboCapabilities {
+  sales_tax: boolean;
+  tax_codes: string[];
+  journal_entries: boolean;
+  multicurrency: boolean;
+  accounts_present: string[];
+  accounts_missing: string[];
+  country?: string;
+  home_currency?: string;
+}
+
 export interface QboSettings {
   realm_id?: string;
   refresh_token?: string;
@@ -23,6 +39,9 @@ export interface QboSettings {
   connected_at?: string;
   oauth_state?: string;
   auth_error?: string;
+  capabilities?: QboCapabilities;
+  capabilities_checked_at?: string;
+  capabilities_error?: string;
 }
 
 /** Thrown when Intuit rejects the refresh token (expired/revoked) — user must reconnect. */
@@ -32,6 +51,15 @@ export class QboReconnectRequired extends Error {
     this.name = 'QboReconnectRequired';
   }
 }
+
+/** Thrown when the company's current QuickBooks version cannot do what we need. */
+export class QboFeatureUnavailable extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'QboFeatureUnavailable';
+  }
+}
+
 
 export function serviceClient() {
   return createClient(
