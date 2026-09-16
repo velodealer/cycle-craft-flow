@@ -70,9 +70,8 @@ export default function AboutPage() {
 
         <h2 className="mt-12 text-2xl font-semibold tracking-tight text-foreground">The company</h2>
         <p className="mt-3 text-muted-foreground">
-          VeloDealer is built and operated by VDMS Ltd, registered in England and Wales (company
-          number 16785495), with a registered office at 30 Wake Green Road, Birmingham, B13 9PB. You
-          can reach us at info@velodealer.com.
+          VeloDealer is built and operated by VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB.
+          You can reach us at info@velodealer.com.
         </p>
 
         <div className="mt-10 flex flex-wrap gap-3">
