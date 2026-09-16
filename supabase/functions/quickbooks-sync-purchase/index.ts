@@ -1,5 +1,17 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient, getQboAuth, qboFetch, requireUser, type QboSettings } from '../_shared/quickbooks.ts';
+import {
+  serviceClient,
+  getQboAuth,
+  qboFetch,
+  requireUser,
+  ensureCapabilities,
+  requireCapability,
+  refreshCapabilities,
+  isFeatureFault,
+  QboFeatureUnavailable,
+  type QboSettings,
+} from '../_shared/quickbooks.ts';
+
 import { purchaseFundingAccount } from '../_shared/quickbooks-lines.ts';
 import { findAccountsReceivableAccount, findOrCreateCustomer } from '../_shared/quickbooks-names.ts';
 
@@ -147,13 +159,23 @@ Deno.serve(async (req) => {
 
     return json({ ok: true, journal_id: journalId, amount });
   } catch (e) {
-    const message = (e as Error).message;
+    let message = (e as Error).message;
     console.error('quickbooks-sync-purchase error', message);
+    let pending = e instanceof QboFeatureUnavailable;
+    if (!pending && isFeatureFault(message)) {
+      pending = true;
+      await refreshCapabilities(supabase).catch(() => null);
+      message =
+        'This posting is waiting on QuickBooks: the company\'s current QuickBooks version rejected part of it. ' +
+        'Check Settings → Integrations → QuickBooks for the feature or account that is missing, then retry. ' +
+        `QuickBooks said: ${message}`;
+    }
     if (bikeId) {
       await supabase.from('bikes')
-        .update({ purchase_sync_status: 'failed', purchase_sync_error: message })
+        .update({ purchase_sync_status: pending ? 'pending_feature' : 'failed', purchase_sync_error: message })
         .eq('id', bikeId);
     }
-    return json({ error: message }, 500);
+    return json({ error: message, pending_feature: pending }, pending ? 409 : 500);
   }
+
 });
