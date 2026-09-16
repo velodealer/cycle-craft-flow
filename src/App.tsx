@@ -39,6 +39,14 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
 import PricingPage from "./pages/PricingPage";
+import FeaturesPage from "./pages/FeaturesPage";
+import UpdatesPage from "./pages/UpdatesPage";
+import AboutPage from "./pages/AboutPage";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
+import CareersPage from "./pages/CareersPage";
+import CareerDetailPage from "./pages/CareerDetailPage";
+import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +68,14 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/cookies" element={<CookiePolicyPage />} />
             <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/updates" element={<UpdatesPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/careers/:slug" element={<CareerDetailPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/dashboard" element={guarded(<Layout><BPSDashboard /></Layout>)} />
             <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
             <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />
