@@ -135,7 +135,64 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2>14. Contact</h2>
+        <h2>14. Subprocessors</h2>
+        <p>
+          We use the following subprocessors to provide the Service. Each acts on our documented
+          instructions under a written agreement, and processes only the data described below.
+        </p>
+        <ul>
+          <li>
+            <strong>Supabase</strong> (database, authentication, file storage and server functions;
+            EU/UK region) — all application data, including bikes, customers, invoices, staff accounts
+            and uploaded photographs.
+          </li>
+          <li>
+            <strong>Lovable</strong> (application hosting and content delivery; EU) — technical
+            connection data such as IP address and request logs.
+          </li>
+          <li>
+            <strong>Resend</strong> (transactional email delivery; EU/US) — recipient name and email
+            address and the content of notification and password-reset messages.
+          </li>
+          <li>
+            <strong>Intuit (QuickBooks Online)</strong> (accounting postings; US) — customer name and
+            contact details, invoice lines, amounts, VAT codes and references.
+          </li>
+          <li>
+            <strong>Cycle Courier Co</strong> (collection and delivery booking; UK) — sender and
+            recipient names, addresses, phone numbers, email addresses and bicycle details.
+          </li>
+          <li>
+            <strong>InspectABike</strong> (bicycle inspections and fault reporting; UK) — bicycle
+            details, frame and serial numbers, and the customer name where supplied.
+          </li>
+          <li>
+            <strong>Typeform</strong> (customer submission forms; EU) — the information and photographs
+            customers enter when submitting a bicycle for sale or part exchange.
+          </li>
+          <li>
+            <strong>Shopify</strong> (listing bicycles on your own store; US/EU) — listing content and
+            the buyer contact details contained in orders returned to us.
+          </li>
+          <li>
+            <strong>eBay</strong> (listing bicycles on your own seller account; US/EU) — listing
+            content only.
+          </li>
+          <li>
+            <strong>99Spokes</strong> (bicycle specification lookup; US) — make, model and year only;
+            no personal data.
+          </li>
+        </ul>
+        <p>
+          Integrations with QuickBooks, Cycle Courier Co, InspectABike, Typeform, Shopify and eBay are
+          used only where you choose to connect them. We will give notice before adding or replacing a
+          subprocessor; you may object on reasonable data protection grounds by writing to us at the
+          contact address below. Cookies and browser storage are described in our Cookie Policy.
+        </p>
+      </section>
+
+      <section>
+        <h2>15. Contact</h2>
         <p>
           [Company Name], [Registered Address]. Email: [Contact Email].
         </p>
