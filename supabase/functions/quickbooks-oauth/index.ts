@@ -115,7 +115,8 @@ Deno.serve(async (req) => {
       const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
       if (!clientId) return json({ error: 'QUICKBOOKS_CLIENT_ID is not configured' }, 400);
       const state = crypto.randomUUID();
-      await saveSettings(supabase, { oauth_state: state }, integration_is_active(await loadIntegration(supabase)));
+      const existing = await loadIntegration(supabase);
+      await saveSettings(supabase, { oauth_state: state }, Boolean(existing?.is_active));
       const params = new URLSearchParams({
         client_id: clientId,
         response_type: 'code',
@@ -142,12 +143,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'tax_codes') {
-      const { accessToken, realmId } = await getQboAuth(supabase);
       const taxCodeQuery = encodeURIComponent('select * from TaxCode where Active = true maxresults 1000');
       const taxRateQuery = encodeURIComponent('select * from TaxRate where Active = true maxresults 1000');
       const [taxCodeData, taxRateData] = await Promise.all([
-        qboFetch(accessToken, realmId, `/query?query=${taxCodeQuery}&minorversion=70`),
-        qboFetch(accessToken, realmId, `/query?query=${taxRateQuery}&minorversion=70`),
+        qboFetchAuthed(supabase, `/query?query=${taxCodeQuery}&minorversion=70`),
+        qboFetchAuthed(supabase, `/query?query=${taxRateQuery}&minorversion=70`),
       ]);
       return json({
         tax_codes: mapSalesTaxCodes(
