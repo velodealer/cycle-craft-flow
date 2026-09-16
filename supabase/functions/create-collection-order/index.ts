@@ -215,6 +215,13 @@ serve(async (req) => {
 
     console.log('Collection order created successfully');
 
+    await notifyLogistics(supabase as any, bike_id, {
+      direction: 'inbound',
+      status: `booked (${responseData.status || 'scheduled'})`,
+      trackingNumber: responseData.trackingNumber,
+      orderId: responseData.id,
+    });
+
     return new Response(
       JSON.stringify({ 
         success: true, 
