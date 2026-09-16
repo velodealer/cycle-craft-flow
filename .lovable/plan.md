@@ -39,6 +39,6 @@ Checked the live data before writing this:
 - Read-only. No schema changes, no migrations, no edge functions.
 - Data sources, all filtered on the selected day in the local timezone: `fulfilment_events` (`performed_by`, `timestamp`, `stage`, `notes`), `inspections` (`inspected_by`, `started_at`, `completed_at`), `inspection_faults` (`decided_by`, `decided_at`, plus `repaired_at` as unattributed), `jobs` (`assigned_to`, `created_at`, `updated_at`).
 - One hook, `useStaffActivity(profileId | 'all', date)`, queries each source, resolves bike rows once by id, resolves `profiles` names, and merges into a single sorted event list with a discriminated `type`.
-- `performed_by` / `inspected_by` / `assigned_to` reference `profiles.id`; `decided_by` is a user id, so it is matched via `profiles.user_id`.
+- `performed_by` / `inspected_by` / `assigned_to` reference `profiles.id`; `decided_by` is a user id, so it is matched via `profiles.user_id`. Repair completions are attributed by matching `inspection_faults.raw->>'mechanic_name'` to a profile name (case-insensitive, first-name match as fallback), timed on `repaired_at`; unmatched names show as an InspectABike mechanic in the Everyone view.
 - Non-admin users are locked to their own `profile.id` in the hook, not just hidden in the UI; existing RLS already governs row visibility.
 - Reuses `BikeThumbnail` and `bikeRef`; mobile-first card layout consistent with the other lists.
