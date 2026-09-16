@@ -6,6 +6,7 @@ import { reverseSale } from '@/lib/quickbooks';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { syncShopifyQuietly } from '@/services/shopify';
+import { syncEbayQuietly } from '@/services/ebay';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,8 +84,10 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
 
       if (pending === 'ready' || pending === 'listed') {
         void syncShopifyQuietly(bike.id, 'list');
+        void syncEbayQuietly(bike.id, 'list');
       } else if (['sold', 'split_for_parts', 'delivered', 'collected'].includes(pending)) {
         void syncShopifyQuietly(bike.id, 'sold_out');
+        void syncEbayQuietly(bike.id, 'end');
       }
 
 

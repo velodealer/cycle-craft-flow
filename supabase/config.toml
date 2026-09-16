@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.shopify-compliance]
 verify_jwt = false
+
+[functions.ebay-oauth]
+verify_jwt = false
+
+[functions.ebay-notifications]
+verify_jwt = false

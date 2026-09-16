@@ -528,6 +528,62 @@ export type Database = {
           },
         ]
       }
+      ebay_listings: {
+        Row: {
+          bike_id: string
+          created_at: string
+          environment: string
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          listing_id: string | null
+          listing_url: string | null
+          offer_id: string | null
+          quantity: number
+          sku: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bike_id: string
+          created_at?: string
+          environment?: string
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          listing_id?: string | null
+          listing_url?: string | null
+          offer_id?: string | null
+          quantity?: number
+          sku?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bike_id?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          listing_id?: string | null
+          listing_url?: string | null
+          offer_id?: string | null
+          quantity?: number
+          sku?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ebay_listings_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: true
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_owners: {
         Row: {
           address: string | null
