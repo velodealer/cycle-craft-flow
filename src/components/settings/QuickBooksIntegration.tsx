@@ -16,7 +16,9 @@ import {
   saveQuickBooksTaxCodes,
   disconnectQuickBooks,
   checkQuickBooksCapabilities,
+  listRecentQuickBooksErrors,
 
+  type IntegrationErrorRow,
   type QboAccount,
   type QboAccountMap,
   type QboStatus,
@@ -45,6 +47,7 @@ export default function QuickBooksIntegration() {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingFeatures, setCheckingFeatures] = useState(false);
+  const [qboErrors, setQboErrors] = useState<IntegrationErrorRow[]>([]);
 
   const ACCOUNT_LABELS: Record<string, string> = {
     stock: 'Stock / inventory',
