@@ -3,6 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
   serviceClient, normaliseFault, upsertFaults, syncBikeStatusFromFaults, isOpenFault,
 } from '../_shared/inspectabike.ts';
+import { notifyFaultsAwaitingApproval } from '../_shared/email.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -127,7 +128,13 @@ Deno.serve(async (req) => {
       await supabase.from('inspection_faults').delete().eq('external_fault_id', faultId);
     } else if (event === 'fault.created' || event === 'fault.updated' || event === 'fault.repaired') {
       const row = normaliseFault(fault, inspection.id, inspection.bike_id, event);
+      const { data: existingRow } = await supabase
+        .from('inspection_faults')
+        .select('id')
+        .eq('external_fault_id', row.external_fault_id)
+        .maybeSingle();
       await upsertFaults(supabase, [row]);
+      if (!existingRow) await notifyFaultsAwaitingApproval(supabase, inspection.bike_id, [row]);
     } else {
       return json({ received: true });
     }

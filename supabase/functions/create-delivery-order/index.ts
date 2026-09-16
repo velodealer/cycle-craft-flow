@@ -2,6 +2,7 @@
 // sender, the buying customer is the receiver.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { notifyLogistics } from '../_shared/email.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -163,6 +164,13 @@ Deno.serve(async (req) => {
         error_message: null,
       })
       .eq('id', delivery.id);
+
+    await notifyLogistics(supabase as any, bikeId, {
+      direction: 'outbound',
+      status: `booked (${responseData.status || 'scheduled'})`,
+      trackingNumber: responseData.trackingNumber,
+      orderId: responseData.id,
+    });
 
     return json({ ok: true, delivery_id: delivery.id, order_id: responseData.id, tracking_number: responseData.trackingNumber });
   } catch (e) {

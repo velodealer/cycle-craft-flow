@@ -2,6 +2,8 @@
 // GET  with ?code=...  → OAuth callback from Typeform (browser redirect, no JWT)
 // POST { action }      → authenticated JSON API
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { sendNotification, loadEmailSettings, appUrl } from '../_shared/email.ts';
+import { submissionEmail } from '../_shared/email-templates.ts';
 import {
   serviceClient,
   loadIntegration,
@@ -378,6 +380,13 @@ Deno.serve(async (req) => {
         });
         if (error) throw new Error(error.message);
         imported++;
+        try {
+          const settings = await loadEmailSettings(supabase);
+          const mail = submissionEmail(extracted, appUrl(settings));
+          await sendNotification(supabase, 'submission_received', mail.subject, mail.html);
+        } catch (err) {
+          console.error('fetch_responses: notification email failed', err);
+        }
       }
 
       return json({ ok: true, imported, skipped, total: items.length });

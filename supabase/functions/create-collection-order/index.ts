@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { notifyLogistics } from '../_shared/email.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -214,6 +215,13 @@ serve(async (req) => {
     }
 
     console.log('Collection order created successfully');
+
+    await notifyLogistics(supabase as any, bike_id, {
+      direction: 'inbound',
+      status: `booked (${responseData.status || 'scheduled'})`,
+      trackingNumber: responseData.trackingNumber,
+      orderId: responseData.id,
+    });
 
     return new Response(
       JSON.stringify({ 

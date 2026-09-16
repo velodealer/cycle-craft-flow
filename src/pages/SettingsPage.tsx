@@ -8,6 +8,7 @@ import StorageBays from '@/components/settings/StorageBays';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
 import InspectABikeBackfill from '@/components/settings/InspectABikeBackfill';
+import EmailNotifications from '@/components/settings/EmailNotifications';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -99,6 +100,7 @@ export default function SettingsPage() {
             <TypeformIntegration />
             <QuickBooksIntegration />
             <InspectABikeBackfill />
+            <EmailNotifications />
 
 
             
