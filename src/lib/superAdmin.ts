@@ -1,7 +1,7 @@
 // VeloDealer super admins: the only people who can see sensitive delivery settings
 // (email sender address, link address) inside Settings.
 export const SUPER_ADMIN_EMAILS: string[] = [
-  'abdullah@velodealer.com',
+  'abdnhussain@gmail.com',
 ];
 
 export function isSuperAdmin(email?: string | null): boolean {
