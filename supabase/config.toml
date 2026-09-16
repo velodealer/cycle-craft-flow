@@ -32,3 +32,10 @@ verify_jwt = false
 
 [functions.ebay-notifications]
 verify_jwt = false
+
+[functions.submit-contact]
+verify_jwt = false
+
+[functions.submit-application]
+verify_jwt = false
+

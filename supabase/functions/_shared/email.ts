@@ -9,6 +9,8 @@ export type NotificationKind =
   | 'submission_received'
   | 'faults_awaiting_approval'
   | 'logistics_update'
+  | 'support_ticket'
+  | 'job_application'
   | 'test';
 
 interface KindSettings {
