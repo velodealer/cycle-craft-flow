@@ -188,9 +188,32 @@ export async function qboFetch(
   const text = await res.text();
   if (!res.ok) {
     console.error(`QuickBooks request failed [${res.status}] ${path}: ${text}`);
-    throw new Error(`QuickBooks request failed [${res.status}]: ${text}`);
+    const err = new Error(`QuickBooks request failed [${res.status}]: ${text}`);
+    (err as Error & { status?: number }).status = res.status;
+    throw err;
   }
   return text ? JSON.parse(text) : null;
+}
+
+/**
+ * Authenticated QuickBooks API call with self-healing:
+ * gets a valid token, and on a 401 forces one token refresh and retries once.
+ */
+export async function qboFetchAuthed(
+  supabase: ReturnType<typeof serviceClient>,
+  path: string,
+  init: RequestInit = {},
+) {
+  const auth = await getQboAuth(supabase);
+  try {
+    return await qboFetch(auth.accessToken, auth.realmId, path, init);
+  } catch (e) {
+    if ((e as Error & { status?: number }).status !== 401) throw e;
+    // Force a refresh by clearing the cached access token, then retry once.
+    await saveSettings(supabase, { access_token: undefined, access_token_expires_at: undefined });
+    const fresh = await getQboAuth(supabase);
+    return await qboFetch(fresh.accessToken, fresh.realmId, path, init);
+  }
 }
 
 /** Validates the caller's JWT and returns their profile, or throws. */
