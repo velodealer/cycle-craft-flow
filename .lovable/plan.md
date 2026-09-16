@@ -1,44 +1,36 @@
-# Staff activity by day
+# Email notifications with Resend
 
-A new "Staff activity" page that answers: what did this person do today, and on which bikes.
+Send automatic emails from VeloDealer using your Resend account (API key already saved), with a Settings page where you choose who receives each type of email.
 
-## What you will see
+## Emails to send
 
-Pick a person and a date (default: today). You get a timeline for that day, newest first, with each entry showing the time, what happened, and the bike it was on (photo, reference, make/model) — click through to the bike.
+1. **New bike submission received** — when a Typeform sell/part-exchange response arrives.
+   Includes customer name, bike make/model/year, asking price, and a link to the Submissions page.
+2. **Faults awaiting approval** — when InspectABike raises faults on a bike that need an approve/decline decision.
+   Includes bike reference, fault list with parts/labour costs, and a link to the Repairs page.
+3. **Collection / delivery updates** — when a Cycle Courier Co collection or delivery is booked, and when the courier webhook reports it collected or delivered.
+   Includes bike reference, direction (inbound/outbound), status and tracking details.
 
-Entries come from what the app already records:
+All emails are sent from **notifications@velodealer.com**. This domain must be verified in your Resend account before delivery works — until then sending will fail with a Resend error, which will be shown in the app.
 
-- Stage moves — moved a bike from intake to cleaning, cleaning to inspection, etc., including the note typed and any photos attached at the time.
-- Inspections — inspection started and inspection completed.
-- Repair decisions — a fault approved or declined, with the note.
-- Repairs finished — a fault marked repaired at InspectABike, attributed to the mechanic name InspectABike sends with that fault, timed by their repaired-at stamp. So Jahan's repairs on a day show up even though the work was logged in InspectABike, not here.
-- Job changes — a repair job assigned to that person, and when its record last changed.
+## Settings
 
-Above the timeline, a small summary for the day: number of bikes touched, stage moves, inspections done, repair decisions, repairs completed, and the labour value of those repairs.
+New "Email notifications" card in Settings → Integrations (admin/owner only):
 
+- Master on/off switch.
+- For each of the three notification types: on/off toggle plus a recipient list.
+- Recipients can be chosen as "all admins and owners" or as a list of specific email addresses typed in.
+- A "Send test email" button to confirm the setup works end to end.
 
-There is also an "Everyone" view for the chosen day, grouped by person, so you can see the whole team's day on one screen.
+## Technical details
 
-## Who can see it
-
-Admin and owner can pick any person. Everyone else sees only their own day — the person picker is hidden for them.
-
-## Honest limits of the current data
-
-Checked the live data before writing this:
-
-- InspectABike does not send booked time or hours on a fault — checked the stored fault payloads, which carry mechanic name, description, parts cost, labour cost and repaired-at only. So the page can show who repaired what and when it was completed, and the labour value of that work, but not hours spent. If you want hours, InspectABike would need to include a time field in the webhook.
-- Repair jobs in VeloDealer carry an assigned person but no start or finish times at all (0 of 77 jobs have them), so job entries show assignment, not duration.
-
-- Only 13 stage moves have ever been recorded in total (8 by Jahan), so early days will look sparse. That is a record-keeping gap, not a bug in the page.
-- Photo uploads and notes made during a stage move are attached to that stage move, so they will appear.
-
-## Technical notes
-
-- New route `/staff-activity` plus a sidebar entry, in the same pattern as `RepairsPage`.
-- Read-only. No schema changes, no migrations, no edge functions.
-- Data sources, all filtered on the selected day in the local timezone: `fulfilment_events` (`performed_by`, `timestamp`, `stage`, `notes`), `inspections` (`inspected_by`, `started_at`, `completed_at`), `inspection_faults` (`decided_by`, `decided_at`, plus `repaired_at` as unattributed), `jobs` (`assigned_to`, `created_at`, `updated_at`).
-- One hook, `useStaffActivity(profileId | 'all', date)`, queries each source, resolves bike rows once by id, resolves `profiles` names, and merges into a single sorted event list with a discriminated `type`.
-- `performed_by` / `inspected_by` / `assigned_to` reference `profiles.id`; `decided_by` is a user id, so it is matched via `profiles.user_id`. Repair completions are attributed by matching `inspection_faults.raw->>'mechanic_name'` to a profile name (case-insensitive, first-name match as fallback), timed on `repaired_at`; unmatched names show as an InspectABike mechanic in the Everyone view.
-- Non-admin users are locked to their own `profile.id` in the hook, not just hidden in the UI; existing RLS already governs row visibility.
-- Reuses `BikeThumbnail` and `bikeRef`; mobile-first card layout consistent with the other lists.
+- **Storage:** new row in the existing `integrations` table, `name = 'resend'`, with `settings` JSON holding `{ enabled, from_address, notifications: { submission_received: { enabled, mode: 'roles'|'addresses', addresses: [] }, faults_awaiting_approval: {...}, logistics_update: {...} } }`. No schema migration needed.
+- **Shared helper** `supabase/functions/_shared/email.ts`: `sendNotification(kind, subject, html)` — reads the `integrations` row with the service-role client, resolves recipients (querying `profiles` for admin/owner emails when in roles mode), skips silently when disabled or no recipients, and POSTs to the Resend API at `https://api.resend.com/emails` with `Authorization: Bearer ${RESEND_API_KEY}`. Direct API call, no connector gateway. Logs the Resend status and body on failure; never throws into the caller's main flow.
+- **Templates** in `_shared/email-templates.ts`: small HTML builders per notification type, sharing a plain header/footer.
+- **Hooks into existing functions** (each wrapped in try/catch so the primary action never fails because of email):
+  - `typeform-webhook/index.ts` and `typeform-oauth` `fetch_responses` — after a submission row is inserted.
+  - `inspectabike-webhook/index.ts` and `inspectabike-sync/index.ts` — after `upsertFaults`, when faults in `reported` status were newly created.
+  - `create-collection-order/index.ts`, `create-delivery-order/index.ts` and `cycle-courier-webhook/index.ts` — after the order is booked or a status change is applied.
+- **New edge function** `send-test-email`: validates the caller's JWT and admin/owner role, then sends a test message through the same helper.
+- **Frontend:** `src/components/settings/EmailNotifications.tsx` (load/save settings via the `integrations` table, invoke `send-test-email`), added to the Integrations tab in `SettingsPage.tsx`.
+- Deploy the new and modified edge functions at the end.
