@@ -76,7 +76,14 @@ Deno.serve(async (req) => {
       const rows = faults
         .map((f) => normaliseFault(f, inspection.id, bikeId))
         .filter((r) => r.external_fault_id);
+      const { data: known } = await supabase
+        .from('inspection_faults')
+        .select('external_fault_id')
+        .eq('bike_id', bikeId);
+      const knownIds = new Set((known ?? []).map((k: any) => k.external_fault_id));
       await upsertFaults(supabase, rows);
+      const freshFaults = rows.filter((r) => !knownIds.has(r.external_fault_id));
+      if (freshFaults.length) await notifyFaultsAwaitingApproval(supabase, bikeId, freshFaults);
     }
 
     await syncBikeStatusFromFaults(supabase, bikeId, completed);
