@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 import { syncShopifyQuietly } from '@/services/shopify';
+import { syncEbayQuietly } from '@/services/ebay';
 
 interface Props {
   open: boolean;
@@ -311,6 +312,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         .eq('id', bike.id);
       if (bikeErr) throw bikeErr;
       void syncShopifyQuietly(bike.id, 'sold_out');
+      void syncEbayQuietly(bike.id, 'end');
       toast({ title: 'Bike broken for parts' });
       onOpenChange(false);
       onDone();

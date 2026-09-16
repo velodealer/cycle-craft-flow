@@ -17,6 +17,7 @@ import BikePhotoGallery from './BikePhotoGallery';
 import StageHistory from './StageHistory';
 import AdminStatusSelect from './AdminStatusSelect';
 import ShopifyListingCard from './ShopifyListingCard';
+import EbayListingCard from './EbayListingCard';
 
 
 
@@ -491,6 +492,8 @@ export default function BikeDetailView({
           )}
 
           {!isMechanic && !inspectionMode && <ShopifyListingCard bikeId={bike.id} />}
+
+          {!isMechanic && !inspectionMode && <EbayListingCard bikeId={bike.id} />}
 
 
           {bike.source === 'investor' && !isMechanic && !inspectionMode && (

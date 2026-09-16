@@ -3,6 +3,7 @@ import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
 import TypeformIntegration from '@/components/settings/TypeformIntegration';
 import ShopifyIntegration from '@/components/settings/ShopifyIntegration';
+import EbayIntegration from '@/components/settings/EbayIntegration';
 import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
@@ -100,6 +101,7 @@ export default function SettingsPage() {
             <CycleCourierIntegration />
             <TypeformIntegration />
             <ShopifyIntegration />
+            <EbayIntegration />
             <QuickBooksIntegration />
             <InspectABikeBackfill />
             <EmailNotifications />

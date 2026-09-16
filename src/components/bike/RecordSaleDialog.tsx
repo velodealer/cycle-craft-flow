@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
 import { syncShopifyQuietly } from '@/services/shopify';
+import { syncEbayQuietly } from '@/services/ebay';
 
 interface RecordSaleDialogProps {
   isOpen: boolean;
@@ -308,6 +309,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
 
       void syncShopifyQuietly(bike.id, 'sold_out');
+      void syncEbayQuietly(bike.id, 'end');
 
 
       toast.success(`Sale recorded — invoice ${invoice.invoice_number}`);
