@@ -11,8 +11,8 @@ export default function TermsPage() {
         <h2>1. Agreement</h2>
         <p>
           This End-User Licence Agreement ("Agreement") is a legal agreement between you (the
-          "Customer") and [Company Name], a company registered in England and Wales with registered
-          office at [Registered Address] ("we", "us"), governing your use of the VeloDealer bicycle
+          "Customer") and VDMS Ltd, a company registered in England and Wales with registered
+          office at 30 Wake Green Road, Birmingham, B13 9PB ("we", "us"), governing your use of the VeloDealer bicycle
           dealer management system, including its web application, integrations and related services
           (the "Service"). By creating an account or using the Service you accept this Agreement.
         </p>
@@ -76,7 +76,7 @@ export default function TermsPage() {
         <p>
           We aim to keep the Service available at all times but do not guarantee uninterrupted access.
           The Service may be unavailable during maintenance or because of events outside our
-          reasonable control. Support is provided at [Support Email].
+          reasonable control. Support is provided at info@inspectabike.com.
         </p>
       </section>
 
@@ -194,7 +194,7 @@ export default function TermsPage() {
       <section>
         <h2>15. Contact</h2>
         <p>
-          [Company Name], [Registered Address]. Email: [Contact Email].
+          VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@inspectabike.com.
         </p>
       </section>
     </LegalPage>
