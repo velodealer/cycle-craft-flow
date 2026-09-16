@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
 
-const SUPABASE_URL = "https://hgztcymscgyuekgsyyfe.supabase.co";
+const SUPABASE_URL = "https://api.velodealer.com";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhnenRjeW1zY2d5dWVrZ3N5eWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2NzMzOTUsImV4cCI6MjA3MzI0OTM5NX0.azFxlBJhK02umfWuYxWyh9ZlIzRhVEqOV5Fk3jUZtPk";
 
 // Import the supabase client like this:
