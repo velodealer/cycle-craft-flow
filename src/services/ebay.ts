@@ -18,6 +18,8 @@ export interface EbayStatus {
 
 export interface EbayListing {
   bike_id: string;
+  condition: string | null;
+  category_id: string | null;
   offer_id: string | null;
   listing_id: string | null;
   listing_url: string | null;
@@ -87,11 +89,30 @@ export const removeBikeFromEbay = (bikeId: string) =>
 export async function getBikeEbayListing(bikeId: string): Promise<EbayListing | null> {
   const { data, error } = await supabase
     .from('ebay_listings')
-    .select('bike_id, offer_id, listing_id, listing_url, status, quantity, last_synced_at, last_error')
+    .select('bike_id, condition, category_id, offer_id, listing_id, listing_url, status, quantity, last_synced_at, last_error')
     .eq('bike_id', bikeId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as EbayListing) ?? null;
+}
+
+/** Saves per-bike eBay options (condition and category). Blank means use the account default. */
+export async function saveBikeEbayOptions(
+  bikeId: string,
+  options: { condition: string | null; category_id: string | null },
+) {
+  const { error } = await supabase
+    .from('ebay_listings')
+    .upsert(
+      {
+        bike_id: bikeId,
+        condition: options.condition || null,
+        category_id: options.category_id || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'bike_id' },
+    );
+  if (error) throw new Error(error.message);
 }
 
 /** Fire-and-forget sync used by status changes — never blocks or throws. */

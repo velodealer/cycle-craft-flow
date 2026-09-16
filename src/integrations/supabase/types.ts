@@ -531,6 +531,8 @@ export type Database = {
       ebay_listings: {
         Row: {
           bike_id: string
+          category_id: string | null
+          condition: string | null
           created_at: string
           environment: string
           id: string
@@ -546,6 +548,8 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          category_id?: string | null
+          condition?: string | null
           created_at?: string
           environment?: string
           id?: string
@@ -561,6 +565,8 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          category_id?: string | null
+          condition?: string | null
           created_at?: string
           environment?: string
           id?: string

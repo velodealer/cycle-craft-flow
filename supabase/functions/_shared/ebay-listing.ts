@@ -150,11 +150,21 @@ export async function pushBikeToEbay(
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .slice(0, 12);
 
+  // Per-bike overrides take priority over the account defaults.
+  const { data: existing } = await supabase
+    .from('ebay_listings')
+    .select('*')
+    .eq('bike_id', bike.id)
+    .maybeSingle();
+
+  const bikeCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
+  const bikeCategoryId = ((existing as any)?.category_id as string | null) || s.category_id || DEFAULT_CATEGORY;
+
   await ebayFetch(conn, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
     method: 'PUT',
     body: JSON.stringify({
       availability: { shipToLocationAvailability: { quantity: 1 } },
-      condition: s.condition || 'USED_EXCELLENT',
+      condition: bikeCondition,
       product: {
         title: bikeTitle(bike),
         description: bikeDescriptionHtml(bike),
@@ -166,12 +176,6 @@ export async function pushBikeToEbay(
     }),
   });
 
-  const { data: existing } = await supabase
-    .from('ebay_listings')
-    .select('*')
-    .eq('bike_id', bike.id)
-    .maybeSingle();
-
   let offerId = ((existing as any)?.offer_id as string | undefined) || (await findOfferId(conn, sku));
 
   const offerBody = {
@@ -179,7 +183,7 @@ export async function pushBikeToEbay(
     marketplaceId: s.marketplace_id || 'EBAY_GB',
     format: 'FIXED_PRICE',
     availableQuantity: 1,
-    categoryId: s.category_id || DEFAULT_CATEGORY,
+    categoryId: bikeCategoryId,
     listingDescription: bikeDescriptionHtml(bike),
     merchantLocationKey: locationKey,
     listingPolicies: {
