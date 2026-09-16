@@ -58,6 +58,9 @@ export default function LegalPage({ title, description, lastUpdated, children }:
         <Separator className="my-8" />
 
         <nav className="flex flex-wrap gap-4 text-sm">
+          <Link to="/pricing" className="text-muted-foreground transition-colors hover:text-foreground">
+            Pricing
+          </Link>
           <Link to="/terms" className="text-muted-foreground transition-colors hover:text-foreground">
             End-User Licence Agreement
           </Link>
