@@ -10,12 +10,13 @@ import {
   normaliseShopDomain,
   redirectUri,
   webhookUrl,
-  shopifyRest,
+  fetchShopName,
+  fetchLocations,
+  ensureWebhooks,
   requireUser,
   requireRole,
   hmacHex,
   timingSafeEqual,
-  SHOPIFY_SCOPES,
   type ShopifySettings,
 } from '../_shared/shopify.ts';
 
@@ -25,7 +26,18 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const FALLBACK_APP_ORIGIN = 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
+const FALLBACK_APP_ORIGIN = Deno.env.get('SHOPIFY_APP_ORIGIN')
+  || 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
+
+/** True when the install started on Shopify (no VeloDealer session to return to). */
+function isInstallState(state: string | null): boolean {
+  if (!state) return false;
+  try {
+    return decodeURIComponent(state).startsWith('install|');
+  } catch {
+    return false;
+  }
+}
 
 function safeOrigin(state: string | null): string {
   if (!state) return FALLBACK_APP_ORIGIN;
@@ -43,36 +55,18 @@ const backToApp = (origin: string, params: Record<string, string>) => {
   return new Response(null, { status: 302, headers: { Location: `${origin}/settings?${qs}` } });
 };
 
+/** Merchants arriving from a Shopify install land on sign-in/sign-up with the store carried across. */
+const toSignUp = (shop: string, params: Record<string, string> = {}) => {
+  const qs = new URLSearchParams({ shopify: 'connected', shop, ...params });
+  return new Response(null, {
+    status: 302,
+    headers: { Location: `${FALLBACK_APP_ORIGIN}/auth?${qs}` },
+  });
+};
+
 const WEBHOOK_TOPICS = ['orders/paid', 'orders/cancelled', 'refunds/create'];
 // Compliance topics (customers/data_request, customers/redact, shop/redact) and
 // app/uninstalled are declared in the Partner Dashboard app configuration, not here.
-
-async function registerWebhooks(settings: { shop_domain: string; access_token: string }) {
-  const address = webhookUrl();
-  let existing: any = null;
-  try {
-    existing = await shopifyRest(settings, '/webhooks.json?limit=250');
-  } catch (e) {
-    console.error('Could not list Shopify webhooks:', (e as Error).message);
-  }
-  const current: any[] = existing?.webhooks ?? [];
-  const wanted: Array<{ topic: string; target: string }> = WEBHOOK_TOPICS.map((topic) => ({
-    topic,
-    target: address,
-  }));
-
-  for (const { topic, target } of wanted) {
-    if (current.some((w) => w.topic === topic && w.address === target)) continue;
-    try {
-      await shopifyRest(settings, '/webhooks.json', {
-        method: 'POST',
-        body: JSON.stringify({ webhook: { topic, address: target, format: 'json' } }),
-      });
-    } catch (e) {
-      console.error(`Could not register Shopify webhook ${topic}:`, (e as Error).message);
-    }
-  }
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -117,13 +111,12 @@ Deno.serve(async (req) => {
       let shopName = shop;
       let locationId: string | undefined;
       try {
-        const info = await shopifyRest(connection, '/shop.json');
-        shopName = info?.shop?.name || shop;
+        shopName = await fetchShopName(connection);
       } catch { /* non-fatal */ }
       try {
-        const locations = await shopifyRest(connection, '/locations.json');
-        const active = (locations?.locations ?? []).find((l: any) => l.active) ?? locations?.locations?.[0];
-        if (active) locationId = String(active.id);
+        const locations = await fetchLocations(connection);
+        const active = locations.find((l) => l.active) ?? locations[0];
+        if (active) locationId = active.id;
       } catch { /* non-fatal */ }
 
       await saveSettings(supabase, {
@@ -135,15 +128,17 @@ Deno.serve(async (req) => {
         connected_at: new Date().toISOString(),
       });
 
-      await registerWebhooks(connection);
+      await ensureWebhooks(connection, WEBHOOK_TOPICS, webhookUrl());
 
+      if (isInstallState(state)) return toSignUp(shop);
       return backToApp(safeOrigin(state), { shopify: 'connected' });
     } catch (e) {
       console.error('Shopify callback error', e);
-      return backToApp(safeOrigin(state), {
-        shopify: 'error',
-        message: String((e as Error).message).slice(0, 300),
-      });
+      const message = String((e as Error).message).slice(0, 300);
+      if (isInstallState(state)) {
+        return toSignUp(url.searchParams.get('shop') ?? '', { shopify: 'error', message });
+      }
+      return backToApp(safeOrigin(state), { shopify: 'error', message });
     }
   }
 
@@ -178,20 +173,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'auth_url') {
+      // Installation must begin on a Shopify-owned surface: send the merchant to
+      // Shopify's own install page, which then calls our install entry point.
       const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
       if (!clientId) throw new Error('SHOPIFY_CLIENT_ID is not configured');
-      const shop = normaliseShopDomain(body.shop_domain ?? '');
-      const origin = typeof body.origin === 'string' && /^https?:\/\//.test(body.origin)
-        ? body.origin.replace(/\/+$/, '')
-        : FALLBACK_APP_ORIGIN;
-      const state = encodeURIComponent(`${origin}|${crypto.randomUUID()}`);
-      const authUrl = `https://${shop}/admin/oauth/authorize?` + new URLSearchParams({
-        client_id: clientId,
-        scope: SHOPIFY_SCOPES,
-        redirect_uri: redirectUri(),
-        state,
+      return json({
+        url: `https://admin.shopify.com/oauth/install?client_id=${encodeURIComponent(clientId)}`,
       });
-      return json({ url: authUrl });
     }
 
     if (action === 'save_settings') {
@@ -207,10 +195,8 @@ Deno.serve(async (req) => {
     if (action === 'locations') {
       const settings = await loadSettings(supabase);
       if (!settings.access_token || !settings.shop_domain) return json({ locations: [] });
-      const data = await shopifyRest(settings as any, '/locations.json');
-      return json({
-        locations: (data?.locations ?? []).map((l: any) => ({ id: String(l.id), name: l.name })),
-      });
+      const list = await fetchLocations(settings as { shop_domain: string; access_token: string });
+      return json({ locations: list.map((l) => ({ id: l.id, name: l.name })) });
     }
 
     if (action === 'disconnect') {

@@ -92,6 +92,10 @@ export default function Auth() {
     }
   };
 
+  const shopifyParams = new URLSearchParams(window.location.search);
+  const shopifyResult = shopifyParams.get('shopify');
+  const shopifyShop = shopifyParams.get('shop');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -107,6 +111,24 @@ export default function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {shopifyResult === 'connected' && (
+            <div className="mb-4 rounded-lg border border-accent bg-accent/10 p-3 text-sm">
+              <div className="font-medium">
+                {shopifyShop ? `${shopifyShop} is connected` : 'Your Shopify store is connected'}
+              </div>
+              <div className="text-muted-foreground">
+                Create your VeloDealer account or sign in and your store will be ready to use.
+              </div>
+            </div>
+          )}
+          {shopifyResult === 'error' && (
+            <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm">
+              <div className="font-medium">Your Shopify store could not be connected</div>
+              <div className="text-muted-foreground">
+                {shopifyParams.get('message') || 'Please try installing the app again from Shopify.'}
+              </div>
+            </div>
+          )}
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>

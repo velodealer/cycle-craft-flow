@@ -24,7 +24,6 @@ export default function ShopifyIntegration() {
   const [connecting, setConnecting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shopDomain, setShopDomain] = useState('');
   const [autoList, setAutoList] = useState(true);
   const [productType, setProductType] = useState('Bicycle');
   const [vendor, setVendor] = useState('');
@@ -71,7 +70,7 @@ export default function ShopifyIntegration() {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const { url } = await getShopifyAuthUrl(shopDomain);
+      const { url } = await getShopifyAuthUrl();
       window.location.href = url;
     } catch (e) {
       toast.error((e as Error).message);
@@ -199,18 +198,13 @@ export default function ShopifyIntegration() {
           </>
         ) : (
           <>
-            <div className="space-y-1.5">
-              <Label htmlFor="shopify-shop">Your store address</Label>
-              <Input
-                id="shopify-shop"
-                value={shopDomain}
-                onChange={(e) => setShopDomain(e.target.value)}
-                placeholder="my-shop.myshopify.com"
-              />
-            </div>
-            <Button onClick={handleConnect} disabled={connecting || !shopDomain.trim()}>
+            <p className="text-sm text-muted-foreground">
+              Installation starts on Shopify. Choose your store there, approve the permissions, and
+              you will be brought straight back here.
+            </p>
+            <Button onClick={handleConnect} disabled={connecting}>
               {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
-              Connect Shopify
+              Install on Shopify
             </Button>
           </>
         )}

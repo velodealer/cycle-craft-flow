@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.send-password-reset]
 verify_jwt = false
 
+[functions.shopify-install]
+verify_jwt = false
+
 [functions.shopify-oauth]
 verify_jwt = false
 

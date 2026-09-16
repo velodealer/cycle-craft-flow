@@ -128,30 +128,80 @@ export async function shopifyGraphql<T = any>(
   return body.data as T;
 }
 
-/** REST helper (used for webhook registration and shop info). */
-export async function shopifyRest(
-  settings: { shop_domain: string; access_token: string },
-  path: string,
-  init: RequestInit = {},
-) {
-  const res = await fetch(
-    `https://${settings.shop_domain}/admin/api/${SHOPIFY_API_VERSION}${path}`,
-    {
-      ...init,
-      headers: {
-        'X-Shopify-Access-Token': settings.access_token,
-        Accept: 'application/json',
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(init.headers as Record<string, string> | undefined),
-      },
-    },
-  );
-  const text = await res.text();
-  if (!res.ok) {
-    console.error(`Shopify REST failed [${res.status}] ${path}: ${text}`);
-    throw new Error(`Shopify request failed [${res.status}]: ${text}`);
+type Conn = { shop_domain: string; access_token: string };
+
+const numericId = (gid: string) => String(gid).split('/').pop() as string;
+
+/** Shop display name via the GraphQL Admin API. */
+export async function fetchShopName(conn: Conn): Promise<string> {
+  const data = await shopifyGraphql<{ shop: { name: string } }>(conn, `{ shop { name } }`);
+  return data?.shop?.name || conn.shop_domain;
+}
+
+/** Active locations via the GraphQL Admin API. */
+export async function fetchLocations(
+  conn: Conn,
+): Promise<Array<{ id: string; name: string; active: boolean }>> {
+  const data = await shopifyGraphql<{
+    locations: { nodes: Array<{ id: string; name: string; isActive: boolean }> };
+  }>(conn, `{ locations(first: 50) { nodes { id name isActive } } }`);
+  return (data?.locations?.nodes ?? []).map((l) => ({
+    id: numericId(l.id),
+    name: l.name,
+    active: Boolean(l.isActive),
+  }));
+}
+
+const TOPIC_ENUM: Record<string, string> = {
+  'orders/paid': 'ORDERS_PAID',
+  'orders/cancelled': 'ORDERS_CANCELLED',
+  'refunds/create': 'REFUNDS_CREATE',
+};
+
+/** Creates any missing webhook subscriptions via the GraphQL Admin API. */
+export async function ensureWebhooks(conn: Conn, topics: string[], callbackUrl: string) {
+  let existing: Array<{ topic: string; endpoint?: { callbackUrl?: string } }> = [];
+  try {
+    const data = await shopifyGraphql<{
+      webhookSubscriptions: {
+        nodes: Array<{ topic: string; endpoint: { callbackUrl?: string } }>;
+      };
+    }>(
+      conn,
+      `{ webhookSubscriptions(first: 100) {
+           nodes { topic endpoint { ... on WebhookHttpEndpoint { callbackUrl } } }
+         } }`,
+    );
+    existing = data?.webhookSubscriptions?.nodes ?? [];
+  } catch (e) {
+    console.error('Could not list Shopify webhooks:', (e as Error).message);
   }
-  return text ? JSON.parse(text) : null;
+
+  const mutation = `mutation CreateWebhook($topic: WebhookSubscriptionTopic!, $sub: WebhookSubscriptionInput!) {
+    webhookSubscriptionCreate(topic: $topic, webhookSubscription: $sub) {
+      userErrors { field message }
+    }
+  }`;
+
+  for (const topic of topics) {
+    const enumTopic = TOPIC_ENUM[topic];
+    if (!enumTopic) continue;
+    if (existing.some((w) => w.topic === enumTopic && w.endpoint?.callbackUrl === callbackUrl)) continue;
+    try {
+      const res = await shopifyGraphql<{
+        webhookSubscriptionCreate: { userErrors: Array<{ message: string }> };
+      }>(conn, mutation, {
+        topic: enumTopic,
+        sub: { callbackUrl, format: 'JSON' },
+      });
+      const errors = res?.webhookSubscriptionCreate?.userErrors ?? [];
+      if (errors.length) {
+        console.error(`Shopify webhook ${topic} not created:`, errors.map((e) => e.message).join('; '));
+      }
+    } catch (e) {
+      console.error(`Could not register Shopify webhook ${topic}:`, (e as Error).message);
+    }
+  }
 }
 
 /** Validates the caller's JWT and returns their user, or throws. */

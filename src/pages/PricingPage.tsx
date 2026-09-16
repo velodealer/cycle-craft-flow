@@ -37,6 +37,10 @@ const faqs = [
     a: 'Yes. You can cancel your subscription at any time with effect from the end of the current billing period, and access continues until that period ends.',
   },
   {
+    q: 'Is the Shopify app free?',
+    a: 'Yes. VeloDealer installed from the Shopify App Store is free to install and use, and no charge is made through Shopify.',
+  },
+  {
     q: 'Can prices change?',
     a: 'We may change subscription fees by giving at least 30 days’ notice. Changes take effect from your next renewal, and you may cancel before a change takes effect if you do not accept it.',
   },
@@ -54,6 +58,12 @@ export default function PricingPage() {
           VeloDealer is available on a subscription, billed monthly or annually in advance. Choose the plan that fits
           your dealership — you can change plan at any time.
         </p>
+
+        <div className="mt-6 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Installing from the Shopify App Store?</span>{' '}
+          VeloDealer is free to install and use for Shopify merchants — there is no charge through Shopify.
+          The plans below apply only to dealers who sign up with VeloDealer directly.
+        </div>
 
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {plans.map((plan) => (
