@@ -3,8 +3,7 @@ import {
   serviceClient,
   loadIntegration,
   saveSettings,
-  getQboAuth,
-  qboFetch,
+  qboFetchAuthed,
   redirectUri,
   qboEnv,
   requireUser,
@@ -107,6 +106,7 @@ Deno.serve(async (req) => {
         accounts: settings.accounts ?? {},
         tax_codes: settings.tax_codes ?? {},
         connected_at: settings.connected_at ?? null,
+        auth_error: settings.auth_error ?? null,
         redirect_uri: redirectUri(),
       });
     }
@@ -114,22 +114,23 @@ Deno.serve(async (req) => {
     if (action === 'auth_url') {
       const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
       if (!clientId) return json({ error: 'QUICKBOOKS_CLIENT_ID is not configured' }, 400);
+      const state = crypto.randomUUID();
+      await saveSettings(supabase, { oauth_state: state }, integration_is_active(await loadIntegration(supabase)));
       const params = new URLSearchParams({
         client_id: clientId,
         response_type: 'code',
         scope: 'com.intuit.quickbooks.accounting',
         redirect_uri: redirectUri(),
-        state: crypto.randomUUID(),
+        state,
       });
       return json({ url: `https://appcenter.intuit.com/connect/oauth2?${params}` });
     }
 
     if (action === 'accounts') {
-      const { accessToken, realmId } = await getQboAuth(supabase);
       const query = encodeURIComponent(
         "select Id, Name, AccountType, AccountSubType, Classification from Account where Active = true maxresults 1000",
       );
-      const data = await qboFetch(accessToken, realmId, `/query?query=${query}&minorversion=70`);
+      const data = await qboFetchAuthed(supabase, `/query?query=${query}&minorversion=70`);
       const accounts = (data?.QueryResponse?.Account ?? []).map((a: any) => ({
         id: a.Id,
         name: a.Name,
