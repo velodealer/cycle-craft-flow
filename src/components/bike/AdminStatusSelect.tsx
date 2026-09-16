@@ -6,6 +6,7 @@ import { reverseSale } from '@/lib/quickbooks';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+import { syncShopifyQuietly } from '@/services/shopify';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

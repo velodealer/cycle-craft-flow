@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
+import { syncShopifyQuietly } from '@/services/shopify';
 
 interface RecordSaleDialogProps {
   isOpen: boolean;
