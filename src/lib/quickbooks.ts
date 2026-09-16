@@ -80,6 +80,16 @@ export const saveQuickBooksTaxCodes = (taxCodes: QboTaxCodeMap) =>
   invoke<{ ok: true }>('quickbooks-oauth', { action: 'save_tax_codes', tax_codes: taxCodes });
 export const disconnectQuickBooks = () => invoke<{ ok: true }>('quickbooks-oauth', { action: 'disconnect' });
 
+/** Re-reads which QuickBooks features this company currently has. */
+export const checkQuickBooksCapabilities = (force = false) =>
+  invoke<{
+    connected: boolean;
+    capabilities: QboCapabilities | null;
+    checked_at?: string | null;
+    error?: string | null;
+  }>('quickbooks-capabilities', { force });
+
+
 /** Readable QuickBooks Doc Numbers (max 21 chars) — must match the edge functions. */
 export const stockInDocNumber = (bikeReference?: string | null) =>
   bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
