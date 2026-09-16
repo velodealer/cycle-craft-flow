@@ -150,7 +150,7 @@ export async function setTypeformWebhook(
       method: 'PUT',
       body: JSON.stringify({
         enabled: true,
-        url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/typeform-webhook`,
+        url: `${functionsBase()}/typeform-webhook`,
         secret,
       }),
     });
