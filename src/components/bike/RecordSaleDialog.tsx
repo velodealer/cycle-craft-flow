@@ -307,6 +307,9 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
 
       await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
 
+      void syncShopifyQuietly(bike.id, 'sold_out');
+
+
       toast.success(`Sale recorded — invoice ${invoice.invoice_number}`);
 
       try {

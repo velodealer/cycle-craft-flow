@@ -310,6 +310,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         .update({ status: 'split_for_parts' as any })
         .eq('id', bike.id);
       if (bikeErr) throw bikeErr;
+      void syncShopifyQuietly(bike.id, 'sold_out');
       toast({ title: 'Bike broken for parts' });
       onOpenChange(false);
       onDone();
