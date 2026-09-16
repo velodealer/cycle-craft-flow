@@ -3,6 +3,8 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getTypeformAuth } from '../_shared/typeform.ts';
 import { extractFromFormResponse } from '../_shared/typeform-extract.ts';
 import { rehostTypeformFiles } from '../_shared/typeform-files.ts';
+import { sendNotification, loadEmailSettings, appUrl } from '../_shared/email.ts';
+import { submissionEmail } from '../_shared/email-templates.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
