@@ -16,6 +16,7 @@ import IntakeTask from './IntakeTask';
 import BikePhotoGallery from './BikePhotoGallery';
 import StageHistory from './StageHistory';
 import AdminStatusSelect from './AdminStatusSelect';
+import ShopifyListingCard from './ShopifyListingCard';
 
 
 
@@ -488,6 +489,9 @@ export default function BikeDetailView({
               </CardContent>
             </Card>
           )}
+
+          {!isMechanic && !inspectionMode && <ShopifyListingCard bikeId={bike.id} />}
+
 
           {bike.source === 'investor' && !isMechanic && !inspectionMode && (
             <Card>
