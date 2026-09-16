@@ -112,13 +112,12 @@ Deno.serve(async (req) => {
       let shopName = shop;
       let locationId: string | undefined;
       try {
-        const info = await shopifyRest(connection, '/shop.json');
-        shopName = info?.shop?.name || shop;
+        shopName = await fetchShopName(connection);
       } catch { /* non-fatal */ }
       try {
-        const locations = await shopifyRest(connection, '/locations.json');
-        const active = (locations?.locations ?? []).find((l: any) => l.active) ?? locations?.locations?.[0];
-        if (active) locationId = String(active.id);
+        const locations = await fetchLocations(connection);
+        const active = locations.find((l) => l.active) ?? locations[0];
+        if (active) locationId = active.id;
       } catch { /* non-fatal */ }
 
       await saveSettings(supabase, {
@@ -130,15 +129,17 @@ Deno.serve(async (req) => {
         connected_at: new Date().toISOString(),
       });
 
-      await registerWebhooks(connection);
+      await ensureWebhooks(connection, WEBHOOK_TOPICS, webhookUrl());
 
+      if (isInstallState(state)) return toSignUp(shop);
       return backToApp(safeOrigin(state), { shopify: 'connected' });
     } catch (e) {
       console.error('Shopify callback error', e);
-      return backToApp(safeOrigin(state), {
-        shopify: 'error',
-        message: String((e as Error).message).slice(0, 300),
-      });
+      const message = String((e as Error).message).slice(0, 300);
+      if (isInstallState(state)) {
+        return toSignUp(url.searchParams.get('shop') ?? '', { shopify: 'error', message });
+      }
+      return backToApp(safeOrigin(state), { shopify: 'error', message });
     }
   }
 
