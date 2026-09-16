@@ -196,10 +196,8 @@ Deno.serve(async (req) => {
     if (action === 'locations') {
       const settings = await loadSettings(supabase);
       if (!settings.access_token || !settings.shop_domain) return json({ locations: [] });
-      const data = await shopifyRest(settings as any, '/locations.json');
-      return json({
-        locations: (data?.locations ?? []).map((l: any) => ({ id: String(l.id), name: l.name })),
-      });
+      const list = await fetchLocations(settings as { shop_domain: string; access_token: string });
+      return json({ locations: list.map((l) => ({ id: l.id, name: l.name })) });
     }
 
     if (action === 'disconnect') {
