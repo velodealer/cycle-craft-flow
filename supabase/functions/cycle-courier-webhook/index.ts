@@ -295,6 +295,24 @@ serve(async (req) => {
         console.log('Unhandled event type:', eventType);
     }
 
+    // Notify staff about the meaningful milestones only.
+    const notifiableStatus =
+      eventType === 'order.collection.completed' ? 'collected'
+        : (eventType === 'delivery.completed' || eventType === 'order.delivery.completed') ? 'delivered'
+          : (eventType === 'delivery.failed' || eventType === 'order.cancelled') ? 'cancelled'
+            : ((eventType === 'order.status.updated' || eventType === 'delivery.status_updated')
+              && (order.status === 'collected' || order.status === 'delivered')) ? order.status
+              : null;
+
+    if (notifiableStatus) {
+      await notifyLogistics(supabase as any, collection.bike_id, {
+        direction: collection.direction || 'inbound',
+        status: notifiableStatus,
+        trackingNumber: collection.tracking_number,
+        orderId: collection.order_id,
+      });
+    }
+
     // Log webhook event (optional - create webhook_logs table if needed)
     // await supabase.from('webhook_logs').insert({
     //   integration_name: 'cycle_courier_co',
