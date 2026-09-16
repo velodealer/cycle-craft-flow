@@ -1257,6 +1257,65 @@ export type Database = {
           },
         ]
       }
+      shopify_listings: {
+        Row: {
+          bike_id: string
+          created_at: string
+          id: string
+          inventory_item_id: string | null
+          last_error: string | null
+          last_synced_at: string | null
+          location_id: string | null
+          product_id: string | null
+          product_url: string | null
+          quantity: number
+          shop_domain: string | null
+          status: string
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          bike_id: string
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          location_id?: string | null
+          product_id?: string | null
+          product_url?: string | null
+          quantity?: number
+          shop_domain?: string | null
+          status?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          bike_id?: string
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          location_id?: string | null
+          product_id?: string | null
+          product_url?: string | null
+          quantity?: number
+          shop_domain?: string | null
+          status?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopify_listings_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: true
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_post_checklist: {
         Row: {
           done: boolean
