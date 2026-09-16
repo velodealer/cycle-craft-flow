@@ -57,6 +57,10 @@ Deno.serve(async (req) => {
     if (!accounts.sales || !accounts.stock || !accounts.cogs) {
       throw new Error('QuickBooks account mapping is incomplete (Sales, Stock and COGS accounts are required)');
     }
+    // The company's QuickBooks version may have changed since the last sync.
+    const capabilities = await ensureCapabilities(supabase, settings as QboSettings);
+    requireCapability(capabilities, { journalEntries: true, accounts: ['sales', 'stock', 'cogs'] });
+
 
     const isMargin = bike?.finance_scheme === 'margin_scheme';
     const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
