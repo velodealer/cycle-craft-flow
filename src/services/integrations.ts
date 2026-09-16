@@ -135,5 +135,5 @@ export const deactivateCycleCourierIntegration = async (
 
 // Get webhook URL
 export const getWebhookUrl = (): string => {
-  return 'https://hgztcymscgyuekgsyyfe.supabase.co/functions/v1/cycle-courier-webhook';
+  return 'https://api.velodealer.com/functions/v1/cycle-courier-webhook';
 };

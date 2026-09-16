@@ -23,8 +23,14 @@ export function typeformApiBase() {
   return 'https://api.typeform.com';
 }
 
+export function functionsBase() {
+  return (
+    Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || `${Deno.env.get('SUPABASE_URL')}/functions/v1`
+  ).trim().replace(/\/+$/, '');
+}
+
 export function redirectUri() {
-  return `${Deno.env.get('SUPABASE_URL')}/functions/v1/typeform-oauth`;
+  return `${functionsBase()}/typeform-oauth`;
 }
 
 export async function loadIntegration(supabase: ReturnType<typeof serviceClient>) {
@@ -144,7 +150,7 @@ export async function setTypeformWebhook(
       method: 'PUT',
       body: JSON.stringify({
         enabled: true,
-        url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/typeform-webhook`,
+        url: `${functionsBase()}/typeform-webhook`,
         secret,
       }),
     });

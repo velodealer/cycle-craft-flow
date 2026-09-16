@@ -29,12 +29,18 @@ export function serviceClient() {
   );
 }
 
+export function functionsBase() {
+  return (
+    Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || `${Deno.env.get('SUPABASE_URL')}/functions/v1`
+  ).trim().replace(/\/+$/, '');
+}
+
 export function redirectUri() {
-  return `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-oauth`;
+  return `${functionsBase()}/shopify-oauth`;
 }
 
 export function webhookUrl() {
-  return `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-webhook`;
+  return `${functionsBase()}/shopify-webhook`;
 }
 
 /** Normalises user input like "my-shop" or "https://my-shop.myshopify.com/admin". */

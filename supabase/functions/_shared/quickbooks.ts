@@ -80,8 +80,14 @@ export function qboApiBase() {
     : 'https://sandbox-quickbooks.api.intuit.com';
 }
 
+export function functionsBase() {
+  return (
+    Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || `${Deno.env.get('SUPABASE_URL')}/functions/v1`
+  ).trim().replace(/\/+$/, '');
+}
+
 export function redirectUri() {
-  return `${Deno.env.get('SUPABASE_URL')}/functions/v1/quickbooks-oauth`;
+  return `${functionsBase()}/quickbooks-oauth`;
 }
 
 export async function loadIntegration(supabase: ReturnType<typeof serviceClient>) {
