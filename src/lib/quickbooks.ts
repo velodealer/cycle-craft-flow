@@ -135,3 +135,26 @@ export const reverseSale = (params: { invoiceId?: string; bikeId?: string; newSt
     new_status: params.newStatus,
   });
 
+
+export interface IntegrationErrorRow {
+  id: string;
+  integration: string;
+  operation: string;
+  entity_ref: string | null;
+  status: number | null;
+  intuit_tid: string | null;
+  message: string;
+  created_at: string;
+}
+
+/** Recent QuickBooks failures for the Settings support panel (admin/owner/accountant). */
+export async function listRecentQuickBooksErrors(limit = 20): Promise<IntegrationErrorRow[]> {
+  const { data, error } = await supabase
+    .from('integration_error_log')
+    .select('id, integration, operation, entity_ref, status, intuit_tid, message, created_at')
+    .eq('integration', 'quickbooks')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as IntegrationErrorRow[];
+}
