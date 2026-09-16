@@ -128,7 +128,13 @@ Deno.serve(async (req) => {
       await supabase.from('inspection_faults').delete().eq('external_fault_id', faultId);
     } else if (event === 'fault.created' || event === 'fault.updated' || event === 'fault.repaired') {
       const row = normaliseFault(fault, inspection.id, inspection.bike_id, event);
+      const { data: existingRow } = await supabase
+        .from('inspection_faults')
+        .select('id')
+        .eq('external_fault_id', row.external_fault_id)
+        .maybeSingle();
       await upsertFaults(supabase, [row]);
+      if (!existingRow) await notifyFaultsAwaitingApproval(supabase, inspection.bike_id, [row]);
     } else {
       return json({ received: true });
     }
