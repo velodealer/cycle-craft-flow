@@ -109,7 +109,28 @@ export default function QuickBooksIntegration() {
     }
   }, []);
 
-  useEffect(() => { loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } }); }, [loadStatus, loadAccounts, loadTaxCodes]);
+  const loadErrors = useCallback(async () => {
+    try {
+      setQboErrors(await listRecentQuickBooksErrors());
+    } catch {
+      // Panel is informational only — never block the settings page on it.
+    }
+  }, []);
+
+  useEffect(() => { loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } }); loadErrors(); }, [loadStatus, loadAccounts, loadTaxCodes, loadErrors]);
+
+  const copyErrorLog = async () => {
+    const text = qboErrors
+      .map((row) =>
+        [
+          `${new Date(row.created_at).toISOString()} [${row.operation}] status=${row.status ?? 'n/a'} intuit_tid=${row.intuit_tid ?? 'n/a'}${row.entity_ref ? ` ref=${row.entity_ref}` : ''}`,
+          row.message,
+        ].join('\n'),
+      )
+      .join('\n\n');
+    await navigator.clipboard.writeText(text || 'No QuickBooks errors recorded.');
+    toast.success('Error log copied — paste it into your message to Intuit support');
+  };
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
