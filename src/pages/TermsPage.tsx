@@ -76,7 +76,7 @@ export default function TermsPage() {
         <p>
           We aim to keep the Service available at all times but do not guarantee uninterrupted access.
           The Service may be unavailable during maintenance or because of events outside our
-          reasonable control. Support is provided at info@inspectabike.com.
+          reasonable control. Support is provided at info@velodealer.com.
         </p>
       </section>
 
@@ -194,7 +194,7 @@ export default function TermsPage() {
       <section>
         <h2>15. Contact</h2>
         <p>
-          VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@inspectabike.com.
+          VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@velodealer.com.
         </p>
       </section>
     </LegalPage>
