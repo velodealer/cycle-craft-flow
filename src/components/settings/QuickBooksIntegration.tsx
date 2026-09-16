@@ -380,6 +380,42 @@ export default function QuickBooksIntegration() {
               )}
             </div>
 
+            <div className="border-t pt-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div>
+                  <h4 className="font-medium">Recent QuickBooks errors</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Every failed QuickBooks call is logged with its Intuit transaction ID (intuit_tid) so
+                    Intuit support can trace it. Copy the log when raising a support case.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={copyErrorLog} disabled={qboErrors.length === 0}>
+                  Copy log
+                </Button>
+              </div>
+              {qboErrors.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No QuickBooks errors recorded.</p>
+              ) : (
+                <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-3">
+                  {qboErrors.map((row) => (
+                    <div key={row.id} className="text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {new Date(row.created_at).toLocaleString()}
+                        </span>
+                        <Badge variant="outline">{row.operation}</Badge>
+                        {row.status && <Badge variant="destructive">{row.status}</Badge>}
+                        {row.intuit_tid && (
+                          <span className="font-mono text-muted-foreground">tid: {row.intuit_tid}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 break-words">{row.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save account mapping
