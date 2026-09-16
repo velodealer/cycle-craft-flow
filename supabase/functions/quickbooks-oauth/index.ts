@@ -7,6 +7,8 @@ import {
   redirectUri,
   qboEnv,
   requireUser,
+  refreshCapabilities,
+
   type QboSettings,
 } from '../_shared/quickbooks.ts';
 import { mapSalesTaxCodes, type QboTaxCodeRef } from '../_shared/quickbooks-tax.ts';
