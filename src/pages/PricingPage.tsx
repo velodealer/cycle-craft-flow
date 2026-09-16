@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Bike, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import PublicLayout from '@/components/public/PublicLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -42,46 +42,17 @@ const faqs = [
   },
 ];
 
-function setMeta(name: string, content: string) {
-  let tag = document.querySelector(`meta[name="${name}"]`);
-  if (!tag) {
-    tag = document.createElement('meta');
-    tag.setAttribute('name', name);
-    document.head.appendChild(tag);
-  }
-  tag.setAttribute('content', content);
-}
-
 export default function PricingPage() {
-  useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Pricing | VeloDealer';
-    setMeta(
-      'description',
-      'VeloDealer subscription plans and pricing. Simple monthly or annual plans for bicycle dealers — billed per dealership, VAT excluded.'
-    );
-    return () => {
+  return () => {
       document.title = previousTitle;
     };
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
-            <Bike className="h-5 w-5 text-primary" />
-            VeloDealer
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to home
-          </Link>
-        </div>
-      </header>
-
+    <PublicLayout
+      title="Pricing"
+      description="VeloDealer subscription plans and pricing. Simple monthly or annual plans for bicycle dealers — billed per dealership, VAT excluded."
+    >
       <main className="container mx-auto max-w-5xl px-4 py-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Pricing</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -154,6 +125,6 @@ export default function PricingPage() {
           VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@velodealer.com.
         </p>
       </main>
-    </div>
+    </PublicLayout>
   );
 }

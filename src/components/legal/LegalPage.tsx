@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Bike } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { PublicHeader, PublicFooter } from '@/components/public/PublicLayout';
 
 interface LegalPageProps {
   title: string;
@@ -29,23 +29,10 @@ export default function LegalPage({ title, description, lastUpdated, children }:
   }, [title, description]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-foreground">
-            <Bike className="h-5 w-5 text-primary" />
-            VeloDealer
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to home
-          </Link>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-background">
+      <PublicHeader />
 
-      <main className="container mx-auto max-w-3xl px-4 py-10">
+      <main className="container mx-auto max-w-3xl flex-1 px-4 py-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
 
@@ -72,6 +59,7 @@ export default function LegalPage({ title, description, lastUpdated, children }:
           </Link>
         </nav>
       </main>
+      <PublicFooter />
     </div>
   );
 }
