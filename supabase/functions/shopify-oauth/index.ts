@@ -44,9 +44,11 @@ const backToApp = (origin: string, params: Record<string, string>) => {
 };
 
 const WEBHOOK_TOPICS = ['orders/paid', 'orders/cancelled', 'refunds/create'];
+const COMPLIANCE_TOPICS = ['app/uninstalled'];
 
 async function registerWebhooks(settings: { shop_domain: string; access_token: string }) {
   const address = webhookUrl();
+  const complianceAddress = `${Deno.env.get('SUPABASE_URL')}/functions/v1/shopify-compliance`;
   let existing: any = null;
   try {
     existing = await shopifyRest(settings, '/webhooks.json?limit=250');
@@ -54,12 +56,16 @@ async function registerWebhooks(settings: { shop_domain: string; access_token: s
     console.error('Could not list Shopify webhooks:', (e as Error).message);
   }
   const current: any[] = existing?.webhooks ?? [];
-  for (const topic of WEBHOOK_TOPICS) {
-    if (current.some((w) => w.topic === topic && w.address === address)) continue;
+  const wanted: Array<{ topic: string; target: string }> = [
+    ...WEBHOOK_TOPICS.map((topic) => ({ topic, target: address })),
+    ...COMPLIANCE_TOPICS.map((topic) => ({ topic, target: complianceAddress })),
+  ];
+  for (const { topic, target } of wanted) {
+    if (current.some((w) => w.topic === topic && w.address === target)) continue;
     try {
       await shopifyRest(settings, '/webhooks.json', {
         method: 'POST',
-        body: JSON.stringify({ webhook: { topic, address, format: 'json' } }),
+        body: JSON.stringify({ webhook: { topic, address: target, format: 'json' } }),
       });
     } catch (e) {
       console.error(`Could not register Shopify webhook ${topic}:`, (e as Error).message);
