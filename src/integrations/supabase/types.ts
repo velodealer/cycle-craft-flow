@@ -382,6 +382,54 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_name: string
+          body: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          excerpt: string
+          id: string
+          published_at: string | null
+          slug: string
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalog_bikes: {
         Row: {
           bike_fields: Json
@@ -999,6 +1047,104 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_applications: {
+        Row: {
+          cover_note: string | null
+          created_at: string
+          cv_path: string | null
+          email: string
+          id: string
+          links: string | null
+          name: string
+          notes: string | null
+          opening_id: string | null
+          phone: string | null
+          role_title: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cover_note?: string | null
+          created_at?: string
+          cv_path?: string | null
+          email: string
+          id?: string
+          links?: string | null
+          name: string
+          notes?: string | null
+          opening_id?: string | null
+          phone?: string | null
+          role_title: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cover_note?: string | null
+          created_at?: string
+          cv_path?: string | null
+          email?: string
+          id?: string
+          links?: string | null
+          name?: string
+          notes?: string | null
+          opening_id?: string | null
+          phone?: string | null
+          role_title?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_opening_id_fkey"
+            columns: ["opening_id"]
+            isOneToOne: false
+            referencedRelation: "job_openings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_openings: {
+        Row: {
+          created_at: string
+          description: string
+          employment_type: string
+          id: string
+          is_open: boolean
+          location: string
+          slug: string
+          sort_order: number
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          employment_type?: string
+          id?: string
+          is_open?: boolean
+          location?: string
+          slug: string
+          sort_order?: number
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          employment_type?: string
+          id?: string
+          is_open?: boolean
+          location?: string
+          slug?: string
+          sort_order?: number
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       jobs: {
         Row: {
@@ -1648,6 +1794,80 @@ export type Database = {
           sort_order?: number
           updated_at?: string
           zone?: string | null
+        }
+        Relationships: []
+      }
+      support_ticket_replies: {
+        Row: {
+          body: string
+          id: string
+          sent_at: string
+          sent_by: string | null
+          sent_by_name: string | null
+          ticket_id: string
+        }
+        Insert: {
+          body: string
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+          sent_by_name?: string | null
+          ticket_id: string
+        }
+        Update: {
+          body?: string
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+          sent_by_name?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_replies_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          source: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          source?: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          source?: string
+          status?: string
+          subject?: string
+          updated_at?: string
         }
         Relationships: []
       }
