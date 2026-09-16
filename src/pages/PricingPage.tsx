@@ -43,17 +43,12 @@ const faqs = [
 ];
 
 export default function PricingPage() {
-  return () => {
-      document.title = previousTitle;
-    };
-  }, []);
-
   return (
     <PublicLayout
       title="Pricing"
       description="VeloDealer subscription plans and pricing. Simple monthly or annual plans for bicycle dealers — billed per dealership, VAT excluded."
     >
-      <main className="container mx-auto max-w-5xl px-4 py-10">
+      <div className="container mx-auto max-w-5xl px-4 py-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Pricing</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           VeloDealer is available on a subscription, billed monthly or annually in advance. Choose the plan that fits
@@ -124,7 +119,7 @@ export default function PricingPage() {
         <p className="mt-8 text-sm text-muted-foreground">
           VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@velodealer.com.
         </p>
-      </main>
+      </div>
     </PublicLayout>
   );
 }
