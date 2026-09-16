@@ -174,20 +174,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'auth_url') {
+      // Installation must begin on a Shopify-owned surface: send the merchant to
+      // Shopify's own install page, which then calls our install entry point.
       const clientId = Deno.env.get('SHOPIFY_CLIENT_ID');
       if (!clientId) throw new Error('SHOPIFY_CLIENT_ID is not configured');
-      const shop = normaliseShopDomain(body.shop_domain ?? '');
-      const origin = typeof body.origin === 'string' && /^https?:\/\//.test(body.origin)
-        ? body.origin.replace(/\/+$/, '')
-        : FALLBACK_APP_ORIGIN;
-      const state = encodeURIComponent(`${origin}|${crypto.randomUUID()}`);
-      const authUrl = `https://${shop}/admin/oauth/authorize?` + new URLSearchParams({
-        client_id: clientId,
-        scope: SHOPIFY_SCOPES,
-        redirect_uri: redirectUri(),
-        state,
+      return json({
+        url: `https://admin.shopify.com/oauth/install?client_id=${encodeURIComponent(clientId)}`,
       });
-      return json({ url: authUrl });
     }
 
     if (action === 'save_settings') {
