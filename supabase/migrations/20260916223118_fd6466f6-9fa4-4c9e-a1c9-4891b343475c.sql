@@ -1,0 +1,3 @@
+CREATE POLICY "Anyone can upload a CV" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id = 'job-applications');
+CREATE POLICY "Admins read CVs" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'job-applications' AND public.has_any_role(ARRAY['admin','owner']::user_role[]));
+CREATE POLICY "Admins delete CVs" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'job-applications' AND public.has_any_role(ARRAY['admin','owner']::user_role[]));

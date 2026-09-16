@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
+import { PublicFooter, PUBLIC_NAV } from "@/components/public/PublicLayout";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -84,11 +85,25 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center space-x-2">
               <Bike className="h-8 w-8 text-primary" />
               <span className="text-2xl font-bold text-foreground">VeloDealer</span>
             </div>
+            <nav className="order-last w-full overflow-x-auto md:order-none md:w-auto">
+              <ul className="flex items-center gap-4 text-sm whitespace-nowrap">
+                {PUBLIC_NAV.map((item) => (
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
+                      className="text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
             <div className="flex items-center space-x-4">
               {user ? (
                 <>
@@ -161,8 +176,8 @@ export default function LandingPage() {
             <Button size="lg" onClick={() => navigate("/auth")} className="text-lg px-8">
               Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8">
-              Watch Demo
+            <Button size="lg" variant="outline" className="text-lg px-8" asChild>
+              <Link to="/features">See all features</Link>
             </Button>
           </div>
 
@@ -259,64 +274,16 @@ export default function LandingPage() {
                 size="lg" 
                 variant="outline"
                 className="text-lg px-8 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+                asChild
               >
-                Contact Sales
+                <Link to="/contact">Contact sales</Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-background py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Bike className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">VeloDealer</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                The complete bicycle dealer management system
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Features</a></li>
-                <li><a href="#" className="hover:text-foreground">Pricing</a></li>
-                <li><a href="#" className="hover:text-foreground">Demo</a></li>
-                <li><a href="#" className="hover:text-foreground">Updates</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Careers</a></li>
-                <li><a href="#" className="hover:text-foreground">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Documentation</a></li>
-                <li><a href="#" className="hover:text-foreground">Help Center</a></li>
-                <li><a href="#" className="hover:text-foreground">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-foreground">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t pt-8 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} VeloDealer. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -42,6 +42,16 @@ const KINDS: { key: string; label: string; description: string }[] = [
     label: 'Collection and delivery updates',
     description: 'Sent when a bike is booked in, collected, delivered or cancelled.',
   },
+  {
+    key: 'support_ticket',
+    label: 'Website enquiries',
+    description: 'Sent when someone submits the contact form on the website.',
+  },
+  {
+    key: 'job_application',
+    label: 'Job applications',
+    description: 'Sent when someone applies for a role on the careers page.',
+  },
 ];
 
 const defaultNotification = (): NotificationSetting => ({ enabled: true, mode: 'roles', addresses: [] });

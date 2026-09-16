@@ -15,6 +15,9 @@ import EmailNotifications from '@/components/settings/EmailNotifications';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SupportInbox from '@/components/settings/SupportInbox';
+import BlogManager from '@/components/settings/BlogManager';
+import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SettingsPage() {
@@ -55,12 +58,14 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') ?? 'users'} className="w-full">
-        <TabsList className="flex w-full flex-wrap h-auto gap-1 md:grid md:grid-cols-6">
+        <TabsList className="flex w-full flex-wrap h-auto gap-1 md:grid md:grid-cols-8">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="listings">Listing Formats</TabsTrigger>
           <TabsTrigger value="bays">Storage Bays</TabsTrigger>
+          <TabsTrigger value="inbox">Inbox</TabsTrigger>
+          <TabsTrigger value="website">Website</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
@@ -142,6 +147,15 @@ export default function SettingsPage() {
 
 
 
+
+        <TabsContent value="inbox" className="space-y-4">
+          <SupportInbox />
+        </TabsContent>
+
+        <TabsContent value="website" className="space-y-4">
+          <BlogManager />
+          <JobOpeningsManager />
+        </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
           <Card>

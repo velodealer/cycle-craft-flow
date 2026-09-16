@@ -18,18 +18,16 @@ export default function Footer() {
 
           {/* Links */}
           <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
-            <a 
-              href="#" 
+            <Link
+              to="/contact"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Support
-            </a>
-            <a 
-              href="#" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Documentation
-            </a>
+            </Link>
+            <span className="inline-flex items-center gap-2 text-muted-foreground">
+              API documentation
+              <span className="rounded bg-muted px-1.5 py-0.5 text-xs">Coming soon</span>
+            </span>
             <Link
               to="/pricing"
               className="text-muted-foreground hover:text-foreground transition-colors"
