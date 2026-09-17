@@ -55,6 +55,7 @@ async function findOrCreateCustomer(supabase: Client, order: any): Promise<strin
       phone: customer.phone || address.phone || null,
       address: [address.address1, address.address2, address.city, address.zip, address.country]
         .filter(Boolean).join(', ') || null,
+      business_id: businessId,
     })
     .select('id')
     .single();
