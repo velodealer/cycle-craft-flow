@@ -12,7 +12,7 @@ A new "business" record (name, contact email, status: pending / active / suspend
 
 **2. Super user**
 
-A separate level above admin, held by named people (not a normal role on the business). A super user can:
+A separate level above admin, held by named people (not a normal role on the business). The super user will be **info@velodealer.com** — I'll create that account during setup and you can add more super users later. A super user can:
 - See and approve/reject new business sign-ups
 - See, edit and move any user in any business
 - See every business's data
