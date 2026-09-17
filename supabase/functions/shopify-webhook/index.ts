@@ -29,7 +29,7 @@ async function bikesFromLineItems(supabase: Client, order: any) {
   }));
 }
 
-async function findOrCreateCustomer(supabase: Client, order: any): Promise<string | null> {
+async function findOrCreateCustomer(supabase: Client, order: any, businessId: string | null): Promise<string | null> {
   const customer = order?.customer ?? {};
   const address = order?.shipping_address ?? order?.billing_address ?? {};
   const name = [customer.first_name, customer.last_name].filter(Boolean).join(' ').trim()
@@ -72,7 +72,7 @@ async function handleOrderPaid(supabase: Client, order: any) {
     console.log('Shopify order has no matching VeloDealer bikes:', order?.name);
     return;
   }
-  const customerId = await findOrCreateCustomer(supabase, order);
+  const customerId = await findOrCreateCustomer(supabase, order, matches[0]?.bike?.business_id ?? null);
   const soldAt = order?.processed_at || order?.created_at || new Date().toISOString();
 
   for (const { bike, price } of matches) {
@@ -102,6 +102,7 @@ async function handleOrderPaid(supabase: Client, order: any) {
         status: 'paid',
         issued_at: soldAt,
         paid_at: soldAt,
+        business_id: bike.business_id,
       });
       if (invoiceError) throw new Error(invoiceError.message);
 
