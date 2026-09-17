@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, Check, PoundSterling, Undo2, X } from 'lucide-react';
+import { AlertTriangle, Check, PoundSterling, Undo2, Wrench, X } from 'lucide-react';
 
 const fmt = (n: number | null | undefined) => `£${Number(n ?? 0).toFixed(2)}`;
 
