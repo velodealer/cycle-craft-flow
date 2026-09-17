@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, Check, PoundSterling, Undo2, X } from 'lucide-react';
+import { AlertTriangle, Check, PoundSterling, Undo2, Wrench, X } from 'lucide-react';
 
 const fmt = (n: number | null | undefined) => `£${Number(n ?? 0).toFixed(2)}`;
 
@@ -33,10 +33,11 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   repaired: 'default',
 };
 
-type Filter = 'pending' | 'open' | 'all';
+type Filter = 'pending' | 'torepair' | 'open' | 'all';
 
 const FILTER_STATUSES: Record<Filter, string[] | null> = {
   pending: ['reported'],
+  torepair: ['approved', 'awaiting_part'],
   open: ['reported', 'approved', 'awaiting_part'],
   all: null,
 };
@@ -45,8 +46,9 @@ export default function RepairsPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const canDecide = !!profile && ['admin', 'owner'].includes(profile.role);
+  const isMechanic = profile?.role === 'mechanic';
 
-  const [filter, setFilter] = useState<Filter>('pending');
+  const [filter, setFilter] = useState<Filter>(isMechanic ? 'torepair' : 'pending');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [faults, setFaults] = useState<any[]>([]);
@@ -82,6 +84,8 @@ export default function RepairsPage() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => { if (isMechanic) setFilter('torepair'); }, [isMechanic]);
 
   const groups = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -125,6 +129,51 @@ export default function RepairsPage() {
     }
   };
 
+  const completeOne = async (fault: any) => {
+    const { data, error } = await supabase.functions.invoke('inspectabike-complete-repair', {
+      body: { fault_row_id: fault.id },
+    });
+    if (error) throw error;
+    if ((data as any)?.error) throw new Error((data as any).error);
+  };
+
+  const markRepaired = async (fault: any) => {
+    setBusy(fault.id);
+    try {
+      await completeOne(fault);
+      toast({ title: 'Repair marked as done', description: 'InspectABike has been updated too.' });
+      await load();
+    } catch (e: any) {
+      toast({
+        title: 'Could not record this repair',
+        description: e.message || 'Nothing was changed. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const markAllRepaired = async (bikeId: string, list: any[]) => {
+    const outstanding = list.filter((f) => ['approved', 'awaiting_part'].includes(f.status));
+    if (!outstanding.length) return;
+    if (!window.confirm(`Mark all ${outstanding.length} repairs on this bike as done?`)) return;
+    setBusy(`bike:${bikeId}`);
+    let done = 0;
+    let failed = 0;
+    for (const f of outstanding) {
+      try { await completeOne(f); done++; } catch { failed++; }
+    }
+    setBusy(null);
+    await load();
+    toast({
+      title: failed ? `${done} of ${outstanding.length} recorded` : 'All repairs marked as done',
+      description: failed ? `${failed} could not be recorded and are unchanged.` : 'InspectABike has been updated too.',
+      variant: failed ? 'destructive' : undefined,
+    });
+  };
+
+
   const undo = async (fault: any) => {
     setBusy(fault.id);
     try {
@@ -166,18 +215,25 @@ export default function RepairsPage() {
   return (
     <div className="container mx-auto py-6 space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Repairs approval</h1>
-        <p className="text-sm text-muted-foreground">Inspection faults grouped by bike, with parts and labour costs.</p>
+        <h1 className="text-2xl font-bold">{isMechanic ? 'Repairs' : 'Repairs approval'}</h1>
+        <p className="text-sm text-muted-foreground">
+          {isMechanic
+            ? 'Approved repairs to carry out, grouped by bike.'
+            : 'Inspection faults grouped by bike, with parts and labour costs.'}
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList>
-            <TabsTrigger value="pending">Awaiting approval</TabsTrigger>
-            <TabsTrigger value="open">All open</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {!isMechanic && (
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="pending">Awaiting approval</TabsTrigger>
+              <TabsTrigger value="torepair">To repair</TabsTrigger>
+              <TabsTrigger value="open">All open</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         <Input
           className="sm:max-w-xs"
           placeholder="Filter by bike ID, make or model"
@@ -207,6 +263,7 @@ export default function RepairsPage() {
               .filter((f) => ['approved', 'awaiting_part', 'repaired'].includes(f.status))
               .reduce((s, f) => s + Number(f.parts_cost || 0) + Number(f.labour_cost || 0), 0);
             const pendingCount = list.filter((f) => f.status === 'reported').length;
+            const toRepairCount = list.filter((f) => ['approved', 'awaiting_part'].includes(f.status)).length;
 
             return (
               <Card key={bikeId}>
@@ -232,14 +289,29 @@ export default function RepairsPage() {
                         )}
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => openCosting(bike)}>
-                      <PoundSterling className="h-4 w-4 mr-1" />View costing
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {!isMechanic && (
+                        <Button size="sm" variant="outline" onClick={() => openCosting(bike)}>
+                          <PoundSterling className="h-4 w-4 mr-1" />View costing
+                        </Button>
+                      )}
+                      {toRepairCount > 0 && (
+                        <Button
+                          size="sm"
+                          disabled={busy === `bike:${bikeId}`}
+                          onClick={() => markAllRepaired(bikeId, list)}
+                        >
+                          <Wrench className="h-4 w-4 mr-1" />Mark all repaired ({toRepairCount})
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm pt-2">
-                    <span>Awaiting approval: <strong>{fmt(pendingTotal)}</strong></span>
-                    <span>Approved work: <strong>{fmt(approvedTotal)}</strong></span>
-                  </div>
+                  {!isMechanic && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm pt-2">
+                      <span>Awaiting approval: <strong>{fmt(pendingTotal)}</strong></span>
+                      <span>Approved work: <strong>{fmt(approvedTotal)}</strong></span>
+                    </div>
+                  )}
                 </CardHeader>
 
                 <CardContent className="space-y-3">
@@ -259,11 +331,13 @@ export default function RepairsPage() {
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{f.description}</p>
                       )}
 
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span>Parts: <strong>{fmt(f.parts_cost)}</strong></span>
-                        <span>Labour: <strong>{fmt(f.labour_cost)}</strong></span>
-                        <span>Total: <strong>{fmt(Number(f.parts_cost || 0) + Number(f.labour_cost || 0))}</strong></span>
-                      </div>
+                      {!isMechanic && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                          <span>Parts: <strong>{fmt(f.parts_cost)}</strong></span>
+                          <span>Labour: <strong>{fmt(f.labour_cost)}</strong></span>
+                          <span>Total: <strong>{fmt(Number(f.parts_cost || 0) + Number(f.labour_cost || 0))}</strong></span>
+                        </div>
+                      )}
 
                       {f.decision_note && (
                         <p className="text-xs text-muted-foreground">Note: {f.decision_note}</p>
@@ -293,11 +367,18 @@ export default function RepairsPage() {
                         </div>
                       )}
 
-                      {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
-                        <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
-                          <Undo2 className="h-4 w-4 mr-1" />Undo decision
-                        </Button>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {['approved', 'awaiting_part'].includes(f.status) && (
+                          <Button size="sm" disabled={busy === f.id} onClick={() => markRepaired(f)}>
+                            <Wrench className="h-4 w-4 mr-1" />Mark repaired
+                          </Button>
+                        )}
+                        {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
+                          <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
+                            <Undo2 className="h-4 w-4 mr-1" />Undo decision
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </CardContent>
