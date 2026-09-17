@@ -160,11 +160,18 @@ Deno.serve(async (req) => {
         .eq('direction', 'outbound')
         .neq('status', 'cancelled');
 
+      const { data: bikeRow } = await supabase
+        .from('bikes')
+        .select('business_id')
+        .eq('id', bikeId)
+        .maybeSingle();
+
       await supabase.from('fulfilment_events').insert({
         bike_id: bikeId,
         stage: 'ready',
         notes: `Sale reversed by ${profile.id}. ${invoices.length} invoice(s) deleted${pxBikes.length ? `, ${pxBikes.length} part-exchange bike(s) removed` : ''}. Bike set to ${newStatus}.`,
         performed_by: profile.id,
+        business_id: (bikeRow as any)?.business_id ?? invoices[0]?.business_id ?? null,
       });
     }
 
