@@ -83,7 +83,7 @@ export type Database = {
           address_postcode: string
           address_street: string
           bike_id: string
-          business_id: string
+          business_id?: string
           completed_at?: string | null
           created_at?: string
           delivery_instructions?: string | null
@@ -167,7 +167,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           component_id: string
           created_at?: string
           id?: string
@@ -272,7 +272,7 @@ export type Database = {
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
-          business_id: string
+          business_id?: string
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
@@ -614,7 +614,7 @@ export type Database = {
         Insert: {
           attributes?: Json
           brand: string
-          business_id: string
+          business_id?: string
           category_id: string
           created_at?: string
           description?: string | null
@@ -675,7 +675,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           category_id?: string | null
           condition?: string | null
           created_at?: string
@@ -740,7 +740,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          business_id: string
+          business_id?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -783,7 +783,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           created_at?: string
           id?: string
           notes?: string | null
@@ -851,7 +851,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           component?: string | null
           created_at?: string
           decided_at?: string | null
@@ -956,7 +956,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           completed_at?: string | null
           created_at?: string
           external_inspection_id?: string | null
@@ -1133,7 +1133,7 @@ export type Database = {
         }
         Insert: {
           bike_id?: string | null
-          business_id: string
+          business_id?: string
           created_at?: string
           customer_id?: string | null
           delivery_charge?: number
@@ -1356,7 +1356,7 @@ export type Database = {
           actual_cost?: number | null
           assigned_to?: string | null
           bike_id: string
-          business_id: string
+          business_id?: string
           checklist?: Json | null
           completed_at?: string | null
           created_at?: string
@@ -1426,7 +1426,7 @@ export type Database = {
         }
         Insert: {
           body?: string
-          business_id: string
+          business_id?: string
           format?: string
           id?: string
           platform: string
@@ -1472,7 +1472,7 @@ export type Database = {
         Insert: {
           bike_id?: string | null
           brand?: string | null
-          business_id: string
+          business_id?: string
           cost_price?: number | null
           created_at?: string
           description: string
@@ -1537,7 +1537,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          business_id: string
+          business_id?: string
           created_at?: string
           email: string
           id?: string
@@ -1582,7 +1582,7 @@ export type Database = {
           version: number
         }
         Insert: {
-          business_id: string
+          business_id?: string
           id?: string
           name: string
           notes?: string | null
@@ -1642,7 +1642,7 @@ export type Database = {
           vat_scheme: string
         }
         Insert: {
-          business_id: string
+          business_id?: string
           created_at?: string
           created_by?: string | null
           current_version?: number
@@ -1691,7 +1691,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1774,7 +1774,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
-          business_id: string
+          business_id?: string
           created_at?: string
           id?: string
           inventory_item_id?: string | null
@@ -1834,7 +1834,7 @@ export type Database = {
           post_id: string
         }
         Insert: {
-          business_id: string
+          business_id?: string
           done?: boolean
           done_at?: string | null
           done_by?: string | null
@@ -1883,7 +1883,7 @@ export type Database = {
           views: number
         }
         Insert: {
-          business_id: string
+          business_id?: string
           comments?: number
           id?: string
           likes?: number
@@ -1940,7 +1940,7 @@ export type Database = {
           scored_by: string | null
         }
         Insert: {
-          business_id: string
+          business_id?: string
           cta_score?: number | null
           hook_score?: number | null
           id?: string
@@ -2005,7 +2005,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
-          business_id: string
+          business_id?: string
           caption?: string
           created_at?: string
           created_by?: string | null
@@ -2082,7 +2082,7 @@ export type Database = {
         }
         Insert: {
           body?: string
-          business_id: string
+          business_id?: string
           category?: string
           created_at?: string
           created_by?: string | null
@@ -2127,7 +2127,7 @@ export type Database = {
           zone: string | null
         }
         Insert: {
-          business_id: string
+          business_id?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -2260,7 +2260,7 @@ export type Database = {
           webhook_tag: string
         }
         Insert: {
-          business_id: string
+          business_id?: string
           created_at?: string
           enabled?: boolean
           field_map?: Json
@@ -2323,7 +2323,7 @@ export type Database = {
           bike_make?: string | null
           bike_model?: string | null
           bike_year?: number | null
-          business_id: string
+          business_id?: string
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
