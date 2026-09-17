@@ -8,14 +8,20 @@ interface Profile {
   name: string;
   email: string;
   role: 'admin' | 'mechanic' | 'detailer' | 'owner' | 'accountant' | 'social_manager' | 'investor';
+  business_id: string;
 }
+
+export type BusinessStatus = 'pending' | 'active' | 'suspended';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  businessId: string | null;
+  businessStatus: BusinessStatus | null;
+  isSuperAdmin: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name: string, businessName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
@@ -26,6 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [businessStatus, setBusinessStatus] = useState<BusinessStatus | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -35,12 +43,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('user_id', userId)
         .single();
-      
+
       if (error) throw error;
       setProfile(data);
+
+      if (data?.business_id) {
+        const { data: biz } = await supabase
+          .from('businesses')
+          .select('status')
+          .eq('id', data.business_id)
+          .maybeSingle();
+        setBusinessStatus((biz?.status as BusinessStatus) ?? null);
+      } else {
+        setBusinessStatus(null);
+      }
+
+      const { data: sa } = await supabase
+        .from('super_admins')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      setIsSuperAdmin(!!sa);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
+      setBusinessStatus(null);
+      setIsSuperAdmin(false);
     }
   };
 
@@ -50,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           // Defer profile fetch to avoid blocking auth state change
           setTimeout(() => {
@@ -58,6 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setProfile(null);
+          setBusinessStatus(null);
+          setIsSuperAdmin(false);
         }
         setLoading(false);
       }
@@ -76,15 +106,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, businessName?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name: name
-        }
-      }
+          name,
+          ...(businessName ? { business_name: businessName } : {}),
+        },
+      },
     });
     return { error };
   };
@@ -106,6 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     session,
     profile,
+    businessId: profile?.business_id ?? null,
+    businessStatus,
+    isSuperAdmin,
     loading,
     signUp,
     signIn,
