@@ -26,7 +26,7 @@ import {
   User,
   LogOut,
 } from "lucide-react";
-import { PublicFooter, PUBLIC_NAV } from "@/components/public/PublicLayout";
+import { PublicFooter, PublicHeader } from "@/components/public/PublicLayout";
 
 export default function LandingPage() {
   const navigate = useNavigate();
