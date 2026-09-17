@@ -68,10 +68,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // handle_new_user trigger inserts profile row; update role + name
+    // handle_new_user trigger inserts profile row; move it into the caller's business
+    const { data: newProfile } = await admin
+      .from('profiles')
+      .select('id, business_id')
+      .eq('user_id', created.user.id)
+      .maybeSingle();
+    const strayBusinessId = newProfile?.business_id;
+
     const { error: updErr } = await admin
       .from('profiles')
-      .update({ role: 'investor', name })
+      .update({ role: 'investor', name, business_id: callerProfile.business_id })
       .eq('user_id', created.user.id);
     if (updErr) {
       return new Response(JSON.stringify({ error: updErr.message }), {

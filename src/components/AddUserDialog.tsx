@@ -38,36 +38,21 @@ export default function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     setLoading(true);
 
     try {
-      // For now, we'll use the regular signup since admin.createUser requires service role
-      // This is a simplified version - in production you'd want proper admin user creation
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.name
-          }
-        }
+      const { data, error } = await supabase.functions.invoke('create-staff-user', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        },
       });
 
-      if (authError) throw authError;
-
-      // Update the user's profile with the selected role
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ 
-            role: formData.role as any,
-            name: formData.name 
-          })
-          .eq('user_id', authData.user.id);
-
-        if (profileError) throw profileError;
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "User created successfully",
-        description: `${formData.name} has been added as a ${formData.role}. They need to verify their email.`,
+        description: `${formData.name} has been added to your business as a ${formData.role}.`,
       });
 
       setFormData({ name: '', email: '', role: 'mechanic', password: '' });
