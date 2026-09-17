@@ -129,6 +129,51 @@ export default function RepairsPage() {
     }
   };
 
+  const completeOne = async (fault: any) => {
+    const { data, error } = await supabase.functions.invoke('inspectabike-complete-repair', {
+      body: { fault_row_id: fault.id },
+    });
+    if (error) throw error;
+    if ((data as any)?.error) throw new Error((data as any).error);
+  };
+
+  const markRepaired = async (fault: any) => {
+    setBusy(fault.id);
+    try {
+      await completeOne(fault);
+      toast({ title: 'Repair marked as done', description: 'InspectABike has been updated too.' });
+      await load();
+    } catch (e: any) {
+      toast({
+        title: 'Could not record this repair',
+        description: e.message || 'Nothing was changed. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const markAllRepaired = async (bikeId: string, list: any[]) => {
+    const outstanding = list.filter((f) => ['approved', 'awaiting_part'].includes(f.status));
+    if (!outstanding.length) return;
+    if (!window.confirm(`Mark all ${outstanding.length} repairs on this bike as done?`)) return;
+    setBusy(`bike:${bikeId}`);
+    let done = 0;
+    let failed = 0;
+    for (const f of outstanding) {
+      try { await completeOne(f); done++; } catch { failed++; }
+    }
+    setBusy(null);
+    await load();
+    toast({
+      title: failed ? `${done} of ${outstanding.length} recorded` : 'All repairs marked as done',
+      description: failed ? `${failed} could not be recorded and are unchanged.` : 'InspectABike has been updated too.',
+      variant: failed ? 'destructive' : undefined,
+    });
+  };
+
+
   const undo = async (fault: any) => {
     setBusy(fault.id);
     try {
