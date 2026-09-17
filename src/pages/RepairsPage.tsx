@@ -331,11 +331,13 @@ export default function RepairsPage() {
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{f.description}</p>
                       )}
 
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span>Parts: <strong>{fmt(f.parts_cost)}</strong></span>
-                        <span>Labour: <strong>{fmt(f.labour_cost)}</strong></span>
-                        <span>Total: <strong>{fmt(Number(f.parts_cost || 0) + Number(f.labour_cost || 0))}</strong></span>
-                      </div>
+                      {!isMechanic && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                          <span>Parts: <strong>{fmt(f.parts_cost)}</strong></span>
+                          <span>Labour: <strong>{fmt(f.labour_cost)}</strong></span>
+                          <span>Total: <strong>{fmt(Number(f.parts_cost || 0) + Number(f.labour_cost || 0))}</strong></span>
+                        </div>
+                      )}
 
                       {f.decision_note && (
                         <p className="text-xs text-muted-foreground">Note: {f.decision_note}</p>
@@ -365,11 +367,18 @@ export default function RepairsPage() {
                         </div>
                       )}
 
-                      {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
-                        <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
-                          <Undo2 className="h-4 w-4 mr-1" />Undo decision
-                        </Button>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {['approved', 'awaiting_part'].includes(f.status) && (
+                          <Button size="sm" disabled={busy === f.id} onClick={() => markRepaired(f)}>
+                            <Wrench className="h-4 w-4 mr-1" />Mark repaired
+                          </Button>
+                        )}
+                        {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
+                          <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
+                            <Undo2 className="h-4 w-4 mr-1" />Undo decision
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </CardContent>
