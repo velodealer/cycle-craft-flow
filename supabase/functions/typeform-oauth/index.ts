@@ -109,9 +109,16 @@ Deno.serve(async (req) => {
   }
 
   // ---- Authenticated JSON API ----
+  let callerBusinessId: string | null = null;
   try {
     const user = await requireUser(req, supabase);
     await requireAdmin(supabase, user.id);
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('business_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    callerBusinessId = (callerProfile as any)?.business_id ?? null;
   } catch (e) {
     return json({ error: (e as Error).message }, 401);
   }

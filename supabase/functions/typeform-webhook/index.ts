@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     // Load the stored field map for this form.
     const { data: formRow } = await supabase
       .from('typeform_forms')
-      .select('id, enabled, field_map')
+      .select('id, enabled, field_map, business_id')
       .eq('form_id', formId)
       .maybeSingle();
 
@@ -120,6 +120,19 @@ Deno.serve(async (req) => {
     }
 
 
+    // Business comes from the stored form; fall back to the oldest active business.
+    let businessId = (formRow as any)?.business_id as string | undefined;
+    if (!businessId) {
+      const { data: fallback } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('status', 'active')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      businessId = (fallback as any)?.id;
+    }
+
     const { error } = await supabase.from('typeform_submissions').insert({
       form_id: formId,
       response_id: responseId,
@@ -127,6 +140,7 @@ Deno.serve(async (req) => {
       raw_payload: payload,
       ...extracted,
       status: 'new',
+      business_id: businessId,
     });
     if (error) throw new Error(error.message);
 
