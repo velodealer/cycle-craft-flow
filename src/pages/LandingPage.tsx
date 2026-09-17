@@ -2,16 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Bike,
   ClipboardList,
@@ -23,20 +13,13 @@ import {
   Shield,
   ArrowRight,
   CheckCircle2,
-  User,
-  LogOut,
 } from "lucide-react";
 import { PublicFooter, PublicHeader } from "@/components/public/PublicLayout";
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
-  const homePath = profile?.role === "investor" ? "/investor" : "/dashboard";
 
   const features = [
     {
