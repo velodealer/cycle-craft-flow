@@ -288,14 +288,29 @@ export default function RepairsPage() {
                         )}
                       </div>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => openCosting(bike)}>
-                      <PoundSterling className="h-4 w-4 mr-1" />View costing
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {!isMechanic && (
+                        <Button size="sm" variant="outline" onClick={() => openCosting(bike)}>
+                          <PoundSterling className="h-4 w-4 mr-1" />View costing
+                        </Button>
+                      )}
+                      {toRepairCount > 0 && (
+                        <Button
+                          size="sm"
+                          disabled={busy === `bike:${bikeId}`}
+                          onClick={() => markAllRepaired(bikeId, list)}
+                        >
+                          <Wrench className="h-4 w-4 mr-1" />Mark all repaired ({toRepairCount})
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm pt-2">
-                    <span>Awaiting approval: <strong>{fmt(pendingTotal)}</strong></span>
-                    <span>Approved work: <strong>{fmt(approvedTotal)}</strong></span>
-                  </div>
+                  {!isMechanic && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm pt-2">
+                      <span>Awaiting approval: <strong>{fmt(pendingTotal)}</strong></span>
+                      <span>Approved work: <strong>{fmt(approvedTotal)}</strong></span>
+                    </div>
+                  )}
                 </CardHeader>
 
                 <CardContent className="space-y-3">
