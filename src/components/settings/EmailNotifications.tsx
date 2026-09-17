@@ -63,8 +63,7 @@ const defaults = (): EmailSettings => ({
 });
 
 export default function EmailNotifications() {
-  const { profile } = useAuth();
-  const superAdmin = isSuperAdmin(profile?.email);
+  const { isSuperAdmin: superAdmin } = useAuth();
   const [settings, setSettings] = useState<EmailSettings>(defaults());
   const [rowId, setRowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
