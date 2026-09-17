@@ -85,6 +85,8 @@ export default function RepairsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => { if (isMechanic) setFilter('torepair'); }, [isMechanic]);
+
   const groups = useMemo(() => {
     const term = search.trim().toLowerCase();
     const byBike = new Map<string, any[]>();
