@@ -28,8 +28,8 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Only show for detailers and admins
-  if (!profile || !['detailer', 'admin'].includes(profile.role)) {
+  // Only show for detailers, owners and admins
+  if (!profile || !['detailer', 'owner', 'admin'].includes(profile.role)) {
     return null;
   }
 

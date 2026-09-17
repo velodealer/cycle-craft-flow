@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import BikeDetailView from '@/components/bike/BikeDetailView';
+import CleaningTask from '@/components/bike/CleaningTask';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
@@ -171,9 +171,9 @@ export default function CleaningPage() {
                   <TableHead className="w-20">Photo</TableHead>
                   <TableHead>Bike</TableHead>
                   <TableHead>Frame Number</TableHead>
-                  <TableHead className="w-48">Location</TableHead>
-                  <TableHead>Added to Cleaning</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-40">Location</TableHead>
+                  <TableHead className="whitespace-nowrap">Added to Cleaning</TableHead>
+                  <TableHead className="whitespace-nowrap">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -220,10 +220,10 @@ export default function CleaningPage() {
                           size="sm"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {new Date(bike.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Button variant="outline" size="sm" onClick={() => handleView(bike)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View & Clean
@@ -239,19 +239,32 @@ export default function CleaningPage() {
       </Card>
 
       <Dialog open={!!selectedBike} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Clean Bike</DialogTitle>
           </DialogHeader>
           {selectedBike && (
-            <BikeDetailView
-              bike={selectedBike}
-              onEdit={() => {}}
-              onBack={handleClose}
-              onUpdate={loadCleaningBikes}
-              showPricing={false}
-              showDescriptions={false}
-            />
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <BikeThumbnail
+                  photos={selectedBike.photos}
+                  alt={`${selectedBike.make} ${selectedBike.model}`}
+                  className="h-16 w-16"
+                />
+                <div className="min-w-0">
+                  <div className="font-semibold leading-tight break-words">
+                    {selectedBike.make} {selectedBike.model}
+                    {selectedBike.year ? (
+                      <span className="text-muted-foreground"> · {selectedBike.year}</span>
+                    ) : null}
+                  </div>
+                  <div className="text-sm text-muted-foreground font-mono">
+                    {selectedBike.frame_number || 'Frame not recorded'}
+                  </div>
+                </div>
+              </div>
+              <CleaningTask bike={selectedBike} onUpdate={loadCleaningBikes} />
+            </div>
           )}
         </DialogContent>
       </Dialog>
