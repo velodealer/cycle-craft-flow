@@ -33,10 +33,11 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   repaired: 'default',
 };
 
-type Filter = 'pending' | 'open' | 'all';
+type Filter = 'pending' | 'torepair' | 'open' | 'all';
 
 const FILTER_STATUSES: Record<Filter, string[] | null> = {
   pending: ['reported'],
+  torepair: ['approved', 'awaiting_part'],
   open: ['reported', 'approved', 'awaiting_part'],
   all: null,
 };
@@ -45,8 +46,9 @@ export default function RepairsPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const canDecide = !!profile && ['admin', 'owner'].includes(profile.role);
+  const isMechanic = profile?.role === 'mechanic';
 
-  const [filter, setFilter] = useState<Filter>('pending');
+  const [filter, setFilter] = useState<Filter>(isMechanic ? 'torepair' : 'pending');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [faults, setFaults] = useState<any[]>([]);
