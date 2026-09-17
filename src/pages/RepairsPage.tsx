@@ -263,6 +263,7 @@ export default function RepairsPage() {
               .filter((f) => ['approved', 'awaiting_part', 'repaired'].includes(f.status))
               .reduce((s, f) => s + Number(f.parts_cost || 0) + Number(f.labour_cost || 0), 0);
             const pendingCount = list.filter((f) => f.status === 'reported').length;
+            const toRepairCount = list.filter((f) => ['approved', 'awaiting_part'].includes(f.status)).length;
 
             return (
               <Card key={bikeId}>
