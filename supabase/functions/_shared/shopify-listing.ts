@@ -90,10 +90,15 @@ export function bikeTags(bike: BikeRow): string[] {
 }
 
 async function upsertListing(supabase: Client, bikeId: string, patch: Record<string, unknown>) {
+  const { data: bikeRow } = await supabase
+    .from('bikes')
+    .select('business_id')
+    .eq('id', bikeId)
+    .maybeSingle();
   const { error } = await supabase
     .from('shopify_listings')
     .upsert(
-      { bike_id: bikeId, ...patch, updated_at: new Date().toISOString() },
+      { bike_id: bikeId, business_id: (bikeRow as any)?.business_id ?? null, ...patch, updated_at: new Date().toISOString() },
       { onConflict: 'bike_id' },
     );
   if (error) console.error('shopify_listings upsert failed:', error.message);

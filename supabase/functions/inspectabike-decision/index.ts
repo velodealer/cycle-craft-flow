@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
             quantity: 1,
             stock_status: 'in_stock',
             bike_id: fault.bike_id,
+            business_id: (fault as any).business_id,
           })
           .select('id')
           .single();
@@ -94,6 +95,7 @@ Deno.serve(async (req) => {
             estimated_cost: Number(fault.labour_cost),
             actual_cost: Number(fault.labour_cost),
             status: 'pending',
+            business_id: (fault as any).business_id,
           })
           .select('id')
           .single();

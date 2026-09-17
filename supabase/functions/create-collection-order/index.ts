@@ -33,7 +33,7 @@ serve(async (req) => {
     // 1. Get bike details
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, year, sale_price, asking_price')
+      .select('id, make, model, frame_number, year, sale_price, asking_price, business_id')
       .eq('id', bike_id)
       .single();
 
@@ -82,7 +82,8 @@ serve(async (req) => {
         address_city,
         address_postcode,
         delivery_instructions,
-        status: 'pending'
+        status: 'pending',
+        business_id: (bike as any)?.business_id ?? null
       })
       .select()
       .single();

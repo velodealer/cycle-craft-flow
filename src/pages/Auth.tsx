@@ -73,9 +73,10 @@ export default function Auth() {
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const businessName = formData.get('business_name') as string;
 
     setLoading(true);
-    const { error } = await signUp(email, password, name);
+    const { error } = await signUp(email, password, name, businessName || undefined);
     setLoading(false);
 
     if (error) {
@@ -87,7 +88,7 @@ export default function Auth() {
     } else {
       toast({
         title: "Account created",
-        description: "Please check your email to verify your account.",
+        description: "Please check your email to verify your account. Your business will be activated once approved by VeloDealer.",
       });
     }
   };
@@ -201,6 +202,16 @@ export default function Auth() {
                     name="name"
                     type="text"
                     placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-business">Business name</Label>
+                  <Input
+                    id="signup-business"
+                    name="business_name"
+                    type="text"
+                    placeholder="e.g. Acme Cycles"
                     required
                   />
                 </div>

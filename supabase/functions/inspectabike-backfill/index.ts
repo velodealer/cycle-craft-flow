@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         else if (externalId) summary.linked++;
 
         const rows = faults
-          .map((f) => normaliseFault(f, inspection.id, inspection.bike_id))
+          .map((f) => normaliseFault(f, inspection.id, inspection.bike_id, undefined, (inspection as any).business_id))
           .filter((r) => r.external_fault_id);
         if (rows.length) {
           const { error: faultError } = await supabase

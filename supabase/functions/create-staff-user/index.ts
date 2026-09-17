@@ -1,6 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
+const ALLOWED_ROLES = ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'investor', 'social_manager'];
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -48,9 +50,10 @@ Deno.serve(async (req) => {
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     const email = typeof body?.email === 'string' ? body.email.trim() : '';
     const password = typeof body?.password === 'string' ? body.password : '';
-    if (!name || !email || !password || password.length < 6) {
+    const role = typeof body?.role === 'string' ? body.role : '';
+    if (!name || !email || !password || password.length < 6 || !ALLOWED_ROLES.includes(role)) {
       return new Response(
-        JSON.stringify({ error: 'name, email, and password (min 6 chars) are required' }),
+        JSON.stringify({ error: 'name, email, password (min 6 chars) and a valid role are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -68,17 +71,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // handle_new_user trigger inserts profile row; move it into the caller's business
+    // handle_new_user trigger creates a pending business + profile; move the profile
+    // into the caller's business with the chosen role and remove the stray business.
     const { data: newProfile } = await admin
       .from('profiles')
       .select('id, business_id')
       .eq('user_id', created.user.id)
       .maybeSingle();
+
     const strayBusinessId = newProfile?.business_id;
 
     const { error: updErr } = await admin
       .from('profiles')
-      .update({ role: 'investor', name, business_id: callerProfile.business_id })
+      .update({ role, name, business_id: callerProfile.business_id })
       .eq('user_id', created.user.id);
     if (updErr) {
       return new Response(JSON.stringify({ error: updErr.message }), {
@@ -92,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ user_id: created.user.id, name, email }),
+      JSON.stringify({ user_id: created.user.id, name, email, role }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (e: any) {

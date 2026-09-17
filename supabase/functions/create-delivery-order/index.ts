@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
         bike_id: bikeId,
         direction: 'outbound',
         status: 'pending',
+        business_id: (bike as any).business_id,
         sender_name: senderName,
         sender_email: senderEmail,
         sender_phone: senderPhone,

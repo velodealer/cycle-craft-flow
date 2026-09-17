@@ -14,7 +14,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { user, profile, signOut, loading } = useAuth();
+  const { user, profile, signOut, loading, businessStatus, isSuperAdmin } = useAuth();
   const { toast } = useToast();
 
   if (loading) {
@@ -30,6 +30,28 @@ export default function Layout({ children }: LayoutProps) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Block businesses that haven't been approved yet or have been suspended
+  if (profile && businessStatus && businessStatus !== 'active' && !isSuperAdmin) {
+    const pending = businessStatus === 'pending';
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md text-center space-y-4">
+          <h1 className="text-2xl font-bold">
+            {pending ? 'Your account is awaiting approval' : 'Your account has been suspended'}
+          </h1>
+          <p className="text-muted-foreground">
+            {pending
+              ? 'Thanks for signing up. A VeloDealer administrator will review your business and activate your account shortly.'
+              : 'Access to this business account has been suspended. Please contact VeloDealer support if you believe this is a mistake.'}
+          </p>
+          <Button variant="outline" onClick={() => signOut()}>
+            Sign out
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const handleSignOut = async () => {

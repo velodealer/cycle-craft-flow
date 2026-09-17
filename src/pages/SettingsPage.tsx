@@ -16,12 +16,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SupportInbox from '@/components/settings/SupportInbox';
+import SuperAdminPanel from '@/components/settings/SuperAdminPanel';
 import BlogManager from '@/components/settings/BlogManager';
 import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SettingsPage() {
-  const { profile } = useAuth();
+  const { profile, isSuperAdmin } = useAuth();
   const isAdmin = profile?.role === 'admin';
 
   if (!isAdmin) {
@@ -58,7 +59,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') ?? 'users'} className="w-full">
-        <TabsList className="flex w-full flex-wrap h-auto gap-1 md:grid md:grid-cols-8">
+        <TabsList className={`flex w-full flex-wrap h-auto gap-1 md:grid ${isSuperAdmin ? 'md:grid-cols-9' : 'md:grid-cols-8'}`}>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
@@ -67,6 +68,7 @@ export default function SettingsPage() {
           <TabsTrigger value="inbox">Inbox</TabsTrigger>
           <TabsTrigger value="website">Website</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger value="super">Super Admin</TabsTrigger>}
         </TabsList>
 
 
@@ -181,6 +183,12 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="super" className="space-y-4">
+            <SuperAdminPanel />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
