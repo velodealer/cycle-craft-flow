@@ -215,18 +215,25 @@ export default function RepairsPage() {
   return (
     <div className="container mx-auto py-6 space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Repairs approval</h1>
-        <p className="text-sm text-muted-foreground">Inspection faults grouped by bike, with parts and labour costs.</p>
+        <h1 className="text-2xl font-bold">{isMechanic ? 'Repairs' : 'Repairs approval'}</h1>
+        <p className="text-sm text-muted-foreground">
+          {isMechanic
+            ? 'Approved repairs to carry out, grouped by bike.'
+            : 'Inspection faults grouped by bike, with parts and labour costs.'}
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList>
-            <TabsTrigger value="pending">Awaiting approval</TabsTrigger>
-            <TabsTrigger value="open">All open</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {!isMechanic && (
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="pending">Awaiting approval</TabsTrigger>
+              <TabsTrigger value="torepair">To repair</TabsTrigger>
+              <TabsTrigger value="open">All open</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         <Input
           className="sm:max-w-xs"
           placeholder="Filter by bike ID, make or model"
