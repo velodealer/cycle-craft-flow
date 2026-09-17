@@ -224,6 +224,7 @@ Deno.serve(async (req) => {
           title,
           enabled,
           webhook_tag: tag,
+          business_id: callerBusinessId,
         });
         if (error) throw new Error(error.message);
       }
@@ -254,6 +255,7 @@ Deno.serve(async (req) => {
           form_id: formId,
           title: String(body.title ?? '').trim() || formId,
           field_map: fieldMap,
+          business_id: callerBusinessId,
         });
         if (error) throw new Error(error.message);
       }
@@ -319,6 +321,7 @@ Deno.serve(async (req) => {
           title: String(body.title ?? '').trim() || formId,
           enabled: true,
           webhook_tag: tag,
+          business_id: callerBusinessId,
         });
       }
       return json({ ok: true });
@@ -331,7 +334,7 @@ Deno.serve(async (req) => {
 
       const { data: stored } = await supabase
         .from('typeform_forms')
-        .select('field_map')
+        .select('field_map, business_id')
         .eq('form_id', formId)
         .maybeSingle();
       const fieldMap = ((stored as any)?.field_map ?? {}) as Record<string, string>;
@@ -384,6 +387,7 @@ Deno.serve(async (req) => {
           raw_payload: { event_type: 'fetched', form_response: formResponse },
           ...extracted,
           status: 'new',
+          business_id: (stored as any)?.business_id ?? callerBusinessId,
         });
         if (error) throw new Error(error.message);
         imported++;
