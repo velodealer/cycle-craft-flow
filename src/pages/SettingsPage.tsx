@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SupportInbox from '@/components/settings/SupportInbox';
+import SuperAdminPanel from '@/components/settings/SuperAdminPanel';
 import BlogManager from '@/components/settings/BlogManager';
 import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -182,6 +183,12 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="super" className="space-y-4">
+            <SuperAdminPanel />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
