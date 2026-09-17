@@ -40,7 +40,7 @@ export function useBpsDashboardData() {
       const since7 = daysAgo(7).toISOString();
 
       const [bikesRes, jobsRes, eventsRes, invoicesRes] = await Promise.all([
-        supabase.from('bikes').select('id, status, sold_at, updated_at, intake_date, created_at'),
+        supabase.from('bikes').select('id, status, sold_at, updated_at, sale_price, intake_date, created_at'),
         supabase.from('jobs').select('id, type, status'),
         supabase.from('fulfilment_events').select('stage, timestamp').gte('timestamp', since30),
         supabase.from('invoices').select('type, gross, total, paid_at, status').eq('status', 'paid').gte('paid_at', monthStart),
