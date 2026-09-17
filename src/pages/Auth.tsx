@@ -206,6 +206,16 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="signup-business">Business name</Label>
+                  <Input
+                    id="signup-business"
+                    name="business_name"
+                    type="text"
+                    placeholder="e.g. Acme Cycles"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
