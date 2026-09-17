@@ -261,6 +261,20 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
               ))}
             </SelectContent>
           </Select>
+          <Select value={sizeFilter} onValueChange={setSizeFilter}>
+            <SelectTrigger className="w-full md:w-36">
+              <SelectValue placeholder="Filter by size" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all">All Sizes</SelectItem>
+              <SelectItem value="none">Not recorded</SelectItem>
+              {sizeOptions.map((opt) => (
+                <SelectItem key={opt.key} value={opt.key}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Mobile cards */}
