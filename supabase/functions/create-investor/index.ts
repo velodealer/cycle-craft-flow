@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: callerProfile, error: profErr } = await admin
       .from('profiles')
-      .select('role')
+      .select('role, business_id')
       .eq('user_id', userData.user.id)
       .maybeSingle();
     if (profErr || !callerProfile || callerProfile.role !== 'admin') {
