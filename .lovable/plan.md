@@ -34,7 +34,8 @@ I need you to confirm the split. My proposed starting point — correct anything
 
 | Person | Email | Business |
 | --- | --- | --- |
-| Abdullah Hussain | abdnhussain@gmail.com | VDMS (super user) |
+| Abdullah Hussain | abdnhussain@gmail.com | VDMS |
+| info@velodealer.com (to be created) | info@velodealer.com | VDMS (super user) |
 | Broximo Prestige Steeds | broxim0@outlook.com | Broximo Prestige Steeds |
 | Bilal Rahim – Eveloce | eveloce@outlook.com | ? |
 | Sulayman Hussain | sulnhussain@yahoo.com | ? |
