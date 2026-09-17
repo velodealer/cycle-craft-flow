@@ -82,77 +82,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center space-x-2">
-              <Bike className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-foreground">VeloDealer</span>
-            </div>
-            <nav className="order-last w-full overflow-x-auto md:order-none md:w-auto">
-              <ul className="flex items-center gap-4 text-sm whitespace-nowrap">
-                {PUBLIC_NAV.map((item) => (
-                  <li key={item.to}>
-                    <Link
-                      to={item.to}
-                      className="text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <Button onClick={() => navigate(homePath)}>
-                    Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <Avatar>
-                          <AvatarFallback>
-                            {profile?.name?.charAt(0)?.toUpperCase() || <User className="h-4 w-4" />}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium">{profile?.name}</p>
-                          <p className="text-xs text-muted-foreground">{profile?.email}</p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigate(homePath)}>
-                        <User className="mr-2 h-4 w-4" />
-                        Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleSignOut}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" onClick={() => navigate("/auth")}>
-                    Sign In
-                  </Button>
-                  <Button onClick={() => navigate("/auth")}>
-                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <PublicHeader />
+
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 md:py-32">
