@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     if (!inspection) {
       const { data: created, error } = await supabase
         .from('inspections')
-        .insert({ bike_id: bikeId, inspected_by: profile.id, status: 'in_progress' })
+        .insert({ bike_id: bikeId, inspected_by: profile.id, status: 'in_progress', business_id: (bike as any).business_id })
         .select()
         .single();
       if (error) throw new Error(error.message);

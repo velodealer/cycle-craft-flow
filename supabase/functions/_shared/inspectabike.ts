@@ -97,13 +97,14 @@ export function mergeFaultStatus(localStatus: string, incomingStatus: string): s
   return VALID_FAULT_STATUSES.includes(incomingStatus) ? incomingStatus : localStatus;
 }
 
-export function normaliseFault(fault: any, inspectionId: string, bikeId: string, event?: string) {
+export function normaliseFault(fault: any, inspectionId: string, bikeId: string, event?: string, businessId?: string | null) {
   const id = String(fault?.id ?? fault?.fault_id ?? '');
   let status = String(fault?.status ?? 'reported').toLowerCase();
   if (event === 'fault.repaired') status = 'repaired';
   return {
     inspection_id: inspectionId,
     bike_id: bikeId,
+    business_id: businessId ?? null,
     external_fault_id: id,
     title: String(fault?.title ?? fault?.name ?? fault?.component ?? 'Fault'),
     description: fault?.description ?? fault?.notes ?? null,

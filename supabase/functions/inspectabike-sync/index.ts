@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
 
     if (faults.length) {
       const rows = faults
-        .map((f) => normaliseFault(f, inspection.id, bikeId))
+        .map((f) => normaliseFault(f, inspection.id, bikeId, undefined, (inspection as any).business_id))
         .filter((r) => r.external_fault_id);
       const { data: known } = await supabase
         .from('inspection_faults')

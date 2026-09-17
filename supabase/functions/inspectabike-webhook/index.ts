@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     const { data: inspection } = await supabase
       .from('inspections')
-      .select('id, bike_id, status, completed_at')
+      .select('id, bike_id, status, completed_at, business_id')
       .or(`external_inspection_id.eq.${externalInspectionId},external_reference.eq.${externalInspectionId}`)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       // All faults are repaired or declined — fires once, but handle idempotently.
       const faults: any[] = Array.isArray(payload?.faults) ? payload.faults : [];
       const rows = faults
-        .map((f) => normaliseFault(f, inspection.id, inspection.bike_id, 'fault.updated'))
+        .map((f) => normaliseFault(f, inspection.id, inspection.bike_id, 'fault.updated', inspection.business_id))
         .filter((r) => r.external_fault_id);
       await upsertFaults(supabase, rows);
 
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
     if (event === 'fault.deleted') {
       await supabase.from('inspection_faults').delete().eq('external_fault_id', faultId);
     } else if (event === 'fault.created' || event === 'fault.updated' || event === 'fault.repaired') {
-      const row = normaliseFault(fault, inspection.id, inspection.bike_id, event);
+      const row = normaliseFault(fault, inspection.id, inspection.bike_id, event, inspection.business_id);
       const { data: existingRow } = await supabase
         .from('inspection_faults')
         .select('id')
