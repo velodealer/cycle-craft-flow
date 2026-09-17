@@ -12,7 +12,8 @@ A new "business" record (name, contact email, status: pending / active / suspend
 
 **2. Super user**
 
-A separate level above admin, held by named people (not a normal role on the business). The super user will be **info@velodealer.com** — I'll create that account during setup and you can add more super users later. A super user can:
+A separate level above admin, held by named people (not a normal role on the business). The super user will be **[info@velodealer.com](mailto:info@velodealer.com)** — I'll create that account during setup and you can add more super users later. A super user can:
+
 - See and approve/reject new business sign-ups
 - See, edit and move any user in any business
 - See every business's data
@@ -32,18 +33,20 @@ A new business signing up lands on a "Your account is awaiting approval" screen 
 
 I need you to confirm the split. My proposed starting point — correct anything:
 
-| Person | Email | Business |
-| --- | --- | --- |
-| Abdullah Hussain | abdnhussain@gmail.com | VDMS |
-| info@velodealer.com (to be created) | info@velodealer.com | VDMS (super user) |
-| Broximo Prestige Steeds | broxim0@outlook.com | Broximo Prestige Steeds |
-| Bilal Rahim – Eveloce | eveloce@outlook.com | ? |
-| Sulayman Hussain | sulnhussain@yahoo.com | ? |
-| Jabir Hussain | jnh096506@gmail.com | ? |
-| Jahan | jahan87@live.com | ? |
-| Sami Top Tech | samkandr@gmail.com | ? |
-| eBay (test) | test@ebay.co.uk | VDMS |
-| Shopify (test) | test@shopify.co.uk | VDMS |
+
+| Person                                                            | Email                                                 | Business                |
+| ----------------------------------------------------------------- | ----------------------------------------------------- | ----------------------- |
+| Abdullah Hussain                                                  | [abdnhussain@gmail.com](mailto:abdnhussain@gmail.com) | VDMS                    |
+| [info@velodealer.com](mailto:info@velodealer.com) (to be created) | [info@velodealer.com](mailto:info@velodealer.com)     | VDMS (super user)       |
+| Broximo Prestige Steeds                                           | [broxim0@outlook.com](mailto:broxim0@outlook.com)     | Broximo Prestige Steeds |
+| Bilal Rahim – Eveloce                                             | [eveloce@outlook.com](mailto:eveloce@outlook.com)     | Broximo Prestige Steeds |
+| Sulayman Hussain                                                  | [sulnhussain@yahoo.com](mailto:sulnhussain@yahoo.com) | Broximo Prestige Steeds |
+| Jabir Hussain                                                     | [jnh096506@gmail.com](mailto:jnh096506@gmail.com)     | Broximo Prestige Steeds |
+| Jahan                                                             | [jahan87@live.com](mailto:jahan87@live.com)           | Broximo Prestige Steeds |
+| Sami Top Tech                                                     | [samkandr@gmail.com](mailto:samkandr@gmail.com)       | Broximo Prestige Steeds |
+| eBay (test)                                                       | [test@ebay.co.uk](mailto:test@ebay.co.uk)             | VDMS                    |
+| Shopify (test)                                                    | [test@shopify.co.uk](mailto:test@shopify.co.uk)       | VDMS                    |
+
 
 All existing bikes and their related records need to go to one business as a starting point — I'll put them in VDMS unless you say otherwise, and anything belonging to Broximo can be moved afterwards from the super admin area.
 
