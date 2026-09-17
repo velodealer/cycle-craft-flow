@@ -16,24 +16,35 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          business_id: string | null
           created_at: string
           key: string
           updated_at: string
           value: Json
         }
         Insert: {
+          business_id?: string | null
           created_at?: string
           key: string
           updated_at?: string
           value?: Json
         }
         Update: {
+          business_id?: string | null
           created_at?: string
           key?: string
           updated_at?: string
           value?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bike_collections: {
         Row: {
@@ -42,6 +53,7 @@ export type Database = {
           address_postcode: string
           address_street: string
           bike_id: string
+          business_id: string
           completed_at: string | null
           created_at: string
           delivery_instructions: string | null
@@ -71,6 +83,7 @@ export type Database = {
           address_postcode: string
           address_street: string
           bike_id: string
+          business_id: string
           completed_at?: string | null
           created_at?: string
           delivery_instructions?: string | null
@@ -100,6 +113,7 @@ export type Database = {
           address_postcode?: string
           address_street?: string
           bike_id?: string
+          business_id?: string
           completed_at?: string | null
           created_at?: string
           delivery_instructions?: string | null
@@ -131,11 +145,19 @@ export type Database = {
             referencedRelation: "bikes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bike_collections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bike_components: {
         Row: {
           bike_id: string
+          business_id: string
           component_id: string
           created_at: string
           id: string
@@ -145,6 +167,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           component_id: string
           created_at?: string
           id?: string
@@ -154,6 +177,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           component_id?: string
           created_at?: string
           id?: string
@@ -167,6 +191,13 @@ export type Database = {
             columns: ["bike_id"]
             isOneToOne: false
             referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bike_components_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
           {
@@ -185,6 +216,7 @@ export type Database = {
           asking_price: number | null
           barcode: string | null
           bike_type: string | null
+          business_id: string
           collection_cost: number | null
           colour: string | null
           condition: string | null
@@ -240,6 +272,7 @@ export type Database = {
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
+          business_id: string
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
@@ -295,6 +328,7 @@ export type Database = {
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
+          business_id?: string
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
@@ -345,6 +379,13 @@ export type Database = {
           year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bikes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bikes_external_owner_id_fkey"
             columns: ["external_owner_id"]
@@ -426,6 +467,33 @@ export type Database = {
           status?: string
           tags?: string[]
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      businesses: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -533,6 +601,7 @@ export type Database = {
         Row: {
           attributes: Json
           brand: string
+          business_id: string
           category_id: string
           created_at: string
           description: string | null
@@ -545,6 +614,7 @@ export type Database = {
         Insert: {
           attributes?: Json
           brand: string
+          business_id: string
           category_id: string
           created_at?: string
           description?: string | null
@@ -557,6 +627,7 @@ export type Database = {
         Update: {
           attributes?: Json
           brand?: string
+          business_id?: string
           category_id?: string
           created_at?: string
           description?: string | null
@@ -567,6 +638,13 @@ export type Database = {
           weight_g?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "components_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "components_category_id_fkey"
             columns: ["category_id"]
@@ -579,6 +657,7 @@ export type Database = {
       ebay_listings: {
         Row: {
           bike_id: string
+          business_id: string
           category_id: string | null
           condition: string | null
           created_at: string
@@ -596,6 +675,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           category_id?: string | null
           condition?: string | null
           created_at?: string
@@ -613,6 +693,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           category_id?: string | null
           condition?: string | null
           created_at?: string
@@ -636,11 +717,19 @@ export type Database = {
             referencedRelation: "bikes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ebay_listings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       external_owners: {
         Row: {
           address: string | null
+          business_id: string
           created_at: string
           email: string | null
           id: string
@@ -651,6 +740,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          business_id: string
           created_at?: string
           email?: string | null
           id?: string
@@ -661,6 +751,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          business_id?: string
           created_at?: string
           email?: string | null
           id?: string
@@ -669,11 +760,20 @@ export type Database = {
           preferred_contact?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "external_owners_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fulfilment_events: {
         Row: {
           bike_id: string
+          business_id: string
           created_at: string
           id: string
           notes: string | null
@@ -683,6 +783,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           created_at?: string
           id?: string
           notes?: string | null
@@ -692,6 +793,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           created_at?: string
           id?: string
           notes?: string | null
@@ -708,6 +810,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fulfilment_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fulfilment_events_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
@@ -719,6 +828,7 @@ export type Database = {
       inspection_faults: {
         Row: {
           bike_id: string
+          business_id: string
           component: string | null
           created_at: string
           decided_at: string | null
@@ -741,6 +851,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           component?: string | null
           created_at?: string
           decided_at?: string | null
@@ -763,6 +874,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           component?: string | null
           created_at?: string
           decided_at?: string | null
@@ -792,6 +904,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inspection_faults_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "inspection_faults_inspection_id_fkey"
             columns: ["inspection_id"]
             isOneToOne: false
@@ -817,6 +936,7 @@ export type Database = {
       inspections: {
         Row: {
           bike_id: string
+          business_id: string
           completed_at: string | null
           created_at: string
           external_inspection_id: string | null
@@ -836,6 +956,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           completed_at?: string | null
           created_at?: string
           external_inspection_id?: string | null
@@ -855,6 +976,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           completed_at?: string | null
           created_at?: string
           external_inspection_id?: string | null
@@ -878,6 +1000,13 @@ export type Database = {
             columns: ["bike_id"]
             isOneToOne: false
             referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
           {
@@ -928,6 +1057,7 @@ export type Database = {
       integrations: {
         Row: {
           api_key: string | null
+          business_id: string | null
           created_at: string
           display_name: string
           id: string
@@ -939,6 +1069,7 @@ export type Database = {
         }
         Insert: {
           api_key?: string | null
+          business_id?: string | null
           created_at?: string
           display_name: string
           id?: string
@@ -950,6 +1081,7 @@ export type Database = {
         }
         Update: {
           api_key?: string | null
+          business_id?: string | null
           created_at?: string
           display_name?: string
           id?: string
@@ -959,11 +1091,20 @@ export type Database = {
           updated_at?: string
           webhook_secret?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "integrations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
           bike_id: string | null
+          business_id: string
           created_at: string
           customer_id: string | null
           delivery_charge: number
@@ -992,6 +1133,7 @@ export type Database = {
         }
         Insert: {
           bike_id?: string | null
+          business_id: string
           created_at?: string
           customer_id?: string | null
           delivery_charge?: number
@@ -1020,6 +1162,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string | null
+          business_id?: string
           created_at?: string
           customer_id?: string | null
           delivery_charge?: number
@@ -1052,6 +1195,13 @@ export type Database = {
             columns: ["bike_id"]
             isOneToOne: false
             referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
           {
@@ -1187,6 +1337,7 @@ export type Database = {
           actual_cost: number | null
           assigned_to: string | null
           bike_id: string
+          business_id: string
           checklist: Json | null
           completed_at: string | null
           created_at: string
@@ -1205,6 +1356,7 @@ export type Database = {
           actual_cost?: number | null
           assigned_to?: string | null
           bike_id: string
+          business_id: string
           checklist?: Json | null
           completed_at?: string | null
           created_at?: string
@@ -1223,6 +1375,7 @@ export type Database = {
           actual_cost?: number | null
           assigned_to?: string | null
           bike_id?: string
+          business_id?: string
           checklist?: Json | null
           completed_at?: string | null
           created_at?: string
@@ -1252,11 +1405,19 @@ export type Database = {
             referencedRelation: "bikes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "jobs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       listing_templates: {
         Row: {
           body: string
+          business_id: string
           format: string
           id: string
           platform: string
@@ -1265,6 +1426,7 @@ export type Database = {
         }
         Insert: {
           body?: string
+          business_id: string
           format?: string
           id?: string
           platform: string
@@ -1273,18 +1435,28 @@ export type Database = {
         }
         Update: {
           body?: string
+          business_id?: string
           format?: string
           id?: string
           platform?: string
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "listing_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       parts: {
         Row: {
           bike_id: string | null
           brand: string | null
+          business_id: string
           cost_price: number | null
           created_at: string
           description: string
@@ -1300,6 +1472,7 @@ export type Database = {
         Insert: {
           bike_id?: string | null
           brand?: string | null
+          business_id: string
           cost_price?: number | null
           created_at?: string
           description: string
@@ -1315,6 +1488,7 @@ export type Database = {
         Update: {
           bike_id?: string | null
           brand?: string | null
+          business_id?: string
           cost_price?: number | null
           created_at?: string
           description?: string
@@ -1336,6 +1510,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "parts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "parts_stripped_from_bike_id_fkey"
             columns: ["stripped_from_bike_id"]
             isOneToOne: false
@@ -1346,6 +1527,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          business_id: string
           created_at: string
           email: string
           id: string
@@ -1355,6 +1537,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          business_id: string
           created_at?: string
           email: string
           id?: string
@@ -1364,6 +1547,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          business_id?: string
           created_at?: string
           email?: string
           id?: string
@@ -1372,10 +1556,19 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quote_versions: {
         Row: {
+          business_id: string
           id: string
           name: string
           notes: string | null
@@ -1389,6 +1582,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          business_id: string
           id?: string
           name: string
           notes?: string | null
@@ -1402,6 +1596,7 @@ export type Database = {
           version: number
         }
         Update: {
+          business_id?: string
           id?: string
           name?: string
           notes?: string | null
@@ -1416,6 +1611,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "quote_versions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quote_versions_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
@@ -1426,6 +1628,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          business_id: string
           created_at: string
           created_by: string | null
           current_version: number
@@ -1439,6 +1642,7 @@ export type Database = {
           vat_scheme: string
         }
         Insert: {
+          business_id: string
           created_at?: string
           created_by?: string | null
           current_version?: number
@@ -1452,6 +1656,7 @@ export type Database = {
           vat_scheme?: string
         }
         Update: {
+          business_id?: string
           created_at?: string
           created_by?: string | null
           current_version?: number
@@ -1464,11 +1669,20 @@ export type Database = {
           updated_at?: string
           vat_scheme?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quotes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sale_drafts: {
         Row: {
           bike_id: string
+          business_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -1477,6 +1691,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1485,6 +1700,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1497,6 +1713,13 @@ export type Database = {
             columns: ["bike_id"]
             isOneToOne: true
             referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_drafts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1534,6 +1757,7 @@ export type Database = {
       shopify_listings: {
         Row: {
           bike_id: string
+          business_id: string
           created_at: string
           id: string
           inventory_item_id: string | null
@@ -1550,6 +1774,7 @@ export type Database = {
         }
         Insert: {
           bike_id: string
+          business_id: string
           created_at?: string
           id?: string
           inventory_item_id?: string | null
@@ -1566,6 +1791,7 @@ export type Database = {
         }
         Update: {
           bike_id?: string
+          business_id?: string
           created_at?: string
           id?: string
           inventory_item_id?: string | null
@@ -1588,10 +1814,18 @@ export type Database = {
             referencedRelation: "bikes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "shopify_listings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       social_post_checklist: {
         Row: {
+          business_id: string
           done: boolean
           done_at: string | null
           done_by: string | null
@@ -1600,6 +1834,7 @@ export type Database = {
           post_id: string
         }
         Insert: {
+          business_id: string
           done?: boolean
           done_at?: string | null
           done_by?: string | null
@@ -1608,6 +1843,7 @@ export type Database = {
           post_id: string
         }
         Update: {
+          business_id?: string
           done?: boolean
           done_at?: string | null
           done_by?: string | null
@@ -1616,6 +1852,13 @@ export type Database = {
           post_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "social_post_checklist_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "social_post_checklist_post_id_fkey"
             columns: ["post_id"]
@@ -1627,6 +1870,7 @@ export type Database = {
       }
       social_post_metrics: {
         Row: {
+          business_id: string
           comments: number
           id: string
           likes: number
@@ -1639,6 +1883,7 @@ export type Database = {
           views: number
         }
         Insert: {
+          business_id: string
           comments?: number
           id?: string
           likes?: number
@@ -1651,6 +1896,7 @@ export type Database = {
           views?: number
         }
         Update: {
+          business_id?: string
           comments?: number
           id?: string
           likes?: number
@@ -1664,6 +1910,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "social_post_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "social_post_metrics_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
@@ -1674,6 +1927,7 @@ export type Database = {
       }
       social_post_scores: {
         Row: {
+          business_id: string
           cta_score: number | null
           hook_score: number | null
           id: string
@@ -1686,6 +1940,7 @@ export type Database = {
           scored_by: string | null
         }
         Insert: {
+          business_id: string
           cta_score?: number | null
           hook_score?: number | null
           id?: string
@@ -1698,6 +1953,7 @@ export type Database = {
           scored_by?: string | null
         }
         Update: {
+          business_id?: string
           cta_score?: number | null
           hook_score?: number | null
           id?: string
@@ -1711,6 +1967,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "social_post_scores_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "social_post_scores_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
@@ -1722,6 +1985,7 @@ export type Database = {
       social_posts: {
         Row: {
           assigned_to: string | null
+          business_id: string
           caption: string
           created_at: string
           created_by: string | null
@@ -1741,6 +2005,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          business_id: string
           caption?: string
           created_at?: string
           created_by?: string | null
@@ -1760,6 +2025,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          business_id?: string
           caption?: string
           created_at?: string
           created_by?: string | null
@@ -1779,6 +2045,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "social_posts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "social_posts_script_id_fkey"
             columns: ["script_id"]
             isOneToOne: false
@@ -1797,6 +2070,7 @@ export type Database = {
       social_scripts: {
         Row: {
           body: string
+          business_id: string
           category: string
           created_at: string
           created_by: string | null
@@ -1808,6 +2082,7 @@ export type Database = {
         }
         Insert: {
           body?: string
+          business_id: string
           category?: string
           created_at?: string
           created_by?: string | null
@@ -1819,6 +2094,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          business_id?: string
           category?: string
           created_at?: string
           created_by?: string | null
@@ -1828,10 +2104,19 @@ export type Database = {
           updated_at?: string
           variables?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "social_scripts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storage_bays: {
         Row: {
+          business_id: string
           created_at: string
           id: string
           is_active: boolean
@@ -1842,6 +2127,7 @@ export type Database = {
           zone: string | null
         }
         Insert: {
+          business_id: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1852,6 +2138,7 @@ export type Database = {
           zone?: string | null
         }
         Update: {
+          business_id?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -1860,6 +2147,29 @@ export type Database = {
           sort_order?: number
           updated_at?: string
           zone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_bays_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      super_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1939,6 +2249,7 @@ export type Database = {
       }
       typeform_forms: {
         Row: {
+          business_id: string
           created_at: string
           enabled: boolean
           field_map: Json
@@ -1949,6 +2260,7 @@ export type Database = {
           webhook_tag: string
         }
         Insert: {
+          business_id: string
           created_at?: string
           enabled?: boolean
           field_map?: Json
@@ -1959,6 +2271,7 @@ export type Database = {
           webhook_tag?: string
         }
         Update: {
+          business_id?: string
           created_at?: string
           enabled?: boolean
           field_map?: Json
@@ -1968,7 +2281,15 @@ export type Database = {
           updated_at?: string
           webhook_tag?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "typeform_forms_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       typeform_submissions: {
         Row: {
@@ -1977,6 +2298,7 @@ export type Database = {
           bike_make: string | null
           bike_model: string | null
           bike_year: number | null
+          business_id: string
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -2001,6 +2323,7 @@ export type Database = {
           bike_make?: string | null
           bike_model?: string | null
           bike_year?: number | null
+          business_id: string
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -2025,6 +2348,7 @@ export type Database = {
           bike_make?: string | null
           bike_model?: string | null
           bike_year?: number | null
+          business_id?: string
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -2052,6 +2376,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "typeform_submissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "typeform_submissions_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
@@ -2065,6 +2396,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_business_id: { Args: never; Returns: string }
+      current_business_status: { Args: never; Returns: string }
       generate_bike_reference: {
         Args: { _bike_id: string; _make: string; _serial: string }
         Returns: string
@@ -2079,6 +2412,7 @@ export type Database = {
         Returns: boolean
       }
       is_investor_for_bike: { Args: { _bike_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       next_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
