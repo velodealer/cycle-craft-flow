@@ -87,6 +87,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (strayBusinessId && strayBusinessId !== callerProfile.business_id) {
+      await admin.from('businesses').delete().eq('id', strayBusinessId);
+    }
+
     return new Response(
       JSON.stringify({ user_id: created.user.id, name, email }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
