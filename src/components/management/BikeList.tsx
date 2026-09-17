@@ -2,7 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { bikeRef } from '@/lib/bikeReference';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +32,27 @@ interface Bike {
   storage_bay_id: string | null;
   frame_number: string | null;
   serial_number?: string | null;
+  size?: string | null;
 }
+
+// Sizes are stored as free text in mixed formats ("54cm", "54", "M - 54", "Large").
+// Reduce each to a canonical key so equivalent formats group together:
+// frame sizes match on their two-digit number, letter sizes on their letter/word form.
+const canonicalSize = (raw: string | null | undefined): string | null => {
+  const s = (raw || '').toLowerCase().trim();
+  if (!s) return null;
+  const num = s.match(/\d{2}/);
+  if (num) return `num:${num[0]}`;
+  if (/3xs|xxxs/.test(s)) return 'l:3xs';
+  if (/2xs|xxs/.test(s)) return 'l:2xs';
+  if (/\bxs\b|extra small|x-small/.test(s)) return 'l:xs';
+  if (/\bs\b|small/.test(s)) return 'l:s';
+  if (/\bm\b|medium/.test(s)) return 'l:m';
+  if (/2xl|xxl/.test(s)) return 'l:2xl';
+  if (/\bxl\b|x-large|extra large/.test(s)) return 'l:xl';
+  if (/\bl\b|\blg\b|large/.test(s)) return 'l:l';
+  return `raw:${s}`;
+};
 
 
 interface BikeListProps {
@@ -47,13 +67,14 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
+  const [sizeFilter, setSizeFilter] = useState('all');
   const { bays } = useStorageBays();
 
   const loadBikes = async () => {
     try {
       let query = supabase
         .from('bikes')
-        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number, serial_number')
+        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number, serial_number, size')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -89,6 +110,22 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     return bay.zone ? `${bay.zone} · ${bay.name}` : bay.name;
   };
 
+  const sizeOptions = useMemo(() => {
+    const byKey = new Map<string, { label: string; count: number }>();
+    bikes.forEach((b) => {
+      const raw = (b.size || '').trim();
+      if (!raw) return;
+      const key = canonicalSize(raw);
+      if (!key) return;
+      const existing = byKey.get(key);
+      if (existing) existing.count += 1;
+      else byKey.set(key, { label: raw, count: 1 });
+    });
+    return Array.from(byKey.entries())
+      .map(([key, v]) => ({ key, label: v.label, count: v.count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [bikes]);
+
   const filteredBikes = bikes.filter((bike) => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
@@ -105,7 +142,13 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
       locationFilter === 'all' ||
       (locationFilter === 'unassigned' ? !bike.storage_bay_id : bike.storage_bay_id === locationFilter);
 
-    return matchesSearch && matchesLocation;
+    const matchesSize =
+      sizeFilter === 'all' ||
+      (sizeFilter === 'none'
+        ? !(bike.size || '').trim()
+        : canonicalSize(bike.size) === sizeFilter);
+
+    return matchesSearch && matchesLocation && matchesSize;
   });
 
   const labelSel = useLabelSelection(filteredBikes.map((b: any) => b.id));
@@ -214,6 +257,20 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
               {bays.map((bay) => (
                 <SelectItem key={bay.id} value={bay.id}>
                   {bay.zone ? `${bay.zone} · ${bay.name}` : bay.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sizeFilter} onValueChange={setSizeFilter}>
+            <SelectTrigger className="w-full md:w-36">
+              <SelectValue placeholder="Filter by size" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all">All Sizes</SelectItem>
+              <SelectItem value="none">Not recorded</SelectItem>
+              {sizeOptions.map((opt) => (
+                <SelectItem key={opt.key} value={opt.key}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
