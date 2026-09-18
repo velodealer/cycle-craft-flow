@@ -1,0 +1,1 @@
+ALTER TABLE public.cycle_courier_oauth_states ADD COLUMN origin text;

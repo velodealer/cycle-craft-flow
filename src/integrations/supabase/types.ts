@@ -709,6 +709,7 @@ export type Database = {
           business_id: string
           code_verifier: string
           created_at: string
+          origin: string | null
           state: string
           user_id: string
         }
@@ -716,6 +717,7 @@ export type Database = {
           business_id: string
           code_verifier: string
           created_at?: string
+          origin?: string | null
           state: string
           user_id: string
         }
@@ -723,6 +725,7 @@ export type Database = {
           business_id?: string
           code_verifier?: string
           created_at?: string
+          origin?: string | null
           state?: string
           user_id?: string
         }
