@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Circle, Clock, Truck } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StatusProgressBarProps {
