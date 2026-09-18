@@ -1,7 +1,7 @@
 // Retrospectively links existing inspections to InspectABike and pulls faults.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
-  serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults, rewriteReportUrl, getReportBaseUrl,
+  serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults,
 } from '../_shared/inspectabike.ts';
 
 const json = (body: unknown, status = 200) =>

@@ -1,7 +1,7 @@
 // Pulls the latest inspection state and faults from InspectABike.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
-  serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults, upsertFaults, rewriteReportUrl, getReportBaseUrl,
+  serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults, upsertFaults,
 } from '../_shared/inspectabike.ts';
 import { notifyFaultsAwaitingApproval } from '../_shared/email.ts';
 
