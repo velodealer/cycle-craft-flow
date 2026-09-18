@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const supabase = serviceClient();
-  const reportBase = await getReportBaseUrl(supabase);
   try {
     await requireRole(req, supabase, ['admin', 'owner', 'mechanic', 'accountant']);
   } catch (e) {
@@ -58,7 +57,7 @@ Deno.serve(async (req) => {
       .from('inspections')
       .update({
         external_inspection_id: remote?.id ? String(remote.id) : inspection.external_inspection_id,
-        report_url: rewriteReportUrl(remote?.report_url ?? null, reportBase) ?? inspection.report_url,
+        report_url: remote?.report_url ?? inspection.report_url,
         overall_grade: remote?.overall_grade ?? null,
         inspector_name: remote?.inspector_name ?? null,
         stolen_status: typeof stolen === 'string' ? stolen : stolen ? JSON.stringify(stolen) : null,

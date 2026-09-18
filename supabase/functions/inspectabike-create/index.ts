@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     }, { supabase, businessId: (bike as any).business_id });
 
     const externalId = result?.inspection_id ?? result?.inspection?.id ?? null;
-    const reportUrl = rewriteReportUrl(result?.report_url ?? result?.inspection?.report_url ?? null, await getReportBaseUrl(supabase));
+    const reportUrl = result?.report_url ?? result?.inspection?.report_url ?? null;
 
     const { data: updated, error: updateError } = await supabase
       .from('inspections')
