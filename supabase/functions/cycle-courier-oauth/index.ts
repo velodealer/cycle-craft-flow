@@ -117,10 +117,11 @@ Deno.serve(async (req) => {
 
   // ---- Authenticated JSON API ----
   let profile: { role: string; business_id: string };
+  let userId: string;
   try {
     const user = await requireUser(req, supabase);
     profile = await requireProfile(supabase, user.id);
-    var userId = user.id;
+    userId = user.id;
   } catch (e) {
     return json({ error: (e as Error).message }, 401);
   }
