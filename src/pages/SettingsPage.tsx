@@ -110,6 +110,7 @@ export default function SettingsPage() {
             <ShopifyIntegration />
             <EbayIntegration />
             <QuickBooksIntegration />
+            <InspectABikeIntegration />
             <InspectABikeBackfill />
             <EmailNotifications />
 
