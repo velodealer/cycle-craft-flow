@@ -59,15 +59,22 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') ?? 'users'} className="w-full">
-        <TabsList className={`flex w-full flex-wrap h-auto gap-1 md:grid ${isSuperAdmin ? 'md:grid-cols-9' : 'md:grid-cols-8'}`}>
+      <Tabs
+        defaultValue={(() => {
+          const requested = new URLSearchParams(window.location.search).get('tab') ?? 'users';
+          const superOnly = ['inbox', 'website', 'super'];
+          return !isSuperAdmin && superOnly.includes(requested) ? 'users' : requested;
+        })()}
+        className="w-full"
+      >
+        <TabsList className={`flex w-full flex-wrap h-auto gap-1 md:grid ${isSuperAdmin ? 'md:grid-cols-9' : 'md:grid-cols-6'}`}>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="listings">Listing Formats</TabsTrigger>
           <TabsTrigger value="bays">Storage Bays</TabsTrigger>
-          <TabsTrigger value="inbox">Inbox</TabsTrigger>
-          <TabsTrigger value="website">Website</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger value="inbox">Inbox</TabsTrigger>}
+          {isSuperAdmin && <TabsTrigger value="website">Website</TabsTrigger>}
           <TabsTrigger value="security">Security</TabsTrigger>
           {isSuperAdmin && <TabsTrigger value="super">Super Admin</TabsTrigger>}
         </TabsList>
@@ -152,14 +159,18 @@ export default function SettingsPage() {
 
 
 
-        <TabsContent value="inbox" className="space-y-4">
-          <SupportInbox />
-        </TabsContent>
+        {isSuperAdmin && (
+          <TabsContent value="inbox" className="space-y-4">
+            <SupportInbox />
+          </TabsContent>
+        )}
 
-        <TabsContent value="website" className="space-y-4">
-          <BlogManager />
-          <JobOpeningsManager />
-        </TabsContent>
+        {isSuperAdmin && (
+          <TabsContent value="website" className="space-y-4">
+            <BlogManager />
+            <JobOpeningsManager />
+          </TabsContent>
+        )}
 
         <TabsContent value="security" className="space-y-4">
           <Card>
