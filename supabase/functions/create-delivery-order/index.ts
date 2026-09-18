@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, year, sale_price, asking_price')
+      .select('id, make, model, frame_number, year, sale_price, asking_price, business_id')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeError) throw new Error(bikeError.message);
@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
       .from('integrations')
       .select('*')
       .eq('name', 'cycle_courier_co')
-      .eq('is_active', true)
       .maybeSingle();
 
     // Record the delivery locally regardless — the courier call may fail.
