@@ -9,16 +9,36 @@ export default {
       center: true,
       padding: "2rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1120px",
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['"IBM Plex Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ['"Bricolage Grotesque"', '"IBM Plex Sans"', "ui-sans-serif", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        board: "hsl(var(--board))",
+        panel: {
+          DEFAULT: "hsl(var(--panel))",
+          high: "hsl(var(--panel-high))",
+        },
+        line: "hsl(var(--line))",
+        chalk: {
+          DEFAULT: "hsl(var(--chalk))",
+          dim: "hsl(var(--chalk-dim))",
+        },
+        amber: {
+          DEFAULT: "hsl(var(--amber))",
+          tint: "hsl(var(--amber-tint))",
+        },
+        gain: "hsl(var(--gain))",
+        loss: "hsl(var(--loss))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -72,30 +92,34 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 1px)",
+        sm: "calc(var(--radius) - 2px)",
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "flap-flip": {
+          "0%": { transform: "rotateX(0deg)" },
+          "49%": { transform: "rotateX(90deg)", backgroundColor: "hsl(var(--amber))", color: "hsl(var(--board))" },
+          "51%": { transform: "rotateX(-90deg)", backgroundColor: "hsl(var(--amber))", color: "hsl(var(--board))" },
+          "100%": { transform: "rotateX(0deg)" },
+        },
+        "stat-tick": {
+          from: { opacity: "0.4", transform: "translateY(2px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-down": "accordion-down 0.15s ease-out",
+        "accordion-up": "accordion-up 0.15s ease-out",
+        "flap-flip": "flap-flip 300ms ease-in-out",
+        "stat-tick": "stat-tick 400ms ease-out",
       },
     },
   },

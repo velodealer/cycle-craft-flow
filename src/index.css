@@ -2,113 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* VeloDealer — "The trade desk" design system.
+   Dark-first, dark-only. All colors MUST be HSL.
+   Board → Panel → Panel-high is the elevation ladder; amber is the only signal. */
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 13% 13%;
+    /* Raw board tokens */
+    --board: 213 28% 10%;
+    --panel: 213 27% 15%;
+    --panel-high: 213 26% 19%;
+    --line: 212 24% 22%;
+    --chalk: 210 22% 93%;
+    --chalk-dim: 210 14% 60%;
+    --amber: 39 83% 55%;
+    --amber-tint: 39 40% 18%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    /* Financial pair — figures only */
+    --gain: 154 48% 53%;
+    --loss: 358 75% 59%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    /* shadcn mapping */
+    --background: var(--board);
+    --foreground: var(--chalk);
 
-    --primary: 142 76% 36%;
-    --primary-foreground: 356 29% 15%;
+    --card: var(--panel);
+    --card-foreground: var(--chalk);
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 220 13% 13%;
+    --popover: var(--panel);
+    --popover-foreground: var(--chalk);
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --primary: var(--amber);
+    --primary-foreground: var(--board);
 
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
+    --secondary: var(--panel-high);
+    --secondary-foreground: var(--chalk);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --muted: var(--panel);
+    --muted-foreground: var(--chalk-dim);
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 142 76% 36%;
+    --accent: var(--amber-tint);
+    --accent-foreground: var(--chalk);
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    
-    --info: 217 91% 60%;
-    --info-foreground: 0 0% 100%;
+    --destructive: var(--loss);
+    --destructive-foreground: 210 22% 96%;
 
-    --radius: 0.5rem;
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--amber);
 
-    --sidebar-background: 0 0% 98%;
+    --success: var(--gain);
+    --success-foreground: 154 32% 8%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --warning: var(--amber);
+    --warning-foreground: var(--board);
 
-    --sidebar-primary: 240 5.9% 10%;
+    --info: 214 100% 68%;
+    --info-foreground: 217 44% 9%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --radius: 0.25rem;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: var(--board);
+    --sidebar-foreground: var(--chalk-dim);
+    --sidebar-primary: var(--amber);
+    --sidebar-primary-foreground: var(--board);
+    --sidebar-accent: var(--panel-high);
+    --sidebar-accent-foreground: var(--chalk);
+    --sidebar-border: var(--line);
+    --sidebar-ring: var(--amber);
   }
 
+  /* Mirror of :root — a stray `dark` class must be a no-op. */
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --board: 213 28% 10%;
+    --panel: 213 27% 15%;
+    --panel-high: 213 26% 19%;
+    --line: 212 24% 22%;
+    --chalk: 210 22% 93%;
+    --chalk-dim: 210 14% 60%;
+    --amber: 39 83% 55%;
+    --amber-tint: 39 40% 18%;
 
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
+    --gain: 154 48% 53%;
+    --loss: 358 75% 59%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
+    --background: var(--board);
+    --foreground: var(--chalk);
+    --card: var(--panel);
+    --card-foreground: var(--chalk);
+    --popover: var(--panel);
+    --popover-foreground: var(--chalk);
+    --primary: var(--amber);
+    --primary-foreground: var(--board);
+    --secondary: var(--panel-high);
+    --secondary-foreground: var(--chalk);
+    --muted: var(--panel);
+    --muted-foreground: var(--chalk-dim);
+    --accent: var(--amber-tint);
+    --accent-foreground: var(--chalk);
+    --destructive: var(--loss);
+    --destructive-foreground: 210 22% 96%;
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--amber);
+    --success: var(--gain);
+    --success-foreground: 154 32% 8%;
+    --warning: var(--amber);
+    --warning-foreground: var(--board);
+    --info: 214 100% 68%;
+    --info-foreground: 217 44% 9%;
 
-    --primary: 142 76% 36%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 213 31% 91%;
-
-    --muted: 215 28% 17%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    
-    --info: 217 91% 60%;
-    --info-foreground: 0 0% 100%;
-
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 142 76% 36%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: var(--board);
+    --sidebar-foreground: var(--chalk-dim);
+    --sidebar-primary: var(--amber);
+    --sidebar-primary-foreground: var(--board);
+    --sidebar-accent: var(--panel-high);
+    --sidebar-accent-foreground: var(--chalk);
+    --sidebar-border: var(--line);
+    --sidebar-ring: var(--amber);
   }
 }
 
@@ -117,7 +128,57 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv05" 1;
+  }
+
+  /* Figures line up to the pixel everywhere */
+  table,
+  input,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
+  h2,
+  h3 {
+    @apply font-sans font-semibold;
+  }
+}
+
+@layer components {
+  /* Plate-style identifiers: bike refs, frame numbers, invoice refs */
+  .id-text {
+    @apply font-sans text-[12.5px] font-medium uppercase text-muted-foreground;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Column heads, field labels, flap type */
+  .label-text {
+    @apply text-xs font-medium uppercase text-muted-foreground;
+    letter-spacing: 0.04em;
+  }
+
+  /* Big dashboard / report figures */
+  .stat-figure {
+    @apply font-display text-[2.75rem] font-bold leading-none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Long-form marketing and legal text */
+  .prose-board {
+    @apply text-base leading-[1.65] text-foreground;
+    max-width: 70ch;
   }
 }
