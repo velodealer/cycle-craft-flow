@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2 } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
+import { StageFlap } from '@/components/velo/StageFlap';
 import BreakBikeDialog from './BreakBikeDialog';
 import DeleteBikeDialog from './DeleteBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
@@ -238,14 +239,14 @@ export default function BikeDetailView({
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to List
           </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {bike.make} {bike.model}
+          <div className="space-y-1">
+            <h1 className="font-display text-[28px] font-bold leading-tight">
+              {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
             </h1>
-            <p className="text-muted-foreground text-sm">
-              {bike.year && `${bike.year} • `}
-              <span className="font-mono">{bikeRef(bike as any)}</span>
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="id-text">{bikeRef(bike as any)}</span>
+              <StageFlap stage={bike.status} />
+            </div>
           </div>
         </div>
         {!inspectionMode && (
