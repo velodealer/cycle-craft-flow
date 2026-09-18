@@ -42,20 +42,16 @@ export interface BpsReceiverSettings {
   };
 }
 
-// Save or update Cycle Courier Co API key
-export const saveCycleCourierApiKey = async (
-  apiKey: string,
+// Save Cycle Courier Co webhook secret + delivery address settings
+export const saveCycleCourierSettings = async (
   webhookSecret: string,
   bpsReceiver: BpsReceiverSettings,
   existingIntegration?: Integration | null
 ): Promise<Integration> => {
-
   if (existingIntegration) {
-    // Update existing integration
     const { data, error } = await supabase
       .from('integrations')
       .update({
-        api_key: apiKey,
         webhook_secret: webhookSecret,
         is_active: true,
         settings: { bps_receiver: bpsReceiver } as unknown as Json,
@@ -71,51 +67,55 @@ export const saveCycleCourierApiKey = async (
     }
 
     return data;
-  } else {
-    // Create new integration
-    const { data, error } = await supabase
-      .from('integrations')
-      .insert({
-        name: 'cycle_courier_co',
-        display_name: 'Cycle Courier Co',
-        api_key: apiKey,
-        webhook_secret: webhookSecret,
-        is_active: true,
-        settings: { bps_receiver: bpsReceiver } as unknown as Json,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating integration:', error);
-      throw error;
-    }
-
-    return data;
   }
+
+  const { data, error } = await supabase
+    .from('integrations')
+    .insert({
+      name: 'cycle_courier_co',
+      display_name: 'Cycle Courier Co',
+      webhook_secret: webhookSecret,
+      is_active: true,
+      settings: { bps_receiver: bpsReceiver } as unknown as Json,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating integration:', error);
+    throw error;
+  }
+
+  return data;
 };
 
-// Test Cycle Courier Co connection
-export const testCycleCourierConnection = async (apiKey: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('test-cycle-courier', {
-      body: { apiKey },
-    });
+export interface CycleCourierStatus {
+  configured: boolean;
+  connected: boolean;
+  needs_reconnect: boolean;
+  account_name: string | null;
+  connected_at: string | null;
+  last_error: string | null;
+  callback_url: string;
+}
 
-    if (error) {
-      console.error('Error testing connection:', error);
-      return false;
-    }
-
-    return data?.success || false;
-  } catch (error) {
-    console.error('Error testing connection:', error);
-    return false;
-  }
+const callOauth = async <T>(body: Record<string, unknown>): Promise<T> => {
+  const { data, error } = await supabase.functions.invoke('cycle-courier-oauth', { body });
+  if (error) throw new Error(error.message);
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return data as T;
 };
 
+export const getCycleCourierStatus = () =>
+  callOauth<CycleCourierStatus>({ action: 'status' });
 
-// Deactivate Cycle Courier Co integration
+export const getCycleCourierAuthUrl = () =>
+  callOauth<{ url: string }>({ action: 'auth_url', origin: window.location.origin });
+
+export const disconnectCycleCourier = () =>
+  callOauth<{ ok: boolean }>({ action: 'disconnect' });
+
+// Deactivate Cycle Courier Co integration settings row
 export const deactivateCycleCourierIntegration = async (
   integrationId: string
 ): Promise<void> => {
