@@ -297,19 +297,6 @@ export default function TypeformIntegration() {
           </Alert>
         )}
 
-        {connected && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="space-y-1">
-              <p>
-                Create a Typeform app at developer.typeform.com and add this OAuth redirect URI, then enter the client
-                ID and secret in Project Settings when prompted:
-              </p>
-              <code className="block break-all rounded bg-muted p-2 text-xs">{status?.redirect_uri}</code>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {connected && forms.length === 0 && !loadingForms && (
           <p className="text-sm text-muted-foreground">
             No forms found in the connected Typeform account. Create a form first, then refresh.
