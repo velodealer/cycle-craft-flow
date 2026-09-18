@@ -10,6 +10,7 @@ import StorageBays from '@/components/settings/StorageBays';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
 import InspectABikeBackfill from '@/components/settings/InspectABikeBackfill';
+import InspectABikeIntegration from '@/components/settings/InspectABikeIntegration';
 import EmailNotifications from '@/components/settings/EmailNotifications';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -110,6 +111,7 @@ export default function SettingsPage() {
             <ShopifyIntegration />
             <EbayIntegration />
             <QuickBooksIntegration />
+            <InspectABikeIntegration />
             <InspectABikeBackfill />
             <EmailNotifications />
 

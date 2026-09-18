@@ -42,18 +42,236 @@ export async function requireRole(
   return { user, profile };
 }
 
-export async function iabFetch(path: string, init: RequestInit = {}) {
-  const key = Deno.env.get('INSPECTABIKE_API_KEY');
-  if (!key) throw Object.assign(new Error('InspectABike API key is not configured'), { status: 500 });
+// ---------------------------------------------------------------------------
+// Per-dealer OAuth connection
+// ---------------------------------------------------------------------------
 
-  const res = await fetch(`${INSPECTABIKE_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      ...(init.headers || {}),
-    },
+export const IAB_AUTHORIZE_URL =
+  (Deno.env.get('INSPECTABIKE_AUTHORIZE_URL') || 'https://inspectabike.com/oauth/authorize').trim();
+
+export const IAB_TOKEN_URL =
+  (Deno.env.get('INSPECTABIKE_TOKEN_URL') || `${INSPECTABIKE_BASE_URL}/oauth-token`).trim();
+
+export class ReconnectRequired extends Error {
+  constructor(message = 'InspectABike needs to be reconnected in Settings') {
+    super(message);
+    this.name = 'ReconnectRequired';
+    (this as any).status = 409;
+  }
+}
+
+export class NotConnected extends Error {
+  constructor(message = 'Connect InspectABike in Settings first') {
+    super(message);
+    this.name = 'NotConnected';
+    (this as any).status = 409;
+  }
+}
+
+export function functionsBase() {
+  return (
+    Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || `${Deno.env.get('SUPABASE_URL')}/functions/v1`
+  ).trim().replace(/\/+$/, '');
+}
+
+export function redirectUri() {
+  return `${functionsBase()}/inspectabike-oauth`;
+}
+
+export function webhookUrl() {
+  return `${functionsBase()}/inspectabike-webhook`;
+}
+
+export function clientCredentials() {
+  const clientId = Deno.env.get('INSPECTABIKE_CLIENT_ID');
+  const clientSecret = Deno.env.get('INSPECTABIKE_CLIENT_SECRET');
+  if (!clientId || !clientSecret) {
+    throw new Error('InspectABike app credentials are not configured yet');
+  }
+  return { clientId, clientSecret };
+}
+
+export interface IabConnection {
+  id: string;
+  business_id: string;
+  access_token: string | null;
+  refresh_token: string | null;
+  access_token_expires_at: string | null;
+  account_name: string | null;
+  external_account_id: string | null;
+  webhook_secret: string | null;
+  status: string;
+  last_error: string | null;
+  connected_at: string | null;
+}
+
+export async function loadConnection(
+  supabase: ReturnType<typeof serviceClient>,
+  businessId: string | null | undefined,
+): Promise<IabConnection | null> {
+  if (!businessId) return null;
+  const { data, error } = await supabase
+    .from('inspectabike_connections')
+    .select('*')
+    .eq('business_id', businessId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as IabConnection) ?? null;
+}
+
+async function markNeedsReconnect(
+  supabase: ReturnType<typeof serviceClient>,
+  businessId: string,
+  message: string,
+) {
+  await supabase
+    .from('inspectabike_connections')
+    .update({ status: 'needs_reconnect', last_error: message.slice(0, 500) })
+    .eq('business_id', businessId);
+}
+
+/** Exchange an authorisation code (PKCE) for tokens. */
+export async function exchangeCode(code: string, codeVerifier: string) {
+  const { clientId, clientSecret } = clientCredentials();
+  const res = await fetch(IAB_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri(),
+      code_verifier: codeVerifier,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
   });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`InspectABike token exchange failed [${res.status}]: ${text.slice(0, 300)}`);
+  return JSON.parse(text) as {
+    access_token: string;
+    refresh_token: string;
+    expires_in?: number;
+    account_name?: string;
+    account_id?: string;
+    webhook_secret?: string;
+  };
+}
+
+/** A valid access token for the business, refreshing when it is close to expiry. */
+export async function getAccessToken(
+  supabase: ReturnType<typeof serviceClient>,
+  businessId: string,
+): Promise<string> {
+  const row = await loadConnection(supabase, businessId);
+  if (!row || !row.refresh_token) throw new NotConnected();
+  if (row.status === 'needs_reconnect') throw new ReconnectRequired();
+
+  const expiresAt = row.access_token_expires_at ? Date.parse(row.access_token_expires_at) : 0;
+  if (row.access_token && expiresAt - Date.now() > 60_000) return row.access_token;
+
+  const { clientId, clientSecret } = clientCredentials();
+  const res = await fetch(IAB_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: row.refresh_token,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+  const text = await res.text();
+
+  if (!res.ok) {
+    if (text.includes('invalid_grant') || res.status === 400 || res.status === 401) {
+      const fresh = await loadConnection(supabase, businessId);
+      if (
+        fresh?.access_token &&
+        fresh.refresh_token !== row.refresh_token &&
+        (fresh.access_token_expires_at ? Date.parse(fresh.access_token_expires_at) : 0) - Date.now() > 10_000
+      ) {
+        return fresh.access_token;
+      }
+      await markNeedsReconnect(supabase, businessId, `Refresh failed: ${text.slice(0, 200)}`);
+      throw new ReconnectRequired();
+    }
+    throw new Error(`InspectABike token refresh failed [${res.status}]: ${text.slice(0, 200)}`);
+  }
+
+  const tokens = JSON.parse(text) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
+
+  const { error } = await supabase
+    .from('inspectabike_connections')
+    .update({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token ?? row.refresh_token,
+      access_token_expires_at: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
+      status: 'connected',
+      last_error: null,
+    })
+    .eq('business_id', businessId)
+    .eq('refresh_token', row.refresh_token);
+  if (error) console.error('Failed to store rotated InspectABike token:', error.message);
+
+  return tokens.access_token;
+}
+
+export interface IabContext {
+  supabase: ReturnType<typeof serviceClient>;
+  businessId?: string | null;
+}
+
+/**
+ * Call the InspectABike partner API.
+ * Uses the business's own connected account when there is one, and falls back
+ * to the shared platform API key for dealers who have not connected yet.
+ */
+export async function iabFetch(path: string, init: RequestInit = {}, ctx?: IabContext) {
+  let authHeaders: Record<string, string> | null = null;
+
+  if (ctx?.supabase && ctx.businessId) {
+    const row = await loadConnection(ctx.supabase, ctx.businessId);
+    if (row?.refresh_token) {
+      if (row.status === 'needs_reconnect') throw new ReconnectRequired();
+      authHeaders = { Authorization: `Bearer ${await getAccessToken(ctx.supabase, ctx.businessId)}` };
+    }
+  }
+
+  if (!authHeaders) {
+    const key = Deno.env.get('INSPECTABIKE_API_KEY');
+    if (!key) throw new NotConnected();
+    authHeaders = { 'x-api-key': key };
+  }
+
+  const call = async () =>
+    await fetch(`${INSPECTABIKE_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+        ...(init.headers || {}),
+      },
+    });
+
+  let res = await call();
+
+  // Bearer rejected: force a refresh and retry once.
+  if (res.status === 401 && authHeaders.Authorization && ctx?.supabase && ctx.businessId) {
+    await ctx.supabase
+      .from('inspectabike_connections')
+      .update({ access_token_expires_at: new Date(0).toISOString() })
+      .eq('business_id', ctx.businessId);
+    authHeaders = { Authorization: `Bearer ${await getAccessToken(ctx.supabase, ctx.businessId)}` };
+    res = await call();
+    if (res.status === 401) {
+      await markNeedsReconnect(ctx.supabase, ctx.businessId, 'InspectABike rejected the connection (401)');
+      throw new ReconnectRequired();
+    }
+  }
 
   const text = await res.text();
   let body: any = null;
@@ -61,7 +279,7 @@ export async function iabFetch(path: string, init: RequestInit = {}) {
 
   if (!res.ok) {
     const message =
-      res.status === 401 ? 'InspectABike rejected the API key'
+      res.status === 401 ? 'InspectABike rejected the connection'
       : res.status === 404 ? 'Inspection not found in InspectABike'
       : res.status === 400 ? (body?.error || body?.message || 'InspectABike rejected the request')
       : (body?.error || body?.message || 'InspectABike request failed');

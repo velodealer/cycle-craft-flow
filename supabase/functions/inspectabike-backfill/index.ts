@@ -19,9 +19,9 @@ function idFromReportUrl(url: string | null): string | null {
   return match ? match[0] : null;
 }
 
-async function tryFetch(query: string) {
+async function tryFetch(query: string, ctx?: { supabase: any; businessId?: string | null }) {
   try {
-    return await iabFetch(`/partner-inspection?${query}`);
+    return await iabFetch(`/partner-inspection?${query}`, {}, ctx as any);
   } catch (e) {
     if ((e as any).status === 404) return null;
     throw e;
@@ -78,14 +78,15 @@ Deno.serve(async (req) => {
         let result: any = null;
         let wasLinked = !!inspection.external_inspection_id;
 
+        const ctx = { supabase, businessId: (inspection as any).business_id };
         const knownId = inspection.external_inspection_id || idFromReportUrl(inspection.report_url);
-        if (knownId) result = await tryFetch(`id=${encodeURIComponent(knownId)}`);
+        if (knownId) result = await tryFetch(`id=${encodeURIComponent(knownId)}`, ctx);
         if (!result && bike?.reference) {
-          result = await tryFetch(`reference=${encodeURIComponent(bike.reference)}`);
+          result = await tryFetch(`reference=${encodeURIComponent(bike.reference)}`, ctx);
         }
         if (!result && (bike?.frame_number || bike?.serial_number)) {
           const serial = bike.frame_number || bike.serial_number;
-          result = await tryFetch(`serial=${encodeURIComponent(serial)}`);
+          result = await tryFetch(`serial=${encodeURIComponent(serial)}`, ctx);
         }
 
         if (!result) {

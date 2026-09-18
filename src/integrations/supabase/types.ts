@@ -910,6 +910,97 @@ export type Database = {
           },
         ]
       }
+      inspectabike_connections: {
+        Row: {
+          access_token: string | null
+          access_token_expires_at: string | null
+          account_name: string | null
+          business_id: string
+          connected_at: string
+          created_at: string
+          external_account_id: string | null
+          id: string
+          last_error: string | null
+          refresh_token: string | null
+          status: string
+          updated_at: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          account_name?: string | null
+          business_id: string
+          connected_at?: string
+          created_at?: string
+          external_account_id?: string | null
+          id?: string
+          last_error?: string | null
+          refresh_token?: string | null
+          status?: string
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          access_token_expires_at?: string | null
+          account_name?: string | null
+          business_id?: string
+          connected_at?: string
+          created_at?: string
+          external_account_id?: string | null
+          id?: string
+          last_error?: string | null
+          refresh_token?: string | null
+          status?: string
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspectabike_connections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspectabike_oauth_states: {
+        Row: {
+          business_id: string
+          code_verifier: string
+          created_at: string
+          origin: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          code_verifier: string
+          created_at?: string
+          origin?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          code_verifier?: string
+          created_at?: string
+          origin?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspectabike_oauth_states_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_faults: {
         Row: {
           bike_id: string
