@@ -90,7 +90,7 @@ export default function InspectABikeIntegration() {
             </CardDescription>
           </div>
           {status?.connected ? (
-            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Connected</Badge>
+            <Badge variant="success">Connected</Badge>
           ) : status?.needs_reconnect ? (
             <Badge variant="destructive">Reconnect needed</Badge>
           ) : (
@@ -103,7 +103,7 @@ export default function InspectABikeIntegration() {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : !status?.configured ? (
-          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               InspectABike has not issued app credentials for VeloDealer yet. Once they do, saving

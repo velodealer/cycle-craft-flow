@@ -198,7 +198,7 @@ export default function QuoteBuilderPage() {
   };
 
   const profitTone =
-    profit > 0 ? "text-green-600" : profit < 0 ? "text-red-600" : "text-foreground";
+    profit > 0 ? "text-gain" : profit < 0 ? "text-loss" : "text-foreground";
 
   if (loading) {
     return (
@@ -228,7 +228,7 @@ export default function QuoteBuilderPage() {
               </Badge>
             )}
             {dirty && (
-              <Badge variant="outline" className="ml-1 text-orange-600 border-orange-300">
+              <Badge variant="outline" className="ml-1 border-warning/50 text-warning">
                 Unsaved
               </Badge>
             )}
