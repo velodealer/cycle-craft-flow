@@ -78,14 +78,15 @@ Deno.serve(async (req) => {
         let result: any = null;
         let wasLinked = !!inspection.external_inspection_id;
 
+        const ctx = { supabase, businessId: (inspection as any).business_id };
         const knownId = inspection.external_inspection_id || idFromReportUrl(inspection.report_url);
-        if (knownId) result = await tryFetch(`id=${encodeURIComponent(knownId)}`);
+        if (knownId) result = await tryFetch(`id=${encodeURIComponent(knownId)}`, ctx);
         if (!result && bike?.reference) {
-          result = await tryFetch(`reference=${encodeURIComponent(bike.reference)}`);
+          result = await tryFetch(`reference=${encodeURIComponent(bike.reference)}`, ctx);
         }
         if (!result && (bike?.frame_number || bike?.serial_number)) {
           const serial = bike.frame_number || bike.serial_number;
-          result = await tryFetch(`serial=${encodeURIComponent(serial)}`);
+          result = await tryFetch(`serial=${encodeURIComponent(serial)}`, ctx);
         }
 
         if (!result) {
