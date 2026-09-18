@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
+import { cycleCourierFetch } from '../_shared/cycle-courier.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,27 +49,11 @@ serve(async (req) => {
     console.log('Bike details:', { make: bike.make, model: bike.model, year: bike.year });
 
     // 2. Get Cycle Courier integration
-    const { data: integration, error: integrationError } = await supabase
+    const { data: integration } = await supabase
       .from('integrations')
       .select('*')
       .eq('name', 'cycle_courier_co')
-      .eq('is_active', true)
-      .single();
-
-    if (integrationError || !integration) {
-      console.error('Integration not found or inactive:', integrationError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Cycle Courier integration not configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!integration.api_key) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'API key not configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      .maybeSingle();
 
     // 2. Create initial collection record
     const { data: collection, error: createError } = await supabase
