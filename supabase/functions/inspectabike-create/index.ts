@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     const result = await iabFetch('/partner-create-inspection', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
+    }, { supabase, businessId: (bike as any).business_id });
 
     const externalId = result?.inspection_id ?? result?.inspection?.id ?? null;
     const reportUrl = rewriteReportUrl(result?.report_url ?? result?.inspection?.report_url ?? null, await getReportBaseUrl(supabase));

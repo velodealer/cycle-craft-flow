@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       ? `id=${encodeURIComponent(inspection.external_inspection_id)}`
       : `reference=${encodeURIComponent(inspection.external_reference)}`;
 
-    const result = await iabFetch(`/partner-inspection?${query}`);
+    const result = await iabFetch(`/partner-inspection?${query}`, {}, { supabase, businessId: (inspection as any).business_id });
     const remote = result?.inspection ?? {};
     const faults: any[] = Array.isArray(result?.faults) ? result.faults : [];
     const stolen = result?.stolen_status ?? remote?.stolen_status ?? null;

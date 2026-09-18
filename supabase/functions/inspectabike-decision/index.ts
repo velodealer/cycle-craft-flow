@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
         ...(note ? { note } : {}),
         actor_name: 'Cycle Craft Flow',
       }),
-    });
+    }, { supabase, businessId: (fault as any).business_id });
 
     // Adopt the status InspectABike returns when it supplies one, so both sides agree.
     const remoteStatus = String(

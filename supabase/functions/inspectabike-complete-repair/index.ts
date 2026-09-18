@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
       return json({ error: 'This repair was declined and cannot be marked as done.' }, 400);
     }
 
+    const ctx = { supabase, businessId: (fault as any).business_id };
     const payload = {
       fault_id: fault.external_fault_id,
       decision: 'repaired',
@@ -54,12 +55,12 @@ Deno.serve(async (req) => {
 
     // InspectABike owns fault state: only record it locally once they accept it.
     try {
-      await iabFetch('/partner-fault-decision', { method: 'POST', body: JSON.stringify(payload) });
+      await iabFetch('/partner-fault-decision', { method: 'POST', body: JSON.stringify(payload) }, ctx);
     } catch (e) {
       const status = (e as any).status;
       if (status === 400 || status === 404) {
         // Older/alternate partner API shape.
-        await iabFetch('/partner-fault-repaired', { method: 'POST', body: JSON.stringify(payload) });
+        await iabFetch('/partner-fault-repaired', { method: 'POST', body: JSON.stringify(payload) }, ctx);
       } else {
         throw e;
       }

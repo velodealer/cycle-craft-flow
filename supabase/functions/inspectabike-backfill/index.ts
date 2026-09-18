@@ -19,9 +19,9 @@ function idFromReportUrl(url: string | null): string | null {
   return match ? match[0] : null;
 }
 
-async function tryFetch(query: string) {
+async function tryFetch(query: string, ctx?: { supabase: any; businessId?: string | null }) {
   try {
-    return await iabFetch(`/partner-inspection?${query}`);
+    return await iabFetch(`/partner-inspection?${query}`, {}, ctx as any);
   } catch (e) {
     if ((e as any).status === 404) return null;
     throw e;
