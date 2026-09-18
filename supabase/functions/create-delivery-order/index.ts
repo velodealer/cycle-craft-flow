@@ -128,11 +128,22 @@ Deno.serve(async (req) => {
       requiresSignature: true,
     };
 
-    const response = await fetch('https://api.cyclecourierco.com/functions/v1/orders', {
-      method: 'POST',
-      headers: { 'X-API-Key': integration.api_key, 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload),
-    });
+    let response: Response;
+    try {
+      response = await cycleCourierFetch(
+        supabase as any,
+        (bike as any).business_id,
+        '/orders',
+        { method: 'POST', body: JSON.stringify(orderPayload) },
+      );
+    } catch (e) {
+      const message = (e as Error).message;
+      await supabase
+        .from('bike_collections')
+        .update({ status: 'failed', error_message: message })
+        .eq('id', delivery.id);
+      return json({ error: message, delivery_id: delivery.id }, 400);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
