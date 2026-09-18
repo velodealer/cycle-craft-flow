@@ -3,6 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { notifyLogistics } from '../_shared/email.ts';
+import { cycleCourierFetch } from '../_shared/cycle-courier.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -49,7 +50,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, year, sale_price, asking_price')
+      .select('id, make, model, frame_number, year, sale_price, asking_price, business_id')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeError) throw new Error(bikeError.message);
@@ -59,7 +60,6 @@ Deno.serve(async (req) => {
       .from('integrations')
       .select('*')
       .eq('name', 'cycle_courier_co')
-      .eq('is_active', true)
       .maybeSingle();
 
     // Record the delivery locally regardless — the courier call may fail.
@@ -100,13 +100,6 @@ Deno.serve(async (req) => {
       .single();
     if (createError) throw new Error(createError.message);
 
-    if (!integration?.api_key) {
-      await supabase
-        .from('bike_collections')
-        .update({ status: 'failed', error_message: 'Cycle Courier integration is not configured' })
-        .eq('id', delivery.id);
-      return json({ error: 'Cycle Courier integration is not configured', delivery_id: delivery.id }, 400);
-    }
 
     const orderPayload = {
       customerOrderNumber: bikeId,
@@ -135,11 +128,22 @@ Deno.serve(async (req) => {
       requiresSignature: true,
     };
 
-    const response = await fetch('https://api.cyclecourierco.com/functions/v1/orders', {
-      method: 'POST',
-      headers: { 'X-API-Key': integration.api_key, 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload),
-    });
+    let response: Response;
+    try {
+      response = await cycleCourierFetch(
+        supabase as any,
+        (bike as any).business_id,
+        '/orders',
+        { method: 'POST', body: JSON.stringify(orderPayload) },
+      );
+    } catch (e) {
+      const message = (e as Error).message;
+      await supabase
+        .from('bike_collections')
+        .update({ status: 'failed', error_message: message })
+        .eq('id', delivery.id);
+      return json({ error: message, delivery_id: delivery.id }, 400);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

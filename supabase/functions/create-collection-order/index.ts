@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
+import { cycleCourierFetch } from '../_shared/cycle-courier.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,27 +49,11 @@ serve(async (req) => {
     console.log('Bike details:', { make: bike.make, model: bike.model, year: bike.year });
 
     // 2. Get Cycle Courier integration
-    const { data: integration, error: integrationError } = await supabase
+    const { data: integration } = await supabase
       .from('integrations')
       .select('*')
       .eq('name', 'cycle_courier_co')
-      .eq('is_active', true)
-      .single();
-
-    if (integrationError || !integration) {
-      console.error('Integration not found or inactive:', integrationError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Cycle Courier integration not configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!integration.api_key) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'API key not configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      .maybeSingle();
 
     // 2. Create initial collection record
     const { data: collection, error: createError } = await supabase
@@ -99,7 +84,7 @@ serve(async (req) => {
     console.log('Collection record created:', collection.id);
 
     // 3. Get BPS receiver address from settings
-    const bpsReceiver = integration.settings?.bps_receiver || {
+    const bpsReceiver = (integration?.settings as any)?.bps_receiver || {
       name: 'Brighton Premium Storage',
       email: 'info@bps.com',
       phone: '+44 1234 567890',
@@ -154,15 +139,26 @@ serve(async (req) => {
 
     console.log('Calling Cycle Courier API...');
 
-    // 5. Call Cycle Courier API
-    const response = await fetch('https://api.cyclecourierco.com/functions/v1/orders', {
-      method: 'POST',
-      headers: {
-        'X-API-Key': integration.api_key,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(orderPayload)
-    });
+    // 5. Call Cycle Courier API on behalf of the connected business account
+    let response: Response;
+    try {
+      response = await cycleCourierFetch(
+        supabase as any,
+        (bike as any).business_id,
+        '/orders',
+        { method: 'POST', body: JSON.stringify(orderPayload) },
+      );
+    } catch (e) {
+      const message = (e as Error).message;
+      await supabase
+        .from('bike_collections')
+        .update({ status: 'failed', error_message: message })
+        .eq('id', collection.id);
+      return new Response(
+        JSON.stringify({ success: false, error: message, collection_id: collection.id }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
