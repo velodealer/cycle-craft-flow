@@ -52,16 +52,9 @@ Deno.serve(async (req) => {
     });
   }
 
-  const secret = Deno.env.get('INSPECTABIKE_WEBHOOK_SECRET');
-  if (!secret) return json({ error: 'Webhook secret not configured' }, 500);
-
   const signature = req.headers.get('x-inspectabike-signature') || '';
   const rawBody = await req.text();
-
-  if (!signature || !(await verify(rawBody, signature, secret))) {
-    console.error('inspectabike-webhook: invalid signature');
-    return json({ error: 'Invalid signature' }, 401);
-  }
+  if (!signature) return json({ error: 'Invalid signature' }, 401);
 
   let payload: any;
   try {
@@ -92,6 +85,32 @@ Deno.serve(async (req) => {
       console.error('inspectabike-webhook: no local inspection for', externalInspectionId);
       return json({ received: true });
     }
+
+    // Verify against this dealer's own signing secret, falling back to the
+    // shared platform secret for dealers who have not connected their account.
+    let secret: string | null = null;
+    if ((inspection as any).business_id) {
+      const { data: conn } = await supabase
+        .from('inspectabike_connections')
+        .select('webhook_secret')
+        .eq('business_id', (inspection as any).business_id)
+        .maybeSingle();
+      secret = (conn as any)?.webhook_secret ?? null;
+    }
+    const sharedSecret = Deno.env.get('INSPECTABIKE_WEBHOOK_SECRET') || null;
+
+    const candidates = [secret, sharedSecret].filter(Boolean) as string[];
+    if (!candidates.length) return json({ error: 'Webhook secret not configured' }, 500);
+
+    let valid = false;
+    for (const candidate of candidates) {
+      if (await verify(rawBody, signature, candidate)) { valid = true; break; }
+    }
+    if (!valid) {
+      console.error('inspectabike-webhook: invalid signature');
+      return json({ error: 'Invalid signature' }, 401);
+    }
+
 
     if (event === 'inspection.faults_completed') {
       // All faults are repaired or declined — fires once, but handle idempotently.
