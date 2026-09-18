@@ -12,7 +12,7 @@ Replace the typed API key with a proper "Connect with Cycle Courier" button. Eac
 
 ## What you need to do
 
-Cycle Courier hasn't registered VeloDealer yet. Email Info@cyclecourierco.com and ask them to register the app with this return address:
+Cycle Courier hasn't registered VeloDealer yet. Email [Info@cyclecourierco.com](mailto:Info@cyclecourierco.com) and ask them to register the app with this return address:
 
 ```text
 https://api.velodealer.com/functions/v1/cycle-courier-oauth
@@ -29,13 +29,15 @@ They will send back an App ID and an App secret. Once you have them I'll ask you
 
 Also a short-lived `cycle_courier_oauth_states` table (`state` pk, `business_id`, `user_id`, `code_verifier`, `created_at`) for PKCE, rows older than 10 minutes purged on each use.
 
-**New edge function `supabase/functions/cycle-courier-oauth/index.ts`** (`verify_jwt = false` in `config.toml`, JWT validated in code for the POST actions):
+**New edge function `supabase/functions/cycle-courier-oauth/index.ts**` (`verify_jwt = false` in `config.toml`, JWT validated in code for the POST actions):
+
 - `POST { action: 'status' }` — returns connected / account name / needs_reconnect, no tokens.
 - `POST { action: 'auth_url' }` — admin/owner only; generates `code_verifier` + S256 challenge + `state`, stores them, returns the `https://booking.cyclecourierco.com/oauth/authorize` URL.
 - `GET ?code=&state=` — the registered redirect. Verifies state, exchanges at `POST https://api.cyclecourierco.com/functions/v1/oauth-token` with `code_verifier` and client credentials, stores the tokens against the state's business, 302s back to `/settings?cyclecourier=connected` (or `=error`). Handles `?error=access_denied`.
 - `POST { action: 'disconnect' }` — calls `/oauth-revoke` with the refresh token, then deletes the row.
 
 **New shared helper `supabase/functions/_shared/cycle-courier.ts`:**
+
 - `getAccessToken(supabase, businessId)` — returns a valid bearer token, refreshing via `grant_type=refresh_token` when the token expires within 60 seconds and persisting the rotated refresh token immediately; a single serialised refresh per row (conditional update on the stored refresh token) so two bookings never refresh in parallel.
 - On `invalid_grant` or a 401 from the API: set `status = 'needs_reconnect'`, record `last_error`, and throw a `ReconnectRequired` error — no retry loop.
 - `cycleCourierFetch(supabase, businessId, path, init)` — adds `Authorization: Bearer …`, retries once after a refresh on a first 401.
