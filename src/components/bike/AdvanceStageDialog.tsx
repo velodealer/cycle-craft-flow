@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncEbayQuietly } from '@/services/ebay';
+import { ensureInspectionQuietly } from '@/services/inspectabike';
 
 const advanceStageSchema = z.object({
   notes: z.string().optional(),
@@ -79,6 +80,10 @@ export default function AdvanceStageDialog({
       if (nextStage === 'ready' || nextStage === 'listed') {
         void syncShopifyQuietly(bike.id, 'list');
         void syncEbayQuietly(bike.id, 'list');
+      }
+
+      if (nextStage === 'inspection') {
+        void ensureInspectionQuietly(bike.id);
       }
 
 
