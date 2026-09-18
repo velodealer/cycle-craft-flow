@@ -244,16 +244,6 @@ export default function QuickBooksIntegration() {
           </Alert>
         )}
 
-        {!status?.connected && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="space-y-1">
-              <p>Add this redirect URI to your Intuit developer app before connecting:</p>
-              <code className="block break-all rounded bg-muted p-2 text-xs">{status?.redirect_uri}</code>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {status?.connected && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
