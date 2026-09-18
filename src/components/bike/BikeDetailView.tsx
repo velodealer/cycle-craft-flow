@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2 } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import { StageFlap } from '@/components/velo/StageFlap';
+import { MarginTriple } from '@/components/velo/MarginTriple';
 import BreakBikeDialog from './BreakBikeDialog';
 import DeleteBikeDialog from './DeleteBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
