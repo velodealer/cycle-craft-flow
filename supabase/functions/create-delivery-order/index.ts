@@ -100,13 +100,6 @@ Deno.serve(async (req) => {
       .single();
     if (createError) throw new Error(createError.message);
 
-    if (!integration?.api_key) {
-      await supabase
-        .from('bike_collections')
-        .update({ status: 'failed', error_message: 'Cycle Courier integration is not configured' })
-        .eq('id', delivery.id);
-      return json({ error: 'Cycle Courier integration is not configured', delivery_id: delivery.id }, 400);
-    }
 
     const orderPayload = {
       customerOrderNumber: bikeId,
