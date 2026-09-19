@@ -166,7 +166,7 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
-        <Link to="/dashboard" onClick={handleNavItemClick} className="flex h-8 items-center gap-3 overflow-hidden">
+        <Link to="/" className="flex h-8 items-center gap-3 overflow-hidden">
           <VeloDealerLogo variant="symbol" className="size-7" />
           <span className="font-display text-lg font-bold text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
             VeloDealer
