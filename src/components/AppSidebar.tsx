@@ -55,7 +55,7 @@ const navGroups: NavGroup[] = [
     label: "Overview",
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: allRoles },
-et    ],
+    ],
   },
   {
     label: "Workshop",
