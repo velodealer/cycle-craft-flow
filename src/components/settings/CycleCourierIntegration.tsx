@@ -123,25 +123,9 @@ export default function CycleCourierIntegration() {
       return;
     }
 
-    if (!bpsName.trim() || !bpsEmail.trim() || !bpsPhone.trim() ||
-        !bpsStreet.trim() || !bpsCity.trim() || !bpsPostcode.trim() || !bpsCountry.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all delivery address fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       setSaving(true);
-      const bpsReceiver: BpsReceiverSettings = {
-        name: bpsName,
-        email: bpsEmail,
-        phone: bpsPhone,
-        address: { street: bpsStreet, city: bpsCity, postcode: bpsPostcode, country: bpsCountry },
-      };
-      const updated = await saveCycleCourierSettings(webhookSecret, bpsReceiver, integration);
+      const updated = await saveCycleCourierSettings(webhookSecret, integration);
       setIntegration(updated);
       toast({ title: 'Saved', description: 'Settings saved successfully' });
     } catch (error) {
@@ -151,6 +135,7 @@ export default function CycleCourierIntegration() {
       setSaving(false);
     }
   };
+
 
   const handleCopyToClipboard = async (text: string, label: string) => {
     try {
