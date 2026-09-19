@@ -21,6 +21,7 @@ import SuperAdminPanel from '@/components/settings/SuperAdminPanel';
 import BlogManager from '@/components/settings/BlogManager';
 import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SettingsPage() {
   const { profile, isSuperAdmin } = useAuth();
@@ -49,15 +50,10 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="bg-accent rounded-lg p-3">
-          <Settings className="h-8 w-8 text-accent-foreground" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground mt-1">System configuration and user management</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="People, system rules, integrations and listing formats."
+      />
 
       <Tabs
         defaultValue={(() => {

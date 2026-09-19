@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Bike, TrendingUp, Wallet, Package } from 'lucide-react';
+import { PageHeader } from '@/components/velo/PageShell';
 
 interface InvestorBike {
   id: string;
@@ -82,11 +83,8 @@ export default function InvestorDashboardPage() {
   const unrealisedReturn = active.reduce((s, b) => s + computeBike(b).myReturn, 0);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">My Investments</h1>
-        <p className="text-muted-foreground">Track the bikes you've funded and your returns.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="My investments" description="The bikes you've funded and what they've returned." />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={<Bike className="h-4 w-4" />} label="Bikes" value={loading ? '…' : bikes.length.toString()} />

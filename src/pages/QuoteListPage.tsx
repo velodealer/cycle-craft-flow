@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { listQuotes, deleteQuote, type Quote } from "@/lib/quotes";
+import { PageHeader, Panel, EmptyState } from '@/components/velo/PageShell';
 
 const gbp = (n: number) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(
@@ -51,34 +52,24 @@ export default function QuoteListPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-6xl">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <Calculator className="h-6 w-6" />
-            Quote Builder
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Saved build quotes with full version history.
-          </p>
-        </div>
-        <Button onClick={() => nav("/quote-builder/new")}>
-          <Plus className="h-4 w-4 mr-2" />
-          New quote
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Quotes"
+        description="Saved build quotes with full version history."
+        actions={
+          <Button onClick={() => nav("/quote-builder/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            New quote
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All quotes</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Panel title="All quotes" bodyClassName="p-0 sm:p-4">
+        <div className="p-4 sm:p-0">
           {loading ? (
             <div className="text-sm text-muted-foreground">Loading…</div>
           ) : quotes.length === 0 ? (
-            <div className="text-sm text-muted-foreground">
-              No quotes yet. Click <b>New quote</b> to create one.
-            </div>
+            <EmptyState fact="No quotes yet." fix="Start one with New quote." />
           ) : (
             <Table>
               <TableHeader>
@@ -159,8 +150,8 @@ export default function QuoteListPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
     </div>
   );
 }

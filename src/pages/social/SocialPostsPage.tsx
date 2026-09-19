@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import PostForm from '@/components/social/PostForm';
 import PostDetailView from '@/components/social/PostDetailView';
+import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SocialPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -42,13 +43,11 @@ export default function SocialPostsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Social Posts</h1>
-          <p className="text-muted-foreground">Plan, script, and track every post.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-2" />New post</Button>
-      </div>
+      <PageHeader
+        title="Posts"
+        description="Plan, script and track every post."
+        actions={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-2" />New post</Button>}
+      />
 
       <Card>
         <CardHeader>

@@ -98,11 +98,11 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r">
-      <SidebarContent className="bg-background">
+    <Sidebar className="border-r border-sidebar-border">
+      <SidebarContent className="bg-sidebar">
         {userAccessibleItems.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+            <SidebarGroupLabel className="px-4 py-2 label-text text-sidebar-foreground/60">
               VeloDealer Navigation
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -118,10 +118,10 @@ export function AppSidebar() {
                           to={item.url} 
                           end={item.url === "/"} 
                           onClick={handleNavItemClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full ${
+                          className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
                             active 
-                              ? "bg-accent text-accent-foreground" 
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                           }`}
                         >
                           <Icon className="h-4 w-4 flex-shrink-0" />
@@ -138,7 +138,7 @@ export function AppSidebar() {
 
         {!isInvestor && (!profile?.role || socialRoles.includes(profile.role)) && (
           <SidebarGroup>
-            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+            <SidebarGroupLabel className="px-4 py-2 label-text text-sidebar-foreground/60">
               Social Planner
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -153,10 +153,10 @@ export function AppSidebar() {
                           to={item.url}
                           end={item.exact}
                           onClick={handleNavItemClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full ${
+                          className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
                             active
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                           }`}
                         >
                           <Icon className="h-4 w-4 flex-shrink-0" />
@@ -173,7 +173,7 @@ export function AppSidebar() {
 
         {profile?.role === 'investor' && (
           <SidebarGroup>
-            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+            <SidebarGroupLabel className="px-4 py-2 label-text text-sidebar-foreground/60">
               Investor Portal
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -188,10 +188,10 @@ export function AppSidebar() {
                           to={item.url}
                           end={item.exact}
                           onClick={handleNavItemClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full ${
+                          className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
                             active
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                           }`}
                         >
                           <Icon className="h-4 w-4 flex-shrink-0" />

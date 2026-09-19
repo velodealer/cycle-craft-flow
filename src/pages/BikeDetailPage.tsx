@@ -42,7 +42,7 @@ export default function BikeDetailPage() {
   if (!bike) {
     return (
       <div className="container mx-auto py-6 space-y-4">
-        <h1 className="text-2xl font-bold">Bike not found</h1>
+        <h1 className="font-display text-[26px] font-bold">Bike not found</h1>
         <Button onClick={() => navigate('/bikes')}>Back to bikes</Button>
       </div>
     );

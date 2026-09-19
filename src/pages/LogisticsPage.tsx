@@ -1,16 +1,14 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import LogisticsList from "@/components/logistics/LogisticsList";
+import { PageHeader, Panel } from '@/components/velo/PageShell';
 
 const LogisticsPage = () => {
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Logistics</h1>
-        <p className="text-muted-foreground mt-2">
-          Track bike collections and deliveries via Cycle Courier Co.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Logistics"
+        description="Collections and deliveries, booked through Cycle Courier Co."
+      />
 
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
@@ -19,31 +17,15 @@ const LogisticsPage = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Collections</CardTitle>
-              <CardDescription>
-                Bikes currently being collected or in transit
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LogisticsList status="active" />
-            </CardContent>
-          </Card>
+          <Panel title="Active collections" hint="Bikes being collected or in transit" bodyClassName="p-0 sm:p-4">
+            <LogisticsList status="active" />
+          </Panel>
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Collections</CardTitle>
-              <CardDescription>
-                Historical record of delivered bikes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LogisticsList status="completed" />
-            </CardContent>
-          </Card>
+          <Panel title="Completed" hint="Delivered and closed movements" bodyClassName="p-0 sm:p-4">
+            <LogisticsList status="completed" />
+          </Panel>
         </TabsContent>
       </Tabs>
     </div>

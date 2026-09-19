@@ -11,6 +11,8 @@ import { stockOutDocNumber, syncInvoice, reverseSale } from '@/lib/quickbooks';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { PageHeader, Panel, EmptyState } from '@/components/velo/PageShell';
+import { StatBlock } from '@/components/velo/StatBlock';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -130,25 +132,21 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="rounded-lg bg-accent p-3">
-          <FileText className="h-8 w-8 text-accent-foreground" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="mt-1 text-muted-foreground">Sales invoices, VAT treatment and QuickBooks sync status</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Invoices"
+        description="Invoices are issued in QuickBooks — VeloDealer tracks their sync state."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Invoices</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{totals.count}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total invoiced</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{currency(totals.gross)}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Awaiting sync</CardTitle></CardHeader><CardContent className="text-2xl font-bold">{totals.unsynced}</CardContent></Card>
+        <StatBlock label="Invoices" value={totals.count} />
+        <StatBlock label="Total invoiced" value={currency(totals.gross)} />
+        <StatBlock label="Awaiting sync" value={totals.unsynced} hint={totals.unsynced ? 'Sync these to QuickBooks' : 'All posted'} />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-          <CardTitle>All invoices</CardTitle>
+      <Panel
+        title="All invoices"
+        bodyClassName="p-0 sm:p-4"
+        actions={
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -158,20 +156,21 @@ export default function InvoicesPage() {
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+        }
+      >
+        <div className="p-4 sm:p-0">
           {loading ? (
             <div className="flex items-center gap-2 py-8 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading invoices…
             </div>
           ) : filtered.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No invoices yet. They are created when a bike is marked as sold.</p>
+            <EmptyState fact="No invoices yet." fix="An invoice is created when a bike is marked as sold." />
           ) : (
             <>
               {/* Mobile cards */}
               <div className="space-y-3 md:hidden">
                 {filtered.map((inv) => (
-                  <div key={inv.id} className="rounded-lg border p-3">
+                  <div key={inv.id} className="rounded-[4px] border border-border p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-medium">{inv.invoice_number}</p>
@@ -298,8 +297,8 @@ export default function InvoicesPage() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
       <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
         <AlertDialogContent>

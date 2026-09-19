@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageHeader, Panel, EmptyState } from '@/components/velo/PageShell';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -138,14 +139,12 @@ export default function SubmissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Submissions</h1>
-          <p className="text-muted-foreground mt-1">
-            Bike sale and part-exchange enquiries received from Typeform
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        title="Submissions"
+        density="bench"
+        description="Bike sale and part-exchange enquiries received from your forms."
+        actions={
+          <>
           <Input
             placeholder="Search customer, bike, frame…"
             value={textFilter}
@@ -164,20 +163,21 @@ export default function SubmissionsPage() {
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center gap-2 py-8 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading submissions…
         </div>
       ) : submissions.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-            <Inbox className="h-8 w-8" />
-            <p>No submissions here yet. Connect a Typeform form in Settings → Integrations to start receiving them.</p>
-          </CardContent>
-        </Card>
+        <Panel bodyClassName="p-0">
+          <EmptyState
+            fact="No submissions here yet."
+            fix="Connect a form in Settings → Integrations and responses land in this queue."
+          />
+        </Panel>
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {submissions.map((sub) => (

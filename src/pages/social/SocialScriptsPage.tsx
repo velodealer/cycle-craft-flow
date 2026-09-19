@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus } from 'lucide-react';
 import ScriptForm from '@/components/social/ScriptForm';
+import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SocialScriptsPage() {
   const [scripts, setScripts] = useState<any[]>([]);
@@ -20,13 +21,11 @@ export default function SocialScriptsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Script Library</h1>
-          <p className="text-muted-foreground">Walkaround templates that maximise retention and intent.</p>
-        </div>
-        <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-2" />New script</Button>
-      </div>
+      <PageHeader
+        title="Scripts"
+        description="Walkaround templates that hold attention."
+        actions={<Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-2" />New script</Button>}
+      />
 
       <div className="grid gap-3 md:grid-cols-2">
         {scripts.length === 0 && (

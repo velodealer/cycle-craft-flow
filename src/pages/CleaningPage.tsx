@@ -3,7 +3,8 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
+import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -93,32 +94,30 @@ export default function CleaningPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Sparkles className="h-8 w-8" />
-          Cleaning Queue
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Bikes ready for cleaning and detailing
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Bikes in Cleaning ({bikes.length})</CardTitle>
-          <div className="flex items-center gap-3">
+      <PageHeader
+        title="Cleaning"
+        density="bench"
+        description="Bikes waiting to be cleaned and detailed before inspection."
+        actions={
+          <>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
               Select all
             </label>
             <PrintLabelsButton bikes={bikes as any} selectedIds={labelSel.selected} />
-          </div>
-        </CardHeader>
-        <CardContent>
+          </>
+        }
+      />
+
+      <Panel title={`In cleaning (${bikes.length})`} bodyClassName="p-0 md:p-0">
+        <div className="p-4 md:p-0">
           {/* Mobile cards */}
           <div className="space-y-3 md:hidden">
             {bikes.length === 0 ? (
-              <ListEmpty message="No bikes in cleaning queue" />
+              <EmptyState
+                fact="Nothing in the cleaning queue."
+                fix="Bikes land here once intake is finished."
+              />
             ) : (
               bikes.map((bike) => (
                 <ListCard key={bike.id}>
@@ -138,12 +137,12 @@ export default function CleaningPage() {
                         {bike.make} {bike.model}
                         {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
                       </div>
-                      <Badge variant="secondary">Cleaning</Badge>
+                      <StageFlap stage="cleaning" />
                     </div>
                   </div>
                   <ListCardRow label="Frame" value={bike.frame_number || 'Not recorded'} />
                   <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">Location</span>
+                    <FieldLabel>Location</FieldLabel>
                     <LocationSelect
                       bikeId={bike.id}
                       value={bike.storage_bay_id}
@@ -152,7 +151,7 @@ export default function CleaningPage() {
                     />
                   </div>
                   <ListCardActions>
-                    <Button variant="outline" className="w-full" onClick={() => handleView(bike)}>
+                    <Button variant="outline" size="bench" className="w-full" onClick={() => handleView(bike)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View & Clean
                     </Button>
@@ -163,7 +162,7 @@ export default function CleaningPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block rounded-md border overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -179,8 +178,11 @@ export default function CleaningPage() {
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No bikes in cleaning queue
+                    <TableCell colSpan={7} className="p-0">
+                      <EmptyState
+                        fact="Nothing in the cleaning queue."
+                        fix="Bikes land here once intake is finished."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -208,9 +210,7 @@ export default function CleaningPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-sm">
-                          {bike.frame_number || 'Not recorded'}
-                        </span>
+                        <span className="id-text">{bike.frame_number || 'Not recorded'}</span>
                       </TableCell>
                       <TableCell>
                         <LocationSelect
@@ -220,7 +220,7 @@ export default function CleaningPage() {
                           size="sm"
                         />
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap id-text">
                         {new Date(bike.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
@@ -235,13 +235,13 @@ export default function CleaningPage() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
       <Dialog open={!!selectedBike} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Clean Bike</DialogTitle>
+            <DialogTitle className="font-display">Clean bike</DialogTitle>
           </DialogHeader>
           {selectedBike && (
             <div className="space-y-4">
@@ -258,7 +258,7 @@ export default function CleaningPage() {
                       <span className="text-muted-foreground"> · {selectedBike.year}</span>
                     ) : null}
                   </div>
-                  <div className="text-sm text-muted-foreground font-mono">
+                  <div className="id-text text-sm text-muted-foreground">
                     {selectedBike.frame_number || 'Frame not recorded'}
                   </div>
                 </div>
