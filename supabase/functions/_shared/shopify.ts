@@ -65,6 +65,19 @@ export async function loadIntegration(supabase: Client) {
   return data;
 }
 
+/** Finds the connected store row matching an exact shop domain (multi-tenant safe). */
+export async function loadIntegrationByShop(supabase: Client, shopDomain: string) {
+  if (!shopDomain) return null;
+  const { data, error } = await supabase
+    .from('integrations')
+    .select('*')
+    .eq('name', SHOPIFY_INTEGRATION_NAME)
+    .filter('settings->>shop_domain', 'eq', shopDomain.toLowerCase())
+    .limit(1);
+  if (error) throw new Error(`Failed to load Shopify integration: ${error.message}`);
+  return (data && data[0]) || null;
+}
+
 export async function loadSettings(supabase: Client): Promise<ShopifySettings> {
   const row = await loadIntegration(supabase);
   return ((row?.settings ?? {}) as ShopifySettings) || {};
