@@ -83,12 +83,12 @@ export default function Layout({ children }: LayoutProps) {
         
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Header */}
-          <header className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30 sticky top-0 z-40">
-            <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+          <header className="border-b border-border bg-card sticky top-0 z-40">
+            <div className="flex h-14 items-center gap-4 px-4 md:px-6">
               <SidebarTrigger className="md:-ml-1" />
               
               <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-                <div className="font-semibold text-lg">VeloDealer</div>
+                <div className="font-display text-lg font-bold tracking-tight">VeloDealer</div>
                 <div className="hidden sm:block flex-1">
                   <SearchBar />
                 </div>

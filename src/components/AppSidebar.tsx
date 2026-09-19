@@ -120,8 +120,8 @@ export function AppSidebar() {
                           onClick={handleNavItemClick}
                           className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
                             active 
-                              ? "bg-accent text-accent-foreground" 
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                           }`}
                         >
                           <Icon className="h-4 w-4 flex-shrink-0" />
