@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import iconDark from '@/assets/brand/icon-dark.svg.asset.json';
-import lockupDark from '@/assets/brand/lockup-horizontal-dark.svg.asset.json';
-import lockupLight from '@/assets/brand/lockup-horizontal-light.svg.asset.json';
+import iconDark from '@/assets/brand/icon-dark-512.png.asset.json';
+import lockupDark from '@/assets/brand/lockup-horizontal-dark.png.asset.json';
+import lockupLight from '@/assets/brand/lockup-horizontal-light.png.asset.json';
 
 type VeloDealerLogoProps = {
   variant?: 'symbol' | 'horizontal';
