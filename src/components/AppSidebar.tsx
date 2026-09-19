@@ -98,8 +98,8 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r">
-      <SidebarContent className="bg-background">
+    <Sidebar className="border-r border-sidebar-border">
+      <SidebarContent className="bg-sidebar">
         {userAccessibleItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
