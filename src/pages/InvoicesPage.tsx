@@ -179,7 +179,8 @@ export default function InvoicesPage() {
                       <SyncBadge status={inv.sync_status} />
                     </div>
                     <p className="mt-2 text-sm">
-                      {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)} · VAT {inv.vat_rate}%
+                      {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)}
+                      {vatRegistered ? ` · VAT ${inv.vat_rate}%` : ''}
                     </p>
                     {Number(inv.part_exchange_value || 0) > 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -226,7 +227,7 @@ export default function InvoicesPage() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Bike</TableHead>
                       <TableHead className="text-right">Net</TableHead>
-                      <TableHead className="text-right">VAT</TableHead>
+                      {vatRegistered && <TableHead className="text-right">VAT</TableHead>}
                       <TableHead className="text-right">Balance due</TableHead>
                       <TableHead>QuickBooks</TableHead>
                       <TableHead />
@@ -259,7 +260,7 @@ export default function InvoicesPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">{currency(inv.net)}</TableCell>
-                        <TableCell className="text-right">{inv.vat_rate}%</TableCell>
+                        {vatRegistered && <TableCell className="text-right">{inv.vat_rate}%</TableCell>}
                         <TableCell className="text-right">{currency(inv.gross)}</TableCell>
                         <TableCell>
                           <SyncBadge status={inv.sync_status} />
