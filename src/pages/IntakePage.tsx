@@ -104,7 +104,7 @@ export default function IntakePage() {
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <StageFlap status={bike.status} />
+                      <StageFlap stage={bike.status} />
                       <Badge variant="outline">
                         {bike.source === 'owned' ? 'Owned' : 'Consignment'}
                       </Badge>

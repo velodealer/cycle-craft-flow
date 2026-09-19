@@ -137,7 +137,7 @@ export default function CleaningPage() {
                         {bike.make} {bike.model}
                         {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
                       </div>
-                      <StageFlap status="cleaning" />
+                      <StageFlap stage="cleaning" />
                     </div>
                   </div>
                   <ListCardRow label="Frame" value={bike.frame_number || 'Not recorded'} />
