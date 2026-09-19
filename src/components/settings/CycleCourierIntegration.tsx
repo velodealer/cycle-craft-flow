@@ -15,8 +15,8 @@ import {
   disconnectCycleCourier,
   getWebhookUrl,
   type Integration,
-  type BpsReceiverSettings,
   type CycleCourierStatus,
+
 } from '@/services/integrations';
 
 export default function CycleCourierIntegration() {
