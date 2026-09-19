@@ -12,7 +12,7 @@ const releases: Release[] = [
     period: 'September 2026',
     title: 'Marketplaces, legal pages and the public site',
     items: [
-      'eBay listing integration with per-bike item condition and category, plus direct links to your postage, payment and returns policies',
+      'eBay listing integration with per-bike condition and category, plus direct links to your postage, payment and returns policies',
       'Shopify listing integration: bikes list when they are ready, drop to zero stock when sold, and Shopify orders mark them sold here',
       'Full terms of service, privacy policy and cookie policy, including the data processing agreement and sub-processor list',
       'Public website: features, pricing, about, blog, careers and contact',
@@ -67,7 +67,7 @@ const releases: Release[] = [
     items: [
       'Bike intake, stage workflow, photos and condition notes',
       'Workshop and detailing jobs with checklists and photos',
-      'Parts inventory, breaking bikes for parts and fitting parts to bikes',
+      'Parts stock, breaking bikes for parts and fitting parts to bikes',
       'Bike builder quotes with standard and margin VAT and saved versions',
       'Investor bikes with profit share and an investor-only view',
       'Reports: stock ageing, pipeline, margin, revenue and turnover',

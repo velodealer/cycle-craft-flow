@@ -19,7 +19,7 @@ import {
   Cog,
   Calculator,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import {
@@ -35,7 +35,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 type NavItem = {
@@ -72,7 +71,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Inventory",
+    label: "Stock",
     items: [
       { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
       { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },

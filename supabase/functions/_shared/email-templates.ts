@@ -21,7 +21,7 @@ export function layout(
   ctaUrl?: string,
   footer = 'You are receiving this because you are set as a notification recipient in VeloDealer settings.',
 ): string {
-  const logoUrl = 'https://velodealer.com/__l5e/assets-v1/9db65c55-64fa-4206-8c82-d9d54175705e/velodealer-lockup-light.svg';
+  const logoUrl = 'https://velodealer.com/__l5e/assets-v1/7cccaf97-809a-4ef4-832d-5207737b6817/velodealer-email-lockup.png';
   const cta = ctaLabel && ctaUrl
     ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="background:#ECA72C;color:#131A22;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;font-weight:600">${escapeHtml(ctaLabel)}</a></p>`
     : '';
