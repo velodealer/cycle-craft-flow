@@ -203,7 +203,7 @@ export default function CycleCourierIntegration() {
       <CardContent className="space-y-6">
         {/* Account connection */}
         <div className="space-y-3">
-          {status && !status.configured && (
+          {isSuperAdmin && status && !status.configured && (
             <p className="text-sm text-muted-foreground">
               The Cycle Courier app details haven't been set up yet. Ask Cycle Courier to register
               VeloDealer with this return address, then save the App ID and secret they send back:
