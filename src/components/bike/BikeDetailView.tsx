@@ -505,10 +505,12 @@ export default function BikeDetailView({
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-4">
+                  {vatRegistered && (
                   <div>
                     <p className="label-text">VAT scheme</p>
                     <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
                   </div>
+                  )}
                   {bike.purchase_date && (
                     <div>
                       <p className="label-text">Purchase date</p>

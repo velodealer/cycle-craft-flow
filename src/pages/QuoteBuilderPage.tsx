@@ -329,7 +329,7 @@ export default function QuoteBuilderPage() {
             const lineTotal = (r.qty || 0) * (r.unitCost || 0);
             const isChild = !!r.parentId;
             const parent = isChild ? rows.find((p) => p.id === r.parentId) : null;
-            const rowVat = Math.abs(lineVat(r, vatScheme));
+            const rowVat = Math.abs(lineVat(r, effectiveScheme));
             return (
               <div
                 key={r.id}

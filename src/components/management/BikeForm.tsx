@@ -791,6 +791,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               />
 
 
+              {vatRegistered && (
               <FormField
                 control={form.control}
                 name="finance_scheme"
@@ -813,6 +814,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   </FormItem>
                 )}
               />
+              )}
             </CardContent>
           </Card>
           )}
