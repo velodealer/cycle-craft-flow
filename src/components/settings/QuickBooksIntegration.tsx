@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, RefreshCw, Link2, Unlink, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 import {
   getQuickBooksStatus,
   getQuickBooksAuthUrl,
@@ -37,6 +38,7 @@ const ACCOUNT_FIELDS: { key: keyof QboAccountMap; label: string; hint: string }[
 
 
 export default function QuickBooksIntegration() {
+  const { isSuperAdmin } = useAuth();
   const [status, setStatus] = useState<QboStatus | null>(null);
   const [accounts, setAccounts] = useState<QboAccount[]>([]);
   const [mapping, setMapping] = useState<QboAccountMap>({});
@@ -117,7 +119,15 @@ export default function QuickBooksIntegration() {
     }
   }, []);
 
-  useEffect(() => { loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } }); loadErrors(); }, [loadStatus, loadAccounts, loadTaxCodes, loadErrors]);
+  useEffect(() => {
+    loadStatus().then((s) => {
+      if (s?.connected) {
+        loadAccounts();
+        loadTaxCodes();
+      }
+    });
+    if (isSuperAdmin) loadErrors();
+  }, [isSuperAdmin, loadStatus, loadAccounts, loadTaxCodes, loadErrors]);
 
   const copyErrorLog = async () => {
     const text = qboErrors
@@ -201,7 +211,7 @@ export default function QuickBooksIntegration() {
               ) : (
                 <Badge variant="secondary">Not connected</Badge>
               )}
-              {status?.environment && <Badge variant="outline">{status.environment}</Badge>}
+              {isSuperAdmin && status?.environment && <Badge variant="outline">{status.environment}</Badge>}
             </CardTitle>
             <CardDescription>
               Post bike purchases to stock at intake and sales invoices, COGS and margin VAT when a bike is sold.
@@ -299,7 +309,7 @@ export default function QuickBooksIntegration() {
               </div>
             </div>
 
-            <div className="border-t pt-4">
+            {isSuperAdmin && <div className="border-t pt-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <h4 className="font-medium">QuickBooks features in this company</h4>
@@ -368,9 +378,9 @@ export default function QuickBooksIntegration() {
                   {status.capabilities_error ?? 'No feature check has run yet.'}
                 </p>
               )}
-            </div>
+            </div>}
 
-            <div className="border-t pt-4">
+            {isSuperAdmin && <div className="border-t pt-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <h4 className="font-medium">Recent QuickBooks errors</h4>
@@ -404,7 +414,7 @@ export default function QuickBooksIntegration() {
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
 
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
