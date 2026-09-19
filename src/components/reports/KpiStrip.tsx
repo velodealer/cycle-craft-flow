@@ -1,75 +1,36 @@
 import { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { money, pct, inRange } from '@/lib/reports';
+import MetricCard from './MetricCard';
+import { delta, money, num, pct, type Range } from '@/lib/reports';
+import { periodStats, type BikeRow } from '@/lib/reportMetrics';
 import type { ReportsData } from '@/hooks/useReportsData';
-import type { Range } from '@/lib/reports';
 
 interface Props {
+  rows: BikeRow[];
   data: ReportsData;
   range: Range;
+  compareRange: Range | null;
 }
 
-export default function KpiStrip({ data, range }: Props) {
-  const stats = useMemo(() => {
-    const paidInvoices = data.invoices.filter(
-      (i) => i.status === 'paid' && inRange(i.paid_at, range),
-    );
-    const revenue = paidInvoices.reduce((s, i) => s + Number(i.gross || i.total || 0), 0);
+export default function KpiStrip({ rows, data, range, compareRange }: Props) {
+  const cur = useMemo(() => periodStats(rows, data, range), [rows, data, range]);
+  const prev = useMemo(() => (compareRange ? periodStats(rows, data, compareRange) : null), [rows, data, compareRange]);
 
-    const soldBikes = data.bikes.filter(
-      (b) => b.status === 'sold' && inRange(b.updated_at, range),
-    );
-    const bikesSold = soldBikes.length;
-
-    let cost = 0;
-    let saleTotal = 0;
-    for (const b of soldBikes) {
-      const partsCost = data.parts
-        .filter((p) => p.bike_id === b.id)
-        .reduce((s, p) => s + Number(p.cost_price || 0) * Number(p.quantity || 1), 0);
-      const jobsCost = data.jobs
-        .filter((j) => j.bike_id === b.id)
-        .reduce((s, j) => s + Number(j.actual_cost || j.estimated_cost || 0), 0);
-      const c =
-        Number(b.purchase_price || b.purchase_cost || 0) +
-        Number(b.collection_cost || 0) +
-        Number(b.delivery_cost || 0) +
-        partsCost +
-        jobsCost;
-      cost += c;
-      saleTotal += Number(b.sale_price || 0);
-    }
-    const margin = revenue - cost;
-    const marginPct = revenue > 0 ? margin / revenue : 0;
-
-    const stockValue = data.bikes
-      .filter((b) => ['in_stock', 'ready', 'listed', 'repair', 'cleaning', 'inspection', 'intake'].includes(b.status))
-      .reduce((s, b) => s + Number(b.purchase_price || b.purchase_cost || 0), 0)
-      + data.parts
-        .filter((p) => p.stock_status === 'in_stock' && !p.bike_id)
-        .reduce((s, p) => s + Number(p.cost_price || 0) * Number(p.quantity || 1), 0);
-
-    return { revenue, bikesSold, margin, marginPct, stockValue, saleTotal };
-  }, [data, range]);
-
-  const items = [
-    { label: 'Revenue', value: money(stats.revenue), sub: 'Paid invoices in range' },
-    { label: 'Bikes sold', value: String(stats.bikesSold), sub: money(stats.saleTotal) + ' booked' },
-    { label: 'Gross margin', value: money(stats.margin), sub: pct(stats.marginPct) },
-    { label: 'Stock value', value: money(stats.stockValue), sub: 'Purchase price only, today' },
-  ];
+  const d = (k: keyof typeof cur) => (prev ? delta(cur[k] as number, prev[k] as number) : null);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {items.map((i) => (
-        <Card key={i.label}>
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{i.label}</p>
-            <p className="text-2xl font-semibold mt-1">{i.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{i.sub}</p>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      <MetricCard label="Revenue" value={money(cur.revenue)} delta={d('revenue')} sub="paid in period" />
+      <MetricCard label="Units sold" value={String(cur.units)} delta={d('units')} sub={`${cur.intakeUnits} taken in`} />
+      <MetricCard label="Gross profit" value={money(cur.grossProfit)} delta={d('grossProfit')} sub={pct(cur.marginPct)} />
+      <MetricCard label="Profit / unit" value={money(cur.avgProfit)} delta={d('avgProfit')} sub={`avg sale ${money(cur.avgSalePrice)}`} />
+      <MetricCard label="Days to sell" value={cur.avgDaysToSell ? num(cur.avgDaysToSell, 0) : '—'} delta={d('avgDaysToSell')} invert sub="average" />
+      <MetricCard label="Prep cost / unit" value={money(cur.avgPrepCost)} delta={d('avgPrepCost')} invert sub="parts + labour" />
+      <MetricCard label="Stock units" value={String(cur.stockUnits)} sub={`${money(cur.stockValue)} at cost`} />
+      <MetricCard label="Ageing 90+" value={String(cur.agingUnits)} sub={`${money(cur.agingValue)} tied up`} />
+      <MetricCard label="Sell-through" value={pct(cur.sellThrough)} delta={d('sellThrough')} sub="sold vs stock held" />
+      <MetricCard label="Service revenue" value={money(cur.serviceRevenue)} delta={d('serviceRevenue')} sub="workshop & detailing" />
+      <MetricCard label="Stock value" value={money(cur.stockValue)} sub="purchase price only" />
+      <MetricCard label="Intake" value={String(cur.intakeUnits)} delta={d('intakeUnits')} sub="bikes bought in" />
     </div>
   );
 }
