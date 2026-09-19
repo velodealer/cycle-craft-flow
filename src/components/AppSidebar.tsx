@@ -51,7 +51,6 @@ const navigationItems = [
   { title: "Quote Builder", url: "/quote-builder", icon: Calculator, roles: ['admin', 'mechanic', 'accountant', 'owner'] },
   
   { title: "Invoices", url: "/invoices", icon: FileText, roles: ['admin', 'accountant'] },
-  { title: "Owners", url: "/owners", icon: Users, roles: ['admin', 'accountant'] },
   { title: "Reports", url: "/reports", icon: BarChart3, roles: ['admin', 'accountant'] },
   { title: "Staff Activity", url: "/staff-activity", icon: Users, roles: ['admin', 'owner', 'mechanic', 'detailer', 'accountant'] },
   { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },

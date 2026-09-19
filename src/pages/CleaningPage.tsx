@@ -6,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Sparkles } from 'lucide-react';
@@ -14,7 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import CleaningTask from '@/components/bike/CleaningTask';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
-import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+import { ListCard, ListCardRow, ListCardActions } from '@/components/ui/list-card';
 
 interface Bike {
   id: string;
@@ -162,23 +161,21 @@ export default function CleaningPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table>
+          <div className="hidden md:block overflow-hidden">
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead className="w-20">Photo</TableHead>
-                  <TableHead>Bike</TableHead>
-                  <TableHead>Frame Number</TableHead>
-                  <TableHead className="w-40">Location</TableHead>
-                  <TableHead className="whitespace-nowrap">Added to Cleaning</TableHead>
-                  <TableHead className="whitespace-nowrap">Actions</TableHead>
+                  <TableHead className="w-[36%]">Bike</TableHead>
+                  <TableHead className="w-[20%]">Frame</TableHead>
+                  <TableHead className="w-[25%]">Location</TableHead>
+                  <TableHead className="w-[19%]"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="p-0">
+                    <TableCell colSpan={5} className="p-0">
                       <EmptyState
                         fact="Nothing in the cleaning queue."
                         fix="Bikes land here once intake is finished."
@@ -195,18 +192,14 @@ export default function CleaningPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <BikeThumbnail
-                          photos={bike.photos}
-                          alt={`${bike.make} ${bike.model}`}
-                          className="h-12 w-12"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{bike.make} {bike.model}</div>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12 shrink-0" />
+                          <div className="min-w-0">
+                          <div className="font-medium break-words">{bike.make} {bike.model}</div>
                           {bike.year && (
                             <div className="text-sm text-muted-foreground">{bike.year}</div>
                           )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -220,10 +213,7 @@ export default function CleaningPage() {
                           size="sm"
                         />
                       </TableCell>
-                      <TableCell className="whitespace-nowrap id-text">
-                        {new Date(bike.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell>
                         <Button variant="outline" size="sm" onClick={() => handleView(bike)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View & Clean

@@ -202,9 +202,11 @@ export default function ListingFormats() {
               <div className="space-y-2">
                 <Label>Preview (sample bike)</Label>
                 {current.format === 'html' ? (
-                  <div
-                    className="border rounded-md p-3 text-sm prose prose-sm max-w-none bg-muted/30"
-                    dangerouslySetInnerHTML={{ __html: preview }}
+                  <iframe
+                    title={`${p.label} listing preview`}
+                    sandbox=""
+                    srcDoc={preview}
+                    className="h-80 w-full rounded-md border bg-background"
                   />
                 ) : (
                   <pre className="border rounded-md p-3 text-sm whitespace-pre-wrap bg-muted/30">
