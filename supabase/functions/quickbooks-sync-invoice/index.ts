@@ -64,8 +64,21 @@ Deno.serve(async (req) => {
     requireCapability(capabilities, { journalEntries: true, accounts: ['sales', 'stock', 'cogs'] });
 
 
-    const isMargin = bike?.finance_scheme === 'margin_scheme';
-    const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
+    // A business can tell us it is not VAT registered — then nothing carries VAT.
+    let vatRegistered = true;
+    const businessId = (invoice as any).business_id ?? bike?.business_id ?? null;
+    if (businessId) {
+      const { data: vatSetting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('business_id', businessId)
+        .eq('key', 'vat_registered')
+        .maybeSingle();
+      if (vatSetting && vatSetting.value === false) vatRegistered = false;
+    }
+
+    const isMargin = vatRegistered && bike?.finance_scheme === 'margin_scheme';
+    const salesTaxCode = vatRegistered ? taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes) : undefined;
     const balanceDue = Number(invoice.gross || invoice.total || 0);
     const partExValue = Number(invoice.part_exchange_value || 0);
     const deliveryCharge = invoice.delivery_charged_to_customer ? Number(invoice.delivery_charge || 0) : 0;
