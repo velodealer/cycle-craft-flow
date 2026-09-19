@@ -66,6 +66,15 @@ Deno.serve(async (req) => {
         direction: 'outbound',
         status: 'pending',
         business_id: (bike as any).business_id,
+        // Shop side is filled in by Cycle Courier from the connected account.
+        sender_name: '',
+        sender_email: '',
+        sender_phone: '',
+        address_street: '',
+        address_city: '',
+        address_postcode: '',
+        address_country: 'UK',
+
         receiver_name: receiver.name,
         receiver_email: receiver.email || null,
         receiver_phone: receiver.phone || null,
