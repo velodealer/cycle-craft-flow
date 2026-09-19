@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncEbayQuietly } from '@/services/ebay';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 
 interface RecordSaleDialogProps {
   isOpen: boolean;
@@ -64,7 +65,8 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
     instructions: '',
   });
 
-  const isMargin = bike?.finance_scheme === 'margin_scheme';
+  const { vatRegistered } = useVatRegistered();
+  const isMargin = vatRegistered && bike?.finance_scheme === 'margin_scheme';
 
   useEffect(() => {
     if (!isOpen) return;
