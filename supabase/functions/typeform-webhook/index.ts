@@ -147,9 +147,9 @@ Deno.serve(async (req) => {
     console.log(`typeform-webhook: saved submission for response ${responseId}`);
 
     try {
-      const settings = await loadEmailSettings(supabase);
+      const settings = await loadEmailSettings(supabase, businessId);
       const { subject, html } = submissionEmail(extracted, appUrl(settings));
-      await sendNotification(supabase, 'submission_received', subject, html);
+      await sendNotification(supabase, 'submission_received', subject, html, businessId);
     } catch (err) {
       console.error('typeform-webhook: notification email failed', err);
     }

@@ -83,7 +83,7 @@ export default function IntakePage() {
             {pending.map((bike) => (
               <div
                 key={bike.id}
-                className="flex flex-col gap-3 border-b border-border p-4 last:border-b-0 md:flex-row md:items-center"
+                className="grid gap-4 border-b border-border p-4 last:border-b-0 lg:grid-cols-[minmax(0,1fr)_minmax(250px,340px)_auto] lg:items-center"
               >
                 <div className="flex min-w-0 flex-1 gap-3">
                   <Checkbox
@@ -120,8 +120,7 @@ export default function IntakePage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 md:w-[380px] md:flex-row md:items-end">
-                  <div className="flex-1 space-y-1">
+                <div className="min-w-0 space-y-1">
                     <FieldLabel>Location</FieldLabel>
                     <LocationSelect
                       bikeId={bike.id}
@@ -133,16 +132,15 @@ export default function IntakePage() {
                       }
                       size="sm"
                     />
-                  </div>
+                </div>
                   <Button
                     size="bench"
                     onClick={() => setProcessBikeId(bike.id)}
-                    className="w-full md:w-auto"
+                    className="w-full whitespace-nowrap lg:w-auto"
                   >
                     Process intake
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                </div>
               </div>
             ))}
           </div>

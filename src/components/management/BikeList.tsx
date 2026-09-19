@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Eye } from 'lucide-react';
+import { Search, Plus, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
@@ -63,6 +63,7 @@ interface BikeListProps {
 }
 
 export default function BikeList({ onEdit, onAdd }: BikeListProps) {
+  const PAGE_SIZE = 25;
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +71,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   const [sourceFilter, setSourceFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
   const [sizeFilter, setSizeFilter] = useState('all');
+  const [page, setPage] = useState(1);
   const { bays } = useStorageBays();
 
   const loadBikes = async () => {
@@ -104,6 +106,10 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   useEffect(() => {
     loadBikes();
   }, [statusFilter, sourceFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, sourceFilter, locationFilter, sizeFilter]);
 
   const bayName = (id: string | null) => {
     if (!id) return null;
@@ -153,6 +159,10 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     return matchesSearch && matchesLocation && matchesSize;
   });
 
+  const pageCount = Math.max(1, Math.ceil(filteredBikes.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visibleBikes = filteredBikes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   const labelSel = useLabelSelection(filteredBikes.map((b: any) => b.id));
 
   const handleLocationChange = (bikeId: string, bayId: string | null) => {
@@ -190,7 +200,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2 xl:grid-cols-5">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -262,7 +272,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
           {filteredBikes.length === 0 ? (
             <ListEmpty message="No bikes found" />
           ) : (
-            filteredBikes.map((bike) => (
+            visibleBikes.map((bike) => (
               <ListCard key={bike.id}>
                 <div className="flex gap-3">
                   <Checkbox
@@ -321,31 +331,27 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
         </div>
 
         {/* Desktop table */}
-        <div className="hidden md:block rounded-md border overflow-x-auto">
-          <Table>
+        <div className="hidden md:block rounded-md border overflow-hidden">
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>
-                <TableHead className="w-20">Photo</TableHead>
-                <TableHead>Bike</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="w-48">Location</TableHead>
-                <TableHead>Asking Price</TableHead>
-                <TableHead>Sale Price</TableHead>
-                <TableHead>Added</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="w-[34%]">Bike</TableHead>
+                <TableHead className="w-[18%]">Stage</TableHead>
+                <TableHead className="w-[24%]">Location</TableHead>
+                <TableHead className="w-[14%] text-right">Prices</TableHead>
+                <TableHead className="w-14"><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredBikes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     No bikes found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredBikes.map((bike) => (
+                visibleBikes.map((bike) => (
                   <TableRow key={bike.id}>
                     <TableCell>
                       <Checkbox
@@ -354,22 +360,22 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                       />
                     </TableCell>
                     <TableCell>
-                      <BikeThumbnail
-                        photos={bike.photos}
-                        alt={`${bike.make} ${bike.model}`}
-                        className="h-12 w-12"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <BikeThumbnail
+                          photos={bike.photos}
+                          alt={`${bike.make} ${bike.model}`}
+                          className="h-12 w-12 shrink-0"
+                        />
+                        <div className="min-w-0">
+                        <div className="font-medium break-words">
                           {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
                         </div>
                         <div className="id-text">{bikeRef(bike as any)}</div>
+                        <div className="mt-1">{getSourceBadge(bike.source)}</div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(bike.status)}</TableCell>
-                    <TableCell>{getSourceBadge(bike.source)}</TableCell>
                     <TableCell>
                       <LocationSelect
                         bikeId={bike.id}
@@ -378,18 +384,9 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                         size="sm"
                       />
                     </TableCell>
-                    <TableCell className="text-right tabular">
-                      {bike.asking_price ? `£${bike.asking_price.toFixed(0)}` : '£—'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {bike.sale_price ? (
-                        <MarginTriple cost={bike.asking_price} asking={bike.sale_price} />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="tabular text-muted-foreground">
-                      {new Date(bike.created_at).toLocaleDateString('en-GB')}
+                    <TableCell className="text-right text-sm tabular">
+                      <div>{bike.asking_price ? `Ask £${bike.asking_price.toFixed(0)}` : 'Ask £—'}</div>
+                      <div className="text-muted-foreground">{bike.sale_price ? `Sale £${bike.sale_price.toFixed(0)}` : `Added ${new Date(bike.created_at).toLocaleDateString('en-GB')}`}</div>
                     </TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm" onClick={() => onEdit(bike)}>
@@ -402,6 +399,23 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             </TableBody>
           </Table>
         </div>
+
+        {filteredBikes.length > 0 && (
+          <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredBikes.length)} of {filteredBikes.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+              </Button>
+              <span className="text-sm tabular">Page {currentPage} of {pageCount}</span>
+              <Button variant="outline" size="sm" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>
+                Next <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1641,6 +1641,7 @@ export type Database = {
           quantity: number
           sale_price: number | null
           stock_status: Database["public"]["Enums"]["stock_status"]
+          storage_bay_id: string | null
           stripped_from_bike_id: string | null
           type: Database["public"]["Enums"]["part_type"]
           updated_at: string
@@ -1657,6 +1658,7 @@ export type Database = {
           quantity?: number
           sale_price?: number | null
           stock_status?: Database["public"]["Enums"]["stock_status"]
+          storage_bay_id?: string | null
           stripped_from_bike_id?: string | null
           type: Database["public"]["Enums"]["part_type"]
           updated_at?: string
@@ -1673,6 +1675,7 @@ export type Database = {
           quantity?: number
           sale_price?: number | null
           stock_status?: Database["public"]["Enums"]["stock_status"]
+          storage_bay_id?: string | null
           stripped_from_bike_id?: string | null
           type?: Database["public"]["Enums"]["part_type"]
           updated_at?: string
@@ -1690,6 +1693,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parts_storage_bay_id_fkey"
+            columns: ["storage_bay_id"]
+            isOneToOne: false
+            referencedRelation: "storage_bays"
             referencedColumns: ["id"]
           },
           {

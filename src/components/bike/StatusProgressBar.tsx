@@ -87,11 +87,11 @@ export default function StatusProgressBar({ currentStatus, className, bikeId }: 
   return (
     <div className={`space-y-3 ${className}`}>
       <h3 className="label-text">Stage</h3>
-      <div className="flex items-start gap-1 overflow-x-auto pb-1">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 xl:grid-cols-8">
         {stages.map((stage, index) => {
           const status = getStageStatus(index);
           return (
-            <div key={stage.key} className="flex min-w-[92px] flex-1 flex-col items-center gap-2">
+            <div key={stage.key} className="flex min-w-0 flex-col items-center gap-2">
               <div className="flex w-full items-center">
                 <span
                   className={`h-px flex-1 ${index === 0 ? 'bg-transparent' : status === 'upcoming' ? 'bg-border' : 'bg-border'}`}

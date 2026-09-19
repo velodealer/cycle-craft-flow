@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useStorageBays } from '@/hooks/useStorageBays';
 
 const partSchema = z.object({
   type: z.enum(['secondhand_bought', 'secondhand_stripped', 'new_resale', 'new_fitted']),
@@ -22,6 +23,7 @@ const partSchema = z.object({
   stock_status: z.enum(['in_stock', 'reserved', 'sold', 'damaged']),
   bike_id: z.string().optional(),
   stripped_from_bike_id: z.string().optional(),
+  storage_bay_id: z.string().optional(),
 });
 
 interface PartFormProps {
@@ -33,6 +35,7 @@ interface PartFormProps {
 export default function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [bikes, setBikes] = useState<Array<{ id: string; make: string; model: string }>>([]);
+  const { bays } = useStorageBays();
 
   const form = useForm<z.infer<typeof partSchema>>({
     resolver: zodResolver(partSchema),
@@ -47,6 +50,7 @@ export default function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
       stock_status: part?.stock_status || 'in_stock',
       bike_id: part?.bike_id || '',
       stripped_from_bike_id: part?.stripped_from_bike_id || '',
+      storage_bay_id: part?.storage_bay_id || 'unassigned',
     },
   });
 
@@ -76,14 +80,14 @@ export default function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
       if (part) {
         const { error } = await supabase
           .from('parts')
-          .update(values)
+          .update({ ...values, storage_bay_id: values.storage_bay_id === 'unassigned' ? null : values.storage_bay_id } as any)
           .eq('id', part.id);
         if (error) throw error;
         toast({ title: 'Part updated successfully' });
       } else {
         const { error } = await supabase
           .from('parts')
-          .insert(values as any);
+          .insert({ ...values, storage_bay_id: values.storage_bay_id === 'unassigned' ? null : values.storage_bay_id } as any);
         if (error) throw error;
         toast({ title: 'Part created successfully' });
       }
@@ -199,6 +203,27 @@ export default function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
                         {...field} 
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="storage_bay_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select storage bay" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {bays.map((bay) => (
+                          <SelectItem key={bay.id} value={bay.id}>{bay.zone ? `${bay.zone} · ${bay.name}` : bay.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Where this part is stored.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

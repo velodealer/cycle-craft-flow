@@ -234,14 +234,14 @@ export default function BikeDetailView({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+      <div className="space-y-4">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
           <Button variant="ghost" size="sm" onClick={onBack} className="w-fit">
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to List
           </Button>
-          <div className="space-y-1">
-            <h1 className="font-display text-[28px] font-bold leading-tight">
+          <div className="min-w-0 space-y-1">
+            <h1 className="break-words font-display text-[28px] font-bold leading-tight">
               {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -251,7 +251,7 @@ export default function BikeDetailView({
           </div>
         </div>
         {!inspectionMode && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+          <div className="flex flex-wrap gap-2 border-t border-border pt-4">
             <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
               <Edit className="h-4 w-4 mr-2" />
               Edit Bike
@@ -296,7 +296,7 @@ export default function BikeDetailView({
               <Button
                 variant="destructive"
                 onClick={() => setShowDelete(true)}
-                className="w-full sm:w-auto"
+                className="min-w-0"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete bike
@@ -306,7 +306,7 @@ export default function BikeDetailView({
               <Button
                 variant="outline"
                 onClick={() => setDialogDirection('back')}
-                className="w-full sm:w-auto"
+                className="min-w-0"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Move back to {getStageLabel(previousStage)}

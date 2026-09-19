@@ -63,7 +63,7 @@ const defaults = (): EmailSettings => ({
 });
 
 export default function EmailNotifications() {
-  const { isSuperAdmin: superAdmin } = useAuth();
+  const { isSuperAdmin: superAdmin, profile } = useAuth();
   const [settings, setSettings] = useState<EmailSettings>(defaults());
   const [rowId, setRowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,7 @@ export default function EmailNotifications() {
         .from('integrations')
         .select('id, is_active, settings')
         .eq('name', 'resend')
+        .eq('business_id', profile?.business_id || '')
         .maybeSingle();
 
       if (data) {
@@ -93,7 +94,7 @@ export default function EmailNotifications() {
       }
       setLoading(false);
     })();
-  }, []);
+  }, [profile?.business_id]);
 
   const updateKind = (key: string, patch: Partial<NotificationSetting>) =>
     setSettings((s) => ({
@@ -109,6 +110,7 @@ export default function EmailNotifications() {
       is_active: settings.enabled,
       settings: settings as any,
       updated_at: new Date().toISOString(),
+      business_id: profile?.business_id,
     };
     const { data, error } = rowId
       ? await supabase.from('integrations').update(payload).eq('id', rowId).select('id').single()

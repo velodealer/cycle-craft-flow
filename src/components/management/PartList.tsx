@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+import { useStorageBays } from '@/hooks/useStorageBays';
 
 
 interface Part {
@@ -22,6 +23,7 @@ interface Part {
   quantity: number;
   stock_status: string;
   created_at: string;
+  storage_bay_id: string | null;
 }
 
 interface PartListProps {
@@ -35,6 +37,8 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
+  const { bays } = useStorageBays();
 
   const loadParts = async () => {
     try {
@@ -71,11 +75,17 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
   }, [typeFilter, statusFilter]);
 
   const filteredParts = parts.filter(part =>
-    searchTerm === '' ||
+    (locationFilter === 'all' || (locationFilter === 'unassigned' ? !part.storage_bay_id : part.storage_bay_id === locationFilter)) &&
+    (searchTerm === '' ||
     part.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (part.brand && part.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (part.part_number && part.part_number.toLowerCase().includes(searchTerm.toLowerCase()))
+    (part.part_number && part.part_number.toLowerCase().includes(searchTerm.toLowerCase())))
   );
+
+  const locationName = (id: string | null) => {
+    const bay = bays.find((item) => item.id === id);
+    return bay ? (bay.zone ? `${bay.zone} · ${bay.name}` : bay.name) : 'Unassigned';
+  };
 
   const getTypeBadge = (type: string) => {
     const labels: Record<string, string> = {
@@ -171,6 +181,14 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
               <SelectItem value="damaged">Damaged</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-full md:w-48"><SelectValue placeholder="Filter by location" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {bays.map((bay) => <SelectItem key={bay.id} value={bay.id}>{bay.zone ? `${bay.zone} · ${bay.name}` : bay.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Mobile cards */}
@@ -194,6 +212,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                   {getStatusBadge(part.stock_status)}
                 </div>
                 <ListCardRow label="Quantity" value={part.quantity} />
+                <ListCardRow label="Location" value={locationName(part.storage_bay_id)} />
                 <ListCardRow
                   label="Cost"
                   value={part.cost_price ? `£${part.cost_price.toFixed(2)}` : '—'}
@@ -223,6 +242,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Quantity</TableHead>
+                <TableHead>Location</TableHead>
                 <TableHead>Cost</TableHead>
                 <TableHead>Sale Price</TableHead>
                 <TableHead>Added</TableHead>
@@ -232,7 +252,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
             <TableBody>
               {filteredParts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     No parts found
                   </TableCell>
                 </TableRow>
@@ -253,6 +273,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                     <TableCell>{getTypeBadge(part.type)}</TableCell>
                     <TableCell>{getStatusBadge(part.stock_status)}</TableCell>
                     <TableCell>{part.quantity}</TableCell>
+                    <TableCell>{locationName(part.storage_bay_id)}</TableCell>
                     <TableCell>
                       {part.cost_price ? `£${part.cost_price.toFixed(2)}` : '-'}
                     </TableCell>

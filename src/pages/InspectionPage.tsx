@@ -8,10 +8,8 @@ import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, ClipboardCheck } from 'lucide-react';
+import { ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import BikeDetailView from '@/components/bike/BikeDetailView';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
@@ -34,7 +32,7 @@ interface Bike {
 export default function InspectionPage() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBike, setSelectedBike] = useState<any>(null);
+  const [startingBikeId, setStartingBikeId] = useState<string | null>(null);
   const labelSel = useLabelSelection(bikes.map((b) => b.id));
 
   const loadInspectionBikes = async () => {
@@ -62,28 +60,23 @@ export default function InspectionPage() {
     loadInspectionBikes();
   }, []);
 
-  const handleView = async (bike: Bike) => {
+  const handleStart = async (bike: Bike) => {
+    setStartingBikeId(bike.id);
     try {
-      const { data, error } = await supabase
-        .from('bikes')
-        .select('*')
-        .eq('id', bike.id)
-        .single();
-
+      const { data, error } = await supabase.functions.invoke('inspectabike-create', { body: { bike_id: bike.id } });
       if (error) throw error;
-      setSelectedBike(data);
+      if (data?.error) throw new Error(data.error);
+      const inspectionUrl = data?.inspection?.report_url;
+      if (!inspectionUrl) throw new Error('InspectABike did not return an inspection link');
+      window.location.assign(inspectionUrl);
     } catch (error: any) {
       toast({
-        title: 'Error loading bike details',
+        title: 'Could not start inspection',
         description: error.message,
         variant: 'destructive',
       });
+      setStartingBikeId(null);
     }
-  };
-
-  const handleClose = () => {
-    setSelectedBike(null);
-    loadInspectionBikes();
   };
 
   const updateLocation = (bikeId: string, bayId: string | null) =>
@@ -153,8 +146,8 @@ export default function InspectionPage() {
                     />
                   </div>
                   <ListCardActions>
-                    <Button variant="outline" className="w-full" onClick={() => handleView(bike)}>
-                      <Eye className="h-4 w-4 mr-2" />
+                    <Button variant="outline" className="w-full" disabled={startingBikeId === bike.id} onClick={() => handleStart(bike)}>
+                      {startingBikeId === bike.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ExternalLink className="h-4 w-4 mr-2" />}
                       Start inspection
                     </Button>
                   </ListCardActions>
@@ -164,23 +157,21 @@ export default function InspectionPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table>
+          <div className="hidden md:block overflow-hidden">
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead className="w-20">Photo</TableHead>
-                  <TableHead>Bike</TableHead>
-                  <TableHead>Frame Number</TableHead>
-                  <TableHead className="w-48">Location</TableHead>
-                  <TableHead>Entered Inspection</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-[36%]">Bike</TableHead>
+                  <TableHead className="w-[20%]">Frame</TableHead>
+                  <TableHead className="w-[25%]">Location</TableHead>
+                  <TableHead className="w-[19%]"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       No bikes awaiting inspection
                     </TableCell>
                   </TableRow>
@@ -194,18 +185,15 @@ export default function InspectionPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <BikeThumbnail
-                          photos={bike.photos}
-                          alt={`${bike.make} ${bike.model}`}
-                          className="h-12 w-12"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{bike.make} {bike.model}</div>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12 shrink-0" />
+                          <div className="min-w-0">
+                          <div className="font-medium break-words">{bike.make} {bike.model}</div>
                           {bike.year && (
                             <div className="text-sm text-muted-foreground">{bike.year}</div>
                           )}
+                          <div className="text-xs text-muted-foreground">Entered {new Date(bike.updated_at || bike.created_at).toLocaleDateString()}</div>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -222,11 +210,8 @@ export default function InspectionPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        {new Date(bike.updated_at || bike.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => handleView(bike)}>
-                          <Eye className="h-4 w-4 mr-2" />
+                        <Button variant="outline" size="sm" disabled={startingBikeId === bike.id} onClick={() => handleStart(bike)}>
+                          {startingBikeId === bike.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ExternalLink className="h-4 w-4 mr-2" />}
                           Start inspection
                         </Button>
                       </TableCell>
@@ -239,24 +224,6 @@ export default function InspectionPage() {
         </div>
       </Panel>
 
-      <Dialog open={!!selectedBike} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Inspect Bike</DialogTitle>
-          </DialogHeader>
-          {selectedBike && (
-            <BikeDetailView
-              bike={selectedBike}
-              onEdit={() => {}}
-              onBack={handleClose}
-              onUpdate={handleClose}
-              showPricing={false}
-              showDescriptions={false}
-              inspectionMode={true}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.inspectabike-oauth]
 verify_jwt = false
+
+[functions.cycle-courier-order-sync]
+verify_jwt = true

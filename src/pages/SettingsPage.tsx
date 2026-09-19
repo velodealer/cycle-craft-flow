@@ -7,9 +7,6 @@ import EbayIntegration from '@/components/settings/EbayIntegration';
 import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
-import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
-import DeliverySettings from '@/components/settings/DeliverySettings';
-import InspectABikeBackfill from '@/components/settings/InspectABikeBackfill';
 import InspectABikeIntegration from '@/components/settings/InspectABikeIntegration';
 import EmailNotifications from '@/components/settings/EmailNotifications';
 
@@ -81,30 +78,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="system">
-          <BikeReferenceSettings />
-          <DeliverySettings />
-          <Card>
-            <CardHeader>
-              <CardTitle>System Configuration</CardTitle>
-              <CardDescription>
-                Configure system-wide settings and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Application Settings</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Data Management</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <p className="text-sm text-muted-foreground">No dealership-wide system rules are currently configurable.</p>
         </TabsContent>
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="integrations">
@@ -115,31 +89,7 @@ export default function SettingsPage() {
             <EbayIntegration />
             <QuickBooksIntegration />
             <InspectABikeIntegration />
-            <InspectABikeBackfill />
             <EmailNotifications />
-
-
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>More Integrations</CardTitle>
-                <CardDescription>
-                  Additional integrations coming soon
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Shopify Integration</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium">eBay Integration</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
