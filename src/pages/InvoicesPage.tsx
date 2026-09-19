@@ -58,6 +58,7 @@ function SyncBadge({ status }: { status: string }) {
 }
 
 export default function InvoicesPage() {
+  const { vatRegistered } = useVatRegistered();
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);

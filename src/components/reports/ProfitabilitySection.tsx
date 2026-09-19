@@ -21,6 +21,7 @@ const MARGIN_BANDS = [
 ];
 
 export default function ProfitabilitySection({ rows, range }: Props) {
+  const { vatRegistered } = useVatRegistered();
   const sold = useMemo(() => soldIn(rows, range), [rows, range]);
 
   const waterfall = useMemo(() => {
