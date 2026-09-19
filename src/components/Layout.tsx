@@ -4,8 +4,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import SearchBar from '@/components/SearchBar';
 import { Button } from '@/components/ui/button';
-import { LogOut, User } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Footer from './Footer';
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
@@ -66,17 +65,6 @@ export default function Layout({ children }: LayoutProps) {
     }
   };
 
-  const getRoleBadgeVariant = (role: string): "destructive" | "default" | "secondary" | "outline" => {
-    switch (role) {
-      case 'admin': return 'destructive';
-      case 'mechanic': return 'default';
-      case 'detailer': return 'secondary';
-      case 'accountant': return 'outline';
-      case 'owner': return 'default';
-      default: return 'secondary';
-    }
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -96,20 +84,6 @@ export default function Layout({ children }: LayoutProps) {
               </div>
 
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="hidden md:flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium truncate max-w-32">
-                    {profile?.name || user.email}
-                  </span>
-                  <Badge variant={getRoleBadgeVariant(profile?.role || 'mechanic')}>
-                    {profile?.role || 'mechanic'}
-                  </Badge>
-                </div>
-                <div className="md:hidden">
-                  <Badge variant={getRoleBadgeVariant(profile?.role || 'mechanic')}>
-                    {profile?.role || 'mechanic'}
-                  </Badge>
-                </div>
                 <Button variant="ghost" size="sm" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4" />
                 </Button>
