@@ -27,6 +27,7 @@ import {
   type VatScheme,
 } from "@/lib/quotes";
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
+import { useVatRegistered } from "@/hooks/useVatRegistered";
 
 const CATEGORIES = [
   "Bike", "Frame", "Fork", "Wheels", "Wheelset", "Groupset", "Shifters", "Derailleurs",
