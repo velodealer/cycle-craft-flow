@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ClipboardCheck, Copy, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import {
   getInspectABikeStatus,
   getInspectABikeAuthUrl,
@@ -14,6 +15,7 @@ import {
 } from '@/services/inspectabike';
 
 export default function InspectABikeIntegration() {
+  const { isSuperAdmin } = useAuth();
   const [status, setStatus] = useState<InspectABikeStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -135,7 +137,7 @@ export default function InspectABikeIntegration() {
           </div>
         )}
 
-        {status && (
+        {isSuperAdmin && status && (
           <div className="space-y-2 pt-2">
             <Label className="text-xs text-muted-foreground">Fault updates are sent to</Label>
             <div className="flex gap-2">

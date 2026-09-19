@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Truck, Eye, EyeOff, Copy, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import {
   getCycleCourierIntegration,
   saveCycleCourierSettings,
@@ -19,6 +20,7 @@ import {
 } from '@/services/integrations';
 
 export default function CycleCourierIntegration() {
+  const { isSuperAdmin } = useAuth();
   const [integration, setIntegration] = useState<Integration | null>(null);
   const [status, setStatus] = useState<CycleCourierStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -201,7 +203,7 @@ export default function CycleCourierIntegration() {
       <CardContent className="space-y-6">
         {/* Account connection */}
         <div className="space-y-3">
-          {status && !status.configured && (
+          {isSuperAdmin && status && !status.configured && (
             <p className="text-sm text-muted-foreground">
               The Cycle Courier app details haven't been set up yet. Ask Cycle Courier to register
               VeloDealer with this return address, then save the App ID and secret they send back:
@@ -250,7 +252,8 @@ export default function CycleCourierIntegration() {
           </div>
         </div>
 
-        {/* Webhook secret */}
+        {/* Webhook secret — super admin only */}
+        {isSuperAdmin && (
         <div className="space-y-2 pt-4 border-t">
           <Label htmlFor="webhookSecret">Webhook Secret</Label>
           <div className="relative flex-1">
@@ -275,8 +278,10 @@ export default function CycleCourierIntegration() {
             Provided by Cycle Courier Co for webhook signature verification
           </p>
         </div>
+        )}
 
-        {/* Delivery address */}
+        {/* Delivery address — super admin only */}
+        {isSuperAdmin && (
         <div className="space-y-4 pt-4 border-t">
           <div>
             <h4 className="font-medium mb-1">Delivery Address Configuration</h4>
@@ -326,8 +331,10 @@ export default function CycleCourierIntegration() {
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </div>
+        )}
 
-        {/* Webhook URL */}
+        {/* Webhook URL — super admin only */}
+        {isSuperAdmin && (
         <div className="space-y-4 pt-4 border-t">
           <div>
             <h4 className="font-medium mb-1">Webhook Configuration</h4>
@@ -346,7 +353,9 @@ export default function CycleCourierIntegration() {
             </div>
           </div>
         </div>
+        )}
 
+        {isSuperAdmin && (
         <div className="pt-4 border-t">
           <Button variant="outline" size="sm" asChild>
             <a
@@ -360,6 +369,7 @@ export default function CycleCourierIntegration() {
             </a>
           </Button>
         </div>
+        )}
 
         {integration?.updated_at && (
           <p className="text-xs text-muted-foreground">
