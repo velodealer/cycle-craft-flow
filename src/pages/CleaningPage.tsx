@@ -94,28 +94,23 @@ export default function CleaningPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Sparkles className="h-8 w-8" />
-          Cleaning Queue
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Bikes ready for cleaning and detailing
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Bikes in Cleaning ({bikes.length})</CardTitle>
-          <div className="flex items-center gap-3">
+      <PageHeader
+        title="Cleaning"
+        density="bench"
+        description="Bikes waiting to be cleaned and detailed before inspection."
+        actions={
+          <>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
               Select all
             </label>
             <PrintLabelsButton bikes={bikes as any} selectedIds={labelSel.selected} />
-          </div>
-        </CardHeader>
-        <CardContent>
+          </>
+        }
+      />
+
+      <Panel title={`In cleaning (${bikes.length})`} bodyClassName="p-0 md:p-0">
+        <div className="p-4 md:p-0">
           {/* Mobile cards */}
           <div className="space-y-3 md:hidden">
             {bikes.length === 0 ? (
