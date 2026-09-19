@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, year, sale_price, asking_price, business_id')
+      .select('id, reference, make, model, frame_number, year, sale_price, asking_price, business_id')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeError) throw new Error(bikeError.message);
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
 
     const orderPayload = {
-      customerOrderNumber: bikeId,
+      customerOrderNumber: bike.reference || bike.id,
       sender: {
         name: senderName,
         email: senderEmail,
@@ -159,12 +159,15 @@ Deno.serve(async (req) => {
       return json({ error: 'Failed to book the delivery', status: response.status, details: errorText }, response.status);
     }
 
-    const responseData = await response.json();
+    const responsePayload = await response.json();
+    const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
+    const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
+    const trackingNumber = responseData?.trackingNumber ?? responseData?.tracking_number ?? responseData?.tracking?.number ?? null;
     await supabase
       .from('bike_collections')
       .update({
-        order_id: responseData.id,
-        tracking_number: responseData.trackingNumber,
+        order_id: orderId,
+        tracking_number: trackingNumber,
         status: responseData.status || 'scheduled',
         error_message: null,
       })
@@ -173,11 +176,11 @@ Deno.serve(async (req) => {
     await notifyLogistics(supabase as any, bikeId, {
       direction: 'outbound',
       status: `booked (${responseData.status || 'scheduled'})`,
-      trackingNumber: responseData.trackingNumber,
-      orderId: responseData.id,
+      trackingNumber,
+      orderId,
     });
 
-    return json({ ok: true, delivery_id: delivery.id, order_id: responseData.id, tracking_number: responseData.trackingNumber });
+    return json({ ok: true, delivery_id: delivery.id, order_id: orderId, tracking_number: trackingNumber });
   } catch (e) {
     const message = (e as Error).message;
     console.error('create-delivery-order error', message);

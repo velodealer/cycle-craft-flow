@@ -14,7 +14,7 @@ import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
-import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+import { ListCard, ListCardRow, ListEmpty } from '@/components/ui/list-card';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { MarginTriple } from '@/components/velo/MarginTriple';

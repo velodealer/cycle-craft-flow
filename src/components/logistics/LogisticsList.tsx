@@ -131,7 +131,8 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
       collection.bikes?.make.toLowerCase().includes(query) ||
       collection.bikes?.model.toLowerCase().includes(query) ||
       collection.sender_name.toLowerCase().includes(query) ||
-      collection.tracking_number?.toLowerCase().includes(query)
+      collection.tracking_number?.toLowerCase().includes(query) ||
+      collection.order_id?.toLowerCase().includes(query)
     );
   });
 
@@ -193,9 +194,9 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                       {collection.tracking_number}
                       <Copy className="inline h-3 w-3 ml-1" />
                     </button>
-                  ) : (
-                    '—'
-                  )
+                  ) : collection.order_id ? (
+                    <span className="font-mono text-xs">Order {collection.order_id}</span>
+                  ) : '—'
                 }
               />
               <ListCardRow
@@ -290,9 +291,9 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
+                    ) : collection.order_id ? (
+                      <div><span className="block text-xs text-muted-foreground">Order</span><span className="font-mono text-xs break-all">{collection.order_id}</span></div>
+                    ) : <span className="text-muted-foreground">-</span>}
                   </TableCell>
                    <TableCell>
                     <div className="text-sm">

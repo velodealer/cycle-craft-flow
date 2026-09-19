@@ -34,7 +34,7 @@ serve(async (req) => {
     // 1. Get bike details
     const { data: bike, error: bikeError } = await supabase
       .from('bikes')
-      .select('id, make, model, frame_number, year, sale_price, asking_price, business_id')
+      .select('id, reference, make, model, frame_number, year, sale_price, asking_price, business_id')
       .eq('id', bike_id)
       .single();
 
@@ -99,7 +99,7 @@ serve(async (req) => {
     // 4. Prepare order payload for Cycle Courier API
     const bikeValue = bike.sale_price || bike.asking_price || 1000;
     const orderPayload = {
-      customerOrderNumber: bike_id,
+      customerOrderNumber: bike.reference || bike.id,
       sender: {
         name: sender_name,
         email: sender_email,
@@ -184,15 +184,18 @@ serve(async (req) => {
       );
     }
 
-    const responseData = await response.json();
+    const responsePayload = await response.json();
+    const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
+    const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
+    const trackingNumber = responseData?.trackingNumber ?? responseData?.tracking_number ?? responseData?.tracking?.number ?? null;
     console.log('Collection order created:', responseData);
 
     // 6. Update collection record with API response
     const { error: updateError } = await supabase
       .from('bike_collections')
       .update({
-        order_id: responseData.id,
-        tracking_number: responseData.trackingNumber,
+        order_id: orderId,
+        tracking_number: trackingNumber,
         status: responseData.status || 'scheduled'
       })
       .eq('id', collection.id);
@@ -216,16 +219,16 @@ serve(async (req) => {
     await notifyLogistics(supabase as any, bike_id, {
       direction: 'inbound',
       status: `booked (${responseData.status || 'scheduled'})`,
-      trackingNumber: responseData.trackingNumber,
-      orderId: responseData.id,
+      trackingNumber,
+      orderId,
     });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         collection_id: collection.id,
-        order_id: responseData.id,
-        tracking_number: responseData.trackingNumber,
+        order_id: orderId,
+        tracking_number: trackingNumber,
         status: responseData.status
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

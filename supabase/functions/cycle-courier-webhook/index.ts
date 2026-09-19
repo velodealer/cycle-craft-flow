@@ -147,6 +147,15 @@ serve(async (req) => {
 
     console.log('Processing event for collection:', collection.id);
 
+    const trackingNumber = order?.trackingNumber ?? order?.tracking_number ?? order?.tracking?.number ?? order?.shipment?.trackingNumber ?? null;
+    if (trackingNumber && trackingNumber !== collection.tracking_number) {
+      await supabase
+        .from('bike_collections')
+        .update({ tracking_number: String(trackingNumber) })
+        .eq('id', collection.id);
+      collection.tracking_number = String(trackingNumber);
+    }
+
     // Process the payload based on event type
     const isOutbound = collection.direction === 'outbound';
 
