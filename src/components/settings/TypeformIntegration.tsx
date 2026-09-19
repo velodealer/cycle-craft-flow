@@ -316,8 +316,8 @@ export default function TypeformIntegration() {
               return (
                 <div key={form.id} className="rounded-lg border">
                   <div className="flex flex-wrap items-center justify-between gap-3 p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{form.title}</p>
+                    <div className="min-w-0 w-full sm:w-auto sm:flex-1">
+                      <p className="break-words text-sm font-medium">{form.title}</p>
                       <p className="text-xs text-muted-foreground">
                         {form.enabled ? 'Receiving responses' : 'Not receiving responses'}
                         {mappedCount > 0 && ` · ${mappedCount} field${mappedCount === 1 ? '' : 's'} mapped`}
