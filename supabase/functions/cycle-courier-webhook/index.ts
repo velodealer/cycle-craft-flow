@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
+import { extractCourierStatus, extractTrackingNumber, shouldApplyStatus } from '../_shared/cycle-courier.ts';
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
