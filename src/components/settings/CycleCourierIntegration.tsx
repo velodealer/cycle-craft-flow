@@ -29,14 +29,8 @@ export default function CycleCourierIntegration() {
   const [webhookSecret, setWebhookSecret] = useState('');
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
-  // Delivery (BPS) receiver address fields
-  const [bpsName, setBpsName] = useState('Brighton Premium Storage');
-  const [bpsEmail, setBpsEmail] = useState('');
-  const [bpsPhone, setBpsPhone] = useState('');
-  const [bpsStreet, setBpsStreet] = useState('');
-  const [bpsCity, setBpsCity] = useState('');
-  const [bpsPostcode, setBpsPostcode] = useState('');
-  const [bpsCountry, setBpsCountry] = useState('UK');
+  // The shop address lives on the dealer's own Cycle Courier account.
+
 
   const webhookUrl = getWebhookUrl();
 
