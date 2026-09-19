@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PartList from '@/components/management/PartList';
 import PartForm from '@/components/management/PartForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PageHeader, Panel } from '@/components/velo/PageShell';
 
 export default function PartsPage() {
   const [selectedPart, setSelectedPart] = useState<any>(null);
@@ -30,11 +31,11 @@ export default function PartsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Parts Management</h1>
-        <p className="text-muted-foreground">Track parts inventory and pricing</p>
-      </div>
+    <div>
+      <PageHeader
+        title="Parts"
+        description="Parts stock, suppliers and cost — what's on the shelf and what's fitted."
+      />
 
       <PartList key={refreshKey} onEdit={handleEdit} onAdd={handleAdd} />
 
@@ -42,7 +43,7 @@ export default function PartsPage() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedPart ? 'Edit Part' : 'Add New Part'}
+              <span className="font-display">{selectedPart ? 'Edit part' : 'Add part'}</span>
             </DialogTitle>
           </DialogHeader>
           <PartForm

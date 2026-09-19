@@ -2,6 +2,7 @@ import { useState } from 'react';
 import OwnerList from '@/components/management/OwnerList';
 import OwnerForm from '@/components/management/OwnerForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PageHeader, Panel } from '@/components/velo/PageShell';
 
 export default function OwnersPage() {
   const [selectedOwner, setSelectedOwner] = useState<any>(null);
@@ -30,11 +31,11 @@ export default function OwnersPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Owner Management</h1>
-        <p className="text-muted-foreground">Manage customer relationships and contact information</p>
-      </div>
+    <div>
+      <PageHeader
+        title="Owners"
+        description="Customers and consignors, their bikes with you and what's settled."
+      />
 
       <OwnerList key={refreshKey} onEdit={handleEdit} onAdd={handleAdd} />
 
@@ -42,7 +43,7 @@ export default function OwnersPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {selectedOwner ? 'Edit Owner' : 'Add New Owner'}
+              <span className="font-display">{selectedOwner ? 'Edit owner' : 'Add owner'}</span>
             </DialogTitle>
           </DialogHeader>
           <OwnerForm

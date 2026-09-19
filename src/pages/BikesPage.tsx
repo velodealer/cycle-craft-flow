@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BikeList from '@/components/management/BikeList';
 import BikeForm from '@/components/management/BikeForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PageHeader, Panel } from '@/components/velo/PageShell';
 
 export default function BikesPage() {
   const navigate = useNavigate();
@@ -23,11 +24,11 @@ export default function BikesPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Bike Management</h1>
-        <p className="text-muted-foreground">Manage your bicycle inventory and tracking</p>
-      </div>
+    <div>
+      <PageHeader
+        title="Bikes"
+        description="Every bike in the book — stage, location, price and margin."
+      />
 
       <BikeList
         key={refreshKey}
@@ -38,7 +39,7 @@ export default function BikesPage() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Bike</DialogTitle>
+            <DialogTitle className="font-display">Add bike</DialogTitle>
           </DialogHeader>
           <BikeForm
             bike={null}
