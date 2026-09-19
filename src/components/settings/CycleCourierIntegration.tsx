@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Truck, Eye, EyeOff, Copy, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import {
   getCycleCourierIntegration,
   saveCycleCourierSettings,

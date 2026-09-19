@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ClipboardCheck, Copy, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import {
   getInspectABikeStatus,
   getInspectABikeAuthUrl,
