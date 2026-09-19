@@ -123,21 +123,23 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Cycle Courier delivery request failed [${response.status}]: ${errorText}`);
+      const message = friendlyCourierError(response.status, errorText);
       await supabase
         .from('bike_collections')
         .update({
           status: 'failed',
-          error_message: `API error: ${response.status} - ${errorText}`,
+          error_message: message,
           retry_count: (delivery.retry_count ?? 0) + 1,
         })
         .eq('id', delivery.id);
-      return json({ error: 'Failed to book the delivery', status: response.status, details: errorText }, response.status);
+      return json({ error: message, status: response.status, details: errorText }, response.status);
     }
 
     const responsePayload = await response.json();
     const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
     const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
     const trackingNumber = extractTrackingNumber(responseData);
+    const shopSide = extractParty(responseData, 'sender');
     await supabase
       .from('bike_collections')
       .update({
@@ -145,8 +147,16 @@ Deno.serve(async (req) => {
         tracking_number: trackingNumber,
         status: responseData.status || 'scheduled',
         error_message: null,
+        sender_name: shopSide.name,
+        sender_email: shopSide.email,
+        sender_phone: shopSide.phone,
+        address_street: shopSide.street,
+        address_city: shopSide.city,
+        address_postcode: shopSide.postcode,
+        address_country: shopSide.country,
       })
       .eq('id', delivery.id);
+
 
     await notifyLogistics(supabase as any, bikeId, {
       direction: 'outbound',
