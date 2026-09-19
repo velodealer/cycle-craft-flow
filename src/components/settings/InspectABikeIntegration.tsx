@@ -137,7 +137,7 @@ export default function InspectABikeIntegration() {
           </div>
         )}
 
-        {status && (
+        {isSuperAdmin && status && (
           <div className="space-y-2 pt-2">
             <Label className="text-xs text-muted-foreground">Fault updates are sent to</Label>
             <div className="flex gap-2">
