@@ -151,6 +151,18 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
     const pxValue = hasPartEx ? Number(partEx.value) || 0 : 0;
     const deliveryFee = fulfilment === 'delivery' && chargeDelivery ? Number(deliveryCharge) || 0 : 0;
     const balance = Math.max(0, gross + deliveryFee - pxValue);
+    if (!vatRegistered) {
+      return {
+        gross,
+        pxValue,
+        deliveryFee,
+        balance,
+        net: gross + deliveryFee,
+        vatRate: 0,
+        invoiceVat: 0,
+        marginVat: 0,
+      };
+    }
     if (isMargin) {
       const purchase = Number(bike?.purchase_price || 0);
       const marginVat = Math.max(0, gross - purchase) * 20 / 120;
@@ -178,7 +190,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       invoiceVat: gross + deliveryFee - net,
       marginVat: 0,
     };
-  }, [salePrice, isMargin, bike?.purchase_price, hasPartEx, partEx.value, fulfilment, chargeDelivery, deliveryCharge]);
+  }, [salePrice, isMargin, vatRegistered, bike?.purchase_price, hasPartEx, partEx.value, fulfilment, chargeDelivery, deliveryCharge]);
 
 
   const handleSubmit = async () => {
