@@ -93,7 +93,6 @@ export default function SettingsPage() {
             <EbayIntegration />
             <QuickBooksIntegration />
             <InspectABikeIntegration />
-            <EmailNotifications />
           </div>
         </TabsContent>
 
