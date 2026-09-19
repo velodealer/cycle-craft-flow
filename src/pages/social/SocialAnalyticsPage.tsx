@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/velo/PageShell';
+import { StatBlock } from '@/components/velo/StatBlock';
 
 export default function SocialAnalyticsPage() {
   const [topPosts, setTopPosts] = useState<any[]>([]);
@@ -46,15 +48,12 @@ export default function SocialAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Performance</h1>
-        <p className="text-muted-foreground">See what content drives attention in real time.</p>
-      </div>
+      <PageHeader title="Performance" description="What content is actually pulling attention." />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card><CardContent className="pt-6"><div className="text-3xl font-bold">{totals.views.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total views</div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="text-3xl font-bold">{totals.likes.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total likes</div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="text-3xl font-bold">{totals.comments.toLocaleString()}</div><div className="text-xs text-muted-foreground">Total comments</div></CardContent></Card>
+        <StatBlock label="Total views" value={totals.views.toLocaleString()} />
+        <StatBlock label="Total likes" value={totals.likes.toLocaleString()} />
+        <StatBlock label="Total comments" value={totals.comments.toLocaleString()} />
       </div>
 
       <Card>
