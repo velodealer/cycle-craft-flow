@@ -252,7 +252,8 @@ export default function CycleCourierIntegration() {
           </div>
         </div>
 
-        {/* Webhook secret */}
+        {/* Webhook secret — super admin only */}
+        {isSuperAdmin && (
         <div className="space-y-2 pt-4 border-t">
           <Label htmlFor="webhookSecret">Webhook Secret</Label>
           <div className="relative flex-1">
@@ -277,8 +278,10 @@ export default function CycleCourierIntegration() {
             Provided by Cycle Courier Co for webhook signature verification
           </p>
         </div>
+        )}
 
-        {/* Delivery address */}
+        {/* Delivery address — super admin only */}
+        {isSuperAdmin && (
         <div className="space-y-4 pt-4 border-t">
           <div>
             <h4 className="font-medium mb-1">Delivery Address Configuration</h4>
