@@ -48,13 +48,6 @@ serve(async (req) => {
 
     console.log('Bike details:', { make: bike.make, model: bike.model, year: bike.year });
 
-    // 2. Get Cycle Courier integration
-    const { data: integration } = await supabase
-      .from('integrations')
-      .select('*')
-      .eq('name', 'cycle_courier_co')
-      .maybeSingle();
-
     // 2. Create initial collection record
     const { data: collection, error: createError } = await supabase
       .from('bike_collections')
@@ -83,23 +76,13 @@ serve(async (req) => {
 
     console.log('Collection record created:', collection.id);
 
-    // 3. Get BPS receiver address from settings
-    const bpsReceiver = (integration?.settings as any)?.bps_receiver || {
-      name: 'Brighton Premium Storage',
-      email: 'info@bps.com',
-      phone: '+44 1234 567890',
-      address: {
-        street: '123 BPS Street',
-        city: 'Brighton',
-        zipCode: 'BN1 1AA',
-        country: 'UK'
-      }
-    };
-
-    // 4. Prepare order payload for Cycle Courier API
+    // 3. Prepare order payload. The delivery side is the dealer themselves —
+    // `customer_side` tells Cycle Courier to fill it in from the address saved
+    // on the connected account, so we never send a shop address.
     const bikeValue = bike.sale_price || bike.asking_price || 1000;
     const orderPayload = {
       customerOrderNumber: bike.reference || bike.id,
+      customer_side: 'receiver',
       sender: {
         name: sender_name,
         email: sender_email,
@@ -109,17 +92,6 @@ serve(async (req) => {
           city: address_city,
           zipCode: address_postcode,
           country: 'UK'
-        }
-      },
-      receiver: {
-        name: bpsReceiver.name,
-        email: bpsReceiver.email,
-        phone: bpsReceiver.phone,
-        address: {
-          street: bpsReceiver.address.street,
-          city: bpsReceiver.address.city,
-          zipCode: bpsReceiver.address.postcode || bpsReceiver.address.zipcode || bpsReceiver.address.zipCode,
-          country: bpsReceiver.address.country
         }
       },
       bikes: [
@@ -134,6 +106,7 @@ serve(async (req) => {
       deliveryInstructions: delivery_instructions || '',
       requiresSignature: true
     };
+
 
     console.log('Sending bike data to API:', JSON.stringify(orderPayload.bikes));
 
