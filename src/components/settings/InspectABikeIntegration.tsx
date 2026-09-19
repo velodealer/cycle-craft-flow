@@ -15,6 +15,7 @@ import {
 } from '@/services/inspectabike';
 
 export default function InspectABikeIntegration() {
+  const { isSuperAdmin } = useAuth();
   const [status, setStatus] = useState<InspectABikeStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);

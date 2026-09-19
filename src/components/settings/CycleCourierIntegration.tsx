@@ -20,6 +20,7 @@ import {
 } from '@/services/integrations';
 
 export default function CycleCourierIntegration() {
+  const { isSuperAdmin } = useAuth();
   const [integration, setIntegration] = useState<Integration | null>(null);
   const [status, setStatus] = useState<CycleCourierStatus | null>(null);
   const [loading, setLoading] = useState(true);
