@@ -3,7 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { notifyLogistics } from '../_shared/email.ts';
-import { cycleCourierFetch, extractTrackingNumber } from '../_shared/cycle-courier.ts';
+import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
