@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
         fault_id: fault.external_fault_id,
         decision,
         ...(note ? { note } : {}),
-        actor_name: 'Cycle Craft Flow',
+        actor_name: actorName,
       }),
     }, { supabase, businessId: (fault as any).business_id });
 
