@@ -193,7 +193,7 @@ export default function EmailNotifications() {
 
         <Separator />
 
-        {KINDS.map((kind) => {
+        {visibleKinds.map((kind) => {
           const value = settings.notifications[kind.key];
           return (
             <div key={kind.key} className="space-y-3 rounded-lg border p-3">
