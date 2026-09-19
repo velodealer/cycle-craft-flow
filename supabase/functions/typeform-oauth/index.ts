@@ -392,9 +392,10 @@ Deno.serve(async (req) => {
         if (error) throw new Error(error.message);
         imported++;
         try {
-          const settings = await loadEmailSettings(supabase);
+          const notificationBusinessId = (stored as any)?.business_id ?? callerBusinessId;
+          const settings = await loadEmailSettings(supabase, notificationBusinessId);
           const mail = submissionEmail(extracted, appUrl(settings));
-          await sendNotification(supabase, 'submission_received', mail.subject, mail.html);
+          await sendNotification(supabase, 'submission_received', mail.subject, mail.html, notificationBusinessId);
         } catch (err) {
           console.error('fetch_responses: notification email failed', err);
         }
