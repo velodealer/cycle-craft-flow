@@ -317,13 +317,15 @@ serve(async (req) => {
     }
 
     // Notify staff about the meaningful milestones only.
+    const updatedStatus = extractCourierStatus(order);
     const notifiableStatus =
       eventType === 'order.collection.completed' ? 'collected'
         : (eventType === 'delivery.completed' || eventType === 'order.delivery.completed') ? 'delivered'
           : (eventType === 'delivery.failed' || eventType === 'order.cancelled') ? 'cancelled'
             : ((eventType === 'order.status.updated' || eventType === 'delivery.status_updated')
-              && (order.status === 'collected' || order.status === 'delivered')) ? order.status
+              && (updatedStatus === 'collected' || updatedStatus === 'delivered')) ? updatedStatus
               : null;
+
 
     if (notifiableStatus) {
       await notifyLogistics(supabase as any, collection.bike_id, {
