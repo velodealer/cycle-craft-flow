@@ -3,7 +3,8 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
+import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -94,32 +95,27 @@ export default function InspectionPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <ClipboardCheck className="h-8 w-8" />
-          Inspection Queue
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Bikes awaiting mechanical inspection
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Awaiting Inspection ({bikes.length})</CardTitle>
-          <div className="flex items-center gap-3">
+      <PageHeader
+        title="Inspection"
+        density="bench"
+        description="Bikes waiting on a mechanical inspection. Faults and grades come back from InspectABike."
+        actions={
+          <>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <Checkbox checked={labelSel.allSelected} onCheckedChange={labelSel.toggleAll} />
               Select all
             </label>
             <PrintLabelsButton bikes={bikes as any} selectedIds={labelSel.selected} />
-          </div>
-        </CardHeader>
-        <CardContent>
+          </>
+        }
+      />
+
+      <Panel title={`Awaiting inspection (${bikes.length})`} bodyClassName="p-4 md:p-0">
+        <div>
           {/* Mobile cards */}
           <div className="space-y-3 md:hidden">
             {bikes.length === 0 ? (
-              <ListEmpty message="No bikes awaiting inspection" />
+              <EmptyState fact="Nothing waiting for inspection." fix="Bikes arrive here once cleaning is signed off." />
             ) : (
               bikes.map((bike) => (
                 <ListCard key={bike.id}>
@@ -139,7 +135,7 @@ export default function InspectionPage() {
                         {bike.make} {bike.model}
                         {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
                       </div>
-                      <Badge variant="secondary">Inspection</Badge>
+                      <StageFlap stage="inspection" />
                     </div>
                   </div>
                   <ListCardRow label="Frame" value={bike.frame_number || 'Not recorded'} />
@@ -148,7 +144,7 @@ export default function InspectionPage() {
                     value={new Date(bike.updated_at || bike.created_at).toLocaleDateString()}
                   />
                   <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">Location</span>
+                    <FieldLabel>Location</FieldLabel>
                     <LocationSelect
                       bikeId={bike.id}
                       value={bike.storage_bay_id}
@@ -168,7 +164,7 @@ export default function InspectionPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block rounded-md border overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -213,7 +209,7 @@ export default function InspectionPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-sm">
+                        <span className="id-text">
                           {bike.frame_number || 'Not recorded'}
                         </span>
                       </TableCell>
@@ -240,8 +236,8 @@ export default function InspectionPage() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
       <Dialog open={!!selectedBike} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

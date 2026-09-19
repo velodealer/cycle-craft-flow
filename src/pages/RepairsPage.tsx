@@ -9,6 +9,8 @@ import BikeCostBreakdown from '@/components/bike/BikeCostBreakdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { PageHeader, EmptyState, Panel } from '@/components/velo/PageShell';
+import { StageFlap } from '@/components/velo/StageFlap';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -213,15 +215,16 @@ export default function RepairsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">{isMechanic ? 'Repairs' : 'Repairs approval'}</h1>
-        <p className="text-sm text-muted-foreground">
-          {isMechanic
+    <div className="space-y-4">
+      <PageHeader
+        title={isMechanic ? 'Repairs' : 'Repairs approval'}
+        density="bench"
+        description={
+          isMechanic
             ? 'Approved repairs to carry out, grouped by bike.'
-            : 'Inspection faults grouped by bike, with parts and labour costs.'}
-        </p>
-      </div>
+            : 'Inspection faults grouped by bike, with parts and labour costs.'
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {!isMechanic && (
@@ -248,11 +251,12 @@ export default function RepairsPage() {
           <Skeleton className="h-32 w-full" />
         </div>
       ) : groups.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            No repairs to show.
-          </CardContent>
-        </Card>
+        <Panel bodyClassName="p-0">
+          <EmptyState
+            fact="No repairs to show."
+            fix="Faults appear here once a bike has been inspected."
+          />
+        </Panel>
       ) : (
         <div className="space-y-4">
           {groups.map(({ bike, bikeId, faults: list }) => {
@@ -277,9 +281,9 @@ export default function RepairsPage() {
                       >
                         {bike.make} {bike.model} {bike.year || ''}
                       </button>
-                      <p className="text-xs text-muted-foreground font-mono">{bikeRef(bike)}</p>
+                      <p className="id-text text-xs text-muted-foreground">{bikeRef(bike)}</p>
                       <div className="mt-1 flex flex-wrap gap-1.5">
-                        <Badge variant="secondary" className="capitalize">{String(bike.status).replace(/_/g, ' ')}</Badge>
+                        <StageFlap stage={bike.status} size="sm" />
                         {bike.size && <Badge variant="outline">{bike.size}</Badge>}
                         {bike.colour && <Badge variant="outline">{bike.colour}</Badge>}
                         {pendingCount > 0 && (
@@ -291,13 +295,13 @@ export default function RepairsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {!isMechanic && (
-                        <Button size="sm" variant="outline" onClick={() => openCosting(bike)}>
+                        <Button size={isMechanic ? 'bench' : 'sm'} variant="outline" onClick={() => openCosting(bike)}>
                           <PoundSterling className="h-4 w-4 mr-1" />View costing
                         </Button>
                       )}
                       {toRepairCount > 0 && (
                         <Button
-                          size="sm"
+                          size={isMechanic ? 'bench' : 'sm'}
                           disabled={busy === `bike:${bikeId}`}
                           onClick={() => markAllRepaired(bikeId, list)}
                         >
@@ -316,7 +320,7 @@ export default function RepairsPage() {
 
                 <CardContent className="space-y-3">
                   {list.map((f) => (
-                    <div key={f.id} className="rounded-md border p-3 space-y-2">
+                    <div key={f.id} className="rounded-[4px] border border-border p-3 space-y-2">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium break-words">{f.title}</p>
