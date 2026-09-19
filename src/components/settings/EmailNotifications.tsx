@@ -142,7 +142,11 @@ export default function EmailNotifications() {
     });
   };
 
-  if (loading || !superAdmin) return null;
+  if (loading) return null;
+
+  const visibleKinds = superAdmin
+    ? KINDS
+    : KINDS.filter((k) => k.key !== 'support_ticket' && k.key !== 'job_application');
 
   return (
     <Card>
