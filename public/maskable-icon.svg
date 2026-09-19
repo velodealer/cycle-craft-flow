@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192" role="img" aria-label="VeloDealer">
+  <title>Maskable icon - safe zone padded for Android</title>
+  <rect width="192" height="192" fill="#131A22"/>
+  <g transform="translate(32 32) scale(1.0)">
+    <path d="M24 28H104V58H24Z" fill="#E9EDF1"/>
+    <path d="M24 66H104L98 102H30Z" fill="#ECA72C"/>
+  </g>
+</svg>

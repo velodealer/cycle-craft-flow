@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="VeloDealer">
+  <title>VeloDealer favicon</title>
+  <rect width="128" height="128" rx="6" fill="#131A22"/>
+  <g transform="translate(0 0) scale(1.0)">
+    <path d="M24 28H104V58H24Z" fill="#E9EDF1"/>
+    <path d="M24 66H104L98 102H30Z" fill="#ECA72C"/>
+  </g>
+</svg>
