@@ -1,7 +1,4 @@
 import { cn } from '@/lib/utils';
-import iconDark from '@/assets/brand/icon-dark-512.png.asset.json';
-import lockupDark from '@/assets/brand/lockup-horizontal-dark.png.asset.json';
-import lockupLight from '@/assets/brand/lockup-horizontal-light.png.asset.json';
 
 type VeloDealerLogoProps = {
   variant?: 'symbol' | 'horizontal';
@@ -14,17 +11,54 @@ export function VeloDealerLogo({
   surface = 'dark',
   className,
 }: VeloDealerLogoProps) {
-  const asset = variant === 'symbol' ? iconDark : surface === 'light' ? lockupLight : lockupDark;
+  if (variant === 'symbol') {
+    return (
+      <svg
+        viewBox="0 0 128 128"
+        role="img"
+        aria-label="VeloDealer"
+        className={cn('block size-7 shrink-0', className)}
+      >
+        <rect width="128" height="128" rx="6" className="fill-board" />
+        <path d="M24 28H104V58H24Z" className="fill-chalk" />
+        <path d="M24 66H104L98 102H30Z" className="fill-amber" />
+      </svg>
+    );
+  }
 
   return (
-    <img
-      src={asset.url}
-      alt="VeloDealer"
+    <svg
+      viewBox="0 0 560 128"
+      role="img"
+      aria-label="VeloDealer"
       className={cn(
-        'block shrink-0 object-contain',
-        variant === 'symbol' ? 'size-7' : 'h-8 w-auto min-w-[120px]',
+        'block h-8 w-auto min-w-[120px] shrink-0',
         className,
       )}
-    />
+    >
+      {surface === 'dark' ? <rect width="560" height="128" className="fill-board" /> : null}
+      <rect width="128" height="128" rx="6" className="fill-board" />
+      <path d="M24 28H104V58H24Z" className="fill-chalk" />
+      <path d="M24 66H104L98 102H30Z" className="fill-amber" />
+      <text
+        x="160"
+        y="66"
+        className={surface === 'light' ? 'fill-board font-display' : 'fill-chalk font-display'}
+        fontSize="46"
+        fontWeight="700"
+      >
+        VeloDealer
+      </text>
+      <text
+        x="162"
+        y="93"
+        className={surface === 'light' ? 'fill-muted-foreground font-sans' : 'fill-chalk-dim font-sans'}
+        fontSize="13"
+        fontWeight="500"
+        letterSpacing="2.2"
+      >
+        VELO DEALER MANAGEMENT SYSTEM
+      </text>
+    </svg>
   );
 }
