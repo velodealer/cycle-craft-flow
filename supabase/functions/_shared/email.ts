@@ -36,12 +36,13 @@ export function emailServiceClient(): Client {
   );
 }
 
-export async function loadEmailSettings(supabase: Client): Promise<ResendSettings> {
-  const { data, error } = await supabase
+export async function loadEmailSettings(supabase: Client, businessId?: string | null): Promise<ResendSettings> {
+  let query = supabase
     .from('integrations')
     .select('settings, is_active')
-    .eq('name', RESEND_INTEGRATION_NAME)
-    .maybeSingle();
+    .eq('name', RESEND_INTEGRATION_NAME);
+  if (businessId) query = query.eq('business_id', businessId);
+  const { data, error } = await query.order('updated_at', { ascending: false }).limit(1).maybeSingle();
   if (error) {
     console.error('email: failed to load settings', error.message);
     return {};
@@ -61,6 +62,7 @@ async function resolveRecipients(
   supabase: Client,
   settings: ResendSettings,
   kind: NotificationKind,
+  businessId?: string | null,
 ): Promise<string[]> {
   const kindSettings = settings.notifications?.[kind] ?? {};
   const mode = kindSettings.mode ?? 'roles';
@@ -69,10 +71,12 @@ async function resolveRecipients(
       .map((a) => String(a).trim())
       .filter((a) => a.includes('@'));
   }
-  const { data, error } = await supabase
+  let query = supabase
     .from('profiles')
     .select('email, role')
     .in('role', ['admin', 'owner']);
+  if (businessId) query = query.eq('business_id', businessId);
+  const { data, error } = await query;
   if (error) {
     console.error('email: failed to load admin recipients', error.message);
     return [];
@@ -94,14 +98,15 @@ export async function sendNotification(
   kind: NotificationKind,
   subject: string,
   html: string,
+  businessId?: string | null,
 ): Promise<SendResult> {
   try {
-    const settings = await loadEmailSettings(supabase);
+    const settings = await loadEmailSettings(supabase, businessId);
     if (settings.enabled === false) return { sent: false, reason: 'Email notifications are switched off' };
     if (kind !== 'test' && settings.notifications?.[kind]?.enabled === false) {
       return { sent: false, reason: 'This notification type is switched off' };
     }
-    const to = await resolveRecipients(supabase, settings, kind);
+    const to = await resolveRecipients(supabase, settings, kind, businessId);
     if (!to.length) return { sent: false, reason: 'No recipients configured' };
 
     const apiKey = Deno.env.get('RESEND_API_KEY');
@@ -179,12 +184,13 @@ export async function notifyFaultsAwaitingApproval(
     const { faultsEmail } = await import('./email-templates.ts');
     const { data: bike } = await supabase
       .from('bikes')
-      .select('id, reference, make, model')
+      .select('id, reference, make, model, business_id')
       .eq('id', bikeId)
       .maybeSingle();
-    const settings = await loadEmailSettings(supabase);
+    const businessId = (bike as any)?.business_id ?? null;
+    const settings = await loadEmailSettings(supabase, businessId);
     const { subject, html } = faultsEmail(bike ?? { id: bikeId }, pending, appUrl(settings));
-    await sendNotification(supabase, 'faults_awaiting_approval', subject, html);
+    await sendNotification(supabase, 'faults_awaiting_approval', subject, html, businessId);
   } catch (e) {
     console.error('email: fault notification failed', (e as Error).message);
   }
@@ -200,12 +206,13 @@ export async function notifyLogistics(
     const { logisticsEmail } = await import('./email-templates.ts');
     const { data: bike } = await supabase
       .from('bikes')
-      .select('id, reference, make, model')
+      .select('id, reference, make, model, business_id')
       .eq('id', bikeId)
       .maybeSingle();
-    const settings = await loadEmailSettings(supabase);
+    const businessId = (bike as any)?.business_id ?? null;
+    const settings = await loadEmailSettings(supabase, businessId);
     const { subject, html } = logisticsEmail({ bike: bike ?? { id: bikeId }, ...opts, appUrl: appUrl(settings) });
-    await sendNotification(supabase, 'logistics_update', subject, html);
+    await sendNotification(supabase, 'logistics_update', subject, html, businessId);
   } catch (e) {
     console.error('email: logistics notification failed', (e as Error).message);
   }

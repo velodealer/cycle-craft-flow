@@ -21,16 +21,16 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, business_id')
       .eq('user_id', userData.user.id)
       .maybeSingle();
     if (!profile || !['admin', 'owner'].includes(String(profile.role))) {
       return json({ error: 'Only admins and owners can send a test email' }, 403);
     }
 
-    const settings = await loadEmailSettings(supabase);
+    const settings = await loadEmailSettings(supabase, (profile as any).business_id);
     const { subject, html } = testEmail(appUrl(settings));
-    const result = await sendNotification(supabase, 'test', subject, html);
+    const result = await sendNotification(supabase, 'test', subject, html, (profile as any).business_id);
     if (!result.sent) return json({ ok: false, error: result.reason }, 400);
     return json({ ok: true, recipients: result.recipients });
   } catch (e) {
