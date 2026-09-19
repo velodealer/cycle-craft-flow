@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import PostDetailView from '@/components/social/PostDetailView';
+import { PageHeader } from '@/components/velo/PageShell';
 
 function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function addMonths(d: Date, n: number) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
@@ -49,17 +50,17 @@ export default function SocialCalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Content Calendar</h1>
-          <p className="text-muted-foreground">Plan what posts when across every channel.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, -1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <div className="font-medium w-40 text-center">{cursor.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</div>
-          <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}><ChevronRight className="h-4 w-4" /></Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Calendar"
+        description="What posts when, across every channel."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+            <div className="w-40 text-center font-display font-semibold">{cursor.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</div>
+            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}><ChevronRight className="h-4 w-4" /></Button>
+          </div>
+        }
+      />
 
       <Card>
         <CardContent className="p-3">

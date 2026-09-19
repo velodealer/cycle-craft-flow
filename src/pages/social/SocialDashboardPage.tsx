@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, TrendingUp, Calendar, FileText, Star } from 'lucide-react';
+import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SocialDashboardPage() {
   const [stats, setStats] = useState({ week: 0, scheduled: 0, drafts: 0, avgScore: 0 });
@@ -46,13 +47,11 @@ export default function SocialDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">Social Planner</h1>
-          <p className="text-muted-foreground">One operating system so no vehicle stays invisible.</p>
-        </div>
-        <Button asChild><Link to="/social/posts"><Plus className="h-4 w-4 mr-2" />New post</Link></Button>
-      </div>
+      <PageHeader
+        title="Social planner"
+        description="One place to plan posts so no bike stays invisible."
+        actions={<Button asChild><Link to="/social/posts"><Plus className="h-4 w-4 mr-2" />New post</Link></Button>}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => {
