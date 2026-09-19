@@ -5,7 +5,6 @@ export interface Integration {
   id: string;
   name: string;
   display_name: string;
-  api_key: string | null;
   webhook_secret: string | null;
   is_active: boolean;
   settings: Json;
@@ -30,22 +29,10 @@ export const getCycleCourierIntegration = async (): Promise<Integration | null> 
   return data;
 };
 
-export interface BpsReceiverSettings {
-  name: string;
-  email: string;
-  phone: string;
-  address: {
-    street: string;
-    city: string;
-    postcode: string;
-    country: string;
-  };
-}
-
-// Save Cycle Courier Co webhook secret + delivery address settings
+// Save Cycle Courier Co webhook secret. The shop address is held on the
+// dealer's own Cycle Courier account and filled in by them at booking time.
 export const saveCycleCourierSettings = async (
   webhookSecret: string,
-  bpsReceiver: BpsReceiverSettings,
   existingIntegration?: Integration | null
 ): Promise<Integration> => {
   if (existingIntegration) {
@@ -54,7 +41,6 @@ export const saveCycleCourierSettings = async (
       .update({
         webhook_secret: webhookSecret,
         is_active: true,
-        settings: { bps_receiver: bpsReceiver } as unknown as Json,
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingIntegration.id)
@@ -76,7 +62,6 @@ export const saveCycleCourierSettings = async (
       display_name: 'Cycle Courier Co',
       webhook_secret: webhookSecret,
       is_active: true,
-      settings: { bps_receiver: bpsReceiver } as unknown as Json,
     })
     .select()
     .single();
@@ -88,6 +73,7 @@ export const saveCycleCourierSettings = async (
 
   return data;
 };
+
 
 export interface CycleCourierStatus {
   configured: boolean;

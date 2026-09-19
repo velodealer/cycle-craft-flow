@@ -3,7 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { notifyLogistics } from '../_shared/email.ts';
-import { cycleCourierFetch, extractTrackingNumber } from '../_shared/cycle-courier.ts';
+import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -56,23 +56,9 @@ Deno.serve(async (req) => {
     if (bikeError) throw new Error(bikeError.message);
     if (!bike) return json({ error: 'Bike not found' }, 404);
 
-    const { data: integration } = await supabase
-      .from('integrations')
-      .select('*')
-      .eq('name', 'cycle_courier_co')
-      .maybeSingle();
-
     // Record the delivery locally regardless — the courier call may fail.
-    const shop: any = (integration?.settings as any)?.bps_receiver ?? {};
-    const shopAddress = shop.address ?? {};
-    const senderName = shop.name || 'Brighton Premium Storage';
-    const senderEmail = shop.email || 'info@bps.com';
-    const senderPhone = shop.phone || '+44 1234 567890';
-    const senderStreet = shopAddress.street || '';
-    const senderCity = shopAddress.city || '';
-    const senderPostcode = shopAddress.postcode || shopAddress.zipcode || shopAddress.zipCode || '';
-    const senderCountry = shopAddress.country || 'UK';
-
+    // The collection side is the dealer's own shop: Cycle Courier fills it in
+    // from the address saved on their account, so we send no shop address.
     const { data: delivery, error: createError } = await supabase
       .from('bike_collections')
       .insert({
@@ -80,13 +66,15 @@ Deno.serve(async (req) => {
         direction: 'outbound',
         status: 'pending',
         business_id: (bike as any).business_id,
-        sender_name: senderName,
-        sender_email: senderEmail,
-        sender_phone: senderPhone,
-        address_street: senderStreet,
-        address_city: senderCity,
-        address_postcode: senderPostcode,
-        address_country: senderCountry,
+        // Shop side is filled in by Cycle Courier from the connected account.
+        sender_name: '',
+        sender_email: '',
+        sender_phone: '',
+        address_street: '',
+        address_city: '',
+        address_postcode: '',
+        address_country: 'UK',
+
         receiver_name: receiver.name,
         receiver_email: receiver.email || null,
         receiver_phone: receiver.phone || null,
@@ -103,12 +91,7 @@ Deno.serve(async (req) => {
 
     const orderPayload = {
       customerOrderNumber: bike.reference || bike.id,
-      sender: {
-        name: senderName,
-        email: senderEmail,
-        phone: senderPhone,
-        address: { street: senderStreet, city: senderCity, zipCode: senderPostcode, country: senderCountry },
-      },
+      customer_side: 'sender',
       receiver: {
         name: receiver.name,
         email: receiver.email,
@@ -127,6 +110,7 @@ Deno.serve(async (req) => {
       deliveryInstructions: instructions,
       requiresSignature: true,
     };
+
 
     let response: Response;
     try {
@@ -148,21 +132,23 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Cycle Courier delivery request failed [${response.status}]: ${errorText}`);
+      const message = friendlyCourierError(response.status, errorText);
       await supabase
         .from('bike_collections')
         .update({
           status: 'failed',
-          error_message: `API error: ${response.status} - ${errorText}`,
+          error_message: message,
           retry_count: (delivery.retry_count ?? 0) + 1,
         })
         .eq('id', delivery.id);
-      return json({ error: 'Failed to book the delivery', status: response.status, details: errorText }, response.status);
+      return json({ error: message, status: response.status, details: errorText }, response.status);
     }
 
     const responsePayload = await response.json();
     const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
     const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
     const trackingNumber = extractTrackingNumber(responseData);
+    const shopSide = extractParty(responseData, 'sender');
     await supabase
       .from('bike_collections')
       .update({
@@ -170,8 +156,17 @@ Deno.serve(async (req) => {
         tracking_number: trackingNumber,
         status: responseData.status || 'scheduled',
         error_message: null,
+        sender_name: shopSide.name ?? '',
+        sender_email: shopSide.email ?? '',
+        sender_phone: shopSide.phone ?? '',
+        address_street: shopSide.street ?? '',
+        address_city: shopSide.city ?? '',
+        address_postcode: shopSide.postcode ?? '',
+        address_country: shopSide.country ?? 'UK',
+
       })
       .eq('id', delivery.id);
+
 
     await notifyLogistics(supabase as any, bikeId, {
       direction: 'outbound',
