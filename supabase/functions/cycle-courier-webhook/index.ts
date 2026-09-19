@@ -149,7 +149,7 @@ serve(async (req) => {
 
     console.log('Processing event for collection:', collection.id);
 
-    const trackingNumber = order?.trackingNumber ?? order?.tracking_number ?? order?.tracking?.number ?? order?.shipment?.trackingNumber ?? null;
+    const trackingNumber = extractTrackingNumber(order);
     if (trackingNumber && trackingNumber !== collection.tracking_number) {
       await supabase
         .from('bike_collections')
