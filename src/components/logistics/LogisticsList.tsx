@@ -194,9 +194,10 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                       {collection.tracking_number}
                       <Copy className="inline h-3 w-3 ml-1" />
                     </button>
-                  ) : collection.order_id ? (
-                    <span className="font-mono text-xs">Order {collection.order_id}</span>
-                  ) : '—'
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Awaiting tracking</span>
+                  )
+
                 }
               />
               <ListCardRow
