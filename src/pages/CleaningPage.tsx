@@ -114,7 +114,10 @@ export default function CleaningPage() {
           {/* Mobile cards */}
           <div className="space-y-3 md:hidden">
             {bikes.length === 0 ? (
-              <ListEmpty message="No bikes in cleaning queue" />
+              <EmptyState
+                fact="Nothing in the cleaning queue."
+                fix="Bikes land here once intake is finished."
+              />
             ) : (
               bikes.map((bike) => (
                 <ListCard key={bike.id}>
