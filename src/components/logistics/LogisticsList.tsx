@@ -17,6 +17,7 @@ interface Collection {
   bike_id: string;
   status: string;
   tracking_number: string | null;
+  order_id: string | null;
   sender_name: string;
   sender_email: string;
   address_street: string;
@@ -43,7 +44,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const loadCollections = async () => {
+  const loadCollections = async (refreshRemote = false) => {
     try {
       setLoading(true);
       
@@ -66,7 +67,23 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setCollections(data || []);
+      let next = (data || []) as Collection[];
+      if (refreshRemote) {
+        const results = await Promise.allSettled(
+          next.filter((item) => item.order_id).map((item) =>
+            supabase.functions.invoke('cycle-courier-order-sync', { body: { collection_id: item.id } }),
+          ),
+        );
+        if (results.some((result) => result.status === 'fulfilled')) {
+          const refreshed = await supabase
+            .from('bike_collections')
+            .select('*, bikes(make, model, frame_number, photos)')
+            .in('status', statuses)
+            .order('created_at', { ascending: false });
+          if (!refreshed.error) next = (refreshed.data || []) as Collection[];
+        }
+      }
+      setCollections(next);
     } catch (error: any) {
       toast({
         title: "Error loading collections",
@@ -134,7 +151,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
             className="pl-9"
           />
         </div>
-        <Button variant="outline" size="icon" onClick={loadCollections}>
+        <Button variant="outline" size="icon" onClick={() => loadCollections(true)} title="Refresh from Cycle Courier Co">
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
@@ -214,28 +231,25 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => navigate(`/bikes?bike=${collection.bike_id}`)}
+                  onClick={() => collection.order_id ? window.open(`https://booking.cyclecourierco.com/orders/${encodeURIComponent(collection.order_id)}`, '_blank', 'noopener,noreferrer') : navigate(`/bikes?bike=${collection.bike_id}`)}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Open bike
+                  {collection.order_id ? 'Open courier order' : 'Open bike'}
                 </Button>
               </ListCardActions>
             </ListCard>
           ))}
         </div>
 
-        <div className="hidden md:block rounded-md border overflow-x-auto">
-          <Table>
+        <div className="hidden md:block rounded-md border overflow-hidden">
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Bike</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tracking Number</TableHead>
-                <TableHead>Sender</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Scheduled</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[30%]">Bike</TableHead>
+                <TableHead className="w-[14%]">Status</TableHead>
+                <TableHead className="w-[24%]">Tracking</TableHead>
+                <TableHead className="w-[24%]">Movement</TableHead>
+                <TableHead className="w-[8%]"><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -280,33 +294,19 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <div>
-                      <div>{collection.sender_name}</div>
-                      <div className="text-xs text-muted-foreground">{collection.sender_email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
+                   <TableCell>
                     <div className="text-sm">
-                      <div>{collection.address_street}</div>
-                      <div className="text-muted-foreground">
-                        {collection.address_city}, {collection.address_postcode}
-                      </div>
+                       <div className="font-medium">{collection.sender_name}</div>
+                       <div className="truncate text-muted-foreground">{collection.address_city}, {collection.address_postcode}</div>
+                       <div className="text-xs text-muted-foreground">{collection.scheduled_date ? format(new Date(collection.scheduled_date), "dd MMM yyyy") : format(new Date(collection.created_at), "dd MMM yyyy")}</div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {collection.scheduled_date
-                      ? format(new Date(collection.scheduled_date), "MMM d, yyyy HH:mm")
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(collection.created_at), "MMM d, yyyy")}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => navigate(`/bikes?bike=${collection.bike_id}`)}
+                       onClick={() => collection.order_id ? window.open(`https://booking.cyclecourierco.com/orders/${encodeURIComponent(collection.order_id)}`, '_blank', 'noopener,noreferrer') : navigate(`/bikes?bike=${collection.bike_id}`)}
+                       title={collection.order_id ? 'Open Cycle Courier Co order' : 'Open bike'}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
