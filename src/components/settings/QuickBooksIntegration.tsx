@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, RefreshCw, Link2, Unlink, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
+import VatSettings from '@/components/settings/VatSettings';
 import {
   getQuickBooksStatus,
   getQuickBooksAuthUrl,
@@ -39,6 +41,7 @@ const ACCOUNT_FIELDS: { key: keyof QboAccountMap; label: string; hint: string }[
 
 export default function QuickBooksIntegration() {
   const { isSuperAdmin } = useAuth();
+  const { vatRegistered } = useVatRegistered();
   const [status, setStatus] = useState<QboStatus | null>(null);
   const [accounts, setAccounts] = useState<QboAccount[]>([]);
   const [mapping, setMapping] = useState<QboAccountMap>({});
