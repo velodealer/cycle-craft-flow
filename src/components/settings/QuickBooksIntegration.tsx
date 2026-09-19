@@ -279,7 +279,7 @@ export default function QuickBooksIntegration() {
                 </div>
               ))}
             </div>
-            {isSuperAdmin && <div className="border-t pt-4">
+            <div className="border-t pt-4">
               <h4 className="mb-3 font-medium">Sales VAT codes</h4>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {([
@@ -307,7 +307,7 @@ export default function QuickBooksIntegration() {
                   </div>
                 ))}
               </div>
-            </div>}
+            </div>
 
             {isSuperAdmin && <div className="border-t pt-4">
               <div className="mb-3 flex items-center justify-between gap-2">
@@ -380,7 +380,7 @@ export default function QuickBooksIntegration() {
               )}
             </div>}
 
-            <div className="border-t pt-4">
+            {isSuperAdmin && <div className="border-t pt-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <h4 className="font-medium">Recent QuickBooks errors</h4>
@@ -414,7 +414,7 @@ export default function QuickBooksIntegration() {
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
 
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
