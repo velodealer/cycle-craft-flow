@@ -228,21 +228,27 @@ serve(async (req) => {
         break;
         
       case 'order.status.updated':
-      case 'delivery.status_updated':
-        console.log('Delivery status updated:', order.status);
-        
-        // Update collection status
+      case 'delivery.status_updated': {
+        const nextStatus = extractCourierStatus(order);
+        console.log('Delivery status updated:', order.status, '->', nextStatus);
+
+        if (!shouldApplyStatus(collection.status, nextStatus)) {
+          console.log('Ignoring status update, current status is', collection.status);
+          break;
+        }
+
         await supabase
           .from('bike_collections')
-          .update({ 
-            status: order.status,
-            scheduled_date: order.scheduledDate || null
+          .update({
+            status: nextStatus,
+            scheduled_date: order.scheduledDate || null,
+            ...(nextStatus === 'delivered' ? { completed_at: new Date().toISOString() } : {}),
           })
           .eq('id', collection.id);
-        
+
         // Map Cycle Courier status to bike status
         let bikeStatus = null;
-        switch (order.status) {
+        switch (nextStatus) {
           case 'scheduled':
             bikeStatus = 'awaiting_collection';
             break;
@@ -257,13 +263,9 @@ serve(async (req) => {
             break;
           case 'delivered':
             bikeStatus = isOutbound ? 'delivered' : 'pending_intake';
-            await supabase
-              .from('bike_collections')
-              .update({ completed_at: new Date().toISOString() })
-              .eq('id', collection.id);
             break;
         }
-        
+
         if (bikeStatus) {
           await supabase
             .from('bikes')
@@ -271,7 +273,8 @@ serve(async (req) => {
             .eq('id', collection.bike_id);
         }
         break;
-        
+      }
+
       case 'delivery.completed':
       case 'order.delivery.completed':
         console.log('Delivery completed:', payload.data);
@@ -293,7 +296,12 @@ serve(async (req) => {
       case 'delivery.failed':
       case 'order.cancelled':
         console.log('Delivery failed or cancelled:', payload.data);
-        
+
+        if (collection.status === 'delivered') {
+          console.log('Ignoring cancellation for an already delivered movement');
+          break;
+        }
+
         await supabase
           .from('bike_collections')
           .update({ 
@@ -302,6 +310,7 @@ serve(async (req) => {
           })
           .eq('id', collection.id);
         break;
+
         
       default:
         console.log('Unhandled event type:', eventType);
