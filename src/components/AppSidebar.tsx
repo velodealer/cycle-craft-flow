@@ -35,28 +35,66 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const navigationItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'social_manager'] },
-  { title: "Submissions", url: "/submissions", icon: Inbox, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner'] },
-  { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
-  { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
-  { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
-  { title: "Repairs", url: "/repairs", icon: Wrench, roles: ['admin', 'owner', 'mechanic'] },
+type NavItem = {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  roles?: string[];
+  exact?: boolean;
+};
 
-  { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
-  { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant'] },
-  { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
-  { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant'] },
-  { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
-  { title: "Quote Builder", url: "/quote-builder", icon: Calculator, roles: ['admin', 'mechanic', 'accountant', 'owner'] },
-  
-  { title: "Invoices", url: "/invoices", icon: FileText, roles: ['admin', 'accountant'] },
-  { title: "Reports", url: "/reports", icon: BarChart3, roles: ['admin', 'accountant'] },
-  { title: "Staff Activity", url: "/staff-activity", icon: Users, roles: ['admin', 'owner', 'mechanic', 'detailer', 'accountant'] },
-  { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+const allRoles = ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'social_manager'];
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: allRoles },
+et    ],
+  },
+  {
+    label: "Workshop",
+    items: [
+      { title: "Submissions", url: "/submissions", icon: Inbox, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner'] },
+      { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
+      { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
+      { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
+      { title: "Repairs", url: "/repairs", icon: Wrench, roles: ['admin', 'owner', 'mechanic'] },
+      { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
+    ],
+  },
+  {
+    label: "Inventory",
+    items: [
+      { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
+      { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
+      { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant'] },
+      { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant'] },
+    ],
+  },
+  {
+    label: "Sales & Money",
+    items: [
+      { title: "Quote Builder", url: "/quote-builder", icon: Calculator, roles: ['admin', 'mechanic', 'accountant', 'owner'] },
+      { title: "Invoices", url: "/invoices", icon: FileText, roles: ['admin', 'accountant'] },
+      { title: "Reports", url: "/reports", icon: BarChart3, roles: ['admin', 'accountant'] },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { title: "Staff Activity", url: "/staff-activity", icon: Users, roles: ['admin', 'owner', 'mechanic', 'detailer', 'accountant'] },
+      { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
+    ],
+  },
 ];
 
-const socialItems = [
+const socialItems: NavItem[] = [
   { title: "Planner", url: "/social", icon: Megaphone, exact: true },
   { title: "Calendar", url: "/social/calendar", icon: CalendarDays },
   { title: "Posts", url: "/social/posts", icon: FileVideo },
@@ -65,7 +103,7 @@ const socialItems = [
 ];
 const socialRoles = ['admin', 'social_manager', 'detailer', 'accountant', 'owner'];
 
-const investorItems = [
+const investorItems: NavItem[] = [
   { title: "My Investments", url: "/investor", icon: Briefcase, exact: true },
 ];
 
@@ -75,18 +113,16 @@ export function AppSidebar() {
   const { profile } = useAuth();
   const currentPath = location.pathname;
 
-  const isActive = (path: string) => {
-    if (path === "/") {
-      return currentPath === "/";
-    }
-    return currentPath.startsWith(path);
-  };
-
   const isInvestor = profile?.role === 'investor';
 
-  const userAccessibleItems = isInvestor ? [] : navigationItems.filter(item =>
-    !profile?.role || item.roles.includes(profile.role)
-  );
+  const groups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(item =>
+        !profile?.role || !item.roles || item.roles.includes(profile.role)
+      ),
+    }))
+    .filter(group => group.items.length > 0);
 
   const handleNavItemClick = () => {
     // Close sidebar on mobile after navigation
@@ -97,44 +133,49 @@ export function AppSidebar() {
     }
   };
 
+  const renderItems = (items: NavItem[]) =>
+    items.map((item) => {
+      const Icon = item.icon;
+      const active = item.exact
+        ? currentPath === item.url
+        : currentPath === item.url || (item.url !== "/" && currentPath.startsWith(item.url + "/"));
+
+      return (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild className="w-full">
+            <NavLink 
+              to={item.url} 
+              end={item.exact}
+              onClick={handleNavItemClick}
+              className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
+                active 
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              }`}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{item.title}</span>
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    });
+
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarContent className="bg-sidebar">
-        {userAccessibleItems.length > 0 && (
-          <SidebarGroup>
+        {!isInvestor && groups.length > 0 && groups.map((group) => (
+          <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="px-4 py-2 label-text text-sidebar-foreground/60">
-              VeloDealer Navigation
+              {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1 px-2">
-                {userAccessibleItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.url);
-                  
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild className="w-full">
-                        <NavLink 
-                          to={item.url} 
-                          end={item.url === "/"} 
-                          onClick={handleNavItemClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
-                            active 
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                          }`}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                {renderItems(group.items)}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ))}
 
         {!isInvestor && (!profile?.role || socialRoles.includes(profile.role)) && (
           <SidebarGroup>
@@ -143,64 +184,20 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1 px-2">
-                {socialItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = item.exact ? currentPath === item.url : currentPath.startsWith(item.url);
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild className="w-full">
-                        <NavLink
-                          to={item.url}
-                          end={item.exact}
-                          onClick={handleNavItemClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
-                            active
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                          }`}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                {renderItems(socialItems)}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        {profile?.role === 'investor' && (
+        {isInvestor && (
           <SidebarGroup>
             <SidebarGroupLabel className="px-4 py-2 label-text text-sidebar-foreground/60">
               Investor Portal
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1 px-2">
-                {investorItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = item.exact ? currentPath === item.url : currentPath.startsWith(item.url);
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild className="w-full">
-                        <NavLink
-                          to={item.url}
-                          end={item.exact}
-                          onClick={handleNavItemClick}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors w-full ${
-                            active
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                          }`}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                {renderItems(investorItems)}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
