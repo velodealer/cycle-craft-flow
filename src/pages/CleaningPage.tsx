@@ -137,12 +137,12 @@ export default function CleaningPage() {
                         {bike.make} {bike.model}
                         {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
                       </div>
-                      <Badge variant="secondary">Cleaning</Badge>
+                      <StageFlap status="cleaning" />
                     </div>
                   </div>
                   <ListCardRow label="Frame" value={bike.frame_number || 'Not recorded'} />
                   <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">Location</span>
+                    <FieldLabel>Location</FieldLabel>
                     <LocationSelect
                       bikeId={bike.id}
                       value={bike.storage_bay_id}
@@ -151,7 +151,7 @@ export default function CleaningPage() {
                     />
                   </div>
                   <ListCardActions>
-                    <Button variant="outline" className="w-full" onClick={() => handleView(bike)}>
+                    <Button variant="outline" size="bench" className="w-full" onClick={() => handleView(bike)}>
                       <Eye className="h-4 w-4 mr-2" />
                       View & Clean
                     </Button>
@@ -162,7 +162,7 @@ export default function CleaningPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block rounded-md border overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -178,8 +178,11 @@ export default function CleaningPage() {
               <TableBody>
                 {bikes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No bikes in cleaning queue
+                    <TableCell colSpan={7} className="p-0">
+                      <EmptyState
+                        fact="Nothing in the cleaning queue."
+                        fix="Bikes land here once intake is finished."
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -207,9 +210,7 @@ export default function CleaningPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-sm">
-                          {bike.frame_number || 'Not recorded'}
-                        </span>
+                        <span className="id-text">{bike.frame_number || 'Not recorded'}</span>
                       </TableCell>
                       <TableCell>
                         <LocationSelect
@@ -219,7 +220,7 @@ export default function CleaningPage() {
                           size="sm"
                         />
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap id-text">
                         {new Date(bike.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
@@ -234,13 +235,13 @@ export default function CleaningPage() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
       <Dialog open={!!selectedBike} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Clean Bike</DialogTitle>
+            <DialogTitle className="font-display">Clean bike</DialogTitle>
           </DialogHeader>
           {selectedBike && (
             <div className="space-y-4">
@@ -257,7 +258,7 @@ export default function CleaningPage() {
                       <span className="text-muted-foreground"> · {selectedBike.year}</span>
                     ) : null}
                   </div>
-                  <div className="text-sm text-muted-foreground font-mono">
+                  <div className="id-text text-sm text-muted-foreground">
                     {selectedBike.frame_number || 'Frame not recorded'}
                   </div>
                 </div>
