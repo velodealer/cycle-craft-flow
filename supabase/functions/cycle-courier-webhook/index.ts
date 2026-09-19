@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
+import { extractCourierStatus, extractTrackingNumber, shouldApplyStatus } from '../_shared/cycle-courier.ts';
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -147,7 +149,7 @@ serve(async (req) => {
 
     console.log('Processing event for collection:', collection.id);
 
-    const trackingNumber = order?.trackingNumber ?? order?.tracking_number ?? order?.tracking?.number ?? order?.shipment?.trackingNumber ?? null;
+    const trackingNumber = extractTrackingNumber(order);
     if (trackingNumber && trackingNumber !== collection.tracking_number) {
       await supabase
         .from('bike_collections')
@@ -226,21 +228,27 @@ serve(async (req) => {
         break;
         
       case 'order.status.updated':
-      case 'delivery.status_updated':
-        console.log('Delivery status updated:', order.status);
-        
-        // Update collection status
+      case 'delivery.status_updated': {
+        const nextStatus = extractCourierStatus(order);
+        console.log('Delivery status updated:', order.status, '->', nextStatus);
+
+        if (!shouldApplyStatus(collection.status, nextStatus)) {
+          console.log('Ignoring status update, current status is', collection.status);
+          break;
+        }
+
         await supabase
           .from('bike_collections')
-          .update({ 
-            status: order.status,
-            scheduled_date: order.scheduledDate || null
+          .update({
+            status: nextStatus,
+            scheduled_date: order.scheduledDate || null,
+            ...(nextStatus === 'delivered' ? { completed_at: new Date().toISOString() } : {}),
           })
           .eq('id', collection.id);
-        
+
         // Map Cycle Courier status to bike status
         let bikeStatus = null;
-        switch (order.status) {
+        switch (nextStatus) {
           case 'scheduled':
             bikeStatus = 'awaiting_collection';
             break;
@@ -255,13 +263,9 @@ serve(async (req) => {
             break;
           case 'delivered':
             bikeStatus = isOutbound ? 'delivered' : 'pending_intake';
-            await supabase
-              .from('bike_collections')
-              .update({ completed_at: new Date().toISOString() })
-              .eq('id', collection.id);
             break;
         }
-        
+
         if (bikeStatus) {
           await supabase
             .from('bikes')
@@ -269,7 +273,8 @@ serve(async (req) => {
             .eq('id', collection.bike_id);
         }
         break;
-        
+      }
+
       case 'delivery.completed':
       case 'order.delivery.completed':
         console.log('Delivery completed:', payload.data);
@@ -291,7 +296,12 @@ serve(async (req) => {
       case 'delivery.failed':
       case 'order.cancelled':
         console.log('Delivery failed or cancelled:', payload.data);
-        
+
+        if (collection.status === 'delivered') {
+          console.log('Ignoring cancellation for an already delivered movement');
+          break;
+        }
+
         await supabase
           .from('bike_collections')
           .update({ 
@@ -300,19 +310,22 @@ serve(async (req) => {
           })
           .eq('id', collection.id);
         break;
+
         
       default:
         console.log('Unhandled event type:', eventType);
     }
 
     // Notify staff about the meaningful milestones only.
+    const updatedStatus = extractCourierStatus(order);
     const notifiableStatus =
       eventType === 'order.collection.completed' ? 'collected'
         : (eventType === 'delivery.completed' || eventType === 'order.delivery.completed') ? 'delivered'
           : (eventType === 'delivery.failed' || eventType === 'order.cancelled') ? 'cancelled'
             : ((eventType === 'order.status.updated' || eventType === 'delivery.status_updated')
-              && (order.status === 'collected' || order.status === 'delivered')) ? order.status
+              && (updatedStatus === 'collected' || updatedStatus === 'delivered')) ? updatedStatus
               : null;
+
 
     if (notifiableStatus) {
       await notifyLogistics(supabase as any, collection.bike_id, {
