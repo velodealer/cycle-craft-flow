@@ -82,6 +82,7 @@ export default function SettingsPage() {
           <BikeReferenceSettings />
           <DeliverySettings />
           <VatSettings />
+          <EmailNotifications />
         </TabsContent>
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="integrations">
@@ -92,7 +93,6 @@ export default function SettingsPage() {
             <EbayIntegration />
             <QuickBooksIntegration />
             <InspectABikeIntegration />
-            <EmailNotifications />
           </div>
         </TabsContent>
 

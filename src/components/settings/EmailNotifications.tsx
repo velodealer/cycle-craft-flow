@@ -142,7 +142,11 @@ export default function EmailNotifications() {
     });
   };
 
-  if (loading || !superAdmin) return null;
+  if (loading) return null;
+
+  const visibleKinds = superAdmin
+    ? KINDS
+    : KINDS.filter((k) => k.key !== 'support_ticket' && k.key !== 'job_application');
 
   return (
     <Card>
@@ -189,7 +193,7 @@ export default function EmailNotifications() {
 
         <Separator />
 
-        {KINDS.map((kind) => {
+        {visibleKinds.map((kind) => {
           const value = settings.notifications[kind.key];
           return (
             <div key={kind.key} className="space-y-3 rounded-lg border p-3">
