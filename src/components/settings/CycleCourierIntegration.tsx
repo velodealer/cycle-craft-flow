@@ -353,7 +353,9 @@ export default function CycleCourierIntegration() {
             </div>
           </div>
         </div>
+        )}
 
+        {isSuperAdmin && (
         <div className="pt-4 border-t">
           <Button variant="outline" size="sm" asChild>
             <a
@@ -367,6 +369,7 @@ export default function CycleCourierIntegration() {
             </a>
           </Button>
         </div>
+        )}
 
         {integration?.updated_at && (
           <p className="text-xs text-muted-foreground">
