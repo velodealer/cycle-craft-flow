@@ -89,9 +89,7 @@ export default function ReportsPage() {
 
             <TabsContent value="overview" className="space-y-6">
               <SalesPipelineSection data={data} range={range} />
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <StockInsightsSection rows={rows} data={data} range={range} />
-              </div>
+              <SalesPerformanceSection rows={rows} data={data} range={range} compareRange={compareRange} />
               <InventoryTurnoverSection data={data} range={range} />
             </TabsContent>
 
