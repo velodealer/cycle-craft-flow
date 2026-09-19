@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import PublicLayout from '@/components/public/PublicLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 
@@ -169,16 +168,16 @@ export default function FeaturesPage() {
       title="Features"
       description="Everything VeloDealer does: bike intake, workshop jobs, inspections, parts, quotes, sales and VAT, QuickBooks, logistics, Shopify and eBay listings, reporting and more."
     >
-      <section className="border-b bg-muted/40">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+      <section className="border-b border-border">
+        <div className="container mx-auto px-4 py-16">
+          <h1 className="font-display text-[40px] font-bold leading-tight text-foreground md:text-[56px]">
             Everything VeloDealer does
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          <p className="mt-4 max-w-[65ch] text-lg text-muted-foreground">
             One system for the whole life of a bike — from the moment it arrives to the invoice, the
             courier and the accounts.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
               <Link to="/auth">Get started</Link>
             </Button>
@@ -189,26 +188,37 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid gap-6 md:grid-cols-2">
-          {groups.map((group) => (
-            <Card key={group.title} className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-xl">{group.title}</CardTitle>
-                <CardDescription>{group.summary}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  {group.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2 text-muted-foreground">
-                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+      <section className="container mx-auto px-4">
+        <div className="divide-y divide-border">
+          {groups.map((group, i) => (
+            <div
+              key={group.title}
+              className={`grid gap-6 py-12 md:grid-cols-2 md:gap-12 ${i % 2 === 1 ? 'md:[&>*:first-child]:order-2' : ''}`}
+            >
+              <div>
+                <h2 className="font-display text-[26px] font-bold text-foreground">{group.title}</h2>
+                <p className="mt-3 max-w-[60ch] text-muted-foreground">{group.summary}</p>
+              </div>
+              <div className="rounded-[4px] border border-border bg-card">
+                {group.points.map((point) => (
+                  <div key={point} className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0">
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                    <span className="text-sm text-foreground">{point}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border">
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h2 className="font-display text-[28px] font-bold text-foreground">Put your stock on the board.</h2>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg"><Link to="/auth">Get started</Link></Button>
+            <Button asChild size="lg" variant="outline"><Link to="/pricing">See pricing</Link></Button>
+          </div>
         </div>
       </section>
     </PublicLayout>

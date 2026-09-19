@@ -35,6 +35,8 @@ import SocialScriptsPage from "./pages/social/SocialScriptsPage";
 import SocialAnalyticsPage from "./pages/social/SocialAnalyticsPage";
 import InvestorDashboardPage from "./pages/investor/InvestorDashboardPage";
 import InvestorBikePage from "./pages/investor/InvestorBikePage";
+import StaffActivityPage from "./pages/StaffActivityPage";
+import InvestorShell from "@/components/InvestorShell";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
@@ -102,8 +104,9 @@ const App = () => (
             <Route path="/social/posts" element={guarded(<Layout><SocialPostsPage /></Layout>)} />
             <Route path="/social/scripts" element={guarded(<Layout><SocialScriptsPage /></Layout>)} />
             <Route path="/social/analytics" element={guarded(<Layout><SocialAnalyticsPage /></Layout>)} />
-            <Route path="/investor" element={<Layout><InvestorDashboardPage /></Layout>} />
-            <Route path="/investor/bikes/:id" element={<Layout><InvestorBikePage /></Layout>} />
+            <Route path="/staff-activity" element={guarded(<Layout><StaffActivityPage /></Layout>)} />
+            <Route path="/investor" element={<InvestorShell><InvestorDashboardPage /></InvestorShell>} />
+            <Route path="/investor/bikes/:id" element={<InvestorShell><InvestorBikePage /></InvestorShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

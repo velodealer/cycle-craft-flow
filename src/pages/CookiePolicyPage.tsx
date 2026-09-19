@@ -1,4 +1,5 @@
 import LegalPage from '@/components/legal/LegalPage';
+import CookiePreferences from '@/components/legal/CookiePreferences';
 
 export default function CookiePolicyPage() {
   return (
@@ -69,7 +70,16 @@ export default function CookiePolicyPage() {
       </section>
 
       <section>
-        <h2>5. Changes</h2>
+        <h2>5. Your preferences</h2>
+        <p>
+          These controls work on this device, in this browser. There is nothing else to switch off —
+          we set no advertising, tracking or analytics cookies.
+        </p>
+        <CookiePreferences />
+      </section>
+
+      <section>
+        <h2>6. Changes</h2>
         <p>
           If we ever introduce additional cookies, this page will be updated first and, where the law
           requires it, we will ask for your consent before they are set.
@@ -77,7 +87,7 @@ export default function CookiePolicyPage() {
       </section>
 
       <section>
-        <h2>6. Contact</h2>
+        <h2>7. Contact</h2>
         <p>
           VDMS Ltd, 30 Wake Green Road, Birmingham, B13 9PB. Email: info@velodealer.com.
         </p>

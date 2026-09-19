@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '@/components/public/PublicLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -48,66 +46,40 @@ export default function BlogPage() {
       title="Blog"
       description="Guides and thinking on running a bicycle shop: intake, workshop flow, inspections, margin, accounting and selling online."
     >
-      <section className="border-b bg-muted/40">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">Blog</h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+      <section className="border-b border-border">
+        <div className="container mx-auto px-4 py-16">
+          <h1 className="font-display text-[40px] font-bold leading-tight text-foreground md:text-[56px]">Blog</h1>
+          <p className="mt-4 max-w-[65ch] text-lg text-muted-foreground">
             How each part of VeloDealer changes the way a shop actually works.
           </p>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-12">
         {loading ? (
-          <div className="grid gap-6 md:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-56 w-full" />
+          <div className="space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
         ) : posts.length === 0 ? (
-          <p className="text-center text-muted-foreground">
-            No posts yet — check back soon.
-          </p>
+          <p className="text-muted-foreground">No posts yet — check back soon.</p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="border-y border-border">
             {posts.map((post) => (
-              <Card key={post.id} className="flex flex-col overflow-hidden">
-                {post.cover_image_url && (
-                  <img
-                    src={post.cover_image_url}
-                    alt={post.title}
-                    loading="lazy"
-                    className="h-40 w-full object-cover"
-                  />
-                )}
-                <CardHeader>
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    {(post.tags ?? []).map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  <CardTitle className="text-lg leading-snug">
-                    <Link to={`/blog/${post.slug}`} className="hover:underline">
-                      {post.title}
-                    </Link>
-                  </CardTitle>
-                  <CardDescription>
-                    {formatPostDate(post.published_at)}
-                    {post.author_name ? ` · ${post.author_name}` : ''}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <p className="text-sm text-muted-foreground">{post.excerpt}</p>
-                  <Link
-                    to={`/blog/${post.slug}`}
-                    className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
-                  >
-                    Read more
-                  </Link>
-                </CardContent>
-              </Card>
+              <Link
+                key={post.id}
+                to={`/blog/${post.slug}`}
+                className="grid gap-1 border-b border-border px-1 py-5 last:border-b-0 transition-colors hover:bg-muted/40 md:grid-cols-[140px,1fr] md:gap-6"
+              >
+                <span className="id-text text-sm text-muted-foreground">{formatPostDate(post.published_at)}</span>
+                <span>
+                  <span className="font-display text-lg font-semibold text-foreground">{post.title}</span>
+                  {post.excerpt ? (
+                    <span className="mt-1 block max-w-[75ch] text-sm text-muted-foreground">{post.excerpt}</span>
+                  ) : null}
+                </span>
+              </Link>
             ))}
           </div>
         )}
