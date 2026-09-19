@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     if (!profile?.business_id) return json({ error: 'No dealership account' }, 403);
     const { data: collection } = await supabase
       .from('bike_collections')
-      .select('id, order_id, business_id, tracking_number, status')
+      .select('id, order_id, business_id, tracking_number, status, direction, bike_id')
       .eq('id', collectionId)
       .eq('business_id', profile.business_id)
       .maybeSingle();
@@ -34,15 +34,24 @@ Deno.serve(async (req) => {
     if (!response.ok) return json({ error: `Cycle Courier returned ${response.status}` }, response.status);
     const payload = await response.json();
     const order = payload?.order ?? payload?.data ?? payload;
-    const remoteStatus = normaliseStatus(order?.status ?? order?.deliveryStatus);
-    const tracking = order?.trackingNumber ?? order?.tracking_number ?? order?.tracking?.number ?? order?.shipment?.trackingNumber ?? collection.tracking_number;
+    console.log('cycle-courier-order-sync raw order:', JSON.stringify(order).slice(0, 4000));
+    const remoteStatus = extractCourierStatus(order);
+    const tracking = extractTrackingNumber(order) ?? collection.tracking_number;
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (remoteStatus) update.status = remoteStatus;
+    const applyStatus = shouldApplyStatus(collection.status, remoteStatus);
+    if (applyStatus) update.status = remoteStatus;
     if (tracking) update.tracking_number = String(tracking);
     if (remoteStatus === 'delivered') update.completed_at = order?.deliveredAt ?? order?.completedAt ?? new Date().toISOString();
     const { error } = await supabase.from('bike_collections').update(update).eq('id', collection.id);
     if (error) throw error;
-    return json({ ok: true, status: remoteStatus, tracking_number: tracking });
+    if (applyStatus && remoteStatus === 'delivered' && collection.bike_id) {
+      await supabase
+        .from('bikes')
+        .update({ status: collection.direction === 'outbound' ? 'delivered' : 'intake' })
+        .eq('id', collection.bike_id);
+    }
+    return json({ ok: true, status: applyStatus ? remoteStatus : collection.status, tracking_number: tracking });
+
   } catch (error) {
     console.error('cycle-courier-order-sync:', (error as Error).message);
     return json({ error: (error as Error).message }, 500);
