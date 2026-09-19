@@ -68,7 +68,10 @@ export default function QuoteBuilderPage() {
   const [notes, setNotes] = useState("");
   const [salePrice, setSalePrice] = useState<number>(0);
   const [rows, setRows] = useState<QuoteRow[]>(presetRows());
-  const [vatScheme, setVatScheme] = useState<VatScheme>("standard");
+  const { vatRegistered } = useVatRegistered();
+  const [vatScheme, setVatSchemeState] = useState<VatScheme>("standard");
+  const setVatScheme = setVatSchemeState;
+  const effectiveScheme: VatScheme = vatRegistered ? vatScheme : "none";
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -115,8 +118,8 @@ export default function QuoteBuilderPage() {
 
   const totalCost = useMemo(() => computeTotalCost(rows), [rows]);
   const vat = useMemo(
-    () => computeVat(rows, salePrice, vatScheme),
-    [rows, salePrice, vatScheme]
+    () => computeVat(rows, salePrice, effectiveScheme),
+    [rows, salePrice, effectiveScheme]
   );
   const profit = salePrice - totalCost;
   const profitAfterVat = profit - vat.marginVat;
