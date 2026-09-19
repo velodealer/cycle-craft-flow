@@ -38,6 +38,21 @@ Deno.serve(async (req) => {
     if (faultError) throw new Error(faultError.message);
     if (!fault) return json({ error: 'Fault not found' }, 404);
 
+    // Who made the decision: staff member plus their dealership.
+    let businessName = '';
+    if ((fault as any).business_id) {
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('name')
+        .eq('id', (fault as any).business_id)
+        .maybeSingle();
+      businessName = (business as any)?.name?.trim() || '';
+    }
+    const staffName = (profile as any)?.name?.trim() || '';
+    const actorName = staffName && businessName
+      ? `${staffName} — ${businessName}`
+      : staffName || businessName || 'VeloDealer';
+
     // Tell InspectABike first — they own the pricing and fault state.
     const remote = await iabFetch('/partner-fault-decision', {
       method: 'POST',
@@ -45,7 +60,7 @@ Deno.serve(async (req) => {
         fault_id: fault.external_fault_id,
         decision,
         ...(note ? { note } : {}),
-        actor_name: 'Cycle Craft Flow',
+        actor_name: actorName,
       }),
     }, { supabase, businessId: (fault as any).business_id });
 

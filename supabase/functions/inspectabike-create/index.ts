@@ -55,8 +55,22 @@ Deno.serve(async (req) => {
 
     const reference = bike.reference || `BIKE-${bike.id.slice(0, 8)}`;
 
-    // Customer name: external owner if we have one, otherwise the trading name.
-    let customerName = 'Cycle Craft Flow';
+    // Customer name: external owner if we have one, otherwise the dealership
+    // plus the staff member who started the inspection.
+    let businessName = '';
+    if ((bike as any).business_id) {
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('name')
+        .eq('id', (bike as any).business_id)
+        .maybeSingle();
+      businessName = (business as any)?.name?.trim() || '';
+    }
+    const staffName = (profile as any)?.name?.trim() || '';
+    let customerName = businessName && staffName
+      ? `${businessName} (${staffName})`
+      : businessName || staffName || 'VeloDealer';
+
     if (bike.external_owner_id) {
       const { data: owner } = await supabase
         .from('external_owners')
