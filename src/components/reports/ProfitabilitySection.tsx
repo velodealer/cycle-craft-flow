@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import ReportTable from './ReportTable';
 import { avg, money, moneyExact, pct, sum, type Range } from '@/lib/reports';
 import { groupStats, soldIn, type BikeRow } from '@/lib/reportMetrics';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 
 interface Props { rows: BikeRow[]; range: Range }
 
@@ -137,6 +138,7 @@ export default function ProfitabilitySection({ rows, range }: Props) {
         </Card>
       </div>
 
+      {vatRegistered && (
       <Card>
         <CardHeader><CardTitle>Profit by VAT scheme</CardTitle></CardHeader>
         <CardContent>
@@ -156,6 +158,7 @@ export default function ProfitabilitySection({ rows, range }: Props) {
           />
         </CardContent>
       </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -11,6 +11,7 @@ import { stockOutDocNumber, syncInvoice, reverseSale } from '@/lib/quickbooks';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { PageHeader, Panel, EmptyState } from '@/components/velo/PageShell';
 import { StatBlock } from '@/components/velo/StatBlock';
 import {
