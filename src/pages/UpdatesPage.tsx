@@ -1,6 +1,5 @@
 import PublicLayout from '@/components/public/PublicLayout';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Release {
   period: string;
@@ -139,48 +138,45 @@ export default function UpdatesPage() {
       title="Updates & Roadmap"
       description="What we have shipped in VeloDealer and what is coming next — integrations, workshop tools, accounting and marketplace listings."
     >
-      <section className="border-b bg-muted/40">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+      <section className="border-b border-border">
+        <div className="container mx-auto px-4 py-16">
+          <h1 className="font-display text-[40px] font-bold leading-tight text-foreground md:text-[56px]">
             Updates &amp; roadmap
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          <p className="mt-4 max-w-[65ch] text-lg text-muted-foreground">
             Everything we have built so far, and what we are working on next.
           </p>
         </div>
       </section>
 
-      <section className="container mx-auto max-w-4xl px-4 py-16">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">What has shipped</h2>
-        <ol className="mt-8 space-y-8 border-l pl-6">
+      <section className="container mx-auto max-w-5xl px-4 py-12">
+        <h2 className="font-display text-xl font-semibold text-foreground">What has shipped</h2>
+        <div className="mt-4 border-y border-border">
           {releases.map((release) => (
-            <li key={release.period} className="relative">
-              <span className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full bg-primary" />
-              <p className="text-sm font-medium text-primary">{release.period}</p>
-              <h3 className="mt-1 text-lg font-semibold text-foreground">{release.title}</h3>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {release.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </li>
+            <div key={release.period} className="grid gap-3 border-b border-border py-6 last:border-b-0 md:grid-cols-[160px,1fr] md:gap-8">
+              <span className="id-text text-sm text-muted-foreground">{release.period}</span>
+              <div>
+                <h3 className="font-display text-lg font-semibold text-foreground">{release.title}</h3>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {release.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           ))}
-        </ol>
+        </div>
 
-        <h2 className="mt-16 text-2xl font-semibold tracking-tight text-foreground">What is next</h2>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <h2 className="mt-14 font-display text-xl font-semibold text-foreground">What is next</h2>
+        <div className="mt-4 grid gap-x-10 border-y border-border md:grid-cols-2">
           {roadmap.map((item) => (
-            <Card key={item.title}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-base">{item.title}</CardTitle>
-                  <Badge variant={stageVariant[item.stage]}>{item.stage}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-              </CardContent>
-            </Card>
+            <div key={item.title} className="border-b border-border py-5 last:border-b-0 md:[&:nth-last-child(2)]:border-b-0">
+              <div className="flex items-start justify-between gap-3">
+                <span className="font-display font-semibold text-foreground">{item.title}</span>
+                <Badge variant={stageVariant[item.stage]}>{item.stage}</Badge>
+              </div>
+              <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">{item.description}</p>
+            </div>
           ))}
         </div>
 

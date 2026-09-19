@@ -61,26 +61,26 @@ export default function SettingsPage() {
           const superOnly = ['inbox', 'website', 'super'];
           return !isSuperAdmin && superOnly.includes(requested) ? 'users' : requested;
         })()}
-        className="w-full"
+        className="w-full md:flex md:items-start md:gap-6"
       >
-        <TabsList className={`flex w-full flex-wrap h-auto gap-1 md:grid ${isSuperAdmin ? 'md:grid-cols-9' : 'md:grid-cols-6'}`}>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="listings">Listing Formats</TabsTrigger>
-          <TabsTrigger value="bays">Storage Bays</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger value="inbox">Inbox</TabsTrigger>}
-          {isSuperAdmin && <TabsTrigger value="website">Website</TabsTrigger>}
-          <TabsTrigger value="security">Security</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger value="super">Super Admin</TabsTrigger>}
+        <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0 md:mb-0 md:w-56 md:shrink-0 md:flex-col md:items-stretch md:border md:border-border md:bg-card md:p-1">
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="users">User Management</TabsTrigger>
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="system">System</TabsTrigger>
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="listings">Listing Formats</TabsTrigger>
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="bays">Storage Bays</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="inbox">Inbox</TabsTrigger>}
+          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="website">Website</TabsTrigger>}
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="security">Security</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="super">Super Admin</TabsTrigger>}
         </TabsList>
 
 
-        <TabsContent value="users" className="space-y-4">
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="users">
           <UserManagement />
         </TabsContent>
 
-        <TabsContent value="system" className="space-y-4">
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="system">
           <BikeReferenceSettings />
           <DeliverySettings />
           <Card>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="integrations" className="space-y-4">
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="integrations">
           <div className="grid grid-cols-1 gap-4">
             <CycleCourierIntegration />
             <TypeformIntegration />
@@ -143,11 +143,11 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="listings" className="space-y-4">
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="listings">
           <ListingFormats />
         </TabsContent>
 
-        <TabsContent value="bays" className="space-y-4">
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="bays">
           <StorageBays />
         </TabsContent>
 
@@ -156,19 +156,19 @@ export default function SettingsPage() {
 
 
         {isSuperAdmin && (
-          <TabsContent value="inbox" className="space-y-4">
+          <TabsContent className="min-w-0 flex-1 space-y-4" value="inbox">
             <SupportInbox />
           </TabsContent>
         )}
 
         {isSuperAdmin && (
-          <TabsContent value="website" className="space-y-4">
+          <TabsContent className="min-w-0 flex-1 space-y-4" value="website">
             <BlogManager />
             <JobOpeningsManager />
           </TabsContent>
         )}
 
-        <TabsContent value="security" className="space-y-4">
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="security">
           <Card>
             <CardHeader>
               <CardTitle>Security & Access Control</CardTitle>
@@ -194,7 +194,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         {isSuperAdmin && (
-          <TabsContent value="super" className="space-y-4">
+          <TabsContent className="min-w-0 flex-1 space-y-4" value="super">
             <SuperAdminPanel />
           </TabsContent>
         )}

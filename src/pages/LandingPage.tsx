@@ -1,198 +1,168 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Bike,
-  ClipboardList,
-  Package,
-  BarChart3,
-  Wrench,
-  Users,
-  Clock,
-  Shield,
-  ArrowRight,
-  CheckCircle2,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { PublicFooter, PublicHeader } from "@/components/public/PublicLayout";
+import BoardPreview from "@/components/public/BoardPreview";
+import PipelineFlaps from "@/components/public/PipelineFlaps";
+import { StatBlock } from "@/components/velo/StatBlock";
+
+const AREAS = [
+  {
+    label: "Workshop",
+    title: "Every bike moves through the same eight stages",
+    body: "Intake, cleaning, inspection, owner approval, repair, ready, listed, sold. Faults come back from InspectABike, get costed, approved and repaired — mechanics never see a price.",
+    rows: [
+      ["Cleaning", "2 bikes on the bench"],
+      ["Inspection", "3 waiting, oldest 2 days"],
+      ["Owner approval", "£67 of work on OGN·0398"],
+    ],
+  },
+  {
+    label: "Selling",
+    title: "List once, delist everywhere it sells",
+    body: "Shopify and eBay listings are pushed from the bike record with your own descriptions and templates. Sell on one channel and the other comes down.",
+    rows: [
+      ["Shopify", "12 bikes live"],
+      ["eBay", "8 bikes live"],
+      ["Sold this week", "3 bikes, £5,420"],
+    ],
+  },
+  {
+    label: "Money",
+    title: "Cost, margin and VAT on every bike",
+    body: "Purchase price, parts, labour and prep roll into one figure against the asking price. Sales post to QuickBooks with margin-scheme VAT handled.",
+    rows: [
+      ["Stock at cost", "£41,200"],
+      ["Average margin", "31%"],
+      ["Awaiting QuickBooks sync", "0"],
+    ],
+  },
+];
+
+const PARTNERS = ["Shopify", "eBay", "QuickBooks", "InspectABike", "Cycle Courier Co", "Typeform"];
 
 export default function LandingPage() {
   const navigate = useNavigate();
-
-
-
-  const features = [
-    {
-      icon: ClipboardList,
-      title: "Streamlined Intake",
-      description: "Quick bike intake with photo documentation and condition tracking",
-    },
-    {
-      icon: Wrench,
-      title: "Service Management",
-      description: "Track cleaning, repairs, and maintenance with detailed job cards",
-    },
-    {
-      icon: Package,
-      title: "Parts Inventory",
-      description: "Manage parts stock, suppliers, and reordering with ease",
-    },
-    {
-      icon: Users,
-      title: "Owner Portal",
-      description: "Keep owners informed with real-time status updates and notifications",
-    },
-    {
-      icon: BarChart3,
-      title: "Business Analytics",
-      description: "Make data-driven decisions with comprehensive reporting tools",
-    },
-    {
-      icon: Clock,
-      title: "Workflow Automation",
-      description: "Automate repetitive tasks and reduce manual data entry",
-    },
-  ];
-
-  const benefits = [
-    "Reduce processing time by 60%",
-    "Eliminate paperwork and manual tracking",
-    "Improve customer satisfaction scores",
-    "Increase workshop efficiency",
-    "Real-time inventory visibility",
-    "Integrated delivery management",
-  ];
 
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
 
-
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <Badge variant="secondary" className="px-4 py-2 text-sm">
-            <Shield className="h-4 w-4 mr-2 inline" />
-            Trusted by Bike Dealers Worldwide
-          </Badge>
-          
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
-            The Complete Platform for
-            <span className="text-primary"> Bicycle Dealer Management</span>
+      {/* Hero */}
+      <section className="container mx-auto px-4 pb-10 pt-16 md:pt-24">
+        <div className="max-w-4xl">
+          <h1 className="font-display text-[42px] font-bold leading-[1.05] text-foreground md:text-[68px]">
+            Run your bike business
+            <br />
+            like a trading desk.
           </h1>
-          
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Streamline your bike shop operations from intake to delivery. Manage inventory, 
-            track repairs, and delight customers with VeloDealer's all-in-one solution.
+          <p className="mt-6 max-w-[60ch] text-lg text-muted-foreground">
+            Every bike staged, priced and margined — from intake to delivery.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" onClick={() => navigate("/auth")} className="text-lg px-8">
-              Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Button size="lg" onClick={() => navigate("/auth")}>
+              Get started <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8" asChild>
-              <Link to="/features">See all features</Link>
-            </Button>
+            <a href="#see-it-work" className="text-sm font-medium text-foreground hover:text-primary">
+              See it work ↓
+            </a>
           </div>
+        </div>
 
-          <p className="text-sm text-muted-foreground">
-            No credit card required • 14-day free trial • Cancel anytime
-          </p>
+        <div id="see-it-work" className="mt-12">
+          <BoardPreview />
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="bg-muted/50 py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Everything You Need to Run Your Bike Shop
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Powerful features designed specifically for bicycle dealers and service centers
+      {/* Stat strip */}
+      <section className="border-y border-border bg-card">
+        <div className="container mx-auto grid gap-8 px-4 py-10 sm:grid-cols-3">
+          <StatBlock label="Stock at cost" value="£41,200" delta="8%" deltaDirection="up" />
+          <StatBlock label="Average margin" value="31%" />
+          <StatBlock label="Days to sold" value="18" hint="3 days quicker than last quarter" />
+        </div>
+        <div className="container mx-auto px-4 pb-6">
+          <p className="text-xs text-muted-foreground">Example figures from a dealer's first quarter on VeloDealer.</p>
+        </div>
+      </section>
+
+      {/* Pipeline */}
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="font-display text-[28px] font-bold text-foreground md:text-[34px]">The pipeline</h2>
+        <p className="mt-2 max-w-[70ch] text-muted-foreground">
+          One board, one status per bike. Anyone in the shop can see where a bike is and what it is waiting on.
+        </p>
+        <PipelineFlaps className="mt-6" />
+
+        <div className="mt-12 divide-y divide-border border-y border-border">
+          {AREAS.map((area) => (
+            <div key={area.label} className="grid gap-6 py-10 md:grid-cols-[1fr,1fr] md:gap-12">
+              <div>
+                <p className="label-text text-primary">{area.label}</p>
+                <h3 className="mt-2 font-display text-[24px] font-bold text-foreground">{area.title}</h3>
+                <p className="mt-3 max-w-[60ch] text-muted-foreground">{area.body}</p>
+              </div>
+              <div className="rounded-[4px] border border-border bg-card">
+                {area.rows.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between gap-4 border-b border-border px-4 py-4 last:border-b-0"
+                  >
+                    <span className="label-text text-muted-foreground">{label}</span>
+                    <span className="tabular text-foreground">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Partners */}
+      <section className="border-y border-border bg-card">
+        <div className="container mx-auto px-4 py-10">
+          <h2 className="font-display text-lg font-semibold text-foreground">Works with what you already use</h2>
+          <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3">
+            {PARTNERS.map((p) => (
+              <span key={p} className="font-display text-lg font-semibold text-muted-foreground">
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing teaser */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-[4px] border border-border bg-card p-6 md:flex-row md:items-center">
+          <div>
+            <h2 className="font-display text-[24px] font-bold text-foreground">Three plans, one book of stock</h2>
+            <p className="mt-2 max-w-[60ch] text-muted-foreground">
+              Starter, Pro and Business. Free on the Shopify App Store — the full app, billed through Shopify.
             </p>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <Card key={feature.title} className="border-2 hover:border-primary/50 transition-colors">
-                  <CardContent className="pt-6">
-                    <div className="mb-4 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <Button variant="outline" size="lg" asChild>
+            <Link to="/pricing">See pricing</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Transform Your Bike Shop Operations
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Join hundreds of dealers who have already modernized their workflow
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {benefits.map((benefit) => (
-                <div key={benefit} className="flex items-start space-x-3">
-                  <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                  <span className="text-lg text-foreground">{benefit}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-12 text-center">
-              <Button size="lg" onClick={() => navigate("/auth")} className="text-lg px-8">
-                Get Started Today <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-primary text-primary-foreground py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Ready to Streamline Your Bike Shop?
-            </h2>
-            <p className="text-xl opacity-90">
-              Start your free trial today and see why VeloDealer is the #1 choice for bicycle dealers
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-              <Button 
-                size="lg" 
-                variant="secondary"
-                onClick={() => navigate("/auth")} 
-                className="text-lg px-8"
-              >
-                Start Free Trial
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="text-lg px-8 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-                asChild
-              >
-                <Link to="/contact">Contact sales</Link>
-              </Button>
-            </div>
+      {/* Final CTA */}
+      <section className="border-t border-border">
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h2 className="font-display text-[30px] font-bold text-foreground md:text-[40px]">
+            Put your stock on the board.
+          </h2>
+          <p className="mx-auto mt-3 max-w-[55ch] text-muted-foreground">
+            Set up your book, bring your bikes in, and see margin on every one of them.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <Button size="lg" onClick={() => navigate("/auth")}>
+              Get started <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link to="/contact">Talk to us</Link>
+            </Button>
           </div>
         </div>
       </section>
