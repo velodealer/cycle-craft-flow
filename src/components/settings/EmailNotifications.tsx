@@ -210,7 +210,9 @@ export default function EmailNotifications() {
                       variant={value.mode === 'roles' ? 'default' : 'outline'}
                       onClick={() => updateKind(kind.key, { mode: 'roles' })}
                     >
-                      All admins and owners
+                      {kind.key === 'support_ticket' || kind.key === 'job_application'
+                        ? 'Super admin only'
+                        : 'All admins and owners'}
                     </Button>
                     <Button
                       type="button"
