@@ -11,6 +11,7 @@ import InspectABikeIntegration from '@/components/settings/InspectABikeIntegrati
 import EmailNotifications from '@/components/settings/EmailNotifications';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
+import VatSettings from '@/components/settings/VatSettings';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -80,6 +81,7 @@ export default function SettingsPage() {
         <TabsContent className="min-w-0 flex-1 space-y-4" value="system">
           <BikeReferenceSettings />
           <DeliverySettings />
+          <VatSettings />
         </TabsContent>
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="integrations">

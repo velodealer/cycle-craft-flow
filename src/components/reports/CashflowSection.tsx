@@ -5,10 +5,12 @@ import ReportTable from './ReportTable';
 import { avg, daysBetween, inRange, money, num, pct, sum, titleCase, type Range } from '@/lib/reports';
 import { soldIn, type BikeRow } from '@/lib/reportMetrics';
 import type { ReportsData } from '@/hooks/useReportsData';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 
 interface Props { rows: BikeRow[]; data: ReportsData; range: Range }
 
 export default function CashflowSection({ rows, data, range }: Props) {
+  const { vatRegistered } = useVatRegistered();
   const ids = useMemo(() => new Set(rows.map((r) => r.id)), [rows]);
   const invoices = useMemo(
     () => data.invoices.filter((i) => (!i.bike_id || ids.has(i.bike_id)) && inRange(i.issued_at || i.created_at, range)),
@@ -64,7 +66,7 @@ export default function CashflowSection({ rows, data, range }: Props) {
             <Stat label="Part exchange taken" value={money(stats.partExchange)} />
             <Stat label="Delivery charged" value={money(stats.deliveryCharged)} sub={`${money(stats.deliveryPaid)} cost`} />
             <Stat label="Delivery recovery" value={stats.deliveryPaid ? pct(stats.deliveryCharged / stats.deliveryPaid) : '—'} />
-            <Stat label="Avg VAT rate" value={stats.vatAvg ? `${num(stats.vatAvg, 1)}%` : '—'} />
+            {vatRegistered && <Stat label="Avg VAT rate" value={stats.vatAvg ? `${num(stats.vatAvg, 1)}%` : '—'} />}
           </div>
         </CardContent>
       </Card>

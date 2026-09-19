@@ -23,6 +23,7 @@ import AddInvestorDialog from '@/components/management/AddInvestorDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import LocationSelect from '@/components/bike/LocationSelect';
 import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
@@ -110,6 +111,7 @@ interface BikeFormProps {
 }
 
 export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
+  const { vatRegistered } = useVatRegistered();
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [submitting, setSubmitting] = useState(false);
   const { bays: storageBays } = useStorageBays();
@@ -791,6 +793,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               />
 
 
+              {vatRegistered && (
               <FormField
                 control={form.control}
                 name="finance_scheme"
@@ -813,6 +816,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   </FormItem>
                 )}
               />
+              )}
             </CardContent>
           </Card>
           )}

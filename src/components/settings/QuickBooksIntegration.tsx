@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, RefreshCw, Link2, Unlink, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
+import VatSettings from '@/components/settings/VatSettings';
 import {
   getQuickBooksStatus,
   getQuickBooksAuthUrl,
@@ -39,6 +41,7 @@ const ACCOUNT_FIELDS: { key: keyof QboAccountMap; label: string; hint: string }[
 
 export default function QuickBooksIntegration() {
   const { isSuperAdmin } = useAuth();
+  const { vatRegistered } = useVatRegistered();
   const [status, setStatus] = useState<QboStatus | null>(null);
   const [accounts, setAccounts] = useState<QboAccount[]>([]);
   const [mapping, setMapping] = useState<QboAccountMap>({});
@@ -214,7 +217,9 @@ export default function QuickBooksIntegration() {
               {isSuperAdmin && status?.environment && <Badge variant="outline">{status.environment}</Badge>}
             </CardTitle>
             <CardDescription>
-              Post bike purchases to stock at intake and sales invoices, COGS and margin VAT when a bike is sold.
+              {vatRegistered
+                ? 'Post bike purchases to stock at intake and sales invoices, COGS and margin VAT when a bike is sold.'
+                : 'Post bike purchases to stock at intake and sales invoices and COGS when a bike is sold.'}
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -256,8 +261,11 @@ export default function QuickBooksIntegration() {
 
         {status?.connected && (
           <div className="space-y-4">
+            <div className="border-b pb-4">
+              <VatSettings compact />
+            </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {ACCOUNT_FIELDS.map((field) => (
+              {ACCOUNT_FIELDS.filter((f) => vatRegistered || f.key !== 'vat').map((field) => (
                 <div key={field.key} className="space-y-1.5">
                   <Label>{field.label}</Label>
                   <Select
@@ -279,7 +287,7 @@ export default function QuickBooksIntegration() {
                 </div>
               ))}
             </div>
-            <div className="border-t pt-4">
+            {vatRegistered && <div className="border-t pt-4">
               <h4 className="mb-3 font-medium">Sales VAT codes</h4>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {([
@@ -307,7 +315,7 @@ export default function QuickBooksIntegration() {
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
 
             {isSuperAdmin && <div className="border-t pt-4">
               <div className="mb-3 flex items-center justify-between gap-2">

@@ -28,6 +28,7 @@ import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
 
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { supabase } from '@/integrations/supabase/client';
 import BikeCostsSection from './BikeCostsSection';
 import BikeCostBreakdown from './BikeCostBreakdown';
@@ -70,6 +71,7 @@ export default function BikeDetailView({
   const [showDelete, setShowDelete] = useState(false);
   const [labelBusy, setLabelBusy] = useState(false);
   const { profile } = useAuth();
+  const { vatRegistered } = useVatRegistered();
   const isMechanic = profile?.role === 'mechanic';
   const isAdmin = profile?.role === 'admin';
   const canSeePricing = showPricing && !isMechanic;
@@ -505,10 +507,12 @@ export default function BikeDetailView({
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-4">
+                  {vatRegistered && (
                   <div>
                     <p className="label-text">VAT scheme</p>
                     <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
                   </div>
+                  )}
                   {bike.purchase_date && (
                     <div>
                       <p className="label-text">Purchase date</p>

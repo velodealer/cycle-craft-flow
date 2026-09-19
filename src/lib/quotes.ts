@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type VatScheme = "standard" | "margin";
+export type VatScheme = "standard" | "margin" | "none";
 
 export const VAT_RATE = 0.2;
 

@@ -64,8 +64,21 @@ Deno.serve(async (req) => {
     requireCapability(capabilities, { journalEntries: true, accounts: ['sales', 'stock', 'cogs'] });
 
 
-    const isMargin = bike?.finance_scheme === 'margin_scheme';
-    const salesTaxCode = taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes);
+    // A business can tell us it is not VAT registered — then nothing carries VAT.
+    let vatRegistered = true;
+    const businessId = (invoice as any).business_id ?? bike?.business_id ?? null;
+    if (businessId) {
+      const { data: vatSetting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('business_id', businessId)
+        .eq('key', 'vat_registered')
+        .maybeSingle();
+      if (vatSetting && vatSetting.value === false) vatRegistered = false;
+    }
+
+    const isMargin = vatRegistered && bike?.finance_scheme === 'margin_scheme';
+    const salesTaxCode = vatRegistered ? taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes) : undefined;
     const balanceDue = Number(invoice.gross || invoice.total || 0);
     const partExValue = Number(invoice.part_exchange_value || 0);
     const deliveryCharge = invoice.delivery_charged_to_customer ? Number(invoice.delivery_charge || 0) : 0;
@@ -85,7 +98,7 @@ Deno.serve(async (req) => {
     const deliveryItemRef = deliveryCharge > 0
       ? await findOrCreateItem(fetcher, accounts.sales, 'Delivery')
       : undefined;
-    const deliveryTaxCode = deliveryCharge > 0
+    const deliveryTaxCode = vatRegistered && deliveryCharge > 0
       ? taxCodeForScheme(false, (settings as QboSettings).tax_codes)
       : undefined;
 
@@ -96,7 +109,7 @@ Deno.serve(async (req) => {
       CustomerRef: { value: customerRef },
       DocNumber: invoice.invoice_number,
       TxnDate: (invoice.issued_at || new Date().toISOString()).slice(0, 10),
-      GlobalTaxCalculation: isMargin && deliveryCharge <= 0 ? 'NotApplicable' : 'TaxInclusive',
+      GlobalTaxCalculation: !vatRegistered || (isMargin && deliveryCharge <= 0) ? 'NotApplicable' : 'TaxInclusive',
       Line: buildSaleInvoiceLines({
         saleGross: gross,
         description,
@@ -107,7 +120,9 @@ Deno.serve(async (req) => {
         deliveryTaxCode,
       }),
       PrivateNote: [
-        isMargin
+        !vatRegistered
+          ? 'Sale by a business that is not VAT registered — no VAT charged.'
+          : isMargin
           ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
           : 'Standard VAT sale.',
         ...(deliveryCharge > 0 ? [`Delivery charged to the customer: ${deliveryCharge.toFixed(2)} (standard rated).`] : []),

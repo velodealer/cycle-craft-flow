@@ -1,3 +1,5 @@
+import { useVatRegistered } from '@/hooks/useVatRegistered';
+
 interface Props {
   bike: any;
   partsCost: number;
@@ -16,6 +18,7 @@ const Row = ({ label, value, negative, bold, muted, sub }: { label: string; valu
 
 /** Shared cost & profit breakdown for a bike (bike page and repairs approval popup). */
 export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedInventoryValue = 0 }: Props) {
+  const { vatRegistered } = useVatRegistered();
   const isSold = bike.status === 'sold';
   const isSplit = bike.status === 'split_for_parts';
   const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
@@ -25,7 +28,7 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
   const prep = collectionCost + deliveryCost + partsCost + jobsCost;
   const totalCost = acquisition + prep;
   const gross = revenue - totalCost;
-  const isMargin = bike.finance_scheme === 'margin_scheme';
+  const isMargin = vatRegistered && bike.finance_scheme === 'margin_scheme';
   const vat = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
   const net = gross - vat;
   const margin = revenue > 0 ? (net / revenue) * 100 : null;

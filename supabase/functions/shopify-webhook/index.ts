@@ -81,7 +81,17 @@ async function handleOrderPaid(supabase: Client, order: any) {
       continue;
     }
     const gross = Number(price) || Number(bike.asking_price) || 0;
-    const isMargin = bike.finance_scheme === 'margin_scheme';
+    let vatRegistered = true;
+    if (bike.business_id) {
+      const { data: vatSetting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('business_id', bike.business_id)
+        .eq('key', 'vat_registered')
+        .maybeSingle();
+      if (vatSetting && vatSetting.value === false) vatRegistered = false;
+    }
+    const isMargin = !vatRegistered || bike.finance_scheme === 'margin_scheme';
     const vatRate = isMargin ? 0 : 20;
     const net = isMargin ? gross : Number((gross / 1.2).toFixed(2));
 
