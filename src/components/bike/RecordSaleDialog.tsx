@@ -387,7 +387,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="sale-price">Sale price (inc. VAT)</Label>
+              <Label htmlFor="sale-price">{vatRegistered ? 'Sale price (inc. VAT)' : 'Sale price'}</Label>
               <Input
                 id="sale-price"
                 type="number"
@@ -485,6 +485,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
+                {vatRegistered && <>
                 <Label>VAT scheme for the incoming bike</Label>
                 <Select
                   value={partEx.finance_scheme}
@@ -498,6 +499,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
                     <SelectItem value="vat_qualifying">VAT qualifying</SelectItem>
                   </SelectContent>
                 </Select>
+                </>}
                 <p className="text-xs text-muted-foreground">
                   The bike is created at intake status so it can be completed later.
                 </p>
@@ -595,18 +597,22 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           <Separator />
 
           <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Scheme</span>
-              <span>{isMargin ? 'Margin scheme' : 'Standard VAT'}</span>
-            </div>
+            {vatRegistered && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Scheme</span>
+                <span>{isMargin ? 'Margin scheme' : 'Standard VAT'}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Bike sale price</span>
               <span>£{totals.gross.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Invoice VAT ({totals.vatRate}%)</span>
-              <span>£{totals.invoiceVat.toFixed(2)}</span>
-            </div>
+            {vatRegistered && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Invoice VAT ({totals.vatRate}%)</span>
+                <span>£{totals.invoiceVat.toFixed(2)}</span>
+              </div>
+            )}
             {hasPartEx && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Part exchange allowance</span>
