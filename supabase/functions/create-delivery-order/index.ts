@@ -56,23 +56,9 @@ Deno.serve(async (req) => {
     if (bikeError) throw new Error(bikeError.message);
     if (!bike) return json({ error: 'Bike not found' }, 404);
 
-    const { data: integration } = await supabase
-      .from('integrations')
-      .select('*')
-      .eq('name', 'cycle_courier_co')
-      .maybeSingle();
-
     // Record the delivery locally regardless — the courier call may fail.
-    const shop: any = (integration?.settings as any)?.bps_receiver ?? {};
-    const shopAddress = shop.address ?? {};
-    const senderName = shop.name || 'Brighton Premium Storage';
-    const senderEmail = shop.email || 'info@bps.com';
-    const senderPhone = shop.phone || '+44 1234 567890';
-    const senderStreet = shopAddress.street || '';
-    const senderCity = shopAddress.city || '';
-    const senderPostcode = shopAddress.postcode || shopAddress.zipcode || shopAddress.zipCode || '';
-    const senderCountry = shopAddress.country || 'UK';
-
+    // The collection side is the dealer's own shop: Cycle Courier fills it in
+    // from the address saved on their account, so we send no shop address.
     const { data: delivery, error: createError } = await supabase
       .from('bike_collections')
       .insert({
@@ -80,13 +66,6 @@ Deno.serve(async (req) => {
         direction: 'outbound',
         status: 'pending',
         business_id: (bike as any).business_id,
-        sender_name: senderName,
-        sender_email: senderEmail,
-        sender_phone: senderPhone,
-        address_street: senderStreet,
-        address_city: senderCity,
-        address_postcode: senderPostcode,
-        address_country: senderCountry,
         receiver_name: receiver.name,
         receiver_email: receiver.email || null,
         receiver_phone: receiver.phone || null,
@@ -103,12 +82,7 @@ Deno.serve(async (req) => {
 
     const orderPayload = {
       customerOrderNumber: bike.reference || bike.id,
-      sender: {
-        name: senderName,
-        email: senderEmail,
-        phone: senderPhone,
-        address: { street: senderStreet, city: senderCity, zipCode: senderPostcode, country: senderCountry },
-      },
+      customer_side: 'sender',
       receiver: {
         name: receiver.name,
         email: receiver.email,
@@ -127,6 +101,7 @@ Deno.serve(async (req) => {
       deliveryInstructions: instructions,
       requiresSignature: true,
     };
+
 
     let response: Response;
     try {
