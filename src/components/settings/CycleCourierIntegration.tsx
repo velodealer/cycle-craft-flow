@@ -60,16 +60,7 @@ export default function CycleCourierIntegration() {
       setIntegration(data);
       setStatus(statusData);
       if (data?.webhook_secret) setWebhookSecret(data.webhook_secret);
-      if (data?.settings && typeof data.settings === 'object' && 'bps_receiver' in data.settings) {
-        const bpsReceiver = (data.settings as Record<string, unknown>).bps_receiver as unknown as BpsReceiverSettings;
-        setBpsName(bpsReceiver.name || 'Brighton Premium Storage');
-        setBpsEmail(bpsReceiver.email || '');
-        setBpsPhone(bpsReceiver.phone || '');
-        setBpsStreet(bpsReceiver.address?.street || '');
-        setBpsCity(bpsReceiver.address?.city || '');
-        setBpsPostcode(bpsReceiver.address?.postcode || '');
-        setBpsCountry(bpsReceiver.address?.country || 'UK');
-      }
+
     } catch (error) {
       console.error('Error loading integration:', error);
       toast({
