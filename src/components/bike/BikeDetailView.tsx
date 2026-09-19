@@ -28,6 +28,7 @@ import { downloadBikeLabelsPdf } from '@/lib/bikeLabelPdf';
 
 import { CollectionStatus } from './CollectionStatus';
 import { useAuth } from '@/hooks/useAuth';
+import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { supabase } from '@/integrations/supabase/client';
 import BikeCostsSection from './BikeCostsSection';
 import BikeCostBreakdown from './BikeCostBreakdown';
@@ -70,6 +71,7 @@ export default function BikeDetailView({
   const [showDelete, setShowDelete] = useState(false);
   const [labelBusy, setLabelBusy] = useState(false);
   const { profile } = useAuth();
+  const { vatRegistered } = useVatRegistered();
   const isMechanic = profile?.role === 'mechanic';
   const isAdmin = profile?.role === 'admin';
   const canSeePricing = showPricing && !isMechanic;
