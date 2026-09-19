@@ -64,8 +64,8 @@ export function PublicHeader() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex shrink-0 items-center" aria-label="VeloDealer home">
-            <VeloDealerLogo variant="symbol" className="size-8 sm:hidden" />
-            <VeloDealerLogo className="hidden h-9 sm:block" />
+            <VeloDealerLogo variant="symbol" className="size-10 sm:hidden" />
+            <VeloDealerLogo className="hidden h-11 sm:block" />
           </Link>
 
           <nav className="hidden flex-1 justify-center md:flex">
