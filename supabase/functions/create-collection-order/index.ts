@@ -136,13 +136,15 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Cycle Courier API error:', response.status, errorText);
-      
+
+      const message = friendlyCourierError(response.status, errorText);
+
       // Update collection with error
       await supabase
         .from('bike_collections')
         .update({
           status: 'failed',
-          error_message: `API error: ${response.status} - ${errorText}`,
+          error_message: message,
           retry_count: collection.retry_count + 1
         })
         .eq('id', collection.id);
@@ -150,7 +152,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Failed to create collection order',
+          error: message,
           details: errorText 
         }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -163,19 +165,29 @@ serve(async (req) => {
     const trackingNumber = extractTrackingNumber(responseData);
     console.log('Collection order created:', responseData);
 
-    // 6. Update collection record with API response
+    // 6. Update collection record with API response, including the dealer's own
+    // delivery address as Cycle Courier filled it in.
+    const shopSide = extractParty(responseData, 'receiver');
     const { error: updateError } = await supabase
       .from('bike_collections')
       .update({
         order_id: orderId,
         tracking_number: trackingNumber,
-        status: responseData.status || 'scheduled'
+        status: responseData.status || 'scheduled',
+        receiver_name: shopSide.name,
+        receiver_email: shopSide.email,
+        receiver_phone: shopSide.phone,
+        receiver_street: shopSide.street,
+        receiver_city: shopSide.city,
+        receiver_postcode: shopSide.postcode,
+        receiver_country: shopSide.country,
       })
       .eq('id', collection.id);
 
     if (updateError) {
       console.error('Failed to update collection:', updateError);
     }
+
 
     // 7. Update bike status
     const { error: bikeUpdateError } = await supabase
