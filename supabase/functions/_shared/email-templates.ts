@@ -21,16 +21,17 @@ export function layout(
   ctaUrl?: string,
   footer = 'You are receiving this because you are set as a notification recipient in VeloDealer settings.',
 ): string {
+  const logoUrl = 'https://velodealer.com/__l5e/assets-v1/7cccaf97-809a-4ef4-832d-5207737b6817/velodealer-email-lockup.png';
   const cta = ctaLabel && ctaUrl
-    ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="background:#14532d;color:#ffffff;padding:10px 18px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">${escapeHtml(ctaLabel)}</a></p>`
+    ? `<p style="margin:24px 0 0"><a href="${escapeHtml(ctaUrl)}" style="background:#ECA72C;color:#131A22;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;font-weight:600">${escapeHtml(ctaLabel)}</a></p>`
     : '';
-  return `<!doctype html><html><body style="margin:0;padding:24px;background:#f5f5f4;font-family:Helvetica,Arial,sans-serif;color:#1c1917">
-  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;padding:28px">
-    <p style="margin:0 0 4px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#14532d;font-weight:700">VeloDealer</p>
+  return `<!doctype html><html><body style="margin:0;padding:24px;background:#E9EDF1;font-family:'IBM Plex Sans',Helvetica,Arial,sans-serif;color:#131A22">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #d8dde3;border-radius:4px;padding:28px">
+    <img src="${logoUrl}" width="212" alt="VeloDealer" style="display:block;width:212px;height:auto;margin:0 0 24px" />
     <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3">${escapeHtml(title)}</h1>
     ${bodyHtml}
     ${cta}
-    <p style="margin:28px 0 0;font-size:12px;color:#78716c">${escapeHtml(footer)}</p>
+    <p style="margin:28px 0 0;font-size:12px;color:#5B6470">${escapeHtml(footer)}</p>
   </div></body></html>`;
 }
 

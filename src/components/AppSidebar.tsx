@@ -19,7 +19,7 @@ import {
   Cog,
   Calculator,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import {
@@ -28,12 +28,14 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 type NavItem = {
   title: string;
@@ -69,7 +71,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Inventory",
+    label: "Stock",
     items: [
       { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
       { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
@@ -163,6 +165,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+        <Link to="/dashboard" onClick={handleNavItemClick} className="flex h-8 items-center gap-3 overflow-hidden">
+          <VeloDealerLogo variant="symbol" className="size-7" />
+          <span className="font-display text-lg font-bold text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
+            VeloDealer
+          </span>
+        </Link>
+      </SidebarHeader>
       <SidebarContent className="bg-sidebar">
         {!isInvestor && groups.length > 0 && groups.map((group) => (
           <SidebarGroup key={group.label}>

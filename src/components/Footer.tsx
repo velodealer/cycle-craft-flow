@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
-import { Bike } from 'lucide-react';
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,10 +10,8 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           {/* Brand */}
-          <div className="flex items-center space-x-2">
-            <Bike className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-foreground">VeloDealer</span>
-            <span className="text-sm text-muted-foreground">Bicycle Dealer Management System</span>
+          <div className="flex items-center">
+            <VeloDealerLogo className="h-9" />
           </div>
 
           {/* Links */}

@@ -8,6 +8,7 @@ import { LogOut, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import Footer from './Footer';
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -88,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
               <SidebarTrigger className="md:-ml-1" />
               
               <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-                <div className="font-display text-lg font-bold tracking-tight">VeloDealer</div>
+                <VeloDealerLogo variant="symbol" className="size-7 md:hidden" />
                 <div className="hidden sm:block flex-1">
                   <SearchBar />
                 </div>

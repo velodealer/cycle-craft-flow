@@ -9,18 +9,18 @@
 @layer base {
   :root {
     /* Raw board tokens */
-    --board: 213 28% 10%;
-    --panel: 213 27% 15%;
+    --board: 212 28.3% 10.4%;
+    --panel: 213 27% 14.5%;
     --panel-high: 213 26% 19%;
     --line: 212 24% 22%;
-    --chalk: 210 22% 93%;
-    --chalk-dim: 210 14% 60%;
-    --amber: 39 83% 55%;
+    --chalk: 210 22.2% 92.9%;
+    --chalk-dim: 211.2 12.3% 60.2%;
+    --amber: 38.4 83.5% 54.9%;
     --amber-tint: 39 40% 18%;
 
     /* Financial pair — figures only */
-    --gain: 154 48% 53%;
-    --loss: 358 75% 59%;
+    --gain: 151.3 49.8% 53.1%;
+    --loss: 358.1 75.1% 59%;
 
     /* shadcn mapping */
     --background: var(--board);
@@ -74,17 +74,17 @@
 
   /* Mirror of :root — a stray `dark` class must be a no-op. */
   .dark {
-    --board: 213 28% 10%;
-    --panel: 213 27% 15%;
+    --board: 212 28.3% 10.4%;
+    --panel: 213 27% 14.5%;
     --panel-high: 213 26% 19%;
     --line: 212 24% 22%;
-    --chalk: 210 22% 93%;
-    --chalk-dim: 210 14% 60%;
-    --amber: 39 83% 55%;
+    --chalk: 210 22.2% 92.9%;
+    --chalk-dim: 211.2 12.3% 60.2%;
+    --amber: 38.4 83.5% 54.9%;
     --amber-tint: 39 40% 18%;
 
-    --gain: 154 48% 53%;
-    --loss: 358 75% 59%;
+    --gain: 151.3 49.8% 53.1%;
+    --loss: 358.1 75.1% 59%;
 
     --background: var(--board);
     --foreground: var(--chalk);
