@@ -102,9 +102,9 @@ export function QuoteHistoryPanel({
                     <div
                       className={`tabular-nums ${
                         profit > 0
-                          ? "text-green-600"
+                          ? "text-gain"
                           : profit < 0
-                          ? "text-red-600"
+                          ? "text-loss"
                           : "text-muted-foreground"
                       }`}
                     >

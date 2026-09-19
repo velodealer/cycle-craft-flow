@@ -329,7 +329,7 @@ export default function TypeformIntegration() {
                           ) : !hook ? (
                             <span className="text-muted-foreground">Checking Typeform…</span>
                           ) : liveOk ? (
-                            <span className="text-green-600 dark:text-green-500">Confirmed live at Typeform</span>
+                            <span className="text-gain">Confirmed live at Typeform</span>
                           ) : live?.registered ? (
                             <span className="text-destructive">
                               Set up at Typeform but {live.enabled ? 'pointing somewhere else' : 'switched off'} — re-connect it

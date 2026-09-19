@@ -16,6 +16,8 @@ import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
 import { useStorageBays } from '@/hooks/useStorageBays';
+import { StageFlap } from '@/components/velo/StageFlap';
+import { MarginTriple } from '@/components/velo/MarginTriple';
 
 interface Bike {
   id: string;
@@ -157,29 +159,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
     setBikes((prev) => prev.map((b) => (b.id === bikeId ? { ...b, storage_bay_id: bayId } : b)));
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      'intake': 'outline',
-      'cleaning': 'secondary',
-      'inspection': 'secondary',
-      'pending_approval': 'destructive',
-      'repair': 'destructive',
-      'ready': 'default',
-      'listed': 'default',
-      'sold': 'secondary'
-    };
-
-    const labels: Record<string, string> = {
-      'pending_approval': 'Awaiting Approval',
-      'ready': 'Ready for Sale'
-    };
-
-    return (
-      <Badge variant={variants[status] || 'outline'}>
-        {labels[status] || status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
+  const getStatusBadge = (status: string) => <StageFlap stage={status} />;
 
   const getSourceBadge = (source: string) => {
     const label = source === 'owned' ? 'Owned' : source === 'investor' ? 'Investor' : 'Consignment';
@@ -300,7 +280,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                       {bike.make} {bike.model}
                       {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
                     </div>
-                    <div className="text-xs font-mono text-muted-foreground">{bikeRef(bike as any)}</div>
+                    <div className="id-text">{bikeRef(bike as any)}</div>
                     <div className="flex flex-wrap gap-2">
                       {getStatusBadge(bike.status)}
                       {getSourceBadge(bike.source)}
@@ -382,11 +362,10 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{bike.make} {bike.model}</div>
-                        <div className="text-xs font-mono text-muted-foreground">{bikeRef(bike as any)}</div>
-                        {bike.year && (
-                          <div className="text-sm text-muted-foreground">{bike.year}</div>
-                        )}
+                        <div className="font-medium">
+                          {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
+                        </div>
+                        <div className="id-text">{bikeRef(bike as any)}</div>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(bike.status)}</TableCell>
@@ -399,14 +378,18 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                         size="sm"
                       />
                     </TableCell>
-                    <TableCell>
-                      {bike.asking_price ? `£${bike.asking_price.toFixed(2)}` : '-'}
+                    <TableCell className="text-right tabular">
+                      {bike.asking_price ? `£${bike.asking_price.toFixed(0)}` : '£—'}
                     </TableCell>
-                    <TableCell>
-                      {bike.sale_price ? `£${bike.sale_price.toFixed(2)}` : '-'}
+                    <TableCell className="text-right">
+                      {bike.sale_price ? (
+                        <MarginTriple cost={bike.asking_price} asking={bike.sale_price} />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
-                    <TableCell>
-                      {new Date(bike.created_at).toLocaleDateString()}
+                    <TableCell className="tabular text-muted-foreground">
+                      {new Date(bike.created_at).toLocaleDateString('en-GB')}
                     </TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm" onClick={() => onEdit(bike)}>

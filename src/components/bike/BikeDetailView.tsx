@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2 } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
+import { StageFlap } from '@/components/velo/StageFlap';
+import { MarginTriple } from '@/components/velo/MarginTriple';
 import BreakBikeDialog from './BreakBikeDialog';
 import DeleteBikeDialog from './DeleteBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
@@ -238,14 +240,14 @@ export default function BikeDetailView({
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to List
           </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {bike.make} {bike.model}
+          <div className="space-y-1">
+            <h1 className="font-display text-[28px] font-bold leading-tight">
+              {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
             </h1>
-            <p className="text-muted-foreground text-sm">
-              {bike.year && `${bike.year} • `}
-              <span className="font-mono">{bikeRef(bike as any)}</span>
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="id-text">{bikeRef(bike as any)}</span>
+              <StageFlap stage={bike.status} />
+            </div>
           </div>
         </div>
         {!inspectionMode && (
@@ -416,80 +418,7 @@ export default function BikeDetailView({
             <BikeCostsSection bikeId={bike.id} onChange={refreshCosts} />
           )}
 
-          {/* Pricing Information */}
-          {canSeePricing && !inspectionMode && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing & Finance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Purchase Price</label>
-                    <p className="text-lg font-semibold">{formatCurrency(bike.purchase_price)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Asking Price</label>
-                    <p className="text-lg font-semibold">{formatCurrency(bike.asking_price)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Sale Price</label>
-                    <p className="text-lg font-semibold">{formatCurrency(bike.sale_price)}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">VAT Scheme</label>
-                    <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
-                  </div>
-                  {bike.purchase_date && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">Purchase Date</label>
-                      <p className="text-base">{new Date(bike.purchase_date).toLocaleDateString()}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 rounded-lg border p-3">
-                  <div className="text-sm font-medium">QuickBooks postings</div>
-                  <div className="mt-2 space-y-1 text-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-muted-foreground">
-                        Stock in {stockInDocNumber(bike.reference) ? `· ${stockInDocNumber(bike.reference)}` : ''}
-                      </span>
-                      <Badge variant={bike.purchase_sync_status === 'synced' ? 'default' : bike.purchase_sync_status === 'failed' ? 'destructive' : 'secondary'}>
-                        {bike.purchase_sync_status === 'synced'
-                          ? 'Posted'
-                          : bike.purchase_sync_status === 'failed'
-                            ? 'Failed'
-                            : bike.purchase_sync_status === 'skipped'
-                              ? 'No purchase price'
-                              : 'Not posted'}
-                      </Badge>
-                    </div>
-                    {bike.purchase_sync_error && (
-                      <p className="text-xs text-destructive">{bike.purchase_sync_error}</p>
-                    )}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-muted-foreground">
-                        Stock out {stockOutDocNumber(bike.reference) ? `· ${stockOutDocNumber(bike.reference)}` : ''}
-                      </span>
-                      <Badge variant={bike.status === 'sold' ? 'default' : 'secondary'}>{bike.status === 'sold' ? 'Posted on sale' : 'Pending sale'}</Badge>
-                    </div>
-                  </div>
-                </div>
-
-
-                <BikeCostBreakdown
-                  bike={bike}
-                  partsCost={partsCost}
-                  jobsCost={jobsCost}
-                  strippedInventoryValue={strippedInventoryValue}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Pricing & finance lives in the rail (see below) */}
 
           {!isMechanic && !inspectionMode && <ShopifyListingCard bikeId={bike.id} />}
 
@@ -548,8 +477,95 @@ export default function BikeDetailView({
           )}
         </div>
 
-        {/* Tasks & Timeline */}
+        {/* Rail: money, logistics, history */}
         <div className="space-y-6">
+          {/* Pricing & finance */}
+          {canSeePricing && !inspectionMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Pricing &amp; finance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <MarginTriple cost={bike.purchase_price} asking={bike.asking_price} className="text-lg" />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="label-text">Purchase</p>
+                    <p className="text-base font-medium tabular">{formatCurrency(bike.purchase_price)}</p>
+                  </div>
+                  <div>
+                    <p className="label-text">Asking</p>
+                    <p className="text-base font-medium tabular">{formatCurrency(bike.asking_price)}</p>
+                  </div>
+                  <div>
+                    <p className="label-text">Sale</p>
+                    <p className="text-base font-medium tabular">{formatCurrency(bike.sale_price)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="label-text">VAT scheme</p>
+                    <p className="text-base capitalize">{bike.finance_scheme?.replace('_', ' ') || '-'}</p>
+                  </div>
+                  {bike.purchase_date && (
+                    <div>
+                      <p className="label-text">Purchase date</p>
+                      <p className="text-base tabular">{new Date(bike.purchase_date).toLocaleDateString('en-GB')}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 rounded-md border p-3">
+                  <div className="label-text">QuickBooks postings</div>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        Stock in {stockInDocNumber(bike.reference) ? `· ${stockInDocNumber(bike.reference)}` : ''}
+                      </span>
+                      <Badge
+                        variant={
+                          bike.purchase_sync_status === 'synced'
+                            ? 'success'
+                            : bike.purchase_sync_status === 'failed'
+                              ? 'destructive'
+                              : 'secondary'
+                        }
+                      >
+                        {bike.purchase_sync_status === 'synced'
+                          ? 'Posted'
+                          : bike.purchase_sync_status === 'failed'
+                            ? 'Failed'
+                            : bike.purchase_sync_status === 'skipped'
+                              ? 'No purchase price'
+                              : 'Not posted'}
+                      </Badge>
+                    </div>
+                    {bike.purchase_sync_error && (
+                      <p className="text-xs text-destructive">{bike.purchase_sync_error}</p>
+                    )}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        Stock out {stockOutDocNumber(bike.reference) ? `· ${stockOutDocNumber(bike.reference)}` : ''}
+                      </span>
+                      <Badge variant={bike.status === 'sold' ? 'success' : 'secondary'}>
+                        {bike.status === 'sold' ? 'Posted on sale' : 'Pending sale'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <BikeCostBreakdown
+                  bike={bike}
+                  partsCost={partsCost}
+                  jobsCost={jobsCost}
+                  strippedInventoryValue={strippedInventoryValue}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Saved sale draft */}
           {!inspectionMode && saleDraft && bike.status !== 'sold' && (
             <Card>

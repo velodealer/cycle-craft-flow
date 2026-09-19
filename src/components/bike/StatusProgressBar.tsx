@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Circle, Clock, Truck } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StatusProgressBarProps {
@@ -85,55 +84,38 @@ export default function StatusProgressBar({ currentStatus, className, bikeId }: 
     return 'upcoming';
   };
 
-  const getStageIcon = (status: string, isCollection?: boolean) => {
-    if (isCollection) {
-      switch (status) {
-        case 'completed':
-          return <CheckCircle className="h-5 w-5 text-green-500" />;
-        case 'current':
-          return <Truck className="h-5 w-5 text-blue-500" />;
-        default:
-          return <Truck className="h-5 w-5 text-muted-foreground" />;
-      }
-    }
-    
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'current':
-        return <Clock className="h-5 w-5 text-blue-500" />;
-      default:
-        return <Circle className="h-5 w-5 text-muted-foreground" />;
-    }
-  };
-
-  const getBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'default' as const;
-      case 'current':
-        return 'secondary' as const;
-      default:
-        return 'outline' as const;
-    }
-  };
-
   return (
-    <div className={`space-y-4 ${className}`}>
-      <h3 className="text-lg font-medium">Status Progress</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+    <div className={`space-y-3 ${className}`}>
+      <h3 className="label-text">Stage</h3>
+      <div className="flex items-start gap-1 overflow-x-auto pb-1">
         {stages.map((stage, index) => {
           const status = getStageStatus(index);
-          const isCollection = 'isCollection' in stage && stage.isCollection;
           return (
-            <div key={stage.key} className="flex flex-col items-center space-y-2">
-              {getStageIcon(status, isCollection)}
-              <Badge 
-                variant={getBadgeVariant(status)} 
-                className={`text-xs text-center ${isCollection ? 'border-blue-500/50' : ''}`}
+            <div key={stage.key} className="flex min-w-[92px] flex-1 flex-col items-center gap-2">
+              <div className="flex w-full items-center">
+                <span
+                  className={`h-px flex-1 ${index === 0 ? 'bg-transparent' : status === 'upcoming' ? 'bg-border' : 'bg-border'}`}
+                />
+                {status === 'completed' ? (
+                  <CheckCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                ) : status === 'current' ? (
+                  <span className="h-3.5 w-3.5 shrink-0 rounded-full bg-primary ring-4 ring-primary/20" />
+                ) : (
+                  <Circle className="h-4 w-4 shrink-0 text-border" />
+                )}
+                <span className={`h-px flex-1 ${index === stages.length - 1 ? 'bg-transparent' : 'bg-border'}`} />
+              </div>
+              <span
+                className={`label-text text-center leading-tight ${
+                  status === 'current'
+                    ? 'text-primary'
+                    : status === 'completed'
+                      ? 'text-muted-foreground'
+                      : 'text-muted-foreground/60'
+                }`}
               >
                 {stage.label}
-              </Badge>
+              </span>
             </div>
           );
         })}
