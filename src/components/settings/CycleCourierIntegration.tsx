@@ -331,8 +331,10 @@ export default function CycleCourierIntegration() {
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </div>
+        )}
 
-        {/* Webhook URL */}
+        {/* Webhook URL — super admin only */}
+        {isSuperAdmin && (
         <div className="space-y-4 pt-4 border-t">
           <div>
             <h4 className="font-medium mb-1">Webhook Configuration</h4>
