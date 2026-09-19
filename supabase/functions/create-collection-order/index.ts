@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
-import { cycleCourierFetch } from '../_shared/cycle-courier.ts';
+import { cycleCourierFetch, extractTrackingNumber } from '../_shared/cycle-courier.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -187,7 +187,7 @@ serve(async (req) => {
     const responsePayload = await response.json();
     const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
     const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
-    const trackingNumber = responseData?.trackingNumber ?? responseData?.tracking_number ?? responseData?.tracking?.number ?? null;
+    const trackingNumber = extractTrackingNumber(responseData);
     console.log('Collection order created:', responseData);
 
     // 6. Update collection record with API response

@@ -3,7 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { notifyLogistics } from '../_shared/email.ts';
-import { cycleCourierFetch } from '../_shared/cycle-courier.ts';
+import { cycleCourierFetch, extractTrackingNumber } from '../_shared/cycle-courier.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
     const responsePayload = await response.json();
     const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
     const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
-    const trackingNumber = responseData?.trackingNumber ?? responseData?.tracking_number ?? responseData?.tracking?.number ?? null;
+    const trackingNumber = extractTrackingNumber(responseData);
     await supabase
       .from('bike_collections')
       .update({
