@@ -342,3 +342,51 @@ export function shouldApplyStatus(current: string | null | undefined, next: stri
   if ((from === 'cancelled' || from === 'failed') && next !== 'cancelled' && next !== 'failed') return false;
   return (STATUS_RANK[next] ?? 0) >= (STATUS_RANK[from] ?? 0) || next === 'cancelled' || next === 'failed';
 }
+
+/* ------------------------------------------------------------------ */
+/* Dealer-side (customer_side) helpers                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Cycle Courier fills the dealer's own side of the job from the address saved
+ * against our app on their account. This is the reply when no address is set.
+ */
+export const MISSING_SHOP_ADDRESS_MESSAGE =
+  'Add your shop address to your Cycle Courier account, then book again.';
+
+/** Turns a failed Cycle Courier response body into a message we can show. */
+export function friendlyCourierError(status: number, body: string): string {
+  if (status === 400 && body.includes('CUSTOMER_ADDRESS_MISSING')) {
+    return MISSING_SHOP_ADDRESS_MESSAGE;
+  }
+  return `API error: ${status} - ${body}`;
+}
+
+export interface CourierParty {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  street: string | null;
+  city: string | null;
+  postcode: string | null;
+  country: string | null;
+}
+
+/** Reads back a side of a created order (the dealer side is filled in by CCC). */
+export function extractParty(order: any, side: 'sender' | 'receiver'): CourierParty {
+  const party = order?.[side] ?? order?.[`${side}Details`] ?? {};
+  const address = party?.address ?? party ?? {};
+  const str = (v: unknown) => {
+    const s = typeof v === 'string' ? v.trim() : v == null ? '' : String(v);
+    return s ? s : null;
+  };
+  return {
+    name: str(party?.name),
+    email: str(party?.email),
+    phone: str(party?.phone),
+    street: str(address?.street),
+    city: str(address?.city),
+    postcode: str(address?.zipCode ?? address?.postcode ?? address?.zipcode),
+    country: str(address?.country),
+  };
+}
