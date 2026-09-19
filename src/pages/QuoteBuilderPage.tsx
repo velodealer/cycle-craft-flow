@@ -219,8 +219,7 @@ export default function QuoteBuilderPage() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             All quotes
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <Calculator className="h-6 w-6" />
+          <h1 className="font-display text-[26px] font-bold flex items-center gap-2">
             {isNew ? "New quote" : name || "Quote"}
             {!isNew && (
               <Badge variant="secondary" className="ml-2">

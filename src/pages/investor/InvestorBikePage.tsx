@@ -43,11 +43,11 @@ export default function InvestorBikePage() {
   useEffect(() => { load(); }, [load]);
 
   if (loading) return <div className="container mx-auto py-6 space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>;
-  if (!bike) return <div className="container mx-auto py-6"><h1 className="text-2xl font-bold">Bike not found</h1><Button asChild className="mt-4"><Link to="/investor">Back</Link></Button></div>;
+  if (!bike) return <div className="container mx-auto py-6"><h1 className="font-display text-[26px] font-bold">Bike not found</h1><Button asChild className="mt-4"><Link to="/investor">Back</Link></Button></div>;
 
   // Guard: only show if this investor owns the bike (RLS should already enforce)
   if (profile?.user_id && bike.investor_id && bike.investor_id !== profile.user_id) {
-    return <div className="container mx-auto py-6"><h1 className="text-2xl font-bold">Not authorised</h1></div>;
+    return <div className="container mx-auto py-6"><h1 className="font-display text-[26px] font-bold">Not authorised</h1></div>;
   }
 
   const partsCost = parts.reduce((s, p) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0);
@@ -83,13 +83,13 @@ export default function InvestorBikePage() {
   timeline.sort((a, b) => +new Date(a.date) - +new Date(b.date));
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="space-y-6">
       <Button variant="ghost" size="sm" asChild className="w-fit">
         <Link to="/investor"><ChevronLeft className="h-4 w-4 mr-2" />Back</Link>
       </Button>
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-3xl font-bold">{bike.make} {bike.model}</h1>
+          <h1 className="font-display text-[26px] font-bold text-foreground">{bike.make} {bike.model}</h1>
           <p className="text-muted-foreground text-sm">{bike.year && `${bike.year} • `}{bike.size || ''}</p>
         </div>
         <Badge variant="outline">{String(bike.status).replace(/_/g, ' ')}</Badge>
