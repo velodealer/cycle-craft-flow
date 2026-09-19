@@ -14,6 +14,7 @@ import CleaningTask from '@/components/bike/CleaningTask';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
 import { ListCard, ListCardRow, ListCardActions } from '@/components/ui/list-card';
+import { useNavigate } from 'react-router-dom';
 
 interface Bike {
   id: string;
@@ -30,6 +31,7 @@ interface Bike {
 
 
 export default function CleaningPage() {
+  const navigate = useNavigate();
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBike, setSelectedBike] = useState<any>(null);
@@ -111,7 +113,7 @@ export default function CleaningPage() {
       <Panel title={`In cleaning (${bikes.length})`} bodyClassName="p-0 md:p-0">
         <div className="p-4 md:p-0">
           {/* Mobile cards */}
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-3 lg:hidden">
             {bikes.length === 0 ? (
               <EmptyState
                 fact="Nothing in the cleaning queue."
@@ -126,16 +128,12 @@ export default function CleaningPage() {
                       checked={labelSel.selected.has(bike.id)}
                       onCheckedChange={() => labelSel.toggle(bike.id)}
                     />
-                    <BikeThumbnail
-                      photos={bike.photos}
-                      alt={`${bike.make} ${bike.model}`}
-                      className="h-20 w-20"
-                    />
+                    <button type="button" className="shrink-0" onClick={() => navigate(`/bikes/${bike.id}`)}><BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-20 w-20" /></button>
                     <div className="min-w-0 flex-1 space-y-2">
-                      <div className="font-semibold leading-tight break-words">
+                      <button type="button" className="block text-left font-semibold leading-tight break-words hover:underline" onClick={() => navigate(`/bikes/${bike.id}`)}>
                         {bike.make} {bike.model}
                         {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
-                      </div>
+                      </button>
                       <StageFlap stage="cleaning" />
                     </div>
                   </div>
@@ -161,15 +159,15 @@ export default function CleaningPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block overflow-hidden">
+          <div className="hidden lg:block overflow-hidden">
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead className="w-[36%]">Bike</TableHead>
-                  <TableHead className="w-[20%]">Frame</TableHead>
-                  <TableHead className="w-[25%]">Location</TableHead>
-                  <TableHead className="w-[19%]"><span className="sr-only">Actions</span></TableHead>
+                  <TableHead className="w-[35%]">Bike</TableHead>
+                  <TableHead className="w-[18%]">Frame</TableHead>
+                  <TableHead className="w-[22%]">Location</TableHead>
+                  <TableHead className="w-[25%]"><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -193,9 +191,9 @@ export default function CleaningPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex min-w-0 items-center gap-3">
-                          <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12 shrink-0" />
+                          <button type="button" className="shrink-0" onClick={() => navigate(`/bikes/${bike.id}`)}><BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12" /></button>
                           <div className="min-w-0">
-                          <div className="font-medium break-words">{bike.make} {bike.model}</div>
+                          <button type="button" className="block text-left font-medium break-words hover:underline" onClick={() => navigate(`/bikes/${bike.id}`)}>{bike.make} {bike.model}</button>
                           {bike.year && (
                             <div className="text-sm text-muted-foreground">{bike.year}</div>
                           )}

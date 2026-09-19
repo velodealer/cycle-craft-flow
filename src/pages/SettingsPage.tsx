@@ -9,6 +9,8 @@ import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
 import InspectABikeIntegration from '@/components/settings/InspectABikeIntegration';
 import EmailNotifications from '@/components/settings/EmailNotifications';
+import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
+import DeliverySettings from '@/components/settings/DeliverySettings';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -17,7 +19,6 @@ import SupportInbox from '@/components/settings/SupportInbox';
 import SuperAdminPanel from '@/components/settings/SuperAdminPanel';
 import BlogManager from '@/components/settings/BlogManager';
 import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SettingsPage() {
@@ -68,7 +69,6 @@ export default function SettingsPage() {
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="bays">Storage Bays</TabsTrigger>
           {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="inbox">Inbox</TabsTrigger>}
           {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="website">Website</TabsTrigger>}
-          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="security">Security</TabsTrigger>
           {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="super">Super Admin</TabsTrigger>}
         </TabsList>
 
@@ -78,7 +78,8 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="system">
-          <p className="text-sm text-muted-foreground">No dealership-wide system rules are currently configurable.</p>
+          <BikeReferenceSettings />
+          <DeliverySettings />
         </TabsContent>
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="integrations">
@@ -117,31 +118,6 @@ export default function SettingsPage() {
             <JobOpeningsManager />
           </TabsContent>
         )}
-
-        <TabsContent className="min-w-0 flex-1 space-y-4" value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security & Access Control</CardTitle>
-              <CardDescription>
-                Manage security settings and access controls
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Authentication Settings</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Audit Logs</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {isSuperAdmin && (
           <TabsContent className="min-w-0 flex-1 space-y-4" value="super">
