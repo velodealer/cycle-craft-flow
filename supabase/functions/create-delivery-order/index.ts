@@ -156,13 +156,14 @@ Deno.serve(async (req) => {
         tracking_number: trackingNumber,
         status: responseData.status || 'scheduled',
         error_message: null,
-        sender_name: shopSide.name,
-        sender_email: shopSide.email,
-        sender_phone: shopSide.phone,
-        address_street: shopSide.street,
-        address_city: shopSide.city,
-        address_postcode: shopSide.postcode,
-        address_country: shopSide.country,
+        sender_name: shopSide.name ?? '',
+        sender_email: shopSide.email ?? '',
+        sender_phone: shopSide.phone ?? '',
+        address_street: shopSide.street ?? '',
+        address_city: shopSide.city ?? '',
+        address_postcode: shopSide.postcode ?? '',
+        address_country: shopSide.country ?? 'UK',
+
       })
       .eq('id', delivery.id);
 
