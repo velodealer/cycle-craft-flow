@@ -237,3 +237,108 @@ export async function requireProfile(supabase: Client, userId: string) {
   if (error || !data) throw new Error('Profile not found');
   return data as { role: string; business_id: string };
 }
+
+/* ------------------------------------------------------------------ */
+/* Shared status + tracking normalisation                              */
+/* ------------------------------------------------------------------ */
+
+const STATUS_ALIASES: Record<string, string> = {
+  completed: 'delivered',
+  complete: 'delivered',
+  delivery_completed: 'delivered',
+  delivered_to_customer: 'delivered',
+  courier_delivered: 'delivered',
+  order_delivered: 'delivered',
+  picked_up: 'collected',
+  pickup_completed: 'collected',
+  collection_completed: 'collected',
+  driver_to_pickup: 'driver_to_collection',
+  intransit: 'in_transit',
+  in_transit: 'driver_to_delivery',
+  out_for_delivery: 'driver_to_delivery',
+  canceled: 'cancelled',
+  cancelled_by_customer: 'cancelled',
+};
+
+/** Maps any Cycle Courier status string onto our internal vocabulary. */
+export function normaliseCourierStatus(value: unknown): string {
+  const raw = String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!raw) return '';
+  return STATUS_ALIASES[raw] || raw;
+}
+
+/** Pulls a status out of any of the shapes the courier API/webhook uses. */
+export function extractCourierStatus(order: any): string {
+  const candidates = [
+    order?.status,
+    typeof order?.status === 'object' ? order?.status?.current ?? order?.status?.value ?? order?.status?.name : null,
+    order?.currentStatus,
+    order?.current_status,
+    order?.deliveryStatus,
+    order?.delivery_status,
+    order?.orderStatus,
+    order?.order_status,
+  ];
+  for (const candidate of candidates) {
+    const status = normaliseCourierStatus(candidate);
+    if (status) return status;
+  }
+  const history = order?.statusHistory ?? order?.status_history;
+  if (Array.isArray(history) && history.length) {
+    const last = history[history.length - 1];
+    return normaliseCourierStatus(last?.status ?? last?.name ?? last);
+  }
+  return '';
+}
+
+/** Pulls the customer-facing CCC tracking number out of any response shape. */
+export function extractTrackingNumber(order: any): string | null {
+  const candidates = [
+    order?.trackingNumber,
+    order?.tracking_number,
+    order?.tracking?.number,
+    order?.tracking?.trackingNumber,
+    order?.shipment?.trackingNumber,
+    order?.shipment?.tracking_number,
+    order?.cccNumber,
+    order?.ccc_number,
+    order?.consignmentNumber,
+    order?.consignment_number,
+    order?.reference,
+    order?.orderReference,
+    order?.order_reference,
+  ];
+  for (const candidate of candidates) {
+    const value = typeof candidate === 'string' ? candidate.trim() : candidate ? String(candidate).trim() : '';
+    if (value && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) return value;
+  }
+  return null;
+}
+
+const STATUS_RANK: Record<string, number> = {
+  created: 1,
+  pending: 1,
+  scheduled: 2,
+  driver_to_collection: 3,
+  collection_in_progress: 3,
+  collected: 4,
+  driver_to_delivery: 5,
+  in_transit: 5,
+  delivered: 9,
+  failed: 8,
+  cancelled: 8,
+};
+
+/**
+ * True when `next` should replace `current`.
+ * Delivered is terminal; a delivered update always wins over cancelled/failed.
+ */
+export function shouldApplyStatus(current: string | null | undefined, next: string): boolean {
+  if (!next) return false;
+  const from = String(current || '');
+  if (from === next) return false;
+  if (from === 'delivered') return false;
+  if (next === 'delivered') return true;
+  if ((from === 'cancelled' || from === 'failed') && next !== 'cancelled' && next !== 'failed') return false;
+  return (STATUS_RANK[next] ?? 0) >= (STATUS_RANK[from] ?? 0) || next === 'cancelled' || next === 'failed';
+}
