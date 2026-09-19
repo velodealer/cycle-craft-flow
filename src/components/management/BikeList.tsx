@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
@@ -200,8 +200,8 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="relative flex-1">
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="relative sm:col-span-2 xl:col-span-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search bikes..."
@@ -211,7 +211,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-44">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
@@ -227,7 +227,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             </SelectContent>
           </Select>
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-full md:w-40">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by source" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
@@ -238,7 +238,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             </SelectContent>
           </Select>
           <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-full md:w-44">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by location" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
@@ -252,7 +252,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             </SelectContent>
           </Select>
           <Select value={sizeFilter} onValueChange={setSizeFilter}>
-            <SelectTrigger className="w-full md:w-36">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by size" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
@@ -280,16 +280,14 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                     checked={labelSel.selected.has(bike.id)}
                     onCheckedChange={() => labelSel.toggle(bike.id)}
                   />
-                  <BikeThumbnail
-                    photos={bike.photos}
-                    alt={`${bike.make} ${bike.model}`}
-                    className="h-20 w-20"
-                  />
+                   <button type="button" className="shrink-0" onClick={() => onEdit(bike)} aria-label={`Open ${bike.make} ${bike.model}`}>
+                     <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-20 w-20" />
+                   </button>
                   <div className="min-w-0 flex-1 space-y-2">
-                    <div className="font-semibold leading-tight break-words">
+                     <button type="button" className="block text-left font-semibold leading-tight break-words hover:underline" onClick={() => onEdit(bike)}>
                       {bike.make} {bike.model}
                       {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
-                    </div>
+                     </button>
                     <div className="id-text">{bikeRef(bike as any)}</div>
                     <div className="flex flex-wrap gap-2">
                       {getStatusBadge(bike.status)}
@@ -319,34 +317,27 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                   />
                 </div>
 
-                <ListCardActions>
-                  <Button variant="outline" className="w-full" onClick={() => onEdit(bike)}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    View bike
-                  </Button>
-                </ListCardActions>
               </ListCard>
             ))
           )}
         </div>
 
         {/* Desktop table */}
-        <div className="hidden md:block rounded-md border overflow-hidden">
+        <div className="hidden lg:block rounded-md border overflow-hidden">
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>
-                <TableHead className="w-[34%]">Bike</TableHead>
-                <TableHead className="w-[18%]">Stage</TableHead>
-                <TableHead className="w-[24%]">Location</TableHead>
-                <TableHead className="w-[14%] text-right">Prices</TableHead>
-                <TableHead className="w-14"><span className="sr-only">Actions</span></TableHead>
+                <TableHead className="w-[38%]">Bike</TableHead>
+                <TableHead className="w-[17%]">Stage</TableHead>
+                <TableHead className="w-[25%]">Location</TableHead>
+                <TableHead className="w-[20%] text-right">Prices</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredBikes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     No bikes found
                   </TableCell>
                 </TableRow>
@@ -361,15 +352,13 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-3">
-                        <BikeThumbnail
-                          photos={bike.photos}
-                          alt={`${bike.make} ${bike.model}`}
-                          className="h-12 w-12 shrink-0"
-                        />
+                        <button type="button" className="shrink-0" onClick={() => onEdit(bike)} aria-label={`Open ${bike.make} ${bike.model}`}>
+                          <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12" />
+                        </button>
                         <div className="min-w-0">
-                        <div className="font-medium break-words">
+                        <button type="button" className="block text-left font-medium break-words hover:underline" onClick={() => onEdit(bike)}>
                           {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
-                        </div>
+                        </button>
                         <div className="id-text">{bikeRef(bike as any)}</div>
                         <div className="mt-1">{getSourceBadge(bike.source)}</div>
                         </div>
@@ -388,16 +377,26 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                       <div>{bike.asking_price ? `Ask £${bike.asking_price.toFixed(0)}` : 'Ask £—'}</div>
                       <div className="text-muted-foreground">{bike.sale_price ? `Sale £${bike.sale_price.toFixed(0)}` : `Added ${new Date(bike.created_at).toLocaleDateString('en-GB')}`}</div>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => onEdit(bike)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="hidden space-y-3 md:block lg:hidden">
+          {visibleBikes.map((bike) => (
+            <ListCard key={bike.id}>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(9rem,0.8fr)] items-start gap-4">
+                <Checkbox checked={labelSel.selected.has(bike.id)} onCheckedChange={() => labelSel.toggle(bike.id)} />
+                <div className="flex min-w-0 gap-3">
+                  <button type="button" className="shrink-0" onClick={() => onEdit(bike)}><BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-14 w-14" /></button>
+                  <div className="min-w-0"><button type="button" className="text-left font-semibold hover:underline" onClick={() => onEdit(bike)}>{bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}</button><div className="id-text">{bikeRef(bike as any)}</div><div className="mt-1 flex flex-wrap gap-2">{getStatusBadge(bike.status)}{getSourceBadge(bike.source)}</div></div>
+                </div>
+                <LocationSelect bikeId={bike.id} value={bike.storage_bay_id} onChange={(bayId) => handleLocationChange(bike.id, bayId)} size="sm" />
+              </div>
+            </ListCard>
+          ))}
         </div>
 
         {filteredBikes.length > 0 && (

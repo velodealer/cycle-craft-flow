@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Pencil, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,9 +40,11 @@ export default function LocationSelect({
   const [current, setCurrent] = useState<string | null>(value ?? null);
   const [bay, setBay] = useState('');
   const [number, setNumber] = useState('');
+  const [editing, setEditing] = useState(!value);
 
   useEffect(() => {
     setCurrent(value ?? null);
+    setEditing(!value);
   }, [value]);
 
   useEffect(() => {
@@ -90,6 +92,7 @@ export default function LocationSelect({
       }
 
       setCurrent(bayId);
+      setEditing(!bayId);
       onChange?.(bayId);
       toast({
         title: 'Location updated',
@@ -111,39 +114,40 @@ export default function LocationSelect({
   };
 
   const inputClass = cn(size === 'sm' ? 'h-8 text-xs' : '', className);
+  const currentBay = bays.find((item) => item.id === current);
+
+  if (currentBay && !editing) {
+    return (
+      <div className={cn('flex min-w-0 flex-col items-start gap-1', className)} onClick={(e) => e.stopPropagation()}>
+        <span className="max-w-full font-medium leading-tight break-words">
+          {currentBay.zone ? `${currentBay.zone} · ${currentBay.name}` : currentBay.name}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={() => setEditing(true)}
+        >
+          <Pencil className="mr-1 h-3 w-3" />
+          Change bay
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-      <Input
-        value={bay}
-        disabled={saving}
-        placeholder="Bay"
-        aria-label="Bay"
-        className={cn(inputClass, 'w-16 uppercase')}
-        onChange={(e) => setBay(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
-        onKeyDown={handleKeyDown}
-      />
-      <Input
-        value={number}
-        inputMode="numeric"
-        disabled={saving}
-        placeholder="No."
-        aria-label="Bay number"
-        className={cn(inputClass, 'w-16')}
-        onChange={(e) => setNumber(e.target.value.replace(/[^0-9]/g, ''))}
-        onKeyDown={handleKeyDown}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        size={size === 'sm' ? 'sm' : 'default'}
-        disabled={saving}
-        onClick={assign}
-        aria-label="Assign location"
-      >
-        <Check className="h-4 w-4" />
-        Assign
+    <div className={cn('grid min-w-0 grid-cols-[minmax(3.5rem,0.8fr)_minmax(3.5rem,0.8fr)] gap-1', className)} onClick={(e) => e.stopPropagation()}>
+      <Input value={bay} disabled={saving} placeholder="Bay" aria-label="Bay" className={cn(inputClass, 'w-full uppercase')} onChange={(e) => setBay(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())} onKeyDown={handleKeyDown} />
+      <Input value={number} inputMode="numeric" disabled={saving} placeholder="No." aria-label="Bay number" className={cn(inputClass, 'w-full')} onChange={(e) => setNumber(e.target.value.replace(/[^0-9]/g, ''))} onKeyDown={handleKeyDown} />
+      <Button type="button" variant="outline" size={size === 'sm' ? 'sm' : 'default'} className={current ? '' : 'col-span-2'} disabled={saving} onClick={assign} aria-label="Assign location">
+        <Check className="mr-1 h-4 w-4" /> Assign
       </Button>
+      {current && (
+        <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => { revert(); setEditing(false); }}>
+          <X className="mr-1 h-3 w-3" /> Cancel
+        </Button>
+      )}
     </div>
   );
 }
