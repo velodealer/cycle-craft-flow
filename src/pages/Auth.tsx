@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Bike } from 'lucide-react';
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 export default function Auth() {
   const { user, profile, signIn, signUp } = useAuth();
@@ -101,15 +101,11 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-accent rounded-full p-3">
-              <Bike className="h-8 w-8 text-accent-foreground" />
-            </div>
+          <div className="mb-4 flex justify-center">
+            <VeloDealerLogo className="h-14" />
           </div>
-          <CardTitle className="text-2xl">VeloDealer</CardTitle>
-          <CardDescription>
-            Bicycle Dealer Management System
-          </CardDescription>
+          <CardTitle className="sr-only">VeloDealer</CardTitle>
+          <CardDescription>Dealer management for the used bike trade</CardDescription>
         </CardHeader>
         <CardContent>
           {shopifyResult === 'connected' && (

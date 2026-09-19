@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bike, ArrowRight, Menu, User, LogOut } from 'lucide-react';
+import { ArrowRight, Menu, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 export const PUBLIC_NAV = [
   { to: '/features', label: 'Features' },
@@ -62,9 +63,9 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 border-b border-border bg-background">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link to="/" className="flex shrink-0 items-center gap-2 font-bold text-foreground">
-            <Bike className="h-6 w-6 text-primary" />
-            <span className="text-xl">VeloDealer</span>
+          <Link to="/" className="flex shrink-0 items-center" aria-label="VeloDealer home">
+            <VeloDealerLogo variant="symbol" className="size-8 sm:hidden" />
+            <VeloDealerLogo className="hidden h-9 sm:block" />
           </Link>
 
           <nav className="hidden flex-1 justify-center md:flex">
@@ -237,10 +238,7 @@ export function PublicFooter() {
       <div className="container mx-auto px-4">
         <div className="mb-8 grid gap-8 md:grid-cols-4">
           <div>
-            <div className="mb-3 flex items-center gap-2">
-              <Bike className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">VeloDealer</span>
-            </div>
+            <VeloDealerLogo className="mb-3 h-10" />
             <p className="text-sm text-muted-foreground">
               The complete bicycle dealer management system.
             </p>

@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 /** Slim, read-only frame for investor screens — no sidebar, mobile first. */
 export default function InvestorShell({ children }: { children: ReactNode }) {
@@ -11,8 +12,8 @@ export default function InvestorShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-3 px-4">
-          <Link to="/investor" className="font-display text-lg font-bold text-foreground">
-            VeloDealer
+          <Link to="/investor" aria-label="VeloDealer investor home">
+            <VeloDealerLogo className="h-8" />
           </Link>
           <div className="flex items-center gap-3">
             {profile?.name ? (

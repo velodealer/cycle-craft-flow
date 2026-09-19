@@ -28,12 +28,15 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Link } from "react-router-dom";
+import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 type NavItem = {
   title: string;
@@ -163,6 +166,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+        <Link to="/dashboard" onClick={handleNavItemClick} className="flex h-8 items-center gap-3 overflow-hidden">
+          <VeloDealerLogo variant="symbol" className="size-7" />
+          <span className="font-display text-lg font-bold text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
+            VeloDealer
+          </span>
+        </Link>
+      </SidebarHeader>
       <SidebarContent className="bg-sidebar">
         {!isInvestor && groups.length > 0 && groups.map((group) => (
           <SidebarGroup key={group.label}>
