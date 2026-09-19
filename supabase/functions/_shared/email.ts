@@ -71,6 +71,30 @@ async function resolveRecipients(
       .map((a) => String(a).trim())
       .filter((a) => a.includes('@'));
   }
+  // Website enquiries and job applications are VeloDealer-platform events:
+  // only the super admin(s) receive them, never dealership staff.
+  if (kind === 'support_ticket' || kind === 'job_application') {
+    const { data: admins, error: adminError } = await supabase
+      .from('super_admins')
+      .select('user_id');
+    if (adminError) {
+      console.error('email: failed to load super admins', adminError.message);
+      return [];
+    }
+    const ids = (admins ?? []).map((a: any) => a.user_id).filter(Boolean);
+    if (!ids.length) return [];
+    const { data: superProfiles, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .in('user_id', ids);
+    if (profileError) {
+      console.error('email: failed to load super admin profiles', profileError.message);
+      return [];
+    }
+    return (superProfiles ?? [])
+      .map((p: any) => String(p.email ?? '').trim())
+      .filter((e: string) => e.includes('@'));
+  }
   let query = supabase
     .from('profiles')
     .select('email, role')
