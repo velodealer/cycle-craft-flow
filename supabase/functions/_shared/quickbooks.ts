@@ -70,8 +70,8 @@ export function serviceClient() {
 }
 
 export function qboEnv() {
-  const env = (Deno.env.get('QUICKBOOKS_ENVIRONMENT') || 'sandbox').toLowerCase();
-  return env === 'production' ? 'production' : 'sandbox';
+  const env = (Deno.env.get('QUICKBOOKS_ENVIRONMENT') || 'sandbox').trim().toLowerCase();
+  return ['production', 'prod', 'live'].includes(env) ? 'production' : 'sandbox';
 }
 
 export function qboApiBase() {
