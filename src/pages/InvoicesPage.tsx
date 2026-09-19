@@ -156,7 +156,6 @@ export default function InvoicesPage() {
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-          </div>
         }
       >
         <div className="p-4 sm:p-0">
@@ -298,8 +297,8 @@ export default function InvoicesPage() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
 
       <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
         <AlertDialogContent>
