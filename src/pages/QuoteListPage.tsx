@@ -150,8 +150,8 @@ export default function QuoteListPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Panel>
     </div>
   );
 }
