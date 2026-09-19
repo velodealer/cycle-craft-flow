@@ -1,20 +1,17 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { cycleCourierFetch } from '../_shared/cycle-courier.ts';
+import {
+  cycleCourierFetch,
+  extractCourierStatus,
+  extractTrackingNumber,
+  shouldApplyStatus,
+} from '../_shared/cycle-courier.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 });
 
-const normaliseStatus = (value: unknown) => {
-  const status = String(value || '').toLowerCase().replace(/[\s-]+/g, '_');
-  const aliases: Record<string, string> = {
-    completed: 'delivered', delivery_completed: 'delivered', courier_delivered: 'delivered',
-    picked_up: 'collected', intransit: 'in_transit', canceled: 'cancelled',
-  };
-  return aliases[status] || status;
-};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
