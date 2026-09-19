@@ -8,7 +8,7 @@ import {
   serviceClient,
   hmacBase64,
   timingSafeEqual,
-  loadIntegration,
+  loadIntegrationByShop,
   type Client,
   type ShopifySettings,
 } from '../_shared/shopify.ts';
@@ -42,10 +42,10 @@ async function logEvent(
 
 /** Clears the stored connection + listing references for a shop that removed us. */
 async function disconnectShop(supabase: Client, shopDomain: string): Promise<string> {
-  const row = await loadIntegration(supabase);
+  const row = await loadIntegrationByShop(supabase, shopDomain);
   const settings = ((row?.settings ?? {}) as ShopifySettings) || {};
-  if (!row || !settings.shop_domain || settings.shop_domain !== shopDomain) {
-    console.log(`Redact/uninstall for ${shopDomain} did not match the stored store — nothing to clear.`);
+  if (!row || !settings.shop_domain) {
+    console.log(`Redact/uninstall for ${shopDomain} did not match a stored store — nothing to clear.`);
     return 'no_matching_store';
   }
 
