@@ -2,9 +2,11 @@
 
 Shopify's automated review is failing two checks: "Provides mandatory compliance webhooks" and "Verifies webhooks with HMAC signatures". The endpoint that answers those requests already exists in the app; what's missing is the declaration on Shopify's side, plus two fixes so the endpoint behaves correctly for every store.
 
-## What you do in the Shopify Partner Dashboard
+## What you do in the Shopify dev dashboard
 
-Open your app's configuration and set all three compliance fields to the same address:
+You do not need Google Pub/Sub or EventBridge — plain HTTPS delivery is what this app uses. The compliance fields are not in the webhooks/Pub-Sub section; they sit on your app's Configuration page, under "Compliance webhooks" (below the app URL and redirect URLs).
+
+Set all three fields to the same address:
 
 ```text
 https://api.velodealer.com/functions/v1/shopify-compliance
@@ -15,6 +17,7 @@ https://api.velodealer.com/functions/v1/shopify-compliance
 - Shop data erasure endpoint
 
 Save, then press "Run" on the automated checks again. These three fields can only be set here — they cannot be registered from the app.
+
 
 ## What I change in the app
 
