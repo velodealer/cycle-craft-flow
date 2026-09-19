@@ -142,7 +142,7 @@ export default function EmailNotifications() {
     });
   };
 
-  if (loading) return null;
+  if (loading || !superAdmin) return null;
 
   return (
     <Card>
