@@ -292,9 +292,8 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
-                    ) : collection.order_id ? (
-                      <div><span className="block text-xs text-muted-foreground">Order</span><span className="font-mono text-xs break-all">{collection.order_id}</span></div>
-                    ) : <span className="text-muted-foreground">-</span>}
+                    ) : <span className="text-xs text-muted-foreground">Awaiting tracking</span>}
+
                   </TableCell>
                    <TableCell>
                     <div className="text-sm">
