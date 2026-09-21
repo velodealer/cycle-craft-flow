@@ -223,6 +223,19 @@ export function isOptInError(text: string): boolean {
     || /not eligible for business polic/i.test(text);
 }
 
+/** Language tag eBay expects for each marketplace. */
+const MARKETPLACE_LANGUAGE: Record<string, string> = {
+  EBAY_GB: 'en-GB',
+  EBAY_US: 'en-US',
+  EBAY_AU: 'en-AU',
+  EBAY_IE: 'en-IE',
+  EBAY_CA: 'en-CA',
+  EBAY_DE: 'de-DE',
+  EBAY_FR: 'fr-FR',
+  EBAY_IT: 'it-IT',
+  EBAY_ES: 'es-ES',
+};
+
 /** eBay REST helper. Throws with eBay's own message on failure. */
 export async function ebayFetch<T = any>(
   conn: Connection,
@@ -230,12 +243,14 @@ export async function ebayFetch<T = any>(
   init: RequestInit = {},
 ): Promise<T> {
   const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+  const language = MARKETPLACE_LANGUAGE[marketplace] || 'en-GB';
   const res = await fetch(`${apiBase(conn.environment)}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${conn.accessToken}`,
       Accept: 'application/json',
-      'Content-Language': 'en-GB',
+      'Accept-Language': language,
+      'Content-Language': language,
       'X-EBAY-C-MARKETPLACE-ID': marketplace,
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
       ...(init.headers as Record<string, string> | undefined),
