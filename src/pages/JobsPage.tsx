@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState, PageHeader, Panel, QueueRow } from '@/components/velo/PageShell';
 import { bikeRef } from '@/lib/bikeReference';
 import { toast } from 'sonner';
+import { logActivity, money } from '@/lib/activity';
 
 interface JobRow {
   id: string;
@@ -77,6 +78,16 @@ export default function JobsPage() {
     if (error) {
       toast.error('Could not update the job.');
       return;
+    }
+    const nextStatus = patch.status as string | undefined;
+    if (nextStatus) {
+      const label = nextStatus === 'complete' ? 'completed' : nextStatus === 'in_progress' ? 'started' : 'set to pending';
+      logActivity(job.bike_id, {
+        kind: 'job',
+        action: nextStatus,
+        summary: `Job ${label}: ${job.title}${nextStatus === 'complete' ? ` (${money(job.actual_cost ?? job.estimated_cost)})` : ''}`,
+        detail: { job_id: job.id, status: nextStatus },
+      });
     }
     await load();
   };

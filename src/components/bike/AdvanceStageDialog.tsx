@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncEbayQuietly } from '@/services/ebay';
 import { ensureInspectionQuietly } from '@/services/inspectabike';
+import { logActivity } from '@/lib/activity';
 
 const advanceStageSchema = z.object({
   notes: z.string().optional(),
@@ -86,6 +87,23 @@ export default function AdvanceStageDialog({
         void ensureInspectionQuietly(bike.id);
       }
 
+
+      logActivity(bike.id, {
+        kind: 'status_change',
+        action: 'stage',
+        summary: `Moved to ${nextStageLabel}`,
+        detail: { from: bike.status, to: nextStage, note: values.notes?.trim() || undefined },
+        actorId: profile.id,
+      });
+      if (photos.length > 0) {
+        logActivity(bike.id, {
+          kind: 'photo',
+          action: 'added',
+          summary: `${photos.length} photo${photos.length === 1 ? '' : 's'} added at ${nextStageLabel}`,
+          detail: { count: photos.length },
+          actorId: profile.id,
+        });
+      }
 
       // Record a fulfilment event so notes/photos aren't lost
       const FULFILMENT_STAGES = ['intake', 'cleaning', 'inspection', 'repair', 'ready'];

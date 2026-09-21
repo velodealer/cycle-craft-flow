@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import { cn } from '@/lib/utils';
+import { logActivity } from '@/lib/activity';
 
 interface LocationSelectProps {
   /** When provided, the location is saved to this bike immediately. */
@@ -89,6 +90,12 @@ export default function LocationSelect({
           .update({ storage_bay_id: bayId })
           .eq('id', bikeId);
         if (error) throw error;
+        logActivity(bikeId, {
+          kind: 'storage',
+          action: bayId ? 'assigned' : 'cleared',
+          summary: name ? `Storage location set to ${name}` : 'Storage location cleared',
+          detail: { bay_id: bayId },
+        });
       }
 
       setCurrent(bayId);

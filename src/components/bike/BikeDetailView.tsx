@@ -18,7 +18,8 @@ import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
 import BikePhotoGallery from './BikePhotoGallery';
-import StageHistory from './StageHistory';
+import BikeActivity from './BikeActivity';
+import { logActivity, priceChangeSummaries } from '@/lib/activity';
 import AdminStatusSelect from './AdminStatusSelect';
 import ShopifyListingCard from './ShopifyListingCard';
 import EbayListingCard from './EbayListingCard';
@@ -119,6 +120,19 @@ export default function BikeDetailView({
     if (error) {
       toast({ title: 'Could not save the prices', description: error.message, variant: 'destructive' });
       return;
+    }
+    for (const change of priceChangeSummaries(bike, payload as any, {
+      purchase_price: 'Purchase price',
+      asking_price: 'Asking price',
+      sale_price: 'Sale price',
+    })) {
+      logActivity(bike.id, {
+        kind: 'price_change',
+        action: change.field,
+        summary: change.summary,
+        detail: { from: change.from, to: change.to },
+        actorId: profile?.id ?? null,
+      });
     }
     setEditingPrices(false);
     toast({ title: 'Prices updated' });
@@ -706,7 +720,7 @@ export default function BikeDetailView({
           <InspectionTask bike={bike} onUpdate={onUpdate} />
 
           {/* Stage notes & photos history */}
-          {!inspectionMode && <StageHistory bikeId={bike.id} />}
+          {!inspectionMode && <BikeActivity bikeId={bike.id} canSeePricing={canSeePricing} />}
 
 
 

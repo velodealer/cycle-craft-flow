@@ -4,6 +4,7 @@ import {
   serviceClient, normaliseFault, upsertFaults, syncBikeStatusFromFaults, isOpenFault,
 } from '../_shared/inspectabike.ts';
 import { notifyFaultsAwaitingApproval } from '../_shared/email.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -134,6 +135,13 @@ Deno.serve(async (req) => {
 
       await recomputeHasIssues(supabase, inspection.id);
       await syncBikeStatusFromFaults(supabase, inspection.bike_id, true);
+      await logBikeActivity(inspection.bike_id, {
+        kind: 'inspection',
+        action: 'completed',
+        summary: 'Inspection completed — all faults resolved',
+        detail: { faults: rows.length },
+        actorLabel: 'InspectABike',
+      }, inspection.business_id);
       return json({ received: true });
     }
 
@@ -153,7 +161,16 @@ Deno.serve(async (req) => {
         .eq('external_fault_id', row.external_fault_id)
         .maybeSingle();
       await upsertFaults(supabase, [row]);
-      if (!existingRow) await notifyFaultsAwaitingApproval(supabase, inspection.bike_id, [row]);
+      if (!existingRow) {
+        await notifyFaultsAwaitingApproval(supabase, inspection.bike_id, [row]);
+        await logBikeActivity(inspection.bike_id, {
+          kind: 'inspection',
+          action: 'fault_reported',
+          summary: `Fault reported: ${row.title}`,
+          detail: { component: row.component ?? null, severity: row.severity ?? null },
+          actorLabel: 'InspectABike',
+        }, inspection.business_id);
+      }
     } else {
       return json({ received: true });
     }

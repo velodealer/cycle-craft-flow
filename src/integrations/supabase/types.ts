@@ -46,6 +46,60 @@ export type Database = {
           },
         ]
       }
+      bike_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          bike_id: string
+          business_id: string
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          summary: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          bike_id: string
+          business_id: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          summary: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          bike_id?: string
+          business_id?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bike_activity_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bike_activity_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bike_collections: {
         Row: {
           address_city: string

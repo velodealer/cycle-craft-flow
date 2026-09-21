@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Trash2, PackageMinus, PackagePlus } from 'lucide-react';
 import StripPartDialog from './StripPartDialog';
 import AddPartFromInventoryDialog from './AddPartFromInventoryDialog';
+import { logActivity, money } from '@/lib/activity';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Props {
   bikeId: string;
@@ -22,6 +24,7 @@ const fmt = (n: number | null | undefined) => (n != null ? `£${Number(n).toFixe
 
 export default function BikeCostsSection({ bikeId, onChange }: Props) {
   const { toast } = useToast();
+  const { profile } = useAuth();
   const [parts, setParts] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
   const [showPart, setShowPart] = useState(false);
@@ -43,14 +46,30 @@ export default function BikeCostsSection({ bikeId, onChange }: Props) {
   const refresh = async () => { await load(); onChange?.(); };
 
   const removePart = async (id: string) => {
+    const removed = parts.find((p) => p.id === id);
     const { error } = await supabase.from('parts').delete().eq('id', id);
     if (error) return toast({ title: 'Failed to remove', description: error.message, variant: 'destructive' });
+    logActivity(bikeId, {
+      kind: 'part',
+      action: 'removed',
+      summary: `Part removed: ${removed?.description ?? 'part'}`,
+      detail: { part_id: id, cost: removed?.cost_price ?? null },
+      actorId: profile?.id ?? null,
+    });
     await refresh();
   };
 
   const removeJob = async (id: string) => {
+    const removed = jobs.find((j) => j.id === id);
     const { error } = await supabase.from('jobs').delete().eq('id', id);
     if (error) return toast({ title: 'Failed to remove', description: error.message, variant: 'destructive' });
+    logActivity(bikeId, {
+      kind: 'job',
+      action: 'removed',
+      summary: `Labour removed: ${removed?.title ?? 'job'}`,
+      detail: { job_id: id },
+      actorId: profile?.id ?? null,
+    });
     await refresh();
   };
 
@@ -172,6 +191,12 @@ function AddPartDialog({ open, onOpenChange, bikeId, onSaved }: { open: boolean;
     } as any);
     setSaving(false);
     if (error) return toast({ title: 'Failed to add part', description: error.message, variant: 'destructive' });
+    logActivity(bikeId, {
+      kind: 'part',
+      action: 'added',
+      summary: `Part added: ${description.trim()}${quantity > 1 ? ` x${quantity}` : ''} at ${money(costPrice === '' ? null : Number(costPrice))}`,
+      detail: { description: description.trim(), quantity, cost_price: costPrice === '' ? null : Number(costPrice), type },
+    });
     toast({ title: 'Part added' });
     reset();
     onOpenChange(false);
@@ -237,6 +262,12 @@ function AddJobDialog({ open, onOpenChange, bikeId, onSaved }: { open: boolean; 
     } as any);
     setSaving(false);
     if (error) return toast({ title: 'Failed to add labour', description: error.message, variant: 'destructive' });
+    logActivity(bikeId, {
+      kind: 'job',
+      action: 'added',
+      summary: `Labour added: ${title.trim()} (${status.replace(/_/g, ' ')}) at ${money(actualCost === '' ? (estimatedCost === '' ? null : Number(estimatedCost)) : Number(actualCost))}`,
+      detail: { title: title.trim(), type, status, estimated_cost: estimatedCost === '' ? null : Number(estimatedCost), actual_cost: actualCost === '' ? null : Number(actualCost) },
+    });
     toast({ title: 'Labour added' });
     reset();
     onOpenChange(false);

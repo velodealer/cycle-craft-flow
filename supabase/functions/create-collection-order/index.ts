@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
 import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -200,6 +201,14 @@ serve(async (req) => {
     }
 
     console.log('Collection order created successfully');
+
+    await logBikeActivity(bike_id, {
+      kind: 'logistics',
+      action: 'booked',
+      summary: `Collection booked with Cycle Courier${responseData.status ? ` (${responseData.status})` : ''}`,
+      detail: { order_id: responseData.id ?? null, status: responseData.status ?? null },
+      actorLabel: 'Cycle Courier',
+    });
 
     await notifyLogistics(supabase as any, bike_id, {
       direction: 'inbound',

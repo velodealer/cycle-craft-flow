@@ -7,6 +7,7 @@ import {
   deleteShopifyProduct,
   recordListingError,
 } from '../_shared/shopify-listing.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -36,11 +37,27 @@ Deno.serve(async (req) => {
   try {
     if (action === 'unlist') {
       const removed = await deleteShopifyProduct(supabase, bikeId);
+      if (removed) {
+        await logBikeActivity(bikeId, {
+          kind: 'listing',
+          action: 'removed',
+          summary: 'Shopify listing removed',
+          actorLabel: 'Shopify',
+        });
+      }
       return json({ ok: true, removed });
     }
 
     if (action === 'sold_out') {
       const updated = await markBikeSoldOut(supabase, bikeId);
+      if (updated) {
+        await logBikeActivity(bikeId, {
+          kind: 'listing',
+          action: 'sold_out',
+          summary: 'Shopify listing marked sold out',
+          actorLabel: 'Shopify',
+        });
+      }
       return json({ ok: true, updated });
     }
 
@@ -52,11 +69,25 @@ Deno.serve(async (req) => {
     if (error || !bike) return json({ error: 'Bike not found' }, 404);
 
     const result = await pushBikeToShopify(supabase, bike as any, 1);
+    await logBikeActivity(bikeId, {
+      kind: 'listing',
+      action: 'listed',
+      summary: 'Listed on Shopify',
+      detail: { product_id: result.productId, url: result.url },
+      actorLabel: 'Shopify',
+    }, (bike as any).business_id);
     return json({ ok: true, product_id: result.productId, url: result.url });
   } catch (e) {
     const message = (e as Error).message;
     console.error('shopify-sync-bike failed:', message);
     await recordListingError(supabase, bikeId, message);
+    await logBikeActivity(bikeId, {
+      kind: 'listing',
+      action: 'failed',
+      summary: 'Shopify listing failed',
+      detail: { note: message },
+      actorLabel: 'Shopify',
+    });
     return json({ error: message }, 400);
   }
 });

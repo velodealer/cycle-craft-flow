@@ -21,6 +21,7 @@ import { tryPostPurchase } from '@/lib/quickbooks';
 import OwnerForm from '@/components/management/OwnerForm';
 import AddInvestorDialog from '@/components/management/AddInvestorDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity } from '@/lib/activity';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useVatRegistered } from '@/hooks/useVatRegistered';
@@ -227,6 +228,19 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           .update(bikeData as any)
           .eq('id', bike.id);
         if (error) throw error;
+        const changed = Object.keys(bikeData).filter((key) => {
+          const before = (bike as any)[key];
+          const after = (bikeData as any)[key];
+          return JSON.stringify(before ?? null) !== JSON.stringify(after ?? null);
+        });
+        if (changed.length) {
+          logActivity(bike.id, {
+            kind: 'detail_change',
+            action: 'edited',
+            summary: `Bike details edited (${changed.map((c) => c.replace(/_/g, ' ')).join(', ')})`,
+            detail: { fields: changed },
+          });
+        }
         toast({ title: 'Bike updated successfully' });
       } else {
         const { data, error } = await supabase
@@ -236,6 +250,12 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           .single();
         if (error) throw error;
         bikeId = data.id;
+        logActivity(bikeId as string, {
+          kind: 'bike',
+          action: 'created',
+          summary: `Bike added: ${bikeData.make ?? ''} ${bikeData.model ?? ''}`.trim(),
+          detail: {},
+        });
         toast({ title: 'Bike created successfully' });
 
         // Post the purchase to QuickBooks stock (purchase price only).

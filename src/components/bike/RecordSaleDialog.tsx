@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity, money } from '@/lib/activity';
 import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
 import { syncShopifyQuietly } from '@/services/shopify';
@@ -319,6 +320,28 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         })
         .eq('id', bike.id);
       if (bikeError) throw bikeError;
+
+      logActivity(bike.id, {
+        kind: 'sale',
+        action: 'sold',
+        summary: `Sold for ${money(totals.gross)} — invoice ${invoice.invoice_number}${hasPartEx ? `, part exchange taken at ${money(totals.pxValue)}` : ''}`,
+        detail: {
+          invoice_id: invoice.id,
+          invoice_number: invoice.invoice_number,
+          sale_gross: totals.gross,
+          balance: totals.balance,
+          part_exchange_bike_id: partExBikeId,
+          note: notes.trim() || undefined,
+        },
+      });
+      if (partExBikeId) {
+        logActivity(partExBikeId, {
+          kind: 'bike',
+          action: 'created',
+          summary: `Taken in part exchange against invoice ${invoice.invoice_number} at ${money(totals.pxValue)}`,
+          detail: { invoice_id: invoice.id },
+        });
+      }
 
       await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
 

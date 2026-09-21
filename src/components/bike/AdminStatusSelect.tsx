@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { reverseSale } from '@/lib/quickbooks';
+import { logActivity } from '@/lib/activity';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { syncShopifyQuietly } from '@/services/shopify';
@@ -95,6 +96,14 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
         void ensureInspectionQuietly(bike.id);
       }
 
+
+      logActivity(bike.id, {
+        kind: 'status_change',
+        action: 'status',
+        summary: `Status changed from ${labelFor(bike.status)} to ${labelFor(pending)}`,
+        detail: { from: bike.status, to: pending },
+        actorId: profile?.id ?? null,
+      });
 
       if (profile?.id && FULFILMENT_STAGES.includes(pending)) {
         const { error: eventError } = await supabase.from('fulfilment_events').insert({

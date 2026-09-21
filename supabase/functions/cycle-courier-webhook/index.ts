@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
 import { extractCourierStatus, extractTrackingNumber, shouldApplyStatus } from '../_shared/cycle-courier.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 
 const corsHeaders = {
@@ -326,6 +327,14 @@ serve(async (req) => {
               && (updatedStatus === 'collected' || updatedStatus === 'delivered')) ? updatedStatus
               : null;
 
+
+    await logBikeActivity(collection.bike_id, {
+      kind: 'logistics',
+      action: String(eventType || 'update'),
+      summary: `Courier update (${collection.direction === 'outbound' ? 'delivery' : 'collection'}): ${String(eventType || 'update').replace(/[._]/g, ' ')}${updatedStatus ? ` — ${updatedStatus}` : ''}`,
+      detail: { order_id: collection.order_id, tracking_number: collection.tracking_number, event: eventType },
+      actorLabel: 'Cycle Courier',
+    }, collection.business_id);
 
     if (notifiableStatus) {
       await notifyLogistics(supabase as any, collection.bike_id, {
