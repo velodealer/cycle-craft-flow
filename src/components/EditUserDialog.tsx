@@ -17,7 +17,8 @@ const roles = [
   { value: 'accountant', label: 'Accountant', color: 'outline' },
   { value: 'owner', label: 'Bike Owner', color: 'default' },
   { value: 'investor', label: 'Investor', color: 'secondary' },
-  { value: 'social_manager', label: 'Social Manager', color: 'outline' }
+  { value: 'social_manager', label: 'Social Manager', color: 'outline' },
+  { value: 'customer_service', label: 'Customer Service', color: 'secondary' }
 ] as const;
 
 interface UserProfile {
