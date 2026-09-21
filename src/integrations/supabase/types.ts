@@ -271,6 +271,11 @@ export type Database = {
           barcode: string | null
           bike_type: string | null
           business_id: string
+          catalog_data: Json | null
+          catalog_size: string | null
+          catalog_source: string | null
+          catalog_source_id: string | null
+          catalog_synced_at: string | null
           collection_cost: number | null
           colour: string | null
           condition: string | null
@@ -327,6 +332,11 @@ export type Database = {
           barcode?: string | null
           bike_type?: string | null
           business_id?: string
+          catalog_data?: Json | null
+          catalog_size?: string | null
+          catalog_source?: string | null
+          catalog_source_id?: string | null
+          catalog_synced_at?: string | null
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
@@ -383,6 +393,11 @@ export type Database = {
           barcode?: string | null
           bike_type?: string | null
           business_id?: string
+          catalog_data?: Json | null
+          catalog_size?: string | null
+          catalog_source?: string | null
+          catalog_source_id?: string | null
+          catalog_synced_at?: string | null
           collection_cost?: number | null
           colour?: string | null
           condition?: string | null
