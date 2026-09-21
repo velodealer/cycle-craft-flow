@@ -232,6 +232,10 @@ export async function pushBikeToEbay(
   if (bike.asking_price == null || Number(bike.asking_price) <= 0) {
     throw new Error('Set an asking price on the bike before listing it on eBay.');
   }
+  if (!ebayBikeType(bike)) {
+    throw new Error('Add a bike type before listing on eBay.');
+  }
+
 
   const sku = skuFor(bike);
   const locationKey = await ensureLocation(conn);
