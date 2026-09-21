@@ -31,6 +31,8 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [bikeComponents, setBikeComponents] = useState<Record<string, string>>({}); // slot -> component_id
+  const [componentDetails, setComponentDetails] = useState<Record<string, any>>({}); // slot -> component row
+
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
   const [spokesOpen, setSpokesOpen] = useState(false);
 
