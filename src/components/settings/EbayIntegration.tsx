@@ -228,39 +228,9 @@ export default function EbayIntegration() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Postage policy</Label>
-                <Select value={fulfillment} onValueChange={setFulfillment}>
-                  <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
-                  <SelectContent className="max-h-[280px] overflow-y-auto">
-                    {policies.fulfillment.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Payment policy</Label>
-                <Select value={payment} onValueChange={setPayment}>
-                  <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
-                  <SelectContent className="max-h-[280px] overflow-y-auto">
-                    {policies.payment.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Returns policy</Label>
-                <Select value={returns} onValueChange={setReturns}>
-                  <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
-                  <SelectContent className="max-h-[280px] overflow-y-auto">
-                    {policies.returns.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {renderPolicyPicker('fulfillment', 'Postage policy', fulfillment, setFulfillment)}
+              {renderPolicyPicker('payment', 'Payment policy', payment, setPayment)}
+              {renderPolicyPicker('returns', 'Returns policy', returns, setReturns)}
               <div className="space-y-1.5">
                 <Label>Default item condition</Label>
                 <Select value={condition} onValueChange={setCondition}>
