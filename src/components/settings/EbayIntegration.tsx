@@ -16,9 +16,13 @@ import {
   saveEbaySettings,
   getEbayPolicies,
   searchEbayCategories,
+  type AnyPolicy,
+  type EbayPolicies,
   type EbayStatus,
+  type PolicyKind,
   type PolicyOption,
 } from '@/services/ebay';
+import EbayPolicyDialog from './EbayPolicyDialog';
 
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
@@ -44,9 +48,8 @@ export default function EbayIntegration() {
   const [fulfillment, setFulfillment] = useState('');
   const [payment, setPayment] = useState('');
   const [returns, setReturns] = useState('');
-  const [policies, setPolicies] = useState<{ fulfillment: PolicyOption[]; payment: PolicyOption[]; returns: PolicyOption[] }>({
-    fulfillment: [], payment: [], returns: [],
-  });
+  const [policies, setPolicies] = useState<EbayPolicies>({ fulfillment: [], payment: [], returns: [] });
+  const [policyDialog, setPolicyDialog] = useState<{ kind: PolicyKind; policy: AnyPolicy | null } | null>(null);
   const [categoryQuery, setCategoryQuery] = useState('');
   const [categories, setCategories] = useState<PolicyOption[]>([]);
   const [searchingCategories, setSearchingCategories] = useState(false);
@@ -163,6 +166,65 @@ export default function EbayIntegration() {
     }
   };
 
+  const selectPolicy = (kind: PolicyKind, id: string) => {
+    if (kind === 'fulfillment') setFulfillment(id);
+    if (kind === 'payment') setPayment(id);
+    if (kind === 'returns') setReturns(id);
+  };
+
+  const handlePolicySaved = (kind: PolicyKind, saved: AnyPolicy) => {
+    setPolicies((prev) => {
+      const list = prev[kind].filter((p) => p.id !== saved.id);
+      return { ...prev, [kind]: [...list, saved].sort((a, b) => a.name.localeCompare(b.name)) };
+    });
+    selectPolicy(kind, saved.id);
+    toast.success('Policy saved to eBay');
+  };
+
+  const handlePolicyDeleted = (kind: PolicyKind, policyId: string) => {
+    setPolicies((prev) => ({ ...prev, [kind]: prev[kind].filter((p) => p.id !== policyId) }));
+    if (kind === 'fulfillment' && fulfillment === policyId) setFulfillment('');
+    if (kind === 'payment' && payment === policyId) setPayment('');
+    if (kind === 'returns' && returns === policyId) setReturns('');
+    toast.success('Policy deleted');
+  };
+
+  const renderPolicyPicker = (
+    kind: PolicyKind,
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+  ) => {
+    const list = policies[kind] as AnyPolicy[];
+    const selected = list.find((p) => p.id === value) ?? null;
+    return (
+      <div className="space-y-1.5">
+        <Label>{label}</Label>
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
+          <SelectContent className="max-h-[280px] overflow-y-auto">
+            {list.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPolicyDialog({ kind, policy: null })}>
+            New
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!selected}
+            onClick={() => selected && setPolicyDialog({ kind, policy: selected })}
+          >
+            Edit
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -212,11 +274,11 @@ export default function EbayIntegration() {
 
             <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
               <p className="mr-auto text-xs text-muted-foreground">
-                Postage, payment and returns policies are created on eBay.
+                Create and edit your postage, payment and returns policies below — they save straight to eBay.
               </p>
               <Button variant="outline" size="sm" asChild>
                 <a href={policiesUrl} target="_blank" rel="noreferrer">
-                  Create or edit policies on eBay <ExternalLink className="ml-1 h-3 w-3" />
+                  Manage on eBay <ExternalLink className="ml-1 h-3 w-3" />
                 </a>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleRefreshPolicies} disabled={refreshingPolicies}>
@@ -228,39 +290,9 @@ export default function EbayIntegration() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Postage policy</Label>
-                <Select value={fulfillment} onValueChange={setFulfillment}>
-                  <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
-                  <SelectContent className="max-h-[280px] overflow-y-auto">
-                    {policies.fulfillment.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Payment policy</Label>
-                <Select value={payment} onValueChange={setPayment}>
-                  <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
-                  <SelectContent className="max-h-[280px] overflow-y-auto">
-                    {policies.payment.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Returns policy</Label>
-                <Select value={returns} onValueChange={setReturns}>
-                  <SelectTrigger><SelectValue placeholder="Choose a policy" /></SelectTrigger>
-                  <SelectContent className="max-h-[280px] overflow-y-auto">
-                    {policies.returns.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {renderPolicyPicker('fulfillment', 'Postage policy', fulfillment, setFulfillment)}
+              {renderPolicyPicker('payment', 'Payment policy', payment, setPayment)}
+              {renderPolicyPicker('returns', 'Returns policy', returns, setReturns)}
               <div className="space-y-1.5">
                 <Label>Default item condition</Label>
                 <Select value={condition} onValueChange={setCondition}>
@@ -369,6 +401,16 @@ export default function EbayIntegration() {
               in your eBay account.
             </p>
           </>
+        )}
+        {policyDialog && (
+          <EbayPolicyDialog
+            kind={policyDialog.kind}
+            policy={policyDialog.policy}
+            open
+            onOpenChange={(o) => { if (!o) setPolicyDialog(null); }}
+            onSaved={(saved) => handlePolicySaved(policyDialog.kind, saved)}
+            onDeleted={(id) => handlePolicyDeleted(policyDialog.kind, id)}
+          />
         )}
       </CardContent>
     </Card>

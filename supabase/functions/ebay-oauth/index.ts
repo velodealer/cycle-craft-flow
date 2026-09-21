@@ -50,6 +50,143 @@ function envFromState(state: string | null): EbayEnvironment {
   }
 }
 
+// ---- Business policies (Sell Account API v1) ----
+type PolicyKind = 'fulfillment' | 'payment' | 'returns';
+
+const POLICY_PATH: Record<PolicyKind, string> = {
+  fulfillment: 'fulfillment_policy',
+  payment: 'payment_policy',
+  returns: 'return_policy',
+};
+
+const CATEGORY_TYPES = [{ name: 'ALL_EXCLUDING_MOTORS_VEHICLES' }];
+
+/** Common UK postage services offered in the postage form. */
+const UK_SHIPPING_SERVICES = [
+  { code: 'UK_OtherCourier3Days', name: 'Courier — 3 days or less' },
+  { code: 'UK_OtherCourier', name: 'Courier — standard' },
+  { code: 'UK_RoyalMailSecondClassStandard', name: 'Royal Mail 2nd Class' },
+  { code: 'UK_RoyalMailFirstClassStandard', name: 'Royal Mail 1st Class' },
+  { code: 'UK_RoyalMailSpecialDelivery', name: 'Royal Mail Special Delivery' },
+  { code: 'UK_Parcelforce24', name: 'Parcelforce 24' },
+  { code: 'UK_Parcelforce48', name: 'Parcelforce 48' },
+  { code: 'UK_ParcelForceIntlDatapost', name: 'Parcelforce — other' },
+];
+
+const RETURN_PERIODS = [14, 30, 60];
+const HANDLING_DAYS = [0, 1, 2, 3, 5];
+
+const idField = (kind: PolicyKind, id: string | null) =>
+  id
+    ? {
+      fulfillment: { fulfillmentPolicyId: id },
+      payment: { paymentPolicyId: id },
+      returns: { returnPolicyId: id },
+    }[kind]
+    : {};
+
+/** Flattens an eBay policy into the shape the settings forms use. */
+function summarisePolicy(kind: PolicyKind, p: any) {
+  const base = {
+    id: p?.fulfillmentPolicyId ?? p?.paymentPolicyId ?? p?.returnPolicyId ?? null,
+    name: p?.name ?? '',
+    description: p?.description ?? '',
+  };
+  if (kind === 'payment') {
+    return { ...base, immediate_pay: Boolean(p?.immediatePay) };
+  }
+  if (kind === 'returns') {
+    return {
+      ...base,
+      returns_accepted: Boolean(p?.returnsAccepted),
+      return_period_days: Number(p?.returnPeriod?.value ?? 30),
+      return_shipping_cost_payer: p?.returnShippingCostPayer ?? 'BUYER',
+      refund_method: p?.refundMethod ?? 'MONEY_BACK',
+    };
+  }
+  const domestic = (p?.shippingOptions ?? []).find((o: any) => o?.optionType === 'DOMESTIC');
+  const service = domestic?.shippingServices?.[0];
+  return {
+    ...base,
+    handling_time_days: Number(p?.handlingTime?.value ?? 1),
+    shipping_service_code: service?.shippingServiceCode ?? UK_SHIPPING_SERVICES[0].code,
+    free_shipping: Boolean(service?.freeShipping),
+    shipping_cost: Number(service?.shippingCost?.value ?? 0),
+    local_pickup: Boolean(p?.pickupDropOff || p?.localPickup),
+  };
+}
+
+/** Validates the submitted form and builds the eBay request body. */
+function buildPolicyBody(
+  kind: PolicyKind,
+  body: Record<string, any>,
+  marketplaceId: string,
+  currency: string,
+): Record<string, unknown> {
+  const name = String(body.name ?? '').trim();
+  if (name.length < 1 || name.length > 64) {
+    throw new Error('Give the policy a name of up to 64 characters.');
+  }
+  const description = String(body.description ?? '').trim().slice(0, 250);
+  const base = { name, description, marketplaceId, categoryTypes: CATEGORY_TYPES };
+
+  if (kind === 'payment') {
+    return { ...base, immediatePay: Boolean(body.immediate_pay) };
+  }
+
+  if (kind === 'returns') {
+    const returnsAccepted = Boolean(body.returns_accepted);
+    if (!returnsAccepted) return { ...base, returnsAccepted: false };
+    const days = Number(body.return_period_days);
+    if (!RETURN_PERIODS.includes(days)) throw new Error('Choose a return window of 14, 30 or 60 days.');
+    const payer = String(body.return_shipping_cost_payer ?? 'BUYER');
+    if (!['BUYER', 'SELLER'].includes(payer)) throw new Error('Choose who pays the return postage.');
+    const refund = String(body.refund_method ?? 'MONEY_BACK');
+    if (!['MONEY_BACK', 'MONEY_BACK_OR_REPLACEMENT'].includes(refund)) {
+      throw new Error('Choose a valid refund method.');
+    }
+    return {
+      ...base,
+      returnsAccepted: true,
+      returnPeriod: { value: days, unit: 'DAY' },
+      returnShippingCostPayer: payer,
+      refundMethod: refund,
+    };
+  }
+
+  const handling = Number(body.handling_time_days ?? 1);
+  if (!HANDLING_DAYS.includes(handling)) throw new Error('Choose a valid handling time.');
+  const serviceCode = String(body.shipping_service_code ?? '');
+  if (!UK_SHIPPING_SERVICES.some((s) => s.code === serviceCode)) {
+    throw new Error('Choose a postage service.');
+  }
+  const free = Boolean(body.free_shipping);
+  const cost = Number(body.shipping_cost ?? 0);
+  if (!free && (!Number.isFinite(cost) || cost < 0 || cost > 10000)) {
+    throw new Error('Enter a postage cost between 0 and 10,000.');
+  }
+
+  return {
+    ...base,
+    handlingTime: { value: handling, unit: 'DAY' },
+    pickupDropOff: Boolean(body.local_pickup),
+    shippingOptions: [
+      {
+        optionType: 'DOMESTIC',
+        costType: 'FLAT_RATE',
+        shippingServices: [
+          {
+            sortOrder: 1,
+            shippingServiceCode: serviceCode,
+            freeShipping: free,
+            ...(free ? {} : { shippingCost: { value: cost.toFixed(2), currency } }),
+          },
+        ],
+      },
+    ],
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -197,27 +334,71 @@ Deno.serve(async (req) => {
     if (action === 'policies') {
       const conn = await requireConnection(supabase, businessId);
       const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
-      const get = async (kind: string, key: string) => {
+      const get = async (kind: PolicyKind, key: string) => {
         try {
           const data = await ebayFetch<any>(
             conn,
-            `/sell/account/v1/${kind}?marketplace_id=${marketplace}`,
+            `/sell/account/v1/${POLICY_PATH[kind]}?marketplace_id=${marketplace}`,
           );
-          return (data?.[key] ?? []).map((p: any) => ({
-            id: p[`${kind.replace('_policy', '')}PolicyId`] ?? p.fulfillmentPolicyId ?? p.paymentPolicyId ?? p.returnPolicyId,
-            name: p.name,
-          })).filter((p: any) => p.id);
+          return (data?.[key] ?? [])
+            .map((p: any) => summarisePolicy(kind, p))
+            .filter((p: any) => p.id);
         } catch (e) {
           console.error(`eBay ${kind} lookup failed:`, (e as Error).message);
           return [];
         }
       };
       const [fulfillment, payment, returns] = await Promise.all([
-        get('fulfillment_policy', 'fulfillmentPolicies'),
-        get('payment_policy', 'paymentPolicies'),
-        get('return_policy', 'returnPolicies'),
+        get('fulfillment', 'fulfillmentPolicies'),
+        get('payment', 'paymentPolicies'),
+        get('returns', 'returnPolicies'),
       ]);
       return json({ fulfillment, payment, returns });
+    }
+
+    if (action === 'shipping_services') {
+      return json({ services: UK_SHIPPING_SERVICES });
+    }
+
+    if (action === 'save_policy') {
+      const conn = await requireConnection(supabase, businessId);
+      const kind = String(body.kind ?? '') as PolicyKind;
+      if (!POLICY_PATH[kind]) return json({ error: 'Unknown policy type' }, 400);
+
+      const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+      const currency = conn.settings.currency || 'GBP';
+      let payload: Record<string, unknown>;
+      try {
+        payload = buildPolicyBody(kind, body, marketplace, currency);
+      } catch (e) {
+        return json({ error: (e as Error).message }, 400);
+      }
+
+      const policyId = typeof body.policy_id === 'string' && body.policy_id.trim()
+        ? body.policy_id.trim()
+        : null;
+      const path = policyId
+        ? `/sell/account/v1/${POLICY_PATH[kind]}/${encodeURIComponent(policyId)}`
+        : `/sell/account/v1/${POLICY_PATH[kind]}`;
+
+      const saved = await ebayFetch<any>(conn, path, {
+        method: policyId ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      });
+      return json({ ok: true, policy: summarisePolicy(kind, saved ?? { ...payload, ...idField(kind, policyId) }) });
+    }
+
+    if (action === 'delete_policy') {
+      const conn = await requireConnection(supabase, businessId);
+      const kind = String(body.kind ?? '') as PolicyKind;
+      const policyId = String(body.policy_id ?? '').trim();
+      if (!POLICY_PATH[kind]) return json({ error: 'Unknown policy type' }, 400);
+      if (!policyId) return json({ error: 'Choose a policy to delete' }, 400);
+
+      await ebayFetch(conn, `/sell/account/v1/${POLICY_PATH[kind]}/${encodeURIComponent(policyId)}`, {
+        method: 'DELETE',
+      });
+      return json({ ok: true });
     }
 
     if (action === 'categories') {

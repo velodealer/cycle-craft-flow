@@ -31,6 +31,43 @@ export interface EbayListing {
 
 export interface PolicyOption { id: string; name: string }
 
+export type PolicyKind = 'fulfillment' | 'payment' | 'returns';
+
+export interface EbayPolicyBase {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface FulfillmentPolicy extends EbayPolicyBase {
+  handling_time_days: number;
+  shipping_service_code: string;
+  free_shipping: boolean;
+  shipping_cost: number;
+  local_pickup: boolean;
+}
+
+export interface PaymentPolicy extends EbayPolicyBase {
+  immediate_pay: boolean;
+}
+
+export interface ReturnsPolicy extends EbayPolicyBase {
+  returns_accepted: boolean;
+  return_period_days: number;
+  return_shipping_cost_payer: 'BUYER' | 'SELLER';
+  refund_method: 'MONEY_BACK' | 'MONEY_BACK_OR_REPLACEMENT';
+}
+
+export type AnyPolicy = FulfillmentPolicy | PaymentPolicy | ReturnsPolicy;
+
+export interface EbayPolicies {
+  fulfillment: FulfillmentPolicy[];
+  payment: PaymentPolicy[];
+  returns: ReturnsPolicy[];
+}
+
+export interface ShippingService { code: string; name: string }
+
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke(fn, { body });
   if (error) {
@@ -55,11 +92,22 @@ export const getEbayAuthUrl = (environment: 'sandbox' | 'production') =>
 
 export const disconnectEbay = () => invoke<{ ok: true }>('ebay-oauth', { action: 'disconnect' });
 
-export const getEbayPolicies = () =>
-  invoke<{ fulfillment: PolicyOption[]; payment: PolicyOption[]; returns: PolicyOption[] }>(
-    'ebay-oauth',
-    { action: 'policies' },
-  );
+export const getEbayPolicies = () => invoke<EbayPolicies>('ebay-oauth', { action: 'policies' });
+
+export const getEbayShippingServices = () =>
+  invoke<{ services: ShippingService[] }>('ebay-oauth', { action: 'shipping_services' });
+
+/** Creates a policy on eBay, or updates it when policy_id is supplied. */
+export const saveEbayPolicy = (kind: PolicyKind, values: Record<string, unknown>, policyId?: string | null) =>
+  invoke<{ ok: true; policy: AnyPolicy }>('ebay-oauth', {
+    action: 'save_policy',
+    kind,
+    policy_id: policyId ?? null,
+    ...values,
+  });
+
+export const deleteEbayPolicy = (kind: PolicyKind, policyId: string) =>
+  invoke<{ ok: true }>('ebay-oauth', { action: 'delete_policy', kind, policy_id: policyId });
 
 export const searchEbayCategories = (query: string) =>
   invoke<{ categories: PolicyOption[] }>('ebay-oauth', { action: 'categories', query });
