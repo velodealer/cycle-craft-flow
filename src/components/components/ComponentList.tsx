@@ -124,8 +124,9 @@ export default function ComponentList() {
                 : 0;
               const open = !!expanded[r.id];
               return (
-                <>
-                  <TableRow key={r.id}>
+                <Fragment key={r.id}>
+                  <TableRow>
+
                     <TableCell className="align-top">
                       {details > 0 && (
                         <Button
