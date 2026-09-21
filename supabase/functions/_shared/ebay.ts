@@ -206,7 +206,7 @@ export async function requireConnection(supabase: Client, businessId: string): P
   }
 
   const fresh = await refreshAccessToken(env, settings.refresh_token);
-  const merged = await saveSettings(supabase, {
+  const merged = await saveSettings(supabase, businessId, {
     access_token: fresh.access_token,
     access_token_expires_at: new Date(Date.now() + fresh.expires_in * 1000).toISOString(),
   });
