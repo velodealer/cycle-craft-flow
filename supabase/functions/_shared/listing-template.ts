@@ -75,15 +75,21 @@ export function textToHtml(text: string): string {
     .join('');
 }
 
-/** Removes markup eBay rejects inside item descriptions. */
+/** Removes markup eBay rejects inside item descriptions. Keeps CSS (<style>) intact. */
 export function sanitiseForEbay(html: string): string {
   return html
-    .replace(/<\s*(script|iframe|form|object|embed|style|link|meta)[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
-    .replace(/<\s*(script|iframe|form|object|embed|style|link|meta)\b[^>]*\/?>/gi, '')
+    // active content eBay blocks outright
+    .replace(/<\s*(script|iframe|form|object|embed|applet)[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*(script|iframe|form|object|embed|applet)\b[^>]*\/?>/gi, '')
+    // document-level tags that do nothing inside a description
+    .replace(/<\s*\/?\s*(html|head|body)\b[^>]*>/gi, '')
+    .replace(/<\s*title\b[^>]*>[\s\S]*?<\s*\/\s*title\s*>/gi, '')
+    .replace(/<\s*(meta|link|base)\b[^>]*\/?>/gi, '')
     .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/javascript:/gi, '')
     .trim();
 }
+
 
 /** Loads the saved format for a platform, preferring the dealer's own row. */
 export async function loadListingTemplate(
