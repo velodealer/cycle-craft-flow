@@ -154,6 +154,8 @@ export const SPEC_SECTIONS: SectionDef[] = [
       { slot: 'rear_derailleur', label: 'Rear Derailleur', categorySlug: 'rear_derailleur' },
       { slot: 'shifters', label: 'Shifters', categorySlug: 'shifters' },
       { slot: 'bottom_bracket', label: 'Bottom Bracket', categorySlug: 'bottom_bracket' },
+      { slot: 'power_meter', label: 'Power Meter', categorySlug: 'power_meter' },
+
     ],
     fields: [
       { key: 'groupset', label: 'Groupset' },
