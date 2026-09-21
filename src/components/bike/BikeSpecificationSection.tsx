@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
+import ComponentAttributes from '@/components/components/ComponentAttributes';
+
 import StripComponentDialog from './StripComponentDialog';
 import { PackageMinus, Sparkles } from 'lucide-react';
 import SpokesApplyDialog from './SpokesApplyDialog';
