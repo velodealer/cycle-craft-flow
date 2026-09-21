@@ -16,9 +16,13 @@ import {
   saveEbaySettings,
   getEbayPolicies,
   searchEbayCategories,
+  type AnyPolicy,
+  type EbayPolicies,
   type EbayStatus,
+  type PolicyKind,
   type PolicyOption,
 } from '@/services/ebay';
+import EbayPolicyDialog from './EbayPolicyDialog';
 
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
@@ -44,9 +48,8 @@ export default function EbayIntegration() {
   const [fulfillment, setFulfillment] = useState('');
   const [payment, setPayment] = useState('');
   const [returns, setReturns] = useState('');
-  const [policies, setPolicies] = useState<{ fulfillment: PolicyOption[]; payment: PolicyOption[]; returns: PolicyOption[] }>({
-    fulfillment: [], payment: [], returns: [],
-  });
+  const [policies, setPolicies] = useState<EbayPolicies>({ fulfillment: [], payment: [], returns: [] });
+  const [policyDialog, setPolicyDialog] = useState<{ kind: PolicyKind; policy: AnyPolicy | null } | null>(null);
   const [categoryQuery, setCategoryQuery] = useState('');
   const [categories, setCategories] = useState<PolicyOption[]>([]);
   const [searchingCategories, setSearchingCategories] = useState(false);
@@ -212,11 +215,11 @@ export default function EbayIntegration() {
 
             <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
               <p className="mr-auto text-xs text-muted-foreground">
-                Postage, payment and returns policies are created on eBay.
+                Create and edit your postage, payment and returns policies below — they save straight to eBay.
               </p>
               <Button variant="outline" size="sm" asChild>
                 <a href={policiesUrl} target="_blank" rel="noreferrer">
-                  Create or edit policies on eBay <ExternalLink className="ml-1 h-3 w-3" />
+                  Manage on eBay <ExternalLink className="ml-1 h-3 w-3" />
                 </a>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleRefreshPolicies} disabled={refreshingPolicies}>
