@@ -355,7 +355,7 @@ export default function BikeDetailView({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
+            {!isMechanic && !isCustomerService && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
               <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
                 <Wrench className="h-4 w-4 mr-2" />
                 Break bike
@@ -483,7 +483,7 @@ export default function BikeDetailView({
           {!inspectionMode && <BikeSpecificationSection bike={bike} onUpdate={onUpdate} />}
 
           {/* Parts & Labour */}
-          {canSeePricing && !inspectionMode && (
+          {canSeeCosts && !inspectionMode && (
             <BikeCostsSection bikeId={bike.id} onChange={refreshCosts} />
           )}
 
@@ -494,7 +494,7 @@ export default function BikeDetailView({
           {!isMechanic && !inspectionMode && <EbayListingCard bikeId={bike.id} />}
 
 
-          {bike.source === 'investor' && !isMechanic && !inspectionMode && (
+          {bike.source === 'investor' && canSeeCosts && !inspectionMode && (
             <Card>
               <CardHeader>
                 <CardTitle>Investor</CardTitle>
@@ -561,9 +561,11 @@ export default function BikeDetailView({
                 )}
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <MarginTriple cost={bike.purchase_price} asking={bike.asking_price} className="text-lg" />
-                </div>
+                {canSeeCosts && (
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <MarginTriple cost={bike.purchase_price} asking={bike.asking_price} className="text-lg" />
+                  </div>
+                )}
                 {editingPrices ? (
                   <div className="mt-4 space-y-3">
                     <div className="grid grid-cols-3 gap-3">
