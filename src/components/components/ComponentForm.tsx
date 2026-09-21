@@ -21,7 +21,10 @@ export interface ComponentRecord {
   mpn: string | null;
   description: string | null;
   weight_g: number | null;
+  /** Extra manufacturer details pulled from the catalogue. */
+  attributes?: any;
 }
+
 
 interface Props {
   component?: ComponentRecord | null;
