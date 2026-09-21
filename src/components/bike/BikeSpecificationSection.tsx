@@ -36,13 +36,22 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
 
   const reloadComponents = () => {
     if (!bike?.id) return;
-    supabase.from('bike_components').select('slot, component_id').eq('bike_id', bike.id)
+    supabase
+      .from('bike_components')
+      .select('slot, component_id, notes, components(brand, model, mpn, weight_g, description, attributes)')
+      .eq('bike_id', bike.id)
       .then(({ data }) => {
         const map: Record<string, string> = {};
-        (data || []).forEach((r: any) => { map[r.slot] = r.component_id; });
+        const details: Record<string, any> = {};
+        (data || []).forEach((r: any) => {
+          map[r.slot] = r.component_id;
+          details[r.slot] = { ...(r.components || {}), notes: r.notes };
+        });
         setBikeComponents(map);
+        setComponentDetails(details);
       });
   };
+
 
   useEffect(() => { setDraft(bike); }, [bike]);
 
