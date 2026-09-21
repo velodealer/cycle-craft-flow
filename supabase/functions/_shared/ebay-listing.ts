@@ -372,7 +372,7 @@ export async function pushBikeToEbay(
       condition: bikeCondition,
       product: {
         title: bikeTitle(bike),
-        description: descriptionHtml,
+        description: inventorySummary(bike),
         imageUrls: images,
         aspects: itemAspects,
         brand: bike.make,
