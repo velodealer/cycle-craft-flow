@@ -162,6 +162,75 @@ async function requiredAspects(conn: Connection, categoryId: string): Promise<st
   }
 }
 
+/** eBay condition enums and their numeric ids. */
+const CONDITION_ID: Record<string, string> = {
+  NEW: '1000',
+  LIKE_NEW: '2750',
+  NEW_OTHER: '1500',
+  NEW_WITH_DEFECTS: '1750',
+  USED_EXCELLENT: '3000',
+  USED_VERY_GOOD: '4000',
+  USED_GOOD: '5000',
+  USED_ACCEPTABLE: '6000',
+  FOR_PARTS_OR_NOT_WORKING: '7000',
+};
+
+/** Where to fall back to when a category doesn't accept the chosen condition. */
+const CONDITION_FALLBACK: Record<string, string[]> = {
+  NEW: ['NEW', 'LIKE_NEW', 'NEW_OTHER', 'USED_EXCELLENT'],
+  LIKE_NEW: ['LIKE_NEW', 'NEW_OTHER', 'USED_EXCELLENT', 'NEW'],
+  NEW_OTHER: ['NEW_OTHER', 'LIKE_NEW', 'USED_EXCELLENT', 'NEW'],
+  NEW_WITH_DEFECTS: ['NEW_WITH_DEFECTS', 'NEW_OTHER', 'USED_EXCELLENT'],
+  USED_EXCELLENT: ['USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_GOOD', 'USED_ACCEPTABLE'],
+  USED_VERY_GOOD: ['USED_VERY_GOOD', 'USED_EXCELLENT', 'USED_GOOD', 'USED_ACCEPTABLE'],
+  USED_GOOD: ['USED_GOOD', 'USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_ACCEPTABLE'],
+  USED_ACCEPTABLE: ['USED_ACCEPTABLE', 'USED_GOOD', 'USED_EXCELLENT', 'USED_VERY_GOOD'],
+  FOR_PARTS_OR_NOT_WORKING: ['FOR_PARTS_OR_NOT_WORKING', 'USED_ACCEPTABLE'],
+};
+
+/** Condition ids a category accepts. Null when the lookup fails (then we don't second-guess). */
+async function allowedConditionIds(conn: Connection, categoryId: string): Promise<Set<string> | null> {
+  const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+  try {
+    const data = await ebayFetch<any>(
+      conn,
+      `/sell/metadata/v1/marketplace/${marketplace}/get_item_condition_policies?filter=categoryIds:%7B${encodeURIComponent(categoryId)}%7D`,
+    );
+    const policy = (data?.itemConditionPolicies ?? [])[0];
+    if (!policy) return null;
+    if (policy.itemConditionRequired === false && !(policy.itemConditions ?? []).length) return null;
+    const ids = (policy.itemConditions ?? [])
+      .map((c: any) => String(c?.conditionId || '').trim())
+      .filter(Boolean);
+    return ids.length ? new Set<string>(ids) : null;
+  } catch (e) {
+    console.warn('Could not read eBay condition policy:', (e as Error).message);
+    return null;
+  }
+}
+
+/** Picks a condition the category actually accepts, as close as possible to the chosen one. */
+async function resolveCondition(
+  conn: Connection,
+  categoryId: string,
+  wanted: string,
+): Promise<string> {
+  const allowed = await allowedConditionIds(conn, categoryId);
+  if (!allowed) return wanted;
+  const ok = (c: string) => CONDITION_ID[c] && allowed.has(CONDITION_ID[c]);
+  if (ok(wanted)) return wanted;
+  for (const candidate of CONDITION_FALLBACK[wanted] ?? []) {
+    if (ok(candidate)) {
+      console.log(`eBay category ${categoryId} rejects ${wanted}; using ${candidate}.`);
+      return candidate;
+    }
+  }
+  for (const candidate of Object.keys(CONDITION_ID)) {
+    if (ok(candidate)) return candidate;
+  }
+  return wanted;
+}
+
 
 function skuFor(bike: BikeRow) {
   return String(bike.reference || bike.id).replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 50);
