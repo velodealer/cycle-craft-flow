@@ -83,6 +83,48 @@ export default function BikeDetailView({
   const [bikeComponents, setBikeComponents] = useState<any[]>([]);
   const [saleDraft, setSaleDraft] = useState<any | null>(null);
   const [forceSaleDialog, setForceSaleDialog] = useState(false);
+  const [editingPrices, setEditingPrices] = useState(false);
+  const [savingPrices, setSavingPrices] = useState(false);
+  const [priceDraft, setPriceDraft] = useState({ purchase_price: '', asking_price: '', sale_price: '' });
+
+  const startEditPrices = () => {
+    setPriceDraft({
+      purchase_price: bike.purchase_price != null ? String(bike.purchase_price) : '',
+      asking_price: bike.asking_price != null ? String(bike.asking_price) : '',
+      sale_price: bike.sale_price != null ? String(bike.sale_price) : '',
+    });
+    setEditingPrices(true);
+  };
+
+  const savePrices = async () => {
+    const parse = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      const num = parseFloat(trimmed);
+      return Number.isFinite(num) ? num : NaN;
+    };
+    const payload = {
+      purchase_price: parse(priceDraft.purchase_price),
+      asking_price: parse(priceDraft.asking_price),
+      sale_price: parse(priceDraft.sale_price),
+    };
+    const invalid = Object.values(payload).some((v) => v !== null && (Number.isNaN(v as number) || (v as number) < 0));
+    if (invalid) {
+      toast({ title: 'Check the prices', description: 'Enter a number of 0 or more, or leave the box empty.', variant: 'destructive' });
+      return;
+    }
+    setSavingPrices(true);
+    const { error } = await supabase.from('bikes').update(payload).eq('id', bike.id);
+    setSavingPrices(false);
+    if (error) {
+      toast({ title: 'Could not save the prices', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setEditingPrices(false);
+    toast({ title: 'Prices updated' });
+    onUpdate();
+    refreshCosts();
+  };
 
   useEffect(() => {
     if (!bike?.id || inspectionMode) return;
