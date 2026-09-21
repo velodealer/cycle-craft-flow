@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 
 export type ListingPlatform = 'ebay' | 'shopify' | 'instagram' | 'facebook';
 export type ListingFormat = 'html' | 'text';
