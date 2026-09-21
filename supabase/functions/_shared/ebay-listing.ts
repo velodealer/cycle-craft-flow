@@ -109,6 +109,25 @@ export function bikeDescriptionHtml(bike: BikeRow): string {
   return `${paragraphs}${rows ? `<ul>${rows}</ul>` : ''}` || `<p>${escapeHtml(bikeTitle(bike))}</p>`;
 }
 
+/**
+ * The inventory item's product.description is capped at 4,000 characters by eBay
+ * (the offer's listingDescription allows 500,000 and carries the real listing copy).
+ * Produce a short plain-text summary that always fits.
+ */
+export function inventorySummary(bike: BikeRow): string {
+  const raw = (bike.listing_description || bike.description || '').toString();
+  const text = raw
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || bikeTitle(bike);
+  const LIMIT = 3900;
+  if (text.length <= LIMIT) return text;
+  const cut = text.slice(0, LIMIT);
+  const boundary = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  return (boundary > 500 ? cut.slice(0, boundary + 1) : cut.replace(/\s+\S*$/, '')).trim() + '…';
+}
+
 function aspects(bike: BikeRow): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   const add = (key: string, value: unknown) => {
@@ -353,7 +372,7 @@ export async function pushBikeToEbay(
       condition: bikeCondition,
       product: {
         title: bikeTitle(bike),
-        description: descriptionHtml,
+        description: inventorySummary(bike),
         imageUrls: images,
         aspects: itemAspects,
         brand: bike.make,
