@@ -1,6 +1,6 @@
 // Lists, updates, ends or removes a single bike on the connected eBay account.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { serviceClient, requireUser, requireRole } from '../_shared/ebay.ts';
+import { serviceClient, requireUser, requireRole, businessIdForUser, businessIdForBike } from '../_shared/ebay.ts';
 import {
   pushBikeToEbay,
   endEbayListing,
@@ -21,9 +21,11 @@ Deno.serve(async (req) => {
 
   const supabase = serviceClient();
 
+  let callerBusinessId: string;
   try {
     const user = await requireUser(req, supabase);
     await requireRole(supabase, user.id, STAFF);
+    callerBusinessId = await businessIdForUser(supabase, user.id);
   } catch (e) {
     return json({ error: (e as Error).message }, 401);
   }
@@ -34,6 +36,10 @@ Deno.serve(async (req) => {
   if (!bikeId) return json({ error: 'bike_id is required' }, 400);
 
   try {
+    if ((await businessIdForBike(supabase, bikeId)) !== callerBusinessId) {
+      return json({ error: 'Bike not found' }, 404);
+    }
+
     if (action === 'end') {
       const ended = await endEbayListing(supabase, bikeId);
       return json({ ok: true, ended });

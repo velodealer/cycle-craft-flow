@@ -350,6 +350,24 @@ export default function EbayIntegration() {
               {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
               Connect eBay
             </Button>
+            <p className="text-xs text-muted-foreground">
+              Disconnecting here removes the link from VeloDealer. eBay remembers that you allowed this app,
+              so connecting again may not ask for your permission a second time. To remove that permission,
+              visit{' '}
+              <a
+                className="underline"
+                href={
+                  environment === 'production'
+                    ? 'https://accounts.ebay.co.uk/acctsec/security-center/third-party-app-access'
+                    : 'https://accounts.sandbox.ebay.co.uk/acctsec/security-center/third-party-app-access'
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                third-party app access
+              </a>{' '}
+              in your eBay account.
+            </p>
           </>
         )}
       </CardContent>

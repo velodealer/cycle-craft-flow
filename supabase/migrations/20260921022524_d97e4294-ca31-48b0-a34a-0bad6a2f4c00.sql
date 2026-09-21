@@ -1,0 +1,1 @@
+REVOKE ALL ON public.ebay_oauth_states FROM anon, authenticated;
