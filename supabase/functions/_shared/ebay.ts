@@ -192,9 +192,9 @@ export interface Connection {
   settings: EbaySettings;
 }
 
-/** Returns a valid access token, refreshing and storing it when needed. */
-export async function requireConnection(supabase: Client): Promise<Connection> {
-  const settings = await loadSettings(supabase);
+/** Returns a valid access token for one dealership, refreshing and storing it when needed. */
+export async function requireConnection(supabase: Client, businessId: string): Promise<Connection> {
+  const settings = await loadSettings(supabase, businessId);
   const env: EbayEnvironment = settings.environment === 'production' ? 'production' : 'sandbox';
   if (!settings.refresh_token) {
     throw new Error('eBay is not connected — connect your seller account in Settings → Integrations.');
