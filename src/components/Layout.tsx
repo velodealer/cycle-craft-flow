@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import SearchBar from '@/components/SearchBar';
@@ -16,6 +16,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const { user, profile, signOut, loading, businessStatus, isSuperAdmin } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
 
   if (loading) {
     return (
