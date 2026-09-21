@@ -603,6 +603,8 @@ export default function BikeDetailView({
                     <p className="text-base font-medium tabular">{formatCurrency(bike.sale_price)}</p>
                   </div>
                 </div>
+                )}
+
 
                 <div className="mt-4 grid grid-cols-2 gap-4">
                   {vatRegistered && (
