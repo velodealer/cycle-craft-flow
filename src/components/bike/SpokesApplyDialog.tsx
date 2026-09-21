@@ -12,6 +12,7 @@ import SpokesLookup from '@/components/management/SpokesLookup';
 import {
   buildReviewRows,
   saveCatalogBike,
+  spokesCatalogColumns,
   upsertComponentsForBike,
   type MappedBike,
   type ReviewRow,
@@ -77,6 +78,8 @@ export default function SpokesApplyDialog({ bike, open, onOpenChange, onApplied 
         else spec = setAtPath(spec, path, r.incoming);
       });
       updates.spec_values = spec;
+      // Keep the complete source record with the bike, whatever was ticked.
+      Object.assign(updates, spokesCatalogColumns(payload.raw, payload.size));
 
       const { error } = await supabase.from('bikes').update(updates as any).eq('id', bike.id);
       if (error) throw error;
