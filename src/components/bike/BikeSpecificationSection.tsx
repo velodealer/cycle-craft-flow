@@ -284,6 +284,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {s.slots.map((slot) => {
                         const linkedId = bikeComponents[slot.slot] || null;
+                        const detail = componentDetails[slot.slot];
                         return (
                           <div key={slot.slot}>
                             <Label>{slot.label}</Label>
@@ -307,9 +308,25 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                                 </Button>
                               )}
                             </div>
+                            {linkedId && detail && (
+                              <div className="mt-1 space-y-1">
+                                {(detail.notes || detail.description) && (
+                                  <p className="text-xs text-muted-foreground">{detail.notes || detail.description}</p>
+                                )}
+                                {(detail.mpn || detail.weight_g) && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {[detail.mpn && `MPN ${detail.mpn}`, detail.weight_g && `${detail.weight_g} g`]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </p>
+                                )}
+                                <ComponentAttributes attributes={detail.attributes} />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
+
                     </div>
                   )}
                   {s.fields && s.fields.length > 0 && (
