@@ -71,27 +71,51 @@ function basicAuth() {
   return btoa(`${id}:${secret}`);
 }
 
-export async function loadIntegration(supabase: Client) {
+/** The dealership a signed-in user belongs to. */
+export async function businessIdForUser(supabase: Client, userId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('business_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error || !data?.business_id) throw new Error('Could not work out which dealership you belong to');
+  return (data as { business_id: string }).business_id;
+}
+
+/** The dealership a bike belongs to. */
+export async function businessIdForBike(supabase: Client, bikeId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('bikes')
+    .select('business_id')
+    .eq('id', bikeId)
+    .maybeSingle();
+  if (error || !data?.business_id) throw new Error('Bike not found');
+  return (data as { business_id: string }).business_id;
+}
+
+export async function loadIntegration(supabase: Client, businessId: string) {
   const { data, error } = await supabase
     .from('integrations')
     .select('*')
     .eq('name', EBAY_INTEGRATION_NAME)
+    .eq('business_id', businessId)
     .maybeSingle();
   if (error) throw new Error(`Failed to load eBay integration: ${error.message}`);
   return data;
 }
 
-export async function loadSettings(supabase: Client): Promise<EbaySettings> {
-  const row = await loadIntegration(supabase);
+export async function loadSettings(supabase: Client, businessId: string): Promise<EbaySettings> {
+  const row = await loadIntegration(supabase, businessId);
   return ((row?.settings ?? {}) as EbaySettings) || {};
 }
 
 export async function saveSettings(
   supabase: Client,
+  businessId: string,
   settings: EbaySettings,
   isActive = true,
 ): Promise<EbaySettings> {
-  const existing = await loadIntegration(supabase);
+  const existing = await loadIntegration(supabase, businessId);
   const merged = { ...((existing?.settings as EbaySettings) ?? {}), ...settings };
   if (existing) {
     const { error } = await supabase
@@ -104,6 +128,7 @@ export async function saveSettings(
       name: EBAY_INTEGRATION_NAME,
       display_name: 'eBay',
       is_active: isActive,
+      business_id: businessId,
       settings: merged,
     });
     if (error) throw new Error(error.message);
