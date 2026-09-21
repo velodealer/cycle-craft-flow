@@ -368,11 +368,48 @@ export function splitFrontRear(text: any, position?: 'front' | 'rear' | null): s
   return rear || s;
 }
 
+/**
+ * 99spokes packs real detail into one free-text line, e.g.
+ * "Shimano R7150 Di2, 36T max cog" or "Shimano 105 7101, 11-34, 12 speed".
+ * This reads the parts we can recognise out of it so they become proper fields
+ * instead of a sentence. Anything unrecognised simply stays in the description.
+ */
+export function parseSpecFromText(text?: string | null): { partNumber?: string; attributes: Record<string, any> } {
+  const s = typeof text === 'string' ? text.trim() : '';
+  const attributes: Record<string, any> = {};
+  if (!s) return { attributes };
+
+  const grab = (re: RegExp, key: string, transform?: (m: RegExpMatchArray) => any) => {
+    const m = s.match(re);
+    if (!m) return;
+    const v = transform ? transform(m) : m[1];
+    if (v !== undefined && v !== null && v !== '') attributes[key] = v;
+  };
+
+  grab(/(\d+)\s*T\s*max\s*cog/i, 'max_cog', (m) => `${m[1]}T`);
+  grab(/\b(\d{1,2})\s*[-–]\s*(\d{2})\b(?!\s*mm)/i, 'gear_range', (m) => `${m[1]}-${m[2]}`);
+  grab(/\b(\d{1,2})\s*[-\s]?speed\b/i, 'speeds', (m) => Number(m[1]));
+  grab(/\b(\d{2})\s*\/\s*(\d{2})\s*T?\b/i, 'chainring', (m) => `${m[1]}/${m[2]}T`);
+  grab(/\b(\d{3}(?:\.\d)?)\s*mm\s*(?:crank|arm)/i, 'crank_length_mm', (m) => Number(m[1]));
+  grab(/\b(1[4-8]0|2[02]0)\s*mm\s*(?:rotor|disc)/i, 'rotor_size_mm', (m) => Number(m[1]));
+  grab(/\b(\d{2,3})\s*mm\s*(?:of\s*)?travel/i, 'travel_mm', (m) => Number(m[1]));
+  grab(/\b(\d{2}(?:\.\d)?)\s*(?:c|mm)\s*(?:tyre|tire)/i, 'tyre_width_mm', (m) => Number(m[1]));
+  grab(/\b(\d{3,4})\s*mm\s*(?:bar|handlebar)/i, 'bar_width_mm', (m) => Number(m[1]));
+  grab(/\b(\d{2,3})\s*mm\s*stem/i, 'stem_length_mm', (m) => Number(m[1]));
+  grab(/\b(2[5-9](?:\.\d)?|3[0-5](?:\.\d)?)\s*mm\s*(?:seat\s*post|seatpost)/i, 'seatpost_diameter_mm', (m) => Number(m[1]));
+
+  // Part numbers: alphanumeric codes such as R7150, RD-R8150, M8100, 7101.
+  const pn = s.match(/\b((?:[A-Z]{2}-)?[A-Z]{1,3}-?\d{3,5}(?:-[A-Z0-9]{1,4})?)\b/);
+  const partNumber = pn ? pn[1] : undefined;
+  return { partNumber, attributes };
+}
+
 function push(list: MappedComponent[], slot: string, categorySlug: string, part: any, position?: 'front' | 'rear') {
   const l = label(part);
   if (!l) return;
-  const attributes = partAttributes(part);
   const description = position ? splitFrontRear(l.description, position) : l.description;
+  const derived = parseSpecFromText(description);
+  const attributes = { ...derived.attributes, ...partAttributes(part) };
   list.push({
     slot,
     categorySlug,
@@ -380,7 +417,7 @@ function push(list: MappedComponent[], slot: string, categorySlug: string, part:
     model: l.model,
     description: description ?? null,
     position: position ?? null,
-    mpn: part?.partNumber || part?.mpn || part?.sku || null,
+    mpn: part?.partNumber || part?.mpn || part?.sku || derived.partNumber || null,
     weightG: numberOrNull(part?.weightG ?? part?.weightGrams ?? part?.weightGrammes),
     attributes,
   });

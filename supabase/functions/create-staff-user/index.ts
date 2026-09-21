@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
-const ALLOWED_ROLES = ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'investor', 'social_manager'];
+const ALLOWED_ROLES = ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'investor', 'social_manager', 'customer_service'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

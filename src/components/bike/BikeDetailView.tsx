@@ -77,7 +77,10 @@ export default function BikeDetailView({
   const { vatRegistered } = useVatRegistered();
   const isMechanic = profile?.role === 'mechanic';
   const isAdmin = profile?.role === 'admin';
+  const isCustomerService = profile?.role === 'customer_service';
   const canSeePricing = showPricing && !isMechanic;
+  /** Purchase cost, profit and margin — hidden from customer service. */
+  const canSeeCosts = canSeePricing && !isCustomerService;
   const [partsCost, setPartsCost] = useState(0);
   const [jobsCost, setJobsCost] = useState(0);
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
@@ -352,7 +355,7 @@ export default function BikeDetailView({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            {!isMechanic && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
+            {!isMechanic && !isCustomerService && bike.status !== 'sold' && bike.status !== 'split_for_parts' && (
               <Button variant="outline" onClick={() => setShowBreak(true)} className="w-full sm:w-auto">
                 <Wrench className="h-4 w-4 mr-2" />
                 Break bike
@@ -480,7 +483,7 @@ export default function BikeDetailView({
           {!inspectionMode && <BikeSpecificationSection bike={bike} onUpdate={onUpdate} />}
 
           {/* Parts & Labour */}
-          {canSeePricing && !inspectionMode && (
+          {canSeeCosts && !inspectionMode && (
             <BikeCostsSection bikeId={bike.id} onChange={refreshCosts} />
           )}
 
@@ -491,7 +494,7 @@ export default function BikeDetailView({
           {!isMechanic && !inspectionMode && <EbayListingCard bikeId={bike.id} />}
 
 
-          {bike.source === 'investor' && !isMechanic && !inspectionMode && (
+          {bike.source === 'investor' && canSeeCosts && !inspectionMode && (
             <Card>
               <CardHeader>
                 <CardTitle>Investor</CardTitle>
@@ -558,12 +561,15 @@ export default function BikeDetailView({
                 )}
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <MarginTriple cost={bike.purchase_price} asking={bike.asking_price} className="text-lg" />
-                </div>
+                {canSeeCosts && (
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <MarginTriple cost={bike.purchase_price} asking={bike.asking_price} className="text-lg" />
+                  </div>
+                )}
                 {editingPrices ? (
                   <div className="mt-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className={`grid gap-3 ${canSeeCosts ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                      {canSeeCosts && (
                       <div className="space-y-1">
                         <Label htmlFor="price-purchase" className="label-text">Purchase</Label>
                         <Input
@@ -575,6 +581,7 @@ export default function BikeDetailView({
                           onChange={(e) => setPriceDraft((d) => ({ ...d, purchase_price: e.target.value }))}
                         />
                       </div>
+                      )}
                       <div className="space-y-1">
                         <Label htmlFor="price-asking" className="label-text">Asking</Label>
                         <Input
@@ -609,11 +616,13 @@ export default function BikeDetailView({
                     </div>
                   </div>
                 ) : (
-                <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className={`mt-4 grid gap-4 ${canSeeCosts ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  {canSeeCosts && (
                   <div>
                     <p className="label-text">Purchase</p>
                     <p className="text-base font-medium tabular">{formatCurrency(bike.purchase_price)}</p>
                   </div>
+                  )}
                   <div>
                     <p className="label-text">Asking</p>
                     <p className="text-base font-medium tabular">{formatCurrency(bike.asking_price)}</p>
@@ -641,6 +650,7 @@ export default function BikeDetailView({
                   )}
                 </div>
 
+                {canSeeCosts && (
                 <div className="mt-4 rounded-md border p-3">
                   <div className="label-text">QuickBooks postings</div>
                   <div className="mt-2 space-y-1 text-sm">
@@ -679,13 +689,16 @@ export default function BikeDetailView({
                     </div>
                   </div>
                 </div>
+                )}
 
+                {canSeeCosts && (
                 <BikeCostBreakdown
                   bike={bike}
                   partsCost={partsCost}
                   jobsCost={jobsCost}
                   strippedInventoryValue={strippedInventoryValue}
                 />
+                )}
               </CardContent>
             </Card>
           )}
@@ -726,7 +739,7 @@ export default function BikeDetailView({
           <InspectionTask bike={bike} onUpdate={onUpdate} />
 
           {/* Stage notes & photos history */}
-          {!inspectionMode && <BikeActivity bikeId={bike.id} canSeePricing={canSeePricing} />}
+          {!inspectionMode && <BikeActivity bikeId={bike.id} canSeePricing={canSeeCosts} />}
 
 
 

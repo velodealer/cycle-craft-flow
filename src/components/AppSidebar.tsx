@@ -50,7 +50,7 @@ type NavGroup = {
   items: NavItem[];
 };
 
-const allRoles = ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'social_manager'];
+const allRoles = ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'social_manager', 'customer_service'];
 
 const navGroups: NavGroup[] = [
   {
@@ -62,7 +62,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Workshop",
     items: [
-      { title: "Submissions", url: "/submissions", icon: Inbox, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner'] },
+      { title: "Submissions", url: "/submissions", icon: Inbox, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'owner', 'customer_service'] },
       { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
       { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
       { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
@@ -73,10 +73,10 @@ const navGroups: NavGroup[] = [
   {
     label: "Stock",
     items: [
-      { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant'] },
-      { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant'] },
-      { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant'] },
-      { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant'] },
+      { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'customer_service'] },
+      { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant', 'customer_service'] },
+      { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant', 'customer_service'] },
+      { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant', 'customer_service'] },
     ],
   },
   {
@@ -90,7 +90,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Admin",
     items: [
-      { title: "Staff Activity", url: "/staff-activity", icon: Users, roles: ['admin', 'owner', 'mechanic', 'detailer', 'accountant'] },
+      { title: "Staff Activity", url: "/staff-activity", icon: Users, roles: ['admin', 'owner', 'mechanic', 'detailer', 'accountant', 'customer_service'] },
       { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
     ],
   },
