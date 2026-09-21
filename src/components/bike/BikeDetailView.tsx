@@ -739,7 +739,7 @@ export default function BikeDetailView({
           <InspectionTask bike={bike} onUpdate={onUpdate} />
 
           {/* Stage notes & photos history */}
-          {!inspectionMode && <BikeActivity bikeId={bike.id} canSeePricing={canSeePricing} />}
+          {!inspectionMode && <BikeActivity bikeId={bike.id} canSeePricing={canSeeCosts} />}
 
 
 
