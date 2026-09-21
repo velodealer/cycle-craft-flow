@@ -111,7 +111,14 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
           <Label>Description</Label>
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
         </div>
+        {component?.attributes && (
+          <div className="col-span-2">
+            <Label>Manufacturer details</Label>
+            <ComponentAttributes attributes={component.attributes} className="mt-1" />
+          </div>
+        )}
       </div>
+
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
         <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
