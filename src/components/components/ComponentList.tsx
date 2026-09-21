@@ -23,6 +23,8 @@ export default function ComponentList() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ComponentRecord | null>(null);
   const [creating, setCreating] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
 
   const load = async () => {
     setLoading(true);
