@@ -402,6 +402,16 @@ export default function EbayIntegration() {
             </p>
           </>
         )}
+        {policyDialog && (
+          <EbayPolicyDialog
+            kind={policyDialog.kind}
+            policy={policyDialog.policy}
+            open
+            onOpenChange={(o) => { if (!o) setPolicyDialog(null); }}
+            onSaved={(saved) => handlePolicySaved(policyDialog.kind, saved)}
+            onDeleted={(id) => handlePolicyDeleted(policyDialog.kind, id)}
+          />
+        )}
       </CardContent>
     </Card>
   );
