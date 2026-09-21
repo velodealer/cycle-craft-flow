@@ -53,8 +53,8 @@ export default function SettingsPage() {
       <Tabs
         defaultValue={(() => {
           const requested = new URLSearchParams(window.location.search).get('tab') ?? 'users';
-          const superOnly = ['inbox', 'website', 'super'];
-          return !isSuperAdmin && superOnly.includes(requested) ? 'users' : requested;
+          const allowed = ['users', 'system', 'integrations', 'listings', 'bays'];
+          return allowed.includes(requested) ? requested : 'users';
         })()}
         className="w-full md:flex md:items-start md:gap-6"
       >
@@ -64,9 +64,6 @@ export default function SettingsPage() {
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="integrations">Integrations</TabsTrigger>
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="listings">Listing Formats</TabsTrigger>
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="bays">Storage Bays</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="inbox">Inbox</TabsTrigger>}
-          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="website">Website</TabsTrigger>}
-          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="super">Super Admin</TabsTrigger>}
         </TabsList>
 
 
