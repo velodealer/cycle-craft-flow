@@ -58,6 +58,18 @@ export default function ListingFormats() {
   });
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [search, setSearch] = useState('');
+
+  const filteredGroups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return LISTING_FIELD_GROUPS;
+    return LISTING_FIELD_GROUPS.map((g) => ({
+      ...g,
+      fields: g.fields.filter(
+        (f) => f.token.toLowerCase().includes(q) || f.label.toLowerCase().includes(q),
+      ),
+    })).filter((g) => g.fields.length > 0);
+  }, [search]);
 
   useEffect(() => {
     (async () => {
