@@ -77,7 +77,10 @@ export default function BikeDetailView({
   const { vatRegistered } = useVatRegistered();
   const isMechanic = profile?.role === 'mechanic';
   const isAdmin = profile?.role === 'admin';
+  const isCustomerService = profile?.role === 'customer_service';
   const canSeePricing = showPricing && !isMechanic;
+  /** Purchase cost, profit and margin — hidden from customer service. */
+  const canSeeCosts = canSeePricing && !isCustomerService;
   const [partsCost, setPartsCost] = useState(0);
   const [jobsCost, setJobsCost] = useState(0);
   const [strippedInventoryValue, setStrippedInventoryValue] = useState(0);
