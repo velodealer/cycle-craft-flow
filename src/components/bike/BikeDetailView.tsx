@@ -616,11 +616,13 @@ export default function BikeDetailView({
                     </div>
                   </div>
                 ) : (
-                <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className={`mt-4 grid gap-4 ${canSeeCosts ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  {canSeeCosts && (
                   <div>
                     <p className="label-text">Purchase</p>
                     <p className="text-base font-medium tabular">{formatCurrency(bike.purchase_price)}</p>
                   </div>
+                  )}
                   <div>
                     <p className="label-text">Asking</p>
                     <p className="text-base font-medium tabular">{formatCurrency(bike.asking_price)}</p>
