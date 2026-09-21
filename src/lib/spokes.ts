@@ -205,12 +205,12 @@ export async function upsertComponentsForBike(bikeId: string, components: Mapped
   let linked = 0;
 
   for (const c of components) {
-    const categoryId = cats[c.categorySlug];
+    const categoryId = cats[c.categorySlug] || cats['accessories'];
     if (!categoryId || !c.brand || !c.model) continue;
 
     const { data: found } = await supabase
       .from('components')
-      .select('id')
+      .select('id, description, mpn, weight_g, attributes')
       .eq('category_id', categoryId)
       .ilike('brand', c.brand)
       .ilike('model', c.model)
@@ -226,21 +226,41 @@ export async function upsertComponentsForBike(bikeId: string, components: Mapped
           brand: c.brand,
           model: c.model,
           description: c.description || null,
+          mpn: c.mpn || null,
+          weight_g: c.weightG ?? null,
+          attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : {},
         })
         .select('id')
         .single();
       if (error || !created) continue;
       componentId = (created as any).id;
+    } else {
+      // Top up blanks only — never overwrite something a person typed.
+      const row = found as any;
+      const patch: Record<string, any> = {};
+      if (!row.description && c.description) patch.description = c.description;
+      if (!row.mpn && c.mpn) patch.mpn = c.mpn;
+      if ((row.weight_g === null || row.weight_g === undefined) && c.weightG != null) patch.weight_g = c.weightG;
+      const incoming = c.attributes || {};
+      if (Object.keys(incoming).length) {
+        const existing = (row.attributes && typeof row.attributes === 'object' ? row.attributes : {}) as Record<string, any>;
+        const merged = { ...incoming, ...existing };
+        if (Object.keys(merged).length !== Object.keys(existing).length) patch.attributes = merged;
+      }
+      if (Object.keys(patch).length) {
+        await supabase.from('components').update(patch).eq('id', componentId);
+      }
     }
 
     const { error: linkError } = await supabase
       .from('bike_components')
       .upsert(
-        { bike_id: bikeId, slot: c.slot, component_id: componentId!, position: c.position || null },
+        { bike_id: bikeId, slot: c.slot, component_id: componentId!, position: c.position || null, notes: c.description || null },
         { onConflict: 'bike_id,slot' },
       );
     if (!linkError) linked += 1;
   }
+
 
   return linked;
 }
