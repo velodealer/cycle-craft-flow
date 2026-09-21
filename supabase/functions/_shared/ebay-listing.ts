@@ -253,6 +253,14 @@ export async function pushBikeToEbay(
   const bikeCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
   const bikeCategoryId = ((existing as any)?.category_id as string | null) || s.category_id || DEFAULT_CATEGORY;
 
+  const itemAspects = aspects(bike);
+  const required = await requiredAspects(conn, bikeCategoryId);
+  const missing = required.filter((name) => !itemAspects[name]);
+  if (missing.length) {
+    throw new Error(`eBay needs these details on the bike before it can be listed: ${missing.join(', ')}.`);
+  }
+
+
   await ebayFetch(conn, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
     method: 'PUT',
     body: JSON.stringify({
