@@ -1,6 +1,7 @@
 // Approves or declines an InspectABike fault and mirrors the decision locally.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, requireRole, iabFetch, syncBikeStatusFromFaults } from '../_shared/inspectabike.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -131,6 +132,15 @@ Deno.serve(async (req) => {
       .select('status')
       .eq('id', fault.inspection_id)
       .maybeSingle();
+
+    await logBikeActivity(fault.bike_id, {
+      kind: 'inspection',
+      action: decision,
+      summary: `Fault ${decision}: ${fault.title}`,
+      detail: { note: note ?? null, status: effectiveStatus },
+      actorId: (profile as any)?.id ?? null,
+      actorLabel: actorName,
+    }, (fault as any).business_id);
 
     await syncBikeStatusFromFaults(supabase, fault.bike_id, inspection?.status === 'completed');
 
