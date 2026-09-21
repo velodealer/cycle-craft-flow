@@ -18,10 +18,57 @@ export interface BikeRow {
   accessories_included?: string | null;
   photos?: string[] | null;
   frame_number?: string | null;
+  gender?: string | null;
+  is_electric?: boolean | null;
+  spec_values?: Record<string, any> | null;
 }
 
 const DEFAULT_CATEGORY = '177831'; // Sporting Goods > Cycling > Bikes
 const DEFAULT_LOCATION_KEY = 'velodealer-main';
+
+/** VeloDealer bike types mapped to the values eBay accepts for "Bike Type". */
+const EBAY_BIKE_TYPE: Record<string, string> = {
+  road: 'Road Bike',
+  gravel: 'Gravel Bike',
+  mtb_hardtail: 'Mountain Bike',
+  mtb_full_sus: 'Mountain Bike',
+  bmx: 'BMX',
+  hybrid: 'Hybrid Bike',
+  city: 'Comfort Bike',
+  electric: 'Electric Bike',
+  folding: 'Folding Bike',
+  cargo: 'Cargo Bike',
+  tt: 'Triathlon Bike',
+  touring: 'Touring Bike',
+  cyclocross: 'Cyclocross Bike',
+  track: 'Track Bike',
+  tandem: 'Tandem',
+  recumbent: 'Recumbent Bike',
+  kids: 'Kids Bike',
+};
+
+export function ebayBikeType(bike: BikeRow): string | null {
+  const raw = String(bike.bike_type ?? '').trim().toLowerCase();
+  if (!raw) return null;
+  if (EBAY_BIKE_TYPE[raw]) return EBAY_BIKE_TYPE[raw];
+  // Fall back to a tidy version of whatever is stored.
+  return raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function specValue(bike: BikeRow, key: string): string | null {
+  const spec = bike.spec_values as any;
+  if (!spec || typeof spec !== 'object') return null;
+  const direct = spec[key];
+  if (typeof direct === 'string' && direct.trim()) return direct.trim();
+  for (const group of Object.values(spec)) {
+    if (group && typeof group === 'object') {
+      const v = (group as any)[key];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+    }
+  }
+  return null;
+}
+
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
@@ -65,18 +112,55 @@ function aspects(bike: BikeRow): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   const add = (key: string, value: unknown) => {
     const v = String(value ?? '').trim();
-    if (v) out[key] = [v.slice(0, 60)];
+    if (v && !out[key]) out[key] = [v.slice(0, 60)];
   };
   add('Brand', bike.make);
   add('Model', bike.model);
+  add('Bike Type', ebayBikeType(bike));
+  add('Type', ebayBikeType(bike));
   add('Frame Size', bike.size);
   add('Colour', bike.colour);
-  add('Type', bike.bike_type);
+  add('Color', bike.colour);
   add('Frame Material', bike.frame_material);
-  add('Wheel Size', null);
+  add('Wheel Size', specValue(bike, 'wheel_size'));
+  add('Number of Gears', specValue(bike, 'gears') || specValue(bike, 'speeds'));
+  add('Brake Type', specValue(bike, 'brake_type'));
+  add('Suspension Type', specValue(bike, 'suspension'));
+  add('Gender', bike.gender);
   if (bike.year) add('Year', String(bike.year));
   return out;
 }
+
+const CATEGORY_TREE_ID: Record<string, string> = {
+  EBAY_GB: '3',
+  EBAY_US: '0',
+  EBAY_AU: '15',
+  EBAY_IE: '205',
+  EBAY_CA: '2',
+  EBAY_DE: '77',
+  EBAY_FR: '71',
+  EBAY_IT: '101',
+  EBAY_ES: '186',
+};
+
+/** Required item specifics for a category, as eBay names them. Empty when the lookup fails. */
+async function requiredAspects(conn: Connection, categoryId: string): Promise<string[]> {
+  const treeId = CATEGORY_TREE_ID[conn.settings.marketplace_id || 'EBAY_GB'] || '3';
+  try {
+    const data = await ebayFetch<any>(
+      conn,
+      `/commerce/taxonomy/v1/category_tree/${treeId}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`,
+    );
+    return (data?.aspects ?? [])
+      .filter((a: any) => a?.aspectConstraint?.aspectRequired)
+      .map((a: any) => String(a?.localizedAspectName || '').trim())
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('Could not read required eBay item specifics:', (e as Error).message);
+    return [];
+  }
+}
+
 
 function skuFor(bike: BikeRow) {
   return String(bike.reference || bike.id).replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 50);
@@ -148,6 +232,10 @@ export async function pushBikeToEbay(
   if (bike.asking_price == null || Number(bike.asking_price) <= 0) {
     throw new Error('Set an asking price on the bike before listing it on eBay.');
   }
+  if (!ebayBikeType(bike)) {
+    throw new Error('Add a bike type before listing on eBay.');
+  }
+
 
   const sku = skuFor(bike);
   const locationKey = await ensureLocation(conn);
@@ -165,6 +253,14 @@ export async function pushBikeToEbay(
   const bikeCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
   const bikeCategoryId = ((existing as any)?.category_id as string | null) || s.category_id || DEFAULT_CATEGORY;
 
+  const itemAspects = aspects(bike);
+  const required = await requiredAspects(conn, bikeCategoryId);
+  const missing = required.filter((name) => !itemAspects[name]);
+  if (missing.length) {
+    throw new Error(`eBay needs these details on the bike before it can be listed: ${missing.join(', ')}.`);
+  }
+
+
   await ebayFetch(conn, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
     method: 'PUT',
     body: JSON.stringify({
@@ -174,7 +270,7 @@ export async function pushBikeToEbay(
         title: bikeTitle(bike),
         description: bikeDescriptionHtml(bike),
         imageUrls: images,
-        aspects: aspects(bike),
+        aspects: itemAspects,
         brand: bike.make,
         mpn: bike.model,
       },
