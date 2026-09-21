@@ -113,7 +113,13 @@ export const SPEC_SECTIONS: SectionDef[] = [
     id: 'wheels',
     title: 'Wheels',
     path: 'wheels',
-    slots: [{ slot: 'wheelset', label: 'Wheelset', categorySlug: 'wheels' }],
+    slots: [
+      { slot: 'wheelset', label: 'Wheelset', categorySlug: 'wheels' },
+      { slot: 'front_hub', label: 'Front Hub', categorySlug: 'hubs', position: 'front' },
+      { slot: 'rear_hub', label: 'Rear Hub', categorySlug: 'hubs', position: 'rear' },
+      { slot: 'spokes', label: 'Spokes', categorySlug: 'spokes' },
+    ],
+
     fields: [
       { key: 'wheel_size', label: 'Wheel Size', placeholder: '700c, 29", 27.5"' },
       { key: 'rim_material', label: 'Rim Material' },
