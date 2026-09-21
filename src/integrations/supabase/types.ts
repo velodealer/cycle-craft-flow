@@ -867,6 +867,41 @@ export type Database = {
           },
         ]
       }
+      ebay_oauth_states: {
+        Row: {
+          business_id: string
+          created_at: string
+          environment: string
+          origin: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          environment?: string
+          origin?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          environment?: string
+          origin?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ebay_oauth_states_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_owners: {
         Row: {
           address: string | null
