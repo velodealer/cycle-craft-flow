@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity } from '@/lib/activity';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -313,6 +314,12 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
       if (bikeErr) throw bikeErr;
       void syncShopifyQuietly(bike.id, 'sold_out');
       void syncEbayQuietly(bike.id, 'end');
+      logActivity(bike.id, {
+        kind: 'status_change',
+        action: 'split_for_parts',
+        summary: 'Bike split for parts',
+        detail: {},
+      });
       toast({ title: 'Bike broken for parts' });
       onOpenChange(false);
       onDone();
