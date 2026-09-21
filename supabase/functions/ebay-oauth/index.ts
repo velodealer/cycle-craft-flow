@@ -197,27 +197,71 @@ Deno.serve(async (req) => {
     if (action === 'policies') {
       const conn = await requireConnection(supabase, businessId);
       const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
-      const get = async (kind: string, key: string) => {
+      const get = async (kind: PolicyKind, key: string) => {
         try {
           const data = await ebayFetch<any>(
             conn,
-            `/sell/account/v1/${kind}?marketplace_id=${marketplace}`,
+            `/sell/account/v1/${POLICY_PATH[kind]}?marketplace_id=${marketplace}`,
           );
-          return (data?.[key] ?? []).map((p: any) => ({
-            id: p[`${kind.replace('_policy', '')}PolicyId`] ?? p.fulfillmentPolicyId ?? p.paymentPolicyId ?? p.returnPolicyId,
-            name: p.name,
-          })).filter((p: any) => p.id);
+          return (data?.[key] ?? [])
+            .map((p: any) => summarisePolicy(kind, p))
+            .filter((p: any) => p.id);
         } catch (e) {
           console.error(`eBay ${kind} lookup failed:`, (e as Error).message);
           return [];
         }
       };
       const [fulfillment, payment, returns] = await Promise.all([
-        get('fulfillment_policy', 'fulfillmentPolicies'),
-        get('payment_policy', 'paymentPolicies'),
-        get('return_policy', 'returnPolicies'),
+        get('fulfillment', 'fulfillmentPolicies'),
+        get('payment', 'paymentPolicies'),
+        get('returns', 'returnPolicies'),
       ]);
       return json({ fulfillment, payment, returns });
+    }
+
+    if (action === 'shipping_services') {
+      return json({ services: UK_SHIPPING_SERVICES });
+    }
+
+    if (action === 'save_policy') {
+      const conn = await requireConnection(supabase, businessId);
+      const kind = String(body.kind ?? '') as PolicyKind;
+      if (!POLICY_PATH[kind]) return json({ error: 'Unknown policy type' }, 400);
+
+      const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+      const currency = conn.settings.currency || 'GBP';
+      let payload: Record<string, unknown>;
+      try {
+        payload = buildPolicyBody(kind, body, marketplace, currency);
+      } catch (e) {
+        return json({ error: (e as Error).message }, 400);
+      }
+
+      const policyId = typeof body.policy_id === 'string' && body.policy_id.trim()
+        ? body.policy_id.trim()
+        : null;
+      const path = policyId
+        ? `/sell/account/v1/${POLICY_PATH[kind]}/${encodeURIComponent(policyId)}`
+        : `/sell/account/v1/${POLICY_PATH[kind]}`;
+
+      const saved = await ebayFetch<any>(conn, path, {
+        method: policyId ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      });
+      return json({ ok: true, policy: summarisePolicy(kind, saved ?? { ...payload, ...idField(kind, policyId) }) });
+    }
+
+    if (action === 'delete_policy') {
+      const conn = await requireConnection(supabase, businessId);
+      const kind = String(body.kind ?? '') as PolicyKind;
+      const policyId = String(body.policy_id ?? '').trim();
+      if (!POLICY_PATH[kind]) return json({ error: 'Unknown policy type' }, 400);
+      if (!policyId) return json({ error: 'Choose a policy to delete' }, 400);
+
+      await ebayFetch(conn, `/sell/account/v1/${POLICY_PATH[kind]}/${encodeURIComponent(policyId)}`, {
+        method: 'DELETE',
+      });
+      return json({ ok: true });
     }
 
     if (action === 'categories') {
