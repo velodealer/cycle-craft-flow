@@ -1,6 +1,6 @@
 // Shared activity logger for edge functions. Uses the service-role client so
 // automatic events (integrations, webhooks) are recorded even without a user.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 export type EdgeActivityKind =
   | 'status_change'
