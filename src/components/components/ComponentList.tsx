@@ -105,31 +105,63 @@ export default function ComponentList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10" />
               <TableHead>Brand</TableHead>
               <TableHead>Model</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>MPN</TableHead>
               <TableHead>Weight</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>}
-            {!loading && rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">No components</TableCell></TableRow>}
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.brand}</TableCell>
-                <TableCell>{r.model}</TableCell>
-                <TableCell>{r.component_categories?.name || '—'}</TableCell>
-                <TableCell>{r.mpn || '—'}</TableCell>
-                <TableCell>{r.weight_g ? `${r.weight_g} g` : '—'}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => setEditing(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>}
+            {!loading && rows.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No components</TableCell></TableRow>}
+            {rows.map((r) => {
+              const details = r.attributes && typeof r.attributes === 'object' && !Array.isArray(r.attributes)
+                ? Object.keys(r.attributes).length
+                : 0;
+              const open = !!expanded[r.id];
+              return (
+                <>
+                  <TableRow key={r.id}>
+                    <TableCell className="align-top">
+                      {details > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={open ? 'Hide details' : `Show ${details} more details`}
+                          onClick={() => setExpanded((e) => ({ ...e, [r.id]: !e[r.id] }))}
+                        >
+                          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell>{r.brand}</TableCell>
+                    <TableCell>{r.model}</TableCell>
+                    <TableCell>{r.component_categories?.name || '—'}</TableCell>
+                    <TableCell>{r.mpn || '—'}</TableCell>
+                    <TableCell>{r.weight_g ? `${r.weight_g} g` : '—'}</TableCell>
+                    <TableCell className="max-w-[320px] text-sm text-muted-foreground">{r.description || '—'}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => setEditing(r)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                  {open && (
+                    <TableRow key={`${r.id}-details`}>
+                      <TableCell />
+                      <TableCell colSpan={7} className="pb-4">
+                        <ComponentAttributes attributes={r.attributes} />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              );
+            })}
           </TableBody>
+
         </Table>
       </div>
 
