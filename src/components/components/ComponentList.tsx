@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import ComponentForm, { ComponentCategory, ComponentRecord } from './ComponentForm';
+import ComponentAttributes from './ComponentAttributes';
 import { toast } from '@/hooks/use-toast';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+
 
 
 type Row = ComponentRecord & { component_categories: { name: string; slug: string } | null };
@@ -21,6 +23,8 @@ export default function ComponentList() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ComponentRecord | null>(null);
   const [creating, setCreating] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
 
   const load = async () => {
     setLoading(true);
@@ -84,6 +88,8 @@ export default function ComponentList() {
             </div>
             <ListCardRow label="MPN" value={r.mpn || '—'} />
             <ListCardRow label="Weight" value={r.weight_g ? `${r.weight_g} g` : '—'} />
+            {r.description && <ListCardRow label="Description" value={r.description} />}
+            <ComponentAttributes attributes={r.attributes} className="mt-2" />
             <ListCardActions>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setEditing(r)}>
@@ -96,37 +102,72 @@ export default function ComponentList() {
             </ListCardActions>
           </ListCard>
         ))}
+
       </div>
 
       <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10" />
               <TableHead>Brand</TableHead>
               <TableHead>Model</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>MPN</TableHead>
               <TableHead>Weight</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead className="w-24" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>}
-            {!loading && rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">No components</TableCell></TableRow>}
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.brand}</TableCell>
-                <TableCell>{r.model}</TableCell>
-                <TableCell>{r.component_categories?.name || '—'}</TableCell>
-                <TableCell>{r.mpn || '—'}</TableCell>
-                <TableCell>{r.weight_g ? `${r.weight_g} g` : '—'}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => setEditing(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {loading && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>}
+            {!loading && rows.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No components</TableCell></TableRow>}
+            {rows.map((r) => {
+              const details = r.attributes && typeof r.attributes === 'object' && !Array.isArray(r.attributes)
+                ? Object.keys(r.attributes).length
+                : 0;
+              const open = !!expanded[r.id];
+              return (
+                <Fragment key={r.id}>
+                  <TableRow>
+
+                    <TableCell className="align-top">
+                      {details > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={open ? 'Hide details' : `Show ${details} more details`}
+                          onClick={() => setExpanded((e) => ({ ...e, [r.id]: !e[r.id] }))}
+                        >
+                          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell>{r.brand}</TableCell>
+                    <TableCell>{r.model}</TableCell>
+                    <TableCell>{r.component_categories?.name || '—'}</TableCell>
+                    <TableCell>{r.mpn || '—'}</TableCell>
+                    <TableCell>{r.weight_g ? `${r.weight_g} g` : '—'}</TableCell>
+                    <TableCell className="max-w-[320px] text-sm text-muted-foreground">{r.description || '—'}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => setEditing(r)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                  {open && (
+                    <TableRow>
+                      <TableCell />
+                      <TableCell colSpan={7} className="pb-4">
+                        <ComponentAttributes attributes={r.attributes} />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
+
+              );
+            })}
           </TableBody>
+
         </Table>
       </div>
 
