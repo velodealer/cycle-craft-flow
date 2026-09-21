@@ -500,12 +500,18 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
 
   /* --- components library --- */
   const components: MappedComponent[] = [];
+  push(components, 'frame', 'frame', c.frame);
   push(components, 'fork', 'fork', c.fork);
   push(components, 'rear_shock', 'rear_shock', c.rearShock);
+  push(components, 'headset', 'headset', c.headset);
   push(components, 'wheelset', 'wheels', c.rims);
+  push(components, 'front_hub', 'hubs', c.frontHub, 'front');
+  push(components, 'rear_hub', 'hubs', c.rearHub, 'rear');
+  push(components, 'spokes', 'spokes', c.spokes);
   push(components, 'front_tyre', 'tyres', c.tires, 'front');
   push(components, 'rear_tyre', 'tyres', c.tires, 'rear');
   push(components, 'crank', 'crank', c.crank);
+  push(components, 'power_meter', 'power_meter', c.powerMeter);
   push(components, 'cassette', 'cassette', c.cassette);
   push(components, 'chain', 'chain', c.chain);
   push(components, 'front_derailleur', 'front_derailleur', c.frontDerailleur);
@@ -513,6 +519,8 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
   push(components, 'shifters', 'shifters', c.shifters);
   push(components, 'bottom_bracket', 'bottom_bracket', c.bottomBracket);
   push(components, 'brakes', 'brakes', c.brakes);
+  push(components, 'brake_levers', 'brake_levers', c.brakeLevers);
+  push(components, 'disc_rotors', 'rotors', c.discRotors);
   push(components, 'handlebars', 'handlebars', c.handlebar);
   push(components, 'stem', 'stem', c.stem);
   push(components, 'grips', 'grips', c.grips);
@@ -520,6 +528,30 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
   push(components, 'seatpost', 'seatpost', c.seatpost);
   push(components, 'pedals', 'pedals', c.pedals);
   push(components, 'ebike_system', 'ebike_system', c.motor);
+  push(components, 'ebike_battery', 'ebike_battery', c.battery);
+  push(components, 'ebike_display', 'ebike_display', c.display);
+  push(components, 'ebike_charger', 'ebike_charger', c.charger);
+  push(components, 'mudguards', 'accessories', c.fenders);
+  push(components, 'rack', 'accessories', c.racks);
+  push(components, 'lights', 'accessories', c.lights);
+  push(components, 'bell', 'accessories', c.bell);
+  push(components, 'kickstand', 'accessories', c.stand);
+  push(components, 'lock', 'accessories', c.lock);
+
+  // Anything the source publishes that we don't have a slot for yet.
+  const KNOWN_KEYS = new Set([
+    'frame', 'fork', 'rearShock', 'headset', 'rims', 'frontHub', 'rearHub', 'spokes', 'tires',
+    'crank', 'powerMeter', 'cassette', 'chain', 'frontDerailleur', 'rearDerailleur', 'shifters',
+    'bottomBracket', 'brakes', 'brakeLevers', 'discRotors', 'handlebar', 'stem', 'grips', 'saddle',
+    'seatpost', 'pedals', 'motor', 'battery', 'display', 'charger',
+    'fenders', 'racks', 'lights', 'bell', 'stand', 'lock',
+  ]);
+  Object.entries(c).forEach(([key, part]) => {
+    if (KNOWN_KEYS.has(key) || !part || typeof part !== 'object') return;
+    const slot = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+    push(components, slot, 'accessories', part);
+  });
+
 
   const sizes: string[] = Array.isArray(bike?.sizes)
     ? bike.sizes.map((s: any) => s?.name).filter(Boolean)
