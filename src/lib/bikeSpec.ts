@@ -248,7 +248,16 @@ export const SPEC_SECTIONS: SectionDef[] = [
     title: 'Accessories',
     path: 'accessories',
     show: hasAccessories,
+    slots: [
+      { slot: 'mudguards', label: 'Mudguards', categorySlug: 'accessories' },
+      { slot: 'rack', label: 'Rack', categorySlug: 'accessories' },
+      { slot: 'lights', label: 'Lights', categorySlug: 'accessories' },
+      { slot: 'bell', label: 'Bell', categorySlug: 'accessories' },
+      { slot: 'kickstand', label: 'Kickstand', categorySlug: 'accessories' },
+      { slot: 'lock', label: 'Lock', categorySlug: 'accessories' },
+    ],
     fields: [
+
       { key: 'mudguards', label: 'Mudguards', type: 'checkbox' },
       { key: 'rack', label: 'Rack', type: 'checkbox' },
       { key: 'lights', label: 'Lights', type: 'checkbox' },
