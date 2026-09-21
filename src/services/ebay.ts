@@ -31,6 +31,43 @@ export interface EbayListing {
 
 export interface PolicyOption { id: string; name: string }
 
+export type PolicyKind = 'fulfillment' | 'payment' | 'returns';
+
+export interface EbayPolicyBase {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface FulfillmentPolicy extends EbayPolicyBase {
+  handling_time_days: number;
+  shipping_service_code: string;
+  free_shipping: boolean;
+  shipping_cost: number;
+  local_pickup: boolean;
+}
+
+export interface PaymentPolicy extends EbayPolicyBase {
+  immediate_pay: boolean;
+}
+
+export interface ReturnsPolicy extends EbayPolicyBase {
+  returns_accepted: boolean;
+  return_period_days: number;
+  return_shipping_cost_payer: 'BUYER' | 'SELLER';
+  refund_method: 'MONEY_BACK' | 'MONEY_BACK_OR_REPLACEMENT';
+}
+
+export type AnyPolicy = FulfillmentPolicy | PaymentPolicy | ReturnsPolicy;
+
+export interface EbayPolicies {
+  fulfillment: FulfillmentPolicy[];
+  payment: PaymentPolicy[];
+  returns: ReturnsPolicy[];
+}
+
+export interface ShippingService { code: string; name: string }
+
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke(fn, { body });
   if (error) {
