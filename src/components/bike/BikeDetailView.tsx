@@ -650,6 +650,7 @@ export default function BikeDetailView({
                   )}
                 </div>
 
+                {canSeeCosts && (
                 <div className="mt-4 rounded-md border p-3">
                   <div className="label-text">QuickBooks postings</div>
                   <div className="mt-2 space-y-1 text-sm">
@@ -688,13 +689,16 @@ export default function BikeDetailView({
                     </div>
                   </div>
                 </div>
+                )}
 
+                {canSeeCosts && (
                 <BikeCostBreakdown
                   bike={bike}
                   partsCost={partsCost}
                   jobsCost={jobsCost}
                   strippedInventoryValue={strippedInventoryValue}
                 />
+                )}
               </CardContent>
             </Card>
           )}
