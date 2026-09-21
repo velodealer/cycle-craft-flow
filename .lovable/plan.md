@@ -1,37 +1,42 @@
-# Add a Customer Service role
+# Pull part numbers and spec details out of catalogue text
 
-A new staff role for people who prepare bikes for sale: they complete the bike's specification and put it live on Shopify and eBay, without seeing what the business paid or earns.
+## What 99spokes actually sends
 
-## What Customer Service can do
+For that rear derailleur the catalogue gives only four fields:
 
-- See the bike list and open any bike
-- Fill in and edit the full bike specification, including pulling details from 99spokes
-- Add and edit parts in the parts/components library and fit them to bikes
-- See and edit the asking and sale price
-- List, update and remove listings on Shopify and eBay
-- Book and track collections and deliveries
-- View customer enquiries and website submissions
+```text
+maker:       Shimano
+model:       105 Di2
+display:     Shimano 105 Di2
+description: Shimano R7150 Di2, 36T max cog
+```
 
-## What they cannot do
+So the model shown ("105 Di2") is correct — it is exactly what 99spokes calls the model. "R7150" and "36T max cog" are not separate fields anywhere in the catalogue; they only exist inside that one sentence. Across every bike we hold, the only structured part fields the catalogue ever uses are: maker, model, display, description, material, width, innerWidthMM, standard, kind, threaded.
 
-- Purchase cost, prep costs, profit and margin figures stay hidden
-- No invoices, reports, quote builder or settings
-- Cannot delete bikes, record sales, or change roles and users
+## What to change
 
-## Where it appears
+Read the useful details out of that sentence when a part comes in, and store them in their own fields so they show as proper rows instead of a blob of text:
 
-- "Customer Service" becomes a choice when adding or editing a staff member
-- Their sidebar shows: Dashboard, Bikes, Parts, Components, Logistics, Submissions, Staff Activity
+- Part number (e.g. R7150, RD-R8150, GX Eagle codes) — goes into the part's Part number field, which is currently empty for almost everything
+- Max cog (36T), gear range (11-34), number of speeds (12 speed)
+- Chainring sizes (50/34), crank length (172.5mm), rotor sizes (160mm), tyre size and width, travel (140mm), bar width, stem length, seatpost diameter
+
+Each is only filled when it is clearly present; anything we cannot read confidently stays in the description, which we keep as-is. Values you have typed yourself are never overwritten — only blanks get filled.
+
+These appear on the part in the library, under the fitted part on a bike's specification tab, and as tokens in the listing template builder.
+
+## Applying it to existing parts
+
+A one-off pass re-reads the descriptions already stored on parts and fills in the new fields where they are blank, so the library benefits without re-importing every bike.
 
 ## Technical notes
 
-- Migration: add `customer_service` to the `user_role` enum (separate statement before it is used in policies).
-- Second migration adds the role to the relevant policies: `bikes` (view + manage, no delete), `components`, `bike_components`, `parts`, `ebay_listings`, `shopify_listings`, `bike_collections`, `typeform_submissions`, `bike_activity` insert/select. Tenant `business_id` scoping is unchanged.
-- `create-staff-user` edge function: add `customer_service` to `ALLOWED_ROLES`.
-- Frontend:
-  - `useAuth.tsx` Profile role union gains `'customer_service'`.
-  - `AddUserDialog.tsx` / `EditUserDialog.tsx` add the option and badge style.
-  - `AppSidebar.tsx` adds the role to Dashboard, Bikes, Parts, Components, Logistics, Submissions, Staff Activity.
-  - `BikeDetailView.tsx`: introduce a `canSeeCosts` flag (admin/owner/accountant/detailer) separate from the existing `canSeePricing`. Customer Service gets pricing (asking/sale editing) but not the cost/profit breakdown; the Shopify and eBay cards render for them, while delete, record sale, break-for-parts and admin status controls stay hidden.
-  - `BikeActivity` receives `canSeeCosts` so purchase-cost entries stay hidden from this role.
-- Existing roles keep exactly the access they have today.
+- `src/lib/spokes.ts`: add `parseSpecFromText(text)` returning a typed attribute object; call it in `push()`, merging the derived values under the part's `attributes` (and setting `mpn` when a part number is detected and none was supplied). Front/rear split via `splitFrontRear` runs first so each side parses its own text.
+- Mirror the same helper in `supabase/functions/_shared/` only if a function needs it; currently parsing happens client-side at import time, so no edge function change.
+- `ComponentAttributes.tsx` already humanises keys, so new keys (`part_number`, `max_cog`, `speeds`, `gear_range`, `chainring`, `crank_length_mm`, `rotor_size_mm`, `travel_mm`, `tyre_width_mm`, `bar_width_mm`, `stem_length_mm`, `seatpost_diameter_mm`) render without UI work.
+- Backfill: a `run_sql`-driven update is not possible (parsing is JS), so add a small "Re-scan details" action on the parts page for admins that re-parses stored descriptions in batches.
+- No schema change — `components.attributes` and `components.mpn` already exist.
+
+## Still to build
+
+The approved Customer Service role (enum value, policy updates, sidebar and user dialogs, pricing-without-costs on the bike page) has not been implemented yet and will be built as approved.
