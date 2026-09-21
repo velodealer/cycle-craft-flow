@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
     const action = body.action || url.searchParams.get('action') || 'status';
 
     if (action === 'status') {
-      const row = await loadIntegration(supabase);
+      const row = await loadIntegration(supabase, businessId);
       const s = ((row?.settings ?? {}) as EbaySettings) || {};
       return json({
         connected: Boolean(row?.is_active && s.refresh_token),
@@ -155,13 +155,26 @@ Deno.serve(async (req) => {
       const origin = typeof body.origin === 'string' && /^https?:\/\//.test(body.origin)
         ? body.origin.replace(/\/+$/, '')
         : FALLBACK_APP_ORIGIN;
-      const state = encodeURIComponent(`${origin}|${crypto.randomUUID()}|${environment}`);
+      const state = `${origin}|${crypto.randomUUID()}|${environment}`;
+
+      // Remember which dealership is connecting so the callback lands on the right account.
+      await supabase.from('ebay_oauth_states').delete().eq('business_id', businessId);
+      const { error: stateError } = await supabase.from('ebay_oauth_states').insert({
+        state,
+        business_id: businessId,
+        user_id: userId,
+        environment,
+        origin,
+      });
+      if (stateError) throw new Error(stateError.message);
+
       const authUrl = `${authBase(environment)}/oauth2/authorize?` + new URLSearchParams({
         client_id: clientId,
         redirect_uri: ruName,
         response_type: 'code',
         scope: EBAY_SCOPES,
-        state,
+        state: encodeURIComponent(state),
+        prompt: 'login',
       });
       return json({ url: authUrl });
     }
