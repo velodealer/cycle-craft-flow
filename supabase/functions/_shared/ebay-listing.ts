@@ -270,7 +270,7 @@ export async function pushBikeToEbay(
         title: bikeTitle(bike),
         description: bikeDescriptionHtml(bike),
         imageUrls: images,
-        aspects: aspects(bike),
+        aspects: itemAspects,
         brand: bike.make,
         mpn: bike.model,
       },
