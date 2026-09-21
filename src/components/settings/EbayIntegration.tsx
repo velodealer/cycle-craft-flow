@@ -272,6 +272,17 @@ export default function EbayIntegration() {
               <Switch checked={autoList} onCheckedChange={setAutoList} />
             </div>
 
+            {policies.opt_in_required && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  This eBay account has not turned on business policies yet, so postage, payment and returns
+                  policies can't be loaded or created. Open business policies on eBay, switch them on, then
+                  refresh below.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
               <p className="mr-auto text-xs text-muted-foreground">
                 Create and edit your postage, payment and returns policies below — they save straight to eBay.
