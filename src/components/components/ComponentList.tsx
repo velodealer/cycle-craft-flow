@@ -26,6 +26,44 @@ export default function ComponentList() {
   const [editing, setEditing] = useState<ComponentRecord | null>(null);
   const [creating, setCreating] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [rescanning, setRescanning] = useState(false);
+  const { profile } = useAuth();
+  const canRescan = profile?.role === 'admin' || profile?.role === 'owner';
+
+  const rescanDetails = async () => {
+    setRescanning(true);
+    let updated = 0;
+    try {
+      for (let from = 0; ; from += 200) {
+        const { data, error } = await supabase
+          .from('components')
+          .select('id, description, mpn, attributes')
+          .order('created_at')
+          .range(from, from + 199);
+        if (error) throw error;
+        const batch = data || [];
+        for (const row of batch as any[]) {
+          const derived = parseSpecFromText(row.description);
+          const existing = (row.attributes && typeof row.attributes === 'object' ? row.attributes : {}) as Record<string, any>;
+          const merged = { ...derived.attributes, ...existing };
+          const patch: Record<string, any> = {};
+          if (Object.keys(merged).length !== Object.keys(existing).length) patch.attributes = merged;
+          if (!row.mpn && derived.partNumber) patch.mpn = derived.partNumber;
+          if (Object.keys(patch).length) {
+            const { error: upErr } = await supabase.from('components').update(patch).eq('id', row.id);
+            if (!upErr) updated += 1;
+          }
+        }
+        if (batch.length < 200) break;
+      }
+      toast({ title: 'Details re-scanned', description: `${updated} part${updated === 1 ? '' : 's'} updated.` });
+      load();
+    } catch (e: any) {
+      toast({ title: 'Could not re-scan', description: e?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setRescanning(false);
+    }
+  };
 
 
   const load = async () => {
@@ -75,6 +113,11 @@ export default function ComponentList() {
             </SelectContent>
           </Select>
         </div>
+        {canRescan && (
+          <Button variant="outline" onClick={rescanDetails} disabled={rescanning}>
+            <Wand2 className="h-4 w-4 mr-1" />{rescanning ? 'Re-scanning…' : 'Re-scan details'}
+          </Button>
+        )}
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />New component</Button>
       </div>
 
