@@ -151,14 +151,15 @@ export default function ComponentList() {
                     </TableCell>
                   </TableRow>
                   {open && (
-                    <TableRow key={`${r.id}-details`}>
+                    <TableRow>
                       <TableCell />
                       <TableCell colSpan={7} className="pb-4">
                         <ComponentAttributes attributes={r.attributes} />
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
+
               );
             })}
           </TableBody>
