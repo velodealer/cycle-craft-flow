@@ -1,31 +1,22 @@
-# Use eBay's Trading API for full-length descriptions
+# Fix the eBay 4,000-character description error
 
-## The situation
-The app lists bikes through eBay's newer Inventory API, which caps the item description at 4,000 characters — that's where the error comes from. The older Trading API you linked allows up to 500,000 characters. Both can be used against the same listing: we publish as now, then immediately push the full description with the Trading API's `ReviseItem`, which lifts the limit.
+## What's actually wrong
+We send the listing text twice: once on the inventory item record and once on the offer. Only the inventory item field is capped at 4,000 characters — the offer's listing description allows up to 500,000. Your saved listing format is longer than 4,000, so the first call fails before the offer is ever created.
 
-## What we'll build
+No Trading API needed, and createOffer is already what we use.
 
-### 1. Publish, then revise with the full description
-- Keep the current publish flow, but send a short safe description in the first step (the listing format trimmed to fit 4,000 characters) so publishing always succeeds.
-- Straight after the listing goes live, call the Trading API `ReviseItem` with the complete rendered listing format — no practical length limit.
-- On later updates to an already-live bike, go straight to `ReviseItem` with the full description.
-- If the revise call fails for any reason, the listing still stands with the shorter description and the failure is recorded rather than blocking the listing.
+## The fix
+- Send the full listing format in the offer's listing description (500,000-character allowance) — this is the text buyers see.
+- On the inventory item record, send a short summary instead: the bike's own description text, cut to a sentence boundary under 4,000 characters, with markup stripped. This field never reaches the buyer once the offer carries its own description.
+- Same handling when updating an existing live listing, so re-listing a bike can't hit the cap either.
+- If eBay still rejects the description for any other reason (banned markup, links), you get a plain-English message naming the reason.
 
-### 2. Record what happened on the bike
-- The bike's Activity timeline gets an entry when the full description is applied, and a clear one if it couldn't be (with eBay's reason), so you always know which version is live.
-
-### 3. Errors in plain English
-- If eBay rejects the description (unsupported markup, banned links, active-content rules), you get a readable message naming the reason instead of raw XML.
+## Mobile note
+eBay builds the mobile "short description" from the first 800 characters of the full text. Worth knowing when you write your listing format — the opening lines are what most buyers see first. No code change for this; flagging it so you can put the key selling points at the top.
 
 ## Technical details
-- New shared helper `supabase/functions/_shared/ebay-trading.ts`: XML request builder + response parser for the Trading API (`https://api.ebay.com/ws/api.dll`, sandbox equivalent), using the existing OAuth access token via the `X-EBAY-API-IAF-TOKEN` header plus `X-EBAY-API-CALL-NAME`, `X-EBAY-API-SITEID` (3 for UK), and `X-EBAY-API-COMPATIBILITY-LEVEL`.
-- `ReviseItem` with `ItemID` (the listing id already stored in `ebay_listings`) and `Description` wrapped in CDATA.
-- `_shared/ebay-listing.ts`: safe-trim helper for the initial publish, revise step after publish/update, activity logging, error mapping.
+- `supabase/functions/_shared/ebay-listing.ts`: keep `descriptionHtml` (the rendered template) for `offerBody.listingDescription`; add a `summaryFor(bike)` helper producing a plain-text, tag-stripped, sentence-boundary-truncated string under 4,000 characters for `product.description` on the `PUT /sell/inventory/v1/inventory_item/{sku}` call.
 - Redeploy `ebay-sync-bike`.
 
-## What may be needed from you
-- Trading API calls need the app's **Dev ID** alongside the client id and secret. If eBay rejects the call for a missing dev name, I'll ask you for it and store it as a secret.
-- The eBay connection may need reconnecting once so the token carries the scope Trading calls require; if so the card will say so.
-
 ## Result
-Bikes list with the complete listing format, however long it is — BPS-TRE-027T included — with the 4,000-character wall gone.
+BPS-TRE-027T and any other bike with a long listing format list successfully, with the complete description on the live eBay listing.
