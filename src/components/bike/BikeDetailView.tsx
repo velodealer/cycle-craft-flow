@@ -528,13 +528,67 @@ export default function BikeDetailView({
           {/* Pricing & finance */}
           {canSeePricing && !inspectionMode && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-xl">Pricing &amp; finance</CardTitle>
+                {!editingPrices && (
+                  <Button variant="outline" size="sm" onClick={startEditPrices}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap items-baseline gap-2">
                   <MarginTriple cost={bike.purchase_price} asking={bike.asking_price} className="text-lg" />
                 </div>
+                {editingPrices ? (
+                  <div className="mt-4 space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="price-purchase" className="label-text">Purchase</Label>
+                        <Input
+                          id="price-purchase"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={priceDraft.purchase_price}
+                          onChange={(e) => setPriceDraft((d) => ({ ...d, purchase_price: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="price-asking" className="label-text">Asking</Label>
+                        <Input
+                          id="price-asking"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={priceDraft.asking_price}
+                          onChange={(e) => setPriceDraft((d) => ({ ...d, asking_price: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="price-sale" className="label-text">Sale</Label>
+                        <Input
+                          id="price-sale"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={priceDraft.sale_price}
+                          onChange={(e) => setPriceDraft((d) => ({ ...d, sale_price: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={savePrices} disabled={savingPrices}>
+                        {savingPrices && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Save
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingPrices(false)} disabled={savingPrices}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="mt-4 grid grid-cols-3 gap-4">
                   <div>
                     <p className="label-text">Purchase</p>
