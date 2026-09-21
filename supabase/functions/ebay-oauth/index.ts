@@ -12,6 +12,7 @@ import {
   requireRole,
   exchangeCode,
   ebayFetch,
+  POLICY_OPT_IN_MESSAGE,
   authBase,
   redirectUri,
   EBAY_SCOPES,
@@ -334,6 +335,7 @@ Deno.serve(async (req) => {
     if (action === 'policies') {
       const conn = await requireConnection(supabase, businessId);
       const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+      let optInRequired = false;
       const get = async (kind: PolicyKind, key: string) => {
         try {
           const data = await ebayFetch<any>(
@@ -344,7 +346,9 @@ Deno.serve(async (req) => {
             .map((p: any) => summarisePolicy(kind, p))
             .filter((p: any) => p.id);
         } catch (e) {
-          console.error(`eBay ${kind} lookup failed:`, (e as Error).message);
+          const message = (e as Error).message;
+          if (message === POLICY_OPT_IN_MESSAGE) optInRequired = true;
+          console.error(`eBay ${kind} lookup failed:`, message);
           return [];
         }
       };
@@ -353,7 +357,7 @@ Deno.serve(async (req) => {
         get('payment', 'paymentPolicies'),
         get('returns', 'returnPolicies'),
       ]);
-      return json({ fulfillment, payment, returns });
+      return json({ fulfillment, payment, returns, opt_in_required: optInRequired });
     }
 
     if (action === 'shipping_services') {

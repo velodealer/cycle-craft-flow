@@ -213,6 +213,16 @@ export async function requireConnection(supabase: Client, businessId: string): P
   return { environment: env, accessToken: fresh.access_token, settings: merged };
 }
 
+export const POLICY_OPT_IN_MESSAGE =
+  'This eBay account has not turned on business policies yet. Open business policies on eBay, switch them on, then try again.';
+
+/** True when eBay rejected the call because the seller has not opted in to business policies. */
+export function isOptInError(text: string): boolean {
+  return /20403/.test(text)
+    || /not opted in to business polic/i.test(text)
+    || /not eligible for business polic/i.test(text);
+}
+
 /** eBay REST helper. Throws with eBay's own message on failure. */
 export async function ebayFetch<T = any>(
   conn: Connection,
@@ -234,6 +244,7 @@ export async function ebayFetch<T = any>(
   const text = await res.text();
   if (!res.ok) {
     console.error(`eBay request failed [${res.status}] ${path}: ${text}`);
+    if (isOptInError(text)) throw new Error(POLICY_OPT_IN_MESSAGE);
     throw new Error(`eBay request failed [${res.status}]: ${ebayMessage(text)}`);
   }
   return (text ? JSON.parse(text) : null) as T;
