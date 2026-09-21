@@ -92,11 +92,22 @@ export const getEbayAuthUrl = (environment: 'sandbox' | 'production') =>
 
 export const disconnectEbay = () => invoke<{ ok: true }>('ebay-oauth', { action: 'disconnect' });
 
-export const getEbayPolicies = () =>
-  invoke<{ fulfillment: PolicyOption[]; payment: PolicyOption[]; returns: PolicyOption[] }>(
-    'ebay-oauth',
-    { action: 'policies' },
-  );
+export const getEbayPolicies = () => invoke<EbayPolicies>('ebay-oauth', { action: 'policies' });
+
+export const getEbayShippingServices = () =>
+  invoke<{ services: ShippingService[] }>('ebay-oauth', { action: 'shipping_services' });
+
+/** Creates a policy on eBay, or updates it when policy_id is supplied. */
+export const saveEbayPolicy = (kind: PolicyKind, values: Record<string, unknown>, policyId?: string | null) =>
+  invoke<{ ok: true; policy: AnyPolicy }>('ebay-oauth', {
+    action: 'save_policy',
+    kind,
+    policy_id: policyId ?? null,
+    ...values,
+  });
+
+export const deleteEbayPolicy = (kind: PolicyKind, policyId: string) =>
+  invoke<{ ok: true }>('ebay-oauth', { action: 'delete_policy', kind, policy_id: policyId });
 
 export const searchEbayCategories = (query: string) =>
   invoke<{ categories: PolicyOption[] }>('ebay-oauth', { action: 'categories', query });
