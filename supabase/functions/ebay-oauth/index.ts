@@ -58,15 +58,35 @@ Deno.serve(async (req) => {
 
   // ---- OAuth callback from eBay ----
   if (req.method === 'GET' && (url.searchParams.get('code') || url.searchParams.get('error'))) {
-    const state = url.searchParams.get('state');
-    const origin = safeOrigin(state);
-    const environment = envFromState(state);
+    const rawState = url.searchParams.get('state');
+    const stateKey = rawState ? decodeURIComponent(rawState) : '';
+    let origin = safeOrigin(rawState);
+    let environment = envFromState(rawState);
     try {
       const error = url.searchParams.get('error');
       if (error) throw new Error(url.searchParams.get('error_description') || error);
 
+      // Which dealership started this connection?
+      const { data: stateRow } = await supabase
+        .from('ebay_oauth_states')
+        .select('*')
+        .eq('state', stateKey)
+        .maybeSingle();
+      if (!stateRow) throw new Error('This eBay connection link has expired — please try connecting again.');
+      await supabase.from('ebay_oauth_states').delete().eq('state', stateKey);
+
+      const record = stateRow as {
+        business_id: string; environment: string; origin: string | null; created_at: string;
+      };
+      if (Date.now() - Date.parse(record.created_at) > 15 * 60_000) {
+        throw new Error('This eBay connection link has expired — please try connecting again.');
+      }
+      const businessId = record.business_id;
+      environment = record.environment === 'production' ? 'production' : 'sandbox';
+      if (record.origin) origin = record.origin;
+
       const tokens = await exchangeCode(environment, url.searchParams.get('code')!);
-      await saveSettings(supabase, {
+      await saveSettings(supabase, businessId, {
         environment,
         refresh_token: tokens.refresh_token,
         access_token: tokens.access_token,
@@ -77,9 +97,9 @@ Deno.serve(async (req) => {
       });
 
       try {
-        const conn = await requireConnection(supabase);
+        const conn = await requireConnection(supabase, businessId);
         const me = await ebayFetch<any>(conn, '/commerce/identity/v1/user/');
-        if (me?.username) await saveSettings(supabase, { seller_name: me.username });
+        if (me?.username) await saveSettings(supabase, businessId, { seller_name: me.username });
       } catch (e) {
         console.error('Could not read eBay account name:', (e as Error).message);
       }
@@ -93,10 +113,12 @@ Deno.serve(async (req) => {
 
   // ---- Authenticated JSON API ----
   let userId: string;
+  let businessId: string;
   try {
     const user = await requireUser(req, supabase);
     await requireRole(supabase, user.id, ['admin', 'owner']);
     userId = user.id;
+    businessId = await businessIdForUser(supabase, user.id);
   } catch (e) {
     return json({ error: (e as Error).message }, 401);
   }
