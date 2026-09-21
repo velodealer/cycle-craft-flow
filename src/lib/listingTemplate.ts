@@ -44,6 +44,34 @@ export const LISTING_FIELDS: ListingField[] = [
   { token: 'reference', label: 'Bike reference' },
   { token: 'photos', label: 'Photos (newline-joined URLs)' },
   { token: 'components', label: 'Components list (one per line)' },
+  { token: 'components_table', label: 'Components table (HTML)' },
+  { token: 'spec_list', label: 'Full specification list (one per line)' },
+  { token: 'spec_table', label: 'Full specification table (HTML)' },
+];
+
+export interface ListingFieldGroup {
+  id: string;
+  title: string;
+  fields: ListingField[];
+}
+
+/** Bike basics + every component slot and spec field, grouped for the picker. */
+export const LISTING_FIELD_GROUPS: ListingFieldGroup[] = [
+  { id: 'bike', title: 'Bike details', fields: LISTING_FIELDS },
+  ...SPEC_SECTIONS.map((section) => ({
+    id: section.id,
+    title: section.title,
+    fields: [
+      ...(section.slots || []).flatMap((slot) => [
+        { token: `part_${slot.slot}`, label: `${slot.label} — brand & model` },
+        { token: `part_${slot.slot}_detail`, label: `${slot.label} — full details` },
+      ]),
+      ...(section.fields || []).map((field) => ({
+        token: `spec_${section.path || section.id}_${field.key.replace(/\./g, '_')}`,
+        label: field.label,
+      })),
+    ],
+  })).filter((g) => g.fields.length > 0),
 ];
 
 const yn = (v: any) => (v === true ? 'Yes' : v === false ? 'No' : '');
