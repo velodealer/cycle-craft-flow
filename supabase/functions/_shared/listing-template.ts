@@ -212,13 +212,19 @@ export function renderListingHtml(
 export async function loadBikeComponents(supabase: any, bikeId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('bike_components')
-    .select('*, components(name, brand, model, component_categories(name))')
+    .select('*, components(name, brand, model, mpn, weight_g, description, attributes, component_categories(name))')
     .eq('bike_id', bikeId);
   if (error || !Array.isArray(data)) return [];
   return data.map((row: any) => ({
+    slot: row.slot,
+    notes: row.notes,
     brand: row.components?.brand,
     model: row.components?.model,
     name: row.components?.name,
+    mpn: row.components?.mpn,
+    weight_g: row.components?.weight_g,
+    description: row.components?.description,
+    attributes: row.components?.attributes,
     category: row.components?.component_categories?.name,
   }));
 }
