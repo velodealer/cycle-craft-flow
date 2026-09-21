@@ -4,6 +4,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { notifyLogistics } from '../_shared/email.ts';
 import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -167,6 +168,14 @@ Deno.serve(async (req) => {
       })
       .eq('id', delivery.id);
 
+
+    await logBikeActivity(bikeId, {
+      kind: 'logistics',
+      action: 'booked',
+      summary: `Delivery booked with Cycle Courier (${responseData.status || 'scheduled'})`,
+      detail: { order_id: orderId ?? null, tracking_number: trackingNumber ?? null },
+      actorLabel: 'Cycle Courier',
+    });
 
     await notifyLogistics(supabase as any, bikeId, {
       direction: 'outbound',
