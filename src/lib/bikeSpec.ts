@@ -67,7 +67,12 @@ export const SPEC_SECTIONS: SectionDef[] = [
     id: 'frame',
     title: 'Frame',
     path: 'frame',
+    slots: [
+      { slot: 'frame', label: 'Frame', categorySlug: 'frame' },
+      { slot: 'headset', label: 'Headset', categorySlug: 'headset' },
+    ],
     fields: [
+
       { key: 'material', label: 'Material', type: 'select', options: FRAME_MATERIALS },
       { key: 'size', label: 'Size' },
       { key: 'geometry', label: 'Geometry', type: 'textarea' },
