@@ -3,6 +3,7 @@
 // invoice and resets the bike off "sold".
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser } from '../_shared/quickbooks.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -173,6 +174,14 @@ Deno.serve(async (req) => {
         performed_by: profile.id,
         business_id: (bikeRow as any)?.business_id ?? invoices[0]?.business_id ?? null,
       });
+
+      await logBikeActivity(bikeId, {
+        kind: 'sale',
+        action: 'reversed',
+        summary: `Sale reversed — ${invoices.length} invoice(s) deleted${pxBikes.length ? `, ${pxBikes.length} part-exchange bike(s) removed` : ''}. Bike set to ${newStatus}.`,
+        detail: { invoices: invoices.length, part_exchange_bikes: pxBikes.length, new_status: newStatus },
+        actorId: profile.id,
+      }, (bikeRow as any)?.business_id ?? null);
     }
 
     return json({
