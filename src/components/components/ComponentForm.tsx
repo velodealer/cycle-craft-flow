@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import ComponentAttributes from './ComponentAttributes';
+
 
 export interface ComponentCategory {
   id: string;
@@ -21,7 +23,10 @@ export interface ComponentRecord {
   mpn: string | null;
   description: string | null;
   weight_g: number | null;
+  /** Extra manufacturer details pulled from the catalogue. */
+  attributes?: any;
 }
+
 
 interface Props {
   component?: ComponentRecord | null;
@@ -111,7 +116,14 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
           <Label>Description</Label>
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
         </div>
+        {component?.attributes && (
+          <div className="col-span-2">
+            <Label>Manufacturer details</Label>
+            <ComponentAttributes attributes={component.attributes} className="mt-1" />
+          </div>
+        )}
       </div>
+
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
         <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>

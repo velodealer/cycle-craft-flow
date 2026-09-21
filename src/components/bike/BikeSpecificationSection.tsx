@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
+import ComponentAttributes from '@/components/components/ComponentAttributes';
+
 import StripComponentDialog from './StripComponentDialog';
 import { PackageMinus, Sparkles } from 'lucide-react';
 import SpokesApplyDialog from './SpokesApplyDialog';
@@ -31,18 +33,29 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [bikeComponents, setBikeComponents] = useState<Record<string, string>>({}); // slot -> component_id
+  const [componentDetails, setComponentDetails] = useState<Record<string, any>>({}); // slot -> component row
+
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
   const [spokesOpen, setSpokesOpen] = useState(false);
 
   const reloadComponents = () => {
     if (!bike?.id) return;
-    supabase.from('bike_components').select('slot, component_id').eq('bike_id', bike.id)
+    supabase
+      .from('bike_components')
+      .select('slot, component_id, notes, components(brand, model, mpn, weight_g, description, attributes)')
+      .eq('bike_id', bike.id)
       .then(({ data }) => {
         const map: Record<string, string> = {};
-        (data || []).forEach((r: any) => { map[r.slot] = r.component_id; });
+        const details: Record<string, any> = {};
+        (data || []).forEach((r: any) => {
+          map[r.slot] = r.component_id;
+          details[r.slot] = { ...(r.components || {}), notes: r.notes };
+        });
         setBikeComponents(map);
+        setComponentDetails(details);
       });
   };
+
 
   useEffect(() => { setDraft(bike); }, [bike]);
 
@@ -273,6 +286,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {s.slots.map((slot) => {
                         const linkedId = bikeComponents[slot.slot] || null;
+                        const detail = componentDetails[slot.slot];
                         return (
                           <div key={slot.slot}>
                             <Label>{slot.label}</Label>
@@ -296,9 +310,25 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                                 </Button>
                               )}
                             </div>
+                            {linkedId && detail && (
+                              <div className="mt-1 space-y-1">
+                                {(detail.notes || detail.description) && (
+                                  <p className="text-xs text-muted-foreground">{detail.notes || detail.description}</p>
+                                )}
+                                {(detail.mpn || detail.weight_g) && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {[detail.mpn && `MPN ${detail.mpn}`, detail.weight_g && `${detail.weight_g} g`]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </p>
+                                )}
+                                <ComponentAttributes attributes={detail.attributes} />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
+
                     </div>
                   )}
                   {s.fields && s.fields.length > 0 && (

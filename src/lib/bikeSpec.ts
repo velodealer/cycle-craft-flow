@@ -67,7 +67,12 @@ export const SPEC_SECTIONS: SectionDef[] = [
     id: 'frame',
     title: 'Frame',
     path: 'frame',
+    slots: [
+      { slot: 'frame', label: 'Frame', categorySlug: 'frame' },
+      { slot: 'headset', label: 'Headset', categorySlug: 'headset' },
+    ],
     fields: [
+
       { key: 'material', label: 'Material', type: 'select', options: FRAME_MATERIALS },
       { key: 'size', label: 'Size' },
       { key: 'geometry', label: 'Geometry', type: 'textarea' },
@@ -108,7 +113,13 @@ export const SPEC_SECTIONS: SectionDef[] = [
     id: 'wheels',
     title: 'Wheels',
     path: 'wheels',
-    slots: [{ slot: 'wheelset', label: 'Wheelset', categorySlug: 'wheels' }],
+    slots: [
+      { slot: 'wheelset', label: 'Wheelset', categorySlug: 'wheels' },
+      { slot: 'front_hub', label: 'Front Hub', categorySlug: 'hubs', position: 'front' },
+      { slot: 'rear_hub', label: 'Rear Hub', categorySlug: 'hubs', position: 'rear' },
+      { slot: 'spokes', label: 'Spokes', categorySlug: 'spokes' },
+    ],
+
     fields: [
       { key: 'wheel_size', label: 'Wheel Size', placeholder: '700c, 29", 27.5"' },
       { key: 'rim_material', label: 'Rim Material' },
@@ -143,6 +154,8 @@ export const SPEC_SECTIONS: SectionDef[] = [
       { slot: 'rear_derailleur', label: 'Rear Derailleur', categorySlug: 'rear_derailleur' },
       { slot: 'shifters', label: 'Shifters', categorySlug: 'shifters' },
       { slot: 'bottom_bracket', label: 'Bottom Bracket', categorySlug: 'bottom_bracket' },
+      { slot: 'power_meter', label: 'Power Meter', categorySlug: 'power_meter' },
+
     ],
     fields: [
       { key: 'groupset', label: 'Groupset' },
@@ -157,7 +170,12 @@ export const SPEC_SECTIONS: SectionDef[] = [
     id: 'brakes',
     title: 'Brakes',
     path: 'brakes',
-    slots: [{ slot: 'brakes', label: 'Brakes', categorySlug: 'brakes' }],
+    slots: [
+      { slot: 'brakes', label: 'Brakes', categorySlug: 'brakes' },
+      { slot: 'brake_levers', label: 'Brake Levers', categorySlug: 'brake_levers' },
+      { slot: 'disc_rotors', label: 'Disc Rotors', categorySlug: 'rotors' },
+    ],
+
     fields: [
       { key: 'type', label: 'Type', type: 'select', options: ['Hydraulic Disc', 'Mechanical Disc', 'Rim'] },
       { key: 'rotor_front_mm', label: 'Front Rotor (mm)', type: 'number' },
@@ -207,7 +225,13 @@ export const SPEC_SECTIONS: SectionDef[] = [
     title: 'E-bike System',
     path: 'ebike',
     show: isElectric,
-    slots: [{ slot: 'ebike_system', label: 'Motor / System', categorySlug: 'ebike_system' }],
+    slots: [
+      { slot: 'ebike_system', label: 'Motor / System', categorySlug: 'ebike_system' },
+      { slot: 'ebike_battery', label: 'Battery', categorySlug: 'ebike_battery' },
+      { slot: 'ebike_display', label: 'Display', categorySlug: 'ebike_display' },
+      { slot: 'ebike_charger', label: 'Charger', categorySlug: 'ebike_charger' },
+    ],
+
     fields: [
       { key: 'motor_brand', label: 'Motor Brand' },
       { key: 'motor_model', label: 'Motor Model' },
@@ -224,7 +248,16 @@ export const SPEC_SECTIONS: SectionDef[] = [
     title: 'Accessories',
     path: 'accessories',
     show: hasAccessories,
+    slots: [
+      { slot: 'mudguards', label: 'Mudguards', categorySlug: 'accessories' },
+      { slot: 'rack', label: 'Rack', categorySlug: 'accessories' },
+      { slot: 'lights', label: 'Lights', categorySlug: 'accessories' },
+      { slot: 'bell', label: 'Bell', categorySlug: 'accessories' },
+      { slot: 'kickstand', label: 'Kickstand', categorySlug: 'accessories' },
+      { slot: 'lock', label: 'Lock', categorySlug: 'accessories' },
+    ],
     fields: [
+
       { key: 'mudguards', label: 'Mudguards', type: 'checkbox' },
       { key: 'rack', label: 'Rack', type: 'checkbox' },
       { key: 'lights', label: 'Lights', type: 'checkbox' },

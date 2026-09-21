@@ -35,7 +35,13 @@ export interface MappedComponent {
   model: string;
   description?: string | null;
   position?: 'front' | 'rear' | null;
+  /** Manufacturer part number, when the source publishes one. */
+  mpn?: string | null;
+  weightG?: number | null;
+  /** Every other field the source publishes for this part. */
+  attributes?: Record<string, any>;
 }
+
 
 export interface MappedBike {
   bikeFields: Record<string, any>;
@@ -199,12 +205,12 @@ export async function upsertComponentsForBike(bikeId: string, components: Mapped
   let linked = 0;
 
   for (const c of components) {
-    const categoryId = cats[c.categorySlug];
+    const categoryId = cats[c.categorySlug] || cats['accessories'];
     if (!categoryId || !c.brand || !c.model) continue;
 
     const { data: found } = await supabase
       .from('components')
-      .select('id')
+      .select('id, description, mpn, weight_g, attributes')
       .eq('category_id', categoryId)
       .ilike('brand', c.brand)
       .ilike('model', c.model)
@@ -220,21 +226,41 @@ export async function upsertComponentsForBike(bikeId: string, components: Mapped
           brand: c.brand,
           model: c.model,
           description: c.description || null,
+          mpn: c.mpn || null,
+          weight_g: c.weightG ?? null,
+          attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : {},
         })
         .select('id')
         .single();
       if (error || !created) continue;
       componentId = (created as any).id;
+    } else {
+      // Top up blanks only — never overwrite something a person typed.
+      const row = found as any;
+      const patch: Record<string, any> = {};
+      if (!row.description && c.description) patch.description = c.description;
+      if (!row.mpn && c.mpn) patch.mpn = c.mpn;
+      if ((row.weight_g === null || row.weight_g === undefined) && c.weightG != null) patch.weight_g = c.weightG;
+      const incoming = c.attributes || {};
+      if (Object.keys(incoming).length) {
+        const existing = (row.attributes && typeof row.attributes === 'object' ? row.attributes : {}) as Record<string, any>;
+        const merged = { ...incoming, ...existing };
+        if (Object.keys(merged).length !== Object.keys(existing).length) patch.attributes = merged;
+      }
+      if (Object.keys(patch).length) {
+        await supabase.from('components').update(patch).eq('id', componentId);
+      }
     }
 
     const { error: linkError } = await supabase
       .from('bike_components')
       .upsert(
-        { bike_id: bikeId, slot: c.slot, component_id: componentId!, position: c.position || null },
+        { bike_id: bikeId, slot: c.slot, component_id: componentId!, position: c.position || null, notes: c.description || null },
         { onConflict: 'bike_id,slot' },
       );
     if (!linkError) linked += 1;
   }
+
 
   return linked;
 }
@@ -305,11 +331,61 @@ function label(part: any): { brand: string; model: string; description?: string 
   return { brand: String(brand), model: String(model), description: part.description || part.display || null };
 }
 
+/** Fields already stored in their own columns — everything else becomes attributes. */
+const SKIP_ATTR_KEYS = new Set([
+  'maker', 'brand', 'model', 'display', 'description',
+  'partNumber', 'mpn', 'sku', 'weightG', 'weightGrams', 'weightGrammes',
+]);
+
+function partAttributes(part: any): Record<string, any> {
+  const out: Record<string, any> = {};
+  if (!part || typeof part !== 'object') return out;
+  for (const [k, v] of Object.entries(part)) {
+    if (SKIP_ATTR_KEYS.has(k)) continue;
+    if (v === undefined || v === null || v === '') continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+const numberOrNull = (v: any) => {
+  const n = Number(v);
+  return v === undefined || v === null || v === '' || Number.isNaN(n) ? null : n;
+};
+
+/**
+ * 99spokes often packs both wheels into one line: "Front: X, Rear: Y".
+ * Returns the text for the requested position when the pattern is present.
+ */
+export function splitFrontRear(text: any, position?: 'front' | 'rear' | null): string | null {
+  const s = typeof text === 'string' ? text : '';
+  if (!position || !s) return s || null;
+  const m = s.match(/front\s*:\s*([\s\S]*?)(?:,?\s*rear\s*:\s*([\s\S]*))?$/i);
+  if (!m) return s;
+  const front = (m[1] || '').replace(/,\s*$/, '').trim();
+  const rear = (m[2] || '').trim();
+  if (position === 'front') return front || s;
+  return rear || s;
+}
+
 function push(list: MappedComponent[], slot: string, categorySlug: string, part: any, position?: 'front' | 'rear') {
   const l = label(part);
   if (!l) return;
-  list.push({ slot, categorySlug, brand: l.brand, model: l.model, description: l.description, position: position ?? null });
+  const attributes = partAttributes(part);
+  const description = position ? splitFrontRear(l.description, position) : l.description;
+  list.push({
+    slot,
+    categorySlug,
+    brand: l.brand,
+    model: l.model,
+    description: description ?? null,
+    position: position ?? null,
+    mpn: part?.partNumber || part?.mpn || part?.sku || null,
+    weightG: numberOrNull(part?.weightG ?? part?.weightGrams ?? part?.weightGrammes),
+    attributes,
+  });
 }
+
 
 /**
  * Converts a 99spokes bike record into our bike columns, spec_values tree and
@@ -424,12 +500,18 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
 
   /* --- components library --- */
   const components: MappedComponent[] = [];
+  push(components, 'frame', 'frame', c.frame);
   push(components, 'fork', 'fork', c.fork);
   push(components, 'rear_shock', 'rear_shock', c.rearShock);
+  push(components, 'headset', 'headset', c.headset);
   push(components, 'wheelset', 'wheels', c.rims);
+  push(components, 'front_hub', 'hubs', c.frontHub, 'front');
+  push(components, 'rear_hub', 'hubs', c.rearHub, 'rear');
+  push(components, 'spokes', 'spokes', c.spokes);
   push(components, 'front_tyre', 'tyres', c.tires, 'front');
   push(components, 'rear_tyre', 'tyres', c.tires, 'rear');
   push(components, 'crank', 'crank', c.crank);
+  push(components, 'power_meter', 'power_meter', c.powerMeter);
   push(components, 'cassette', 'cassette', c.cassette);
   push(components, 'chain', 'chain', c.chain);
   push(components, 'front_derailleur', 'front_derailleur', c.frontDerailleur);
@@ -437,6 +519,8 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
   push(components, 'shifters', 'shifters', c.shifters);
   push(components, 'bottom_bracket', 'bottom_bracket', c.bottomBracket);
   push(components, 'brakes', 'brakes', c.brakes);
+  push(components, 'brake_levers', 'brake_levers', c.brakeLevers);
+  push(components, 'disc_rotors', 'rotors', c.discRotors);
   push(components, 'handlebars', 'handlebars', c.handlebar);
   push(components, 'stem', 'stem', c.stem);
   push(components, 'grips', 'grips', c.grips);
@@ -444,6 +528,30 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
   push(components, 'seatpost', 'seatpost', c.seatpost);
   push(components, 'pedals', 'pedals', c.pedals);
   push(components, 'ebike_system', 'ebike_system', c.motor);
+  push(components, 'ebike_battery', 'ebike_battery', c.battery);
+  push(components, 'ebike_display', 'ebike_display', c.display);
+  push(components, 'ebike_charger', 'ebike_charger', c.charger);
+  push(components, 'mudguards', 'accessories', c.fenders);
+  push(components, 'rack', 'accessories', c.racks);
+  push(components, 'lights', 'accessories', c.lights);
+  push(components, 'bell', 'accessories', c.bell);
+  push(components, 'kickstand', 'accessories', c.stand);
+  push(components, 'lock', 'accessories', c.lock);
+
+  // Anything the source publishes that we don't have a slot for yet.
+  const KNOWN_KEYS = new Set([
+    'frame', 'fork', 'rearShock', 'headset', 'rims', 'frontHub', 'rearHub', 'spokes', 'tires',
+    'crank', 'powerMeter', 'cassette', 'chain', 'frontDerailleur', 'rearDerailleur', 'shifters',
+    'bottomBracket', 'brakes', 'brakeLevers', 'discRotors', 'handlebar', 'stem', 'grips', 'saddle',
+    'seatpost', 'pedals', 'motor', 'battery', 'display', 'charger',
+    'fenders', 'racks', 'lights', 'bell', 'stand', 'lock',
+  ]);
+  Object.entries(c).forEach(([key, part]) => {
+    if (KNOWN_KEYS.has(key) || !part || typeof part !== 'object') return;
+    const slot = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+    push(components, slot, 'accessories', part);
+  });
+
 
   const sizes: string[] = Array.isArray(bike?.sizes)
     ? bike.sizes.map((s: any) => s?.name).filter(Boolean)
