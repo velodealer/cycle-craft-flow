@@ -84,6 +84,8 @@ export default function ComponentList() {
             </div>
             <ListCardRow label="MPN" value={r.mpn || '—'} />
             <ListCardRow label="Weight" value={r.weight_g ? `${r.weight_g} g` : '—'} />
+            {r.description && <ListCardRow label="Description" value={r.description} />}
+            <ComponentAttributes attributes={r.attributes} className="mt-2" />
             <ListCardActions>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setEditing(r)}>
@@ -96,6 +98,7 @@ export default function ComponentList() {
             </ListCardActions>
           </ListCard>
         ))}
+
       </div>
 
       <div className="hidden md:block rounded-md border overflow-x-auto">
