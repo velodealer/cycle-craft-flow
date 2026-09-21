@@ -305,11 +305,61 @@ function label(part: any): { brand: string; model: string; description?: string 
   return { brand: String(brand), model: String(model), description: part.description || part.display || null };
 }
 
+/** Fields already stored in their own columns — everything else becomes attributes. */
+const SKIP_ATTR_KEYS = new Set([
+  'maker', 'brand', 'model', 'display', 'description',
+  'partNumber', 'mpn', 'sku', 'weightG', 'weightGrams', 'weightGrammes',
+]);
+
+function partAttributes(part: any): Record<string, any> {
+  const out: Record<string, any> = {};
+  if (!part || typeof part !== 'object') return out;
+  for (const [k, v] of Object.entries(part)) {
+    if (SKIP_ATTR_KEYS.has(k)) continue;
+    if (v === undefined || v === null || v === '') continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+const numberOrNull = (v: any) => {
+  const n = Number(v);
+  return v === undefined || v === null || v === '' || Number.isNaN(n) ? null : n;
+};
+
+/**
+ * 99spokes often packs both wheels into one line: "Front: X, Rear: Y".
+ * Returns the text for the requested position when the pattern is present.
+ */
+export function splitFrontRear(text: any, position?: 'front' | 'rear' | null): string | null {
+  const s = typeof text === 'string' ? text : '';
+  if (!position || !s) return s || null;
+  const m = s.match(/front\s*:\s*([\s\S]*?)(?:,?\s*rear\s*:\s*([\s\S]*))?$/i);
+  if (!m) return s;
+  const front = (m[1] || '').replace(/,\s*$/, '').trim();
+  const rear = (m[2] || '').trim();
+  if (position === 'front') return front || s;
+  return rear || s;
+}
+
 function push(list: MappedComponent[], slot: string, categorySlug: string, part: any, position?: 'front' | 'rear') {
   const l = label(part);
   if (!l) return;
-  list.push({ slot, categorySlug, brand: l.brand, model: l.model, description: l.description, position: position ?? null });
+  const attributes = partAttributes(part);
+  const description = position ? splitFrontRear(l.description, position) : l.description;
+  list.push({
+    slot,
+    categorySlug,
+    brand: l.brand,
+    model: l.model,
+    description: description ?? null,
+    position: position ?? null,
+    mpn: part?.partNumber || part?.mpn || part?.sku || null,
+    weightG: numberOrNull(part?.weightG ?? part?.weightGrams ?? part?.weightGrammes),
+    attributes,
+  });
 }
+
 
 /**
  * Converts a 99spokes bike record into our bike columns, spec_values tree and
