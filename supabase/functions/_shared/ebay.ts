@@ -230,12 +230,14 @@ export async function ebayFetch<T = any>(
   init: RequestInit = {},
 ): Promise<T> {
   const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+  const language = MARKETPLACE_LANGUAGE[marketplace] || 'en-GB';
   const res = await fetch(`${apiBase(conn.environment)}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${conn.accessToken}`,
       Accept: 'application/json',
-      'Content-Language': 'en-GB',
+      'Accept-Language': language,
+      'Content-Language': language,
       'X-EBAY-C-MARKETPLACE-ID': marketplace,
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
       ...(init.headers as Record<string, string> | undefined),
