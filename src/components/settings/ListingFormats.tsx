@@ -155,7 +155,7 @@ export default function ListingFormats() {
   };
 
   const preview = useMemo(
-    () => renderTemplate(current.body || '', SAMPLE_BIKE, []),
+    () => renderTemplate(current.body || '', SAMPLE_BIKE, SAMPLE_COMPONENTS),
     [current.body],
   );
 
