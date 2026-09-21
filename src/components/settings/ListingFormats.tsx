@@ -40,7 +40,21 @@ const SAMPLE_BIKE = {
   sale_price: null,
   sku: 'BIKE-001',
   photos: [],
+  spec_values: {
+    frame: { material: 'Carbon', size: 'Large' },
+    fork: { travel_mm: 150, lockout: true },
+    drivetrain: { groupset: 'SRAM GX Eagle', speed: 12, config: '1x', cassette_range: '10-52T' },
+    brakes: { type: 'Hydraulic Disc', rotor_front_mm: 200, rotor_rear_mm: 180 },
+    wheels: { wheel_size: '29"', rim_material: 'Alloy', tubeless_ready: true },
+  },
 };
+
+const SAMPLE_COMPONENTS = [
+  { slot: 'fork', slot_label: 'Fork', brand: 'Fox', model: '36 Factory', mpn: 'FOX36-F', weight_g: 2050, attributes: { travel: '150mm' } },
+  { slot: 'rear_derailleur', slot_label: 'Rear Derailleur', brand: 'SRAM', model: 'GX Eagle', attributes: { speeds: 12 } },
+  { slot: 'wheelset', slot_label: 'Wheelset', brand: 'Roval', model: 'Traverse', attributes: { material: 'Alloy' } },
+];
+
 
 type TemplateRow = {
   platform: ListingPlatform;
