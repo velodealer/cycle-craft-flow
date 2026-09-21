@@ -316,6 +316,8 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
             </AccordionItem>
           ))}
         </Accordion>
+
+        {bike?.catalog_data && <SpokesFullSpec bike={bike} />}
       </CardContent>
       {stripping && (
         <StripComponentDialog
