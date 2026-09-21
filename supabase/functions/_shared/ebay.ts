@@ -223,6 +223,19 @@ export function isOptInError(text: string): boolean {
     || /not eligible for business polic/i.test(text);
 }
 
+/** Language tag eBay expects for each marketplace. */
+const MARKETPLACE_LANGUAGE: Record<string, string> = {
+  EBAY_GB: 'en-GB',
+  EBAY_US: 'en-US',
+  EBAY_AU: 'en-AU',
+  EBAY_IE: 'en-IE',
+  EBAY_CA: 'en-CA',
+  EBAY_DE: 'de-DE',
+  EBAY_FR: 'fr-FR',
+  EBAY_IT: 'it-IT',
+  EBAY_ES: 'es-ES',
+};
+
 /** eBay REST helper. Throws with eBay's own message on failure. */
 export async function ebayFetch<T = any>(
   conn: Connection,
