@@ -64,6 +64,8 @@ export interface EbayPolicies {
   fulfillment: FulfillmentPolicy[];
   payment: PaymentPolicy[];
   returns: ReturnsPolicy[];
+  /** True when the seller has not switched business policies on in their eBay account. */
+  opt_in_required?: boolean;
 }
 
 export interface ShippingService { code: string; name: string }
