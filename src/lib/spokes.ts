@@ -161,6 +161,20 @@ export async function saveCatalogBike(bike: any, mapped: MappedBike): Promise<vo
   }
 }
 
+/**
+ * Columns written onto a bike so the complete 99spokes record is kept with it,
+ * not just the values we map into our own fields.
+ */
+export function spokesCatalogColumns(raw: any, size: string | null) {
+  return {
+    catalog_source: '99spokes',
+    catalog_source_id: raw?.id ?? null,
+    catalog_size: size ?? null,
+    catalog_data: raw ?? null,
+    catalog_synced_at: new Date().toISOString(),
+  };
+}
+
 /* ------------------------------------------------------------- component -- */
 
 let categoryCache: Record<string, string> | null = null;
@@ -378,6 +392,19 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
 
   /* --- cockpit --- */
   set('cockpit.bar_material', c.handlebar?.material ? MATERIAL_MAP[c.handlebar.material] : undefined);
+
+  /* --- extras from the full record --- */
+  set('drivetrain.shifting', bike?.shifting?.kind);
+  set('frame.hanger_standard', c.frame?.hangerStandard);
+  set('frame.weight_limit_kg', bike?.weightLimit?.weightKG);
+  set('wheels.configuration', bike?.wheels?.configuration);
+  if (Array.isArray(bike?.tireClearance) && bike.tireClearance.length) {
+    const widest = bike.tireClearance
+      .map((t: any) => t?.maxTireWidth)
+      .filter((v: any) => v !== undefined && v !== null)[0];
+    set('tyres.max_clearance', widest);
+  }
+  set('overview.spec_level', bike?.analysis?.specLevel?.value);
 
   /* --- e-bike --- */
   set('ebike.motor_brand', c.motor?.maker);

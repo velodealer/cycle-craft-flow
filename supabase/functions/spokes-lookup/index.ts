@@ -3,21 +3,11 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 const API_BASE = 'https://api.99spokes.com/v1';
 const API_KEY = Deno.env.get('NINETYNINE_SPOKES_API_KEY');
 
-const DETAIL_INCLUDE = [
-  'thumbnailUrl',
-  'shifting',
-  'weight',
-  'wheels',
-  'tireClearance',
-  'gearing',
-  'suspension',
-  'components',
-  'sizes',
-  'images',
-  'colors',
-].join(',');
+// '*' asks 99spokes for every field our API key is allowed to see, so we store
+// the complete manufacturer record rather than a hand-picked subset.
+const DETAIL_INCLUDE = '*';
 
-const SEARCH_INCLUDE = ['thumbnailUrl', 'suspension', 'components'].join(',');
+const SEARCH_INCLUDE = ['thumbnailUrl', 'suspension', 'components', 'sizes', 'prices'].join(',');
 
 function partLabel(part: any): string | null {
   if (!part) return null;

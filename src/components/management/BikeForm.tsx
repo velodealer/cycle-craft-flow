@@ -28,7 +28,7 @@ import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import LocationSelect from '@/components/bike/LocationSelect';
 import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
-import { saveCatalogBike, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
+import { saveCatalogBike, spokesCatalogColumns, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
 
 
 
@@ -203,6 +203,8 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
           ...(bike?.spec_values || {}),
           ...spokesFill.mapped.specValues,
         };
+        // Store the complete 99spokes record alongside the mapped values.
+        Object.assign(spokesExtras, spokesCatalogColumns(spokesFill.raw, spokesFill.size));
       }
 
       const bikeData = {

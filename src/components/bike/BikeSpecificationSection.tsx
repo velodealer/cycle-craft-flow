@@ -14,6 +14,7 @@ import ComponentPicker from '@/components/components/ComponentPicker';
 import StripComponentDialog from './StripComponentDialog';
 import { PackageMinus, Sparkles } from 'lucide-react';
 import SpokesApplyDialog from './SpokesApplyDialog';
+import SpokesFullSpec from './SpokesFullSpec';
 import {
   BIKE_TYPES, FRAME_MATERIALS, GENDERS, CONDITIONS,
   SPEC_SECTIONS, applyTypeDefaults, getAtPath, setAtPath,
@@ -315,6 +316,8 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
             </AccordionItem>
           ))}
         </Accordion>
+
+        {bike?.catalog_data && <SpokesFullSpec bike={bike} />}
       </CardContent>
       {stripping && (
         <StripComponentDialog
