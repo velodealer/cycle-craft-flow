@@ -96,6 +96,14 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
       }
 
 
+      logActivity(bike.id, {
+        kind: 'status_change',
+        action: 'status',
+        summary: `Status changed from ${labelFor(bike.status)} to ${labelFor(pending)}`,
+        detail: { from: bike.status, to: pending },
+        actorId: profile?.id ?? null,
+      });
+
       if (profile?.id && FULFILMENT_STAGES.includes(pending)) {
         const { error: eventError } = await supabase.from('fulfilment_events').insert({
           bike_id: bike.id,
