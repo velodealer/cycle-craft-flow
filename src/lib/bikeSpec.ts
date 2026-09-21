@@ -170,7 +170,12 @@ export const SPEC_SECTIONS: SectionDef[] = [
     id: 'brakes',
     title: 'Brakes',
     path: 'brakes',
-    slots: [{ slot: 'brakes', label: 'Brakes', categorySlug: 'brakes' }],
+    slots: [
+      { slot: 'brakes', label: 'Brakes', categorySlug: 'brakes' },
+      { slot: 'brake_levers', label: 'Brake Levers', categorySlug: 'brake_levers' },
+      { slot: 'disc_rotors', label: 'Disc Rotors', categorySlug: 'rotors' },
+    ],
+
     fields: [
       { key: 'type', label: 'Type', type: 'select', options: ['Hydraulic Disc', 'Mechanical Disc', 'Rim'] },
       { key: 'rotor_front_mm', label: 'Front Rotor (mm)', type: 'number' },
