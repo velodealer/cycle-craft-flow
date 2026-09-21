@@ -5,8 +5,8 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
   serviceClient,
   loadIntegration,
-  loadSettings,
   saveSettings,
+  businessIdForUser,
   requireConnection,
   requireUser,
   requireRole,
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
     if (action === 'save_settings') {
       const clean = (v: unknown, max = 80) =>
         typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined;
-      const settings = await saveSettings(supabase, {
+      const settings = await saveSettings(supabase, businessId, {
         auto_list: Boolean(body.auto_list),
         category_id: clean(body.category_id, 20),
         condition: clean(body.condition, 40),
@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'policies') {
-      const conn = await requireConnection(supabase);
+      const conn = await requireConnection(supabase, businessId);
       const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
       const get = async (kind: string, key: string) => {
         try {
@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'categories') {
-      const conn = await requireConnection(supabase);
+      const conn = await requireConnection(supabase, businessId);
       const query = String(body.query ?? 'bicycle').slice(0, 60);
       const treeId = conn.settings.marketplace_id === 'EBAY_US' ? '0' : '3';
       const data = await ebayFetch<any>(
@@ -240,7 +240,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'disconnect') {
-      const row = await loadIntegration(supabase);
+      const row = await loadIntegration(supabase, businessId);
+      await supabase.from('ebay_oauth_states').delete().eq('business_id', businessId);
       if (row) {
         const { error } = await supabase
           .from('integrations')
