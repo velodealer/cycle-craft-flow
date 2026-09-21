@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 import {
-  LISTING_FIELDS,
+  LISTING_FIELD_GROUPS,
   PLATFORMS,
   renderTemplate,
   type ListingFormat,
@@ -39,7 +40,21 @@ const SAMPLE_BIKE = {
   sale_price: null,
   sku: 'BIKE-001',
   photos: [],
+  spec_values: {
+    frame: { material: 'Carbon', size: 'Large' },
+    fork: { travel_mm: 150, lockout: true },
+    drivetrain: { groupset: 'SRAM GX Eagle', speed: 12, config: '1x', cassette_range: '10-52T' },
+    brakes: { type: 'Hydraulic Disc', rotor_front_mm: 200, rotor_rear_mm: 180 },
+    wheels: { wheel_size: '29"', rim_material: 'Alloy', tubeless_ready: true },
+  },
 };
+
+const SAMPLE_COMPONENTS = [
+  { slot: 'fork', slot_label: 'Fork', brand: 'Fox', model: '36 Factory', mpn: 'FOX36-F', weight_g: 2050, attributes: { travel: '150mm' } },
+  { slot: 'rear_derailleur', slot_label: 'Rear Derailleur', brand: 'SRAM', model: 'GX Eagle', attributes: { speeds: 12 } },
+  { slot: 'wheelset', slot_label: 'Wheelset', brand: 'Roval', model: 'Traverse', attributes: { material: 'Alloy' } },
+];
+
 
 type TemplateRow = {
   platform: ListingPlatform;
@@ -57,6 +72,18 @@ export default function ListingFormats() {
   });
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [search, setSearch] = useState('');
+
+  const filteredGroups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return LISTING_FIELD_GROUPS;
+    return LISTING_FIELD_GROUPS.map((g) => ({
+      ...g,
+      fields: g.fields.filter(
+        (f) => f.token.toLowerCase().includes(q) || f.label.toLowerCase().includes(q),
+      ),
+    })).filter((g) => g.fields.length > 0);
+  }, [search]);
 
   useEffect(() => {
     (async () => {
@@ -128,7 +155,7 @@ export default function ListingFormats() {
   };
 
   const preview = useMemo(
-    () => renderTemplate(current.body || '', SAMPLE_BIKE, []),
+    () => renderTemplate(current.body || '', SAMPLE_BIKE, SAMPLE_COMPONENTS),
     [current.body],
   );
 
@@ -183,17 +210,33 @@ export default function ListingFormats() {
                 </div>
                 <div className="space-y-2">
                   <Label>Available fields</Label>
-                  <div className="border rounded-md max-h-[380px] overflow-y-auto p-2 space-y-1">
-                    {LISTING_FIELDS.map((f) => (
-                      <button
-                        key={f.token}
-                        type="button"
-                        onClick={() => insertToken(f.token)}
-                        className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent flex flex-col"
-                      >
-                        <span className="font-mono">{`{${f.token}}`}</span>
-                        <span className="text-muted-foreground">{f.label}</span>
-                      </button>
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search fields or parts…"
+                    className="h-8 text-xs"
+                  />
+                  <div className="border rounded-md max-h-[420px] overflow-y-auto p-2 space-y-3">
+                    {filteredGroups.length === 0 && (
+                      <p className="text-xs text-muted-foreground px-1 py-2">No matching fields</p>
+                    )}
+                    {filteredGroups.map((group) => (
+                      <div key={group.id} className="space-y-1">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1">
+                          {group.title}
+                        </p>
+                        {group.fields.map((f) => (
+                          <button
+                            key={f.token}
+                            type="button"
+                            onClick={() => insertToken(f.token)}
+                            className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent flex flex-col"
+                          >
+                            <span className="font-mono break-all">{`{${f.token}}`}</span>
+                            <span className="text-muted-foreground">{f.label}</span>
+                          </button>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 </div>

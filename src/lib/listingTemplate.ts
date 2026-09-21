@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 
 export type ListingPlatform = 'ebay' | 'shopify' | 'instagram' | 'facebook';
 export type ListingFormat = 'html' | 'text';
@@ -43,6 +44,34 @@ export const LISTING_FIELDS: ListingField[] = [
   { token: 'reference', label: 'Bike reference' },
   { token: 'photos', label: 'Photos (newline-joined URLs)' },
   { token: 'components', label: 'Components list (one per line)' },
+  { token: 'components_table', label: 'Components table (HTML)' },
+  { token: 'spec_list', label: 'Full specification list (one per line)' },
+  { token: 'spec_table', label: 'Full specification table (HTML)' },
+];
+
+export interface ListingFieldGroup {
+  id: string;
+  title: string;
+  fields: ListingField[];
+}
+
+/** Bike basics + every component slot and spec field, grouped for the picker. */
+export const LISTING_FIELD_GROUPS: ListingFieldGroup[] = [
+  { id: 'bike', title: 'Bike details', fields: LISTING_FIELDS },
+  ...SPEC_SECTIONS.map((section) => ({
+    id: section.id,
+    title: section.title,
+    fields: [
+      ...(section.slots || []).flatMap((slot) => [
+        { token: `part_${slot.slot}`, label: `${slot.label} — brand & model` },
+        { token: `part_${slot.slot}_detail`, label: `${slot.label} — full details` },
+      ]),
+      ...(section.fields || []).map((field) => ({
+        token: `spec_${section.path || section.id}_${field.key.replace(/\./g, '_')}`,
+        label: field.label,
+      })),
+    ],
+  })).filter((g) => g.fields.length > 0),
 ];
 
 const yn = (v: any) => (v === true ? 'Yes' : v === false ? 'No' : '');
@@ -52,18 +81,106 @@ const money = (v: any) => {
   return `£${n.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 };
 
+export const humanise = (key: string) =>
+  key
+    .replace(/_/g, ' ')
+    .replace(/\b(mm|kg|wh|nm|km|pct|w|g)\b/gi, (m) => m.toUpperCase())
+    .replace(/^./, (c) => c.toUpperCase());
+
+const flatValue = (v: any): string => {
+  if (v == null || v === '') return '';
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (Array.isArray(v)) return v.map(flatValue).filter(Boolean).join(', ');
+  if (typeof v === 'object') {
+    return Object.entries(v)
+      .map(([k, val]) => {
+        const s = flatValue(val);
+        return s ? `${humanise(k)}: ${s}` : '';
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+  return String(v);
+};
+
+/** Every spec_values entry as a {spec_section_field} token. */
+export function specTokens(bike: any): Record<string, string> {
+  const out: Record<string, string> = {};
+  const spec = bike?.spec_values;
+  if (!spec || typeof spec !== 'object') return out;
+  Object.entries(spec).forEach(([section, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      Object.entries(value as Record<string, any>).forEach(([key, val]) => {
+        out[`spec_${section}_${key}`] = flatValue(val);
+      });
+    } else {
+      out[`spec_${section}`] = flatValue(value);
+    }
+  });
+  return out;
+}
+
+const partName = (c: any) => [c.brand, c.model || c.name].filter(Boolean).join(' ');
+
+const partDetail = (c: any) =>
+  [
+    c.description || '',
+    c.mpn ? `MPN: ${c.mpn}` : '',
+    c.weight_g ? `${c.weight_g} g` : '',
+    flatValue(c.attributes),
+    c.notes || '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+/** Every fitted part as {part_<slot>} / {part_<slot>_detail} tokens. */
+export function partTokens(components: any[] = []): Record<string, string> {
+  const out: Record<string, string> = {};
+  components.forEach((c) => {
+    if (!c?.slot) return;
+    const slot = String(c.slot).replace(/\W+/g, '_');
+    out[`part_${slot}`] = partName(c);
+    out[`part_${slot}_detail`] = partDetail(c);
+  });
+  return out;
+}
+
 export function buildValues(bike: any, components: any[] = []): Record<string, string> {
   const compLines = components
     .map((c) => {
-      const cat = c.category || c.component_categories?.name || '';
-      const name = [c.brand, c.model || c.name].filter(Boolean).join(' ');
+      const cat = c.category || c.component_categories?.name || c.slot_label || '';
+      const name = partName(c);
       return cat ? `${cat}: ${name}` : name;
     })
     .filter(Boolean)
     .map((l) => `• ${l}`)
     .join('\n');
 
+  const compRows = components
+    .filter((c) => partName(c))
+    .map((c) => {
+      const label = c.slot_label || c.category || c.component_categories?.name || '';
+      const detail = partDetail(c);
+      return `<tr><th align="left">${label}</th><td>${partName(c)}${detail ? `<br><small>${detail}</small>` : ''}</td></tr>`;
+    })
+    .join('');
+
+  const specs = specTokens(bike);
+  const specLines = Object.entries(specs)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `• ${humanise(k.replace(/^spec_/, ''))}: ${v}`)
+    .join('\n');
+  const specRows = Object.entries(specs)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<tr><th align="left">${humanise(k.replace(/^spec_/, ''))}</th><td>${v}</td></tr>`)
+    .join('');
+
   return {
+    ...specs,
+    ...partTokens(components),
+    spec_list: specLines,
+    spec_table: specRows ? `<table>${specRows}</table>` : '',
+    components_table: compRows ? `<table>${compRows}</table>` : '',
     title: [bike.year, bike.make, bike.model].filter(Boolean).join(' '),
     make: bike.make ?? '',
     model: bike.model ?? '',
