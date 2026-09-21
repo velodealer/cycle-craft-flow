@@ -225,7 +225,13 @@ export const SPEC_SECTIONS: SectionDef[] = [
     title: 'E-bike System',
     path: 'ebike',
     show: isElectric,
-    slots: [{ slot: 'ebike_system', label: 'Motor / System', categorySlug: 'ebike_system' }],
+    slots: [
+      { slot: 'ebike_system', label: 'Motor / System', categorySlug: 'ebike_system' },
+      { slot: 'ebike_battery', label: 'Battery', categorySlug: 'ebike_battery' },
+      { slot: 'ebike_display', label: 'Display', categorySlug: 'ebike_display' },
+      { slot: 'ebike_charger', label: 'Charger', categorySlug: 'ebike_charger' },
+    ],
+
     fields: [
       { key: 'motor_brand', label: 'Motor Brand' },
       { key: 'motor_model', label: 'Motor Model' },
