@@ -138,8 +138,8 @@ export default function EbayIntegration() {
   };
 
   const policiesUrl = status?.environment === 'production'
-    ? 'https://www.bizpolicy.ebay.co.uk/businesspolicy/manage'
-    : 'https://www.bizpolicy.sandbox.ebay.co.uk/businesspolicy/manage';
+    ? 'https://www.ebay.co.uk/bp/manage'
+    : 'https://www.sandbox.ebay.co.uk/bp/manage';
 
   const handleRefreshPolicies = async () => {
     setRefreshingPolicies(true);
