@@ -183,17 +183,33 @@ export default function ListingFormats() {
                 </div>
                 <div className="space-y-2">
                   <Label>Available fields</Label>
-                  <div className="border rounded-md max-h-[380px] overflow-y-auto p-2 space-y-1">
-                    {LISTING_FIELDS.map((f) => (
-                      <button
-                        key={f.token}
-                        type="button"
-                        onClick={() => insertToken(f.token)}
-                        className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent flex flex-col"
-                      >
-                        <span className="font-mono">{`{${f.token}}`}</span>
-                        <span className="text-muted-foreground">{f.label}</span>
-                      </button>
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search fields or parts…"
+                    className="h-8 text-xs"
+                  />
+                  <div className="border rounded-md max-h-[420px] overflow-y-auto p-2 space-y-3">
+                    {filteredGroups.length === 0 && (
+                      <p className="text-xs text-muted-foreground px-1 py-2">No matching fields</p>
+                    )}
+                    {filteredGroups.map((group) => (
+                      <div key={group.id} className="space-y-1">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1">
+                          {group.title}
+                        </p>
+                        {group.fields.map((f) => (
+                          <button
+                            key={f.token}
+                            type="button"
+                            onClick={() => insertToken(f.token)}
+                            className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent flex flex-col"
+                          >
+                            <span className="font-mono break-all">{`{${f.token}}`}</span>
+                            <span className="text-muted-foreground">{f.label}</span>
+                          </button>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 </div>
