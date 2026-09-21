@@ -1,5 +1,6 @@
 // Builds eBay listings from VeloDealer bikes and keeps the ebay_listings table in step.
 import { ebayFetch, requireConnection, businessIdForBike, itemBase, type Client, type Connection } from './ebay.ts';
+import { loadListingTemplate, renderListingHtml, loadBikeComponents } from './listing-template.ts';
 
 export interface BikeRow {
   id: string;
@@ -224,7 +225,8 @@ export async function pushBikeToEbay(
   supabase: Client,
   bike: BikeRow,
 ): Promise<{ offerId: string; listingId: string | null; url: string | null }> {
-  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bike.id));
+  const businessId = await businessIdForBike(supabase, bike.id);
+  const conn = await requireConnection(supabase, businessId);
   const s = conn.settings;
   if (!s.fulfillment_policy_id || !s.payment_policy_id || !s.return_policy_id) {
     throw new Error('Choose your eBay postage, payment and returns policies in Settings → Integrations first.');
@@ -238,6 +240,19 @@ export async function pushBikeToEbay(
 
 
   const sku = skuFor(bike);
+  // Use the dealer's saved eBay listing format when there is one.
+  let descriptionHtml = bikeDescriptionHtml(bike);
+  try {
+    const tpl = await loadListingTemplate(supabase, 'ebay', businessId);
+    if (tpl) {
+      const components = /\{components\}/.test(tpl.body || '')
+        ? await loadBikeComponents(supabase, bike.id)
+        : [];
+      descriptionHtml = renderListingHtml(tpl, bike, components) || descriptionHtml;
+    }
+  } catch (e) {
+    console.error('listing template render failed, using default description:', (e as Error).message);
+  }
   const locationKey = await ensureLocation(conn);
   const images = (bike.photos ?? [])
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
@@ -268,7 +283,7 @@ export async function pushBikeToEbay(
       condition: bikeCondition,
       product: {
         title: bikeTitle(bike),
-        description: bikeDescriptionHtml(bike),
+        description: descriptionHtml,
         imageUrls: images,
         aspects: itemAspects,
         brand: bike.make,
@@ -285,7 +300,7 @@ export async function pushBikeToEbay(
     format: 'FIXED_PRICE',
     availableQuantity: 1,
     categoryId: bikeCategoryId,
-    listingDescription: bikeDescriptionHtml(bike),
+    listingDescription: descriptionHtml,
     merchantLocationKey: locationKey,
     listingPolicies: {
       fulfillmentPolicyId: s.fulfillment_policy_id,
