@@ -161,6 +161,20 @@ export async function saveCatalogBike(bike: any, mapped: MappedBike): Promise<vo
   }
 }
 
+/**
+ * Columns written onto a bike so the complete 99spokes record is kept with it,
+ * not just the values we map into our own fields.
+ */
+export function spokesCatalogColumns(raw: any, size: string | null) {
+  return {
+    catalog_source: '99spokes',
+    catalog_source_id: raw?.id ?? null,
+    catalog_size: size ?? null,
+    catalog_data: raw ?? null,
+    catalog_synced_at: new Date().toISOString(),
+  };
+}
+
 /* ------------------------------------------------------------- component -- */
 
 let categoryCache: Record<string, string> | null = null;
