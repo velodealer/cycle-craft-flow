@@ -568,7 +568,8 @@ export default function BikeDetailView({
                 )}
                 {editingPrices ? (
                   <div className="mt-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className={`grid gap-3 ${canSeeCosts ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                      {canSeeCosts && (
                       <div className="space-y-1">
                         <Label htmlFor="price-purchase" className="label-text">Purchase</Label>
                         <Input
@@ -580,6 +581,7 @@ export default function BikeDetailView({
                           onChange={(e) => setPriceDraft((d) => ({ ...d, purchase_price: e.target.value }))}
                         />
                       </div>
+                      )}
                       <div className="space-y-1">
                         <Label htmlFor="price-asking" className="label-text">Asking</Label>
                         <Input
