@@ -334,8 +334,9 @@ export async function pushBikeToEbay(
     .eq('bike_id', bike.id)
     .maybeSingle();
 
-  const bikeCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
+  const wantedCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
   const bikeCategoryId = ((existing as any)?.category_id as string | null) || s.category_id || DEFAULT_CATEGORY;
+  const bikeCondition = await resolveCondition(conn, bikeCategoryId, wantedCondition);
 
   const itemAspects = aspects(bike);
   const required = await requiredAspects(conn, bikeCategoryId);
