@@ -35,7 +35,13 @@ export interface MappedComponent {
   model: string;
   description?: string | null;
   position?: 'front' | 'rear' | null;
+  /** Manufacturer part number, when the source publishes one. */
+  mpn?: string | null;
+  weightG?: number | null;
+  /** Every other field the source publishes for this part. */
+  attributes?: Record<string, any>;
 }
+
 
 export interface MappedBike {
   bikeFields: Record<string, any>;
