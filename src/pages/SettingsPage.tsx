@@ -16,14 +16,10 @@ import VatSettings from '@/components/settings/VatSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import SupportInbox from '@/components/settings/SupportInbox';
-import SuperAdminPanel from '@/components/settings/SuperAdminPanel';
-import BlogManager from '@/components/settings/BlogManager';
-import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
 import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SettingsPage() {
-  const { profile, isSuperAdmin } = useAuth();
+  const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
 
   if (!isAdmin) {
@@ -57,8 +53,8 @@ export default function SettingsPage() {
       <Tabs
         defaultValue={(() => {
           const requested = new URLSearchParams(window.location.search).get('tab') ?? 'users';
-          const superOnly = ['inbox', 'website', 'super'];
-          return !isSuperAdmin && superOnly.includes(requested) ? 'users' : requested;
+          const allowed = ['users', 'system', 'integrations', 'listings', 'bays'];
+          return allowed.includes(requested) ? requested : 'users';
         })()}
         className="w-full md:flex md:items-start md:gap-6"
       >
@@ -68,9 +64,6 @@ export default function SettingsPage() {
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="integrations">Integrations</TabsTrigger>
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="listings">Listing Formats</TabsTrigger>
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="bays">Storage Bays</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="inbox">Inbox</TabsTrigger>}
-          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="website">Website</TabsTrigger>}
-          {isSuperAdmin && <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="super">Super Admin</TabsTrigger>}
         </TabsList>
 
 
@@ -103,29 +96,6 @@ export default function SettingsPage() {
         <TabsContent className="min-w-0 flex-1 space-y-4" value="bays">
           <StorageBays />
         </TabsContent>
-
-
-
-
-
-        {isSuperAdmin && (
-          <TabsContent className="min-w-0 flex-1 space-y-4" value="inbox">
-            <SupportInbox />
-          </TabsContent>
-        )}
-
-        {isSuperAdmin && (
-          <TabsContent className="min-w-0 flex-1 space-y-4" value="website">
-            <BlogManager />
-            <JobOpeningsManager />
-          </TabsContent>
-        )}
-
-        {isSuperAdmin && (
-          <TabsContent className="min-w-0 flex-1 space-y-4" value="super">
-            <SuperAdminPanel />
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );

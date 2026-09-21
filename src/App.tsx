@@ -49,6 +49,14 @@ import CareersPage from "./pages/CareersPage";
 import CareerDetailPage from "./pages/CareerDetailPage";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
+import AdminShell from "@/components/admin/AdminShell";
+import AdminOverviewPage from "./pages/admin/AdminOverviewPage";
+import AdminDealershipsPage from "./pages/admin/AdminDealershipsPage";
+import AdminDealershipDetailPage from "./pages/admin/AdminDealershipDetailPage";
+import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
+import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
+import AdminInboxPage from "./pages/admin/AdminInboxPage";
+import AdminWebsitePage from "./pages/admin/AdminWebsitePage";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +111,13 @@ const App = () => (
             <Route path="/social/scripts" element={guarded(<Layout><SocialScriptsPage /></Layout>)} />
             <Route path="/social/analytics" element={guarded(<Layout><SocialAnalyticsPage /></Layout>)} />
             <Route path="/staff-activity" element={guarded(<Layout><StaffActivityPage /></Layout>)} />
+            <Route path="/admin" element={<AdminShell><AdminOverviewPage /></AdminShell>} />
+            <Route path="/admin/dealerships" element={<AdminShell><AdminDealershipsPage /></AdminShell>} />
+            <Route path="/admin/dealerships/:id" element={<AdminShell><AdminDealershipDetailPage /></AdminShell>} />
+            <Route path="/admin/subscriptions" element={<AdminShell><AdminSubscriptionsPage /></AdminShell>} />
+            <Route path="/admin/analytics" element={<AdminShell><AdminAnalyticsPage /></AdminShell>} />
+            <Route path="/admin/inbox" element={<AdminShell><AdminInboxPage /></AdminShell>} />
+            <Route path="/admin/website" element={<AdminShell><AdminWebsitePage /></AdminShell>} />
             <Route path="/investor" element={<InvestorShell><InvestorDashboardPage /></InvestorShell>} />
             <Route path="/investor/bikes/:id" element={<InvestorShell><InvestorBikePage /></InvestorShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

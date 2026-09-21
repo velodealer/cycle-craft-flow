@@ -471,6 +471,62 @@ export type Database = {
         }
         Relationships: []
       }
+      business_subscriptions: {
+        Row: {
+          billing_period: string
+          business_id: string
+          created_at: string
+          currency: string
+          current_period_end: string | null
+          id: string
+          notes: string | null
+          plan_name: string
+          price: number
+          seats: number
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_period?: string
+          business_id: string
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          id?: string
+          notes?: string | null
+          plan_name?: string
+          price?: number
+          seats?: number
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_period?: string
+          business_id?: string
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          id?: string
+          notes?: string | null
+          plan_name?: string
+          price?: number
+          seats?: number
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           contact_email: string | null
@@ -2582,6 +2638,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_dealership_stats: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          bikes_added: number
+          bikes_in_stock: number
+          bikes_sold: number
+          bikes_total: number
+          billing_period: string
+          business_id: string
+          business_name: string
+          contact_email: string
+          created_at: string
+          jobs_completed: number
+          last_activity: string
+          plan_name: string
+          price: number
+          sale_value: number
+          status: string
+          subscription_status: string
+          users_count: number
+        }[]
+      }
+      admin_integration_health: {
+        Args: never
+        Returns: {
+          business_id: string
+          business_name: string
+          connected: boolean
+          integration: string
+          last_error: string
+          status: string
+        }[]
+      }
+      admin_platform_overview: { Args: never; Returns: Json }
       current_business_id: { Args: never; Returns: string }
       current_business_status: { Args: never; Returns: string }
       generate_bike_reference: {
