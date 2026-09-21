@@ -7,6 +7,7 @@ import {
   deleteEbayListing,
   recordListingError,
 } from '../_shared/ebay-listing.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -42,11 +43,27 @@ Deno.serve(async (req) => {
 
     if (action === 'end') {
       const ended = await endEbayListing(supabase, bikeId);
+      if (ended) {
+        await logBikeActivity(bikeId, {
+          kind: 'listing',
+          action: 'ended',
+          summary: 'eBay listing ended',
+          actorLabel: 'eBay',
+        }, callerBusinessId);
+      }
       return json({ ok: true, ended });
     }
 
     if (action === 'remove') {
       const removed = await deleteEbayListing(supabase, bikeId);
+      if (removed) {
+        await logBikeActivity(bikeId, {
+          kind: 'listing',
+          action: 'removed',
+          summary: 'eBay listing removed',
+          actorLabel: 'eBay',
+        }, callerBusinessId);
+      }
       return json({ ok: true, removed });
     }
 
@@ -58,11 +75,25 @@ Deno.serve(async (req) => {
     if (error || !bike) return json({ error: 'Bike not found' }, 404);
 
     const result = await pushBikeToEbay(supabase, bike as any);
+    await logBikeActivity(bikeId, {
+      kind: 'listing',
+      action: 'listed',
+      summary: 'Listed on eBay',
+      detail: { offer_id: result.offerId, listing_id: result.listingId, url: result.url },
+      actorLabel: 'eBay',
+    }, callerBusinessId);
     return json({ ok: true, offer_id: result.offerId, listing_id: result.listingId, url: result.url });
   } catch (e) {
     const message = (e as Error).message;
     console.error('ebay-sync-bike failed:', message);
     await recordListingError(supabase, bikeId, message);
+    await logBikeActivity(bikeId, {
+      kind: 'listing',
+      action: 'failed',
+      summary: 'eBay listing failed',
+      detail: { note: message },
+      actorLabel: 'eBay',
+    }, callerBusinessId);
     return json({ error: message }, 400);
   }
 });
