@@ -1,5 +1,5 @@
 // Builds eBay listings from VeloDealer bikes and keeps the ebay_listings table in step.
-import { ebayFetch, requireConnection, itemBase, type Client, type Connection } from './ebay.ts';
+import { ebayFetch, requireConnection, businessIdForBike, itemBase, type Client, type Connection } from './ebay.ts';
 
 export interface BikeRow {
   id: string;
@@ -140,7 +140,7 @@ export async function pushBikeToEbay(
   supabase: Client,
   bike: BikeRow,
 ): Promise<{ offerId: string; listingId: string | null; url: string | null }> {
-  const conn = await requireConnection(supabase);
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bike.id));
   const s = conn.settings;
   if (!s.fulfillment_policy_id || !s.payment_policy_id || !s.return_policy_id) {
     throw new Error('Choose your eBay postage, payment and returns policies in Settings → Integrations first.');
@@ -253,7 +253,7 @@ export async function endEbayListing(supabase: Client, bikeId: string): Promise<
   const offerId = (listing as any)?.offer_id as string | undefined;
   if (!offerId) return false;
 
-  const conn = await requireConnection(supabase);
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
   try {
     await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}/withdraw`, {
       method: 'POST',
@@ -285,7 +285,7 @@ export async function deleteEbayListing(supabase: Client, bikeId: string): Promi
   const offerId = (listing as any).offer_id as string | undefined;
   const sku = (listing as any).sku as string | undefined;
 
-  const conn = await requireConnection(supabase);
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
   if (offerId) {
     try {
       await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}/withdraw`, {
