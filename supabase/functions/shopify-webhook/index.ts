@@ -3,6 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, hmacBase64, timingSafeEqual, type Client } from '../_shared/shopify.ts';
 import { markBikeSoldOut, pushBikeToShopify, recordListingError } from '../_shared/shopify-listing.ts';
+import { logBikeActivity } from '../_shared/activity.ts';
 
 const ok = (body: unknown = { ok: true }) =>
   new Response(JSON.stringify(body), {
@@ -130,6 +131,14 @@ async function handleOrderPaid(supabase: Client, order: any) {
       await markBikeSoldOut(supabase, bike.id).catch((e) =>
         console.error('Shopify stock update failed:', (e as Error).message));
 
+      await logBikeActivity(bike.id, {
+        kind: 'sale',
+        action: 'sold',
+        summary: `Sold via Shopify order ${order?.name ?? ''}`.trim(),
+        detail: { gross, invoice_number: numberData as string },
+        actorLabel: 'Shopify',
+      }, bike.business_id);
+
       console.log(`Bike ${bike.reference} marked sold from Shopify order ${order?.name}`);
     } catch (e) {
       console.error(`Shopify order handling failed for ${bike.reference}:`, (e as Error).message);
@@ -167,6 +176,13 @@ async function handleOrderReversed(supabase: Client, order: any) {
       .from('bikes')
       .update({ status: 'listed', sale_price: null, sold_at: null })
       .eq('id', bike.id);
+
+    await logBikeActivity(bike.id, {
+      kind: 'sale',
+      action: 'reversed',
+      summary: `Shopify order ${order?.name ?? ''} cancelled or refunded — bike back on sale`.trim(),
+      actorLabel: 'Shopify',
+    }, bike.business_id);
 
     try {
       await pushBikeToShopify(supabase, bike as any, 1);
