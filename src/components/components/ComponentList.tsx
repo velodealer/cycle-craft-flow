@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import ComponentForm, { ComponentCategory, ComponentRecord } from './ComponentForm';
+import ComponentAttributes from './ComponentAttributes';
 import { toast } from '@/hooks/use-toast';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
+
 
 
 type Row = ComponentRecord & { component_categories: { name: string; slug: string } | null };
