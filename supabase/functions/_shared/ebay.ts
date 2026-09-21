@@ -61,7 +61,7 @@ export function authBase(env: EbayEnvironment) {
 }
 
 export function itemBase(env: EbayEnvironment) {
-  return env === 'production' ? 'https://www.ebay.co.uk/itm/' : 'https://sandbox.ebay.co.uk/itm/';
+  return env === 'production' ? 'https://www.ebay.co.uk/itm/' : 'https://www.sandbox.ebay.co.uk/itm/';
 }
 
 function basicAuth() {
