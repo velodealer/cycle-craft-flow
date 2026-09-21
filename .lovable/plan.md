@@ -1,30 +1,31 @@
-# Fix eBay's 4,000-character description limit
+# Use eBay's Trading API for full-length descriptions
 
-## Problem
-eBay's Inventory API caps the item description at 4,000 characters. Your saved eBay listing format renders longer than that for some bikes (e.g. BPS-TRE-027T), so the listing fails with "Invalid value for description. The length should be between 1 and 4000 characters." The Trading API doc you found allows much longer descriptions, but the app lists through the newer Inventory API, where the 4,000-character cap is hard — so the fix is to make what we send fit.
+## The situation
+The app lists bikes through eBay's newer Inventory API, which caps the item description at 4,000 characters — that's where the error comes from. The older Trading API you linked allows up to 500,000 characters. Both can be used against the same listing: we publish as now, then immediately push the full description with the Trading API's `ReviseItem`, which lifts the limit.
 
 ## What we'll build
 
-### 1. Automatic trimming when the description is too long
-In the eBay listing code (`supabase/functions/_shared/ebay-listing.ts`), after the listing format is rendered:
+### 1. Publish, then revise with the full description
+- Keep the current publish flow, but send a short safe description in the first step (the listing format trimmed to fit 4,000 characters) so publishing always succeeds.
+- Straight after the listing goes live, call the Trading API `ReviseItem` with the complete rendered listing format — no practical length limit.
+- On later updates to an already-live bike, go straight to `ReviseItem` with the full description.
+- If the revise call fails for any reason, the listing still stands with the shorter description and the failure is recorded rather than blocking the listing.
 
-1. If it fits within 4,000 characters — send as-is (no change for most bikes).
-2. If too long, retry in steps until it fits:
-   - **Step 1:** drop the components list from the description (usually the biggest block).
-   - **Step 2:** shorten the rendered text, cutting at a sentence/paragraph boundary around 3,900 characters and ending with "…".
-3. Whatever is finally sent is counted on the HTML eBay actually receives, so it can never exceed the limit again.
+### 2. Record what happened on the bike
+- The bike's Activity timeline gets an entry when the full description is applied, and a clear one if it couldn't be (with eBay's reason), so you always know which version is live.
 
-### 2. Clear warning when trimming happened
-- The bike's Activity timeline gets an entry noting the description was trimmed to fit eBay's limit (and which step was used), so you can see it happened and tidy the format if you want the full text.
-- If even the shortest version can't fit (extremely unlikely), the listing stops with a plain-English message telling you the eBay listing format is too long and to shorten it in Settings → Listing Formats.
-
-### 3. Same protection for Shopify
-Apply the same length check to the Shopify sync so a long format can't fail there either (Shopify's limit is far more generous, so this is just a safety net).
+### 3. Errors in plain English
+- If eBay rejects the description (unsupported markup, banned links, active-content rules), you get a readable message naming the reason instead of raw XML.
 
 ## Technical details
-- Changes confined to `supabase/functions/_shared/ebay-listing.ts` (trim logic + activity log) and a small shared helper; Shopify sync gets the guard only.
-- Character counting done on the final HTML string sent to eBay.
-- Redeploy `ebay-sync-bike` (and `shopify-sync-bike` for the guard) when done.
+- New shared helper `supabase/functions/_shared/ebay-trading.ts`: XML request builder + response parser for the Trading API (`https://api.ebay.com/ws/api.dll`, sandbox equivalent), using the existing OAuth access token via the `X-EBAY-API-IAF-TOKEN` header plus `X-EBAY-API-CALL-NAME`, `X-EBAY-API-SITEID` (3 for UK), and `X-EBAY-API-COMPATIBILITY-LEVEL`.
+- `ReviseItem` with `ItemID` (the listing id already stored in `ebay_listings`) and `Description` wrapped in CDATA.
+- `_shared/ebay-listing.ts`: safe-trim helper for the initial publish, revise step after publish/update, activity logging, error mapping.
+- Redeploy `ebay-sync-bike`.
+
+## What may be needed from you
+- Trading API calls need the app's **Dev ID** alongside the client id and secret. If eBay rejects the call for a missing dev name, I'll ask you for it and store it as a secret.
+- The eBay connection may need reconnecting once so the token carries the scope Trading calls require; if so the card will say so.
 
 ## Result
-Listing BPS-TRE-027T (and any bike with a long format) succeeds. Descriptions that fit are untouched; over-long ones are shortened sensibly and the trim is recorded on the bike's activity feed.
+Bikes list with the complete listing format, however long it is — BPS-TRE-027T included — with the 4,000-character wall gone.
