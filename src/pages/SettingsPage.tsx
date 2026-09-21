@@ -16,14 +16,10 @@ import VatSettings from '@/components/settings/VatSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import SupportInbox from '@/components/settings/SupportInbox';
-import SuperAdminPanel from '@/components/settings/SuperAdminPanel';
-import BlogManager from '@/components/settings/BlogManager';
-import JobOpeningsManager from '@/components/settings/JobOpeningsManager';
 import { PageHeader } from '@/components/velo/PageShell';
 
 export default function SettingsPage() {
-  const { profile, isSuperAdmin } = useAuth();
+  const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
 
   if (!isAdmin) {

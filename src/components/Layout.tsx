@@ -33,6 +33,12 @@ export default function Layout({ children }: LayoutProps) {
     return <Navigate to="/auth" replace />;
   }
 
+  // The platform super admin runs the business, not a workshop — send them to their console
+  if (isSuperAdmin && location.pathname === '/dashboard') {
+    return <Navigate to="/admin" replace />;
+  }
+
+
   // Block businesses that haven't been approved yet or have been suspended
   if (profile && businessStatus && businessStatus !== 'active' && !isSuperAdmin) {
     const pending = businessStatus === 'pending';
