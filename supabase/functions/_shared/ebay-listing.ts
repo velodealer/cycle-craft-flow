@@ -18,10 +18,57 @@ export interface BikeRow {
   accessories_included?: string | null;
   photos?: string[] | null;
   frame_number?: string | null;
+  gender?: string | null;
+  is_electric?: boolean | null;
+  spec_values?: Record<string, any> | null;
 }
 
 const DEFAULT_CATEGORY = '177831'; // Sporting Goods > Cycling > Bikes
 const DEFAULT_LOCATION_KEY = 'velodealer-main';
+
+/** VeloDealer bike types mapped to the values eBay accepts for "Bike Type". */
+const EBAY_BIKE_TYPE: Record<string, string> = {
+  road: 'Road Bike',
+  gravel: 'Gravel Bike',
+  mtb_hardtail: 'Mountain Bike',
+  mtb_full_sus: 'Mountain Bike',
+  bmx: 'BMX',
+  hybrid: 'Hybrid Bike',
+  city: 'Comfort Bike',
+  electric: 'Electric Bike',
+  folding: 'Folding Bike',
+  cargo: 'Cargo Bike',
+  tt: 'Triathlon Bike',
+  touring: 'Touring Bike',
+  cyclocross: 'Cyclocross Bike',
+  track: 'Track Bike',
+  tandem: 'Tandem',
+  recumbent: 'Recumbent Bike',
+  kids: 'Kids Bike',
+};
+
+export function ebayBikeType(bike: BikeRow): string | null {
+  const raw = String(bike.bike_type ?? '').trim().toLowerCase();
+  if (!raw) return null;
+  if (EBAY_BIKE_TYPE[raw]) return EBAY_BIKE_TYPE[raw];
+  // Fall back to a tidy version of whatever is stored.
+  return raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function specValue(bike: BikeRow, key: string): string | null {
+  const spec = bike.spec_values as any;
+  if (!spec || typeof spec !== 'object') return null;
+  const direct = spec[key];
+  if (typeof direct === 'string' && direct.trim()) return direct.trim();
+  for (const group of Object.values(spec)) {
+    if (group && typeof group === 'object') {
+      const v = (group as any)[key];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+    }
+  }
+  return null;
+}
+
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
