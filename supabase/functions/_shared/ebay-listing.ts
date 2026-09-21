@@ -112,18 +112,55 @@ function aspects(bike: BikeRow): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   const add = (key: string, value: unknown) => {
     const v = String(value ?? '').trim();
-    if (v) out[key] = [v.slice(0, 60)];
+    if (v && !out[key]) out[key] = [v.slice(0, 60)];
   };
   add('Brand', bike.make);
   add('Model', bike.model);
+  add('Bike Type', ebayBikeType(bike));
+  add('Type', ebayBikeType(bike));
   add('Frame Size', bike.size);
   add('Colour', bike.colour);
-  add('Type', bike.bike_type);
+  add('Color', bike.colour);
   add('Frame Material', bike.frame_material);
-  add('Wheel Size', null);
+  add('Wheel Size', specValue(bike, 'wheel_size'));
+  add('Number of Gears', specValue(bike, 'gears') || specValue(bike, 'speeds'));
+  add('Brake Type', specValue(bike, 'brake_type'));
+  add('Suspension Type', specValue(bike, 'suspension'));
+  add('Gender', bike.gender);
   if (bike.year) add('Year', String(bike.year));
   return out;
 }
+
+const CATEGORY_TREE_ID: Record<string, string> = {
+  EBAY_GB: '3',
+  EBAY_US: '0',
+  EBAY_AU: '15',
+  EBAY_IE: '205',
+  EBAY_CA: '2',
+  EBAY_DE: '77',
+  EBAY_FR: '71',
+  EBAY_IT: '101',
+  EBAY_ES: '186',
+};
+
+/** Required item specifics for a category, as eBay names them. Empty when the lookup fails. */
+async function requiredAspects(conn: Connection, categoryId: string): Promise<string[]> {
+  const treeId = CATEGORY_TREE_ID[conn.settings.marketplace_id || 'EBAY_GB'] || '3';
+  try {
+    const data = await ebayFetch<any>(
+      conn,
+      `/commerce/taxonomy/v1/category_tree/${treeId}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`,
+    );
+    return (data?.aspects ?? [])
+      .filter((a: any) => a?.aspectConstraint?.aspectRequired)
+      .map((a: any) => String(a?.localizedAspectName || '').trim())
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('Could not read required eBay item specifics:', (e as Error).message);
+    return [];
+  }
+}
+
 
 function skuFor(bike: BikeRow) {
   return String(bike.reference || bike.id).replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 50);
