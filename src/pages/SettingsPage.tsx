@@ -96,29 +96,6 @@ export default function SettingsPage() {
         <TabsContent className="min-w-0 flex-1 space-y-4" value="bays">
           <StorageBays />
         </TabsContent>
-
-
-
-
-
-        {isSuperAdmin && (
-          <TabsContent className="min-w-0 flex-1 space-y-4" value="inbox">
-            <SupportInbox />
-          </TabsContent>
-        )}
-
-        {isSuperAdmin && (
-          <TabsContent className="min-w-0 flex-1 space-y-4" value="website">
-            <BlogManager />
-            <JobOpeningsManager />
-          </TabsContent>
-        )}
-
-        {isSuperAdmin && (
-          <TabsContent className="min-w-0 flex-1 space-y-4" value="super">
-            <SuperAdminPanel />
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
