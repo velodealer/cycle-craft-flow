@@ -357,6 +357,12 @@ export function parsePart(input: ParseInput): ParsedPart {
 
   // Spec
   const { attrs, spec, used } = extractSpec(slot, text, model);
+  if (model && brand !== 'Shimano' && !FRAME_SLOTS.has(slot)) {
+    let mm = model;
+    for (const u of used) if (!/speed|spd/i.test(u)) mm = mm.split(u).join(' ');
+    model = clean(mm.replace(/\s+T\b/, '')) || model;
+  }
+  if (/\bnot (supplied|included)\b|^compatible with\b/i.test(text)) flags.push('text describes something not fitted — row should not print');
   const consumed = (c: string) => {
     let rest = c;
     for (const u of used) rest = rest.split(u).join(' ');
