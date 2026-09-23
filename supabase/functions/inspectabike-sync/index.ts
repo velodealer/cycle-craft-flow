@@ -41,13 +41,37 @@ Deno.serve(async (req) => {
       return json({ error: 'This bike has not been sent to InspectABike yet' }, 400);
     }
 
-    const query = inspection.external_inspection_id
-      ? `id=${encodeURIComponent(inspection.external_inspection_id)}`
-      : `reference=${encodeURIComponent(inspection.external_reference)}`;
-
-    const result = await iabFetch(`/partner-inspection?${query}`, {}, { supabase, businessId: (inspection as any).business_id });
+    const { data: bikeRow } = await supabase.from('bikes').select('reference').eq('id', bikeId).maybeSingle();
+    const ctx = { supabase, businessId: (inspection as any).business_id };
+    const attempts: string[] = [];
+    const extId = inspection.external_inspection_id;
+    if (extId) attempts.push(`id=${encodeURIComponent(extId)}`, `report_id=${encodeURIComponent(extId)}`);
+    for (const ref of [inspection.external_reference, (bikeRow as any)?.reference]) {
+      if (ref) attempts.push(`reference=${encodeURIComponent(ref)}`);
+    }
+    let result: any = null;
+    let lastErr: any = null;
+    for (const q of [...new Set(attempts)]) {
+      try {
+        result = await iabFetch(`/partner-inspection?${q}`, {}, ctx);
+        console.log(`inspectabike-sync: found via ${q}`);
+        break;
+      } catch (e) {
+        lastErr = e;
+        if ((e as any).status && (e as any).status !== 404 && (e as any).status !== 400) throw e;
+      }
+    }
+    if (!result) {
+      throw Object.assign(
+        new Error(`${(lastErr as Error)?.message || 'Inspection not found in InspectABike'} — check the inspection ID in Edit link`),
+        { status: 404 },
+      );
+    }
     const remote = result?.inspection ?? {};
     const faults: any[] = Array.isArray(result?.faults) ? result.faults : [];
+    const { count: priorCount } = await supabase
+      .from('inspection_faults').select('id', { count: 'exact', head: true }).eq('inspection_id', inspection.id);
+    const emptyButHadIssues = faults.length === 0 && (inspection.has_issues || (priorCount ?? 0) > 0);
     const stolen = result?.stolen_status ?? remote?.stolen_status ?? null;
 
     const remoteStatus = String(remote?.status ?? '').toLowerCase();
@@ -61,7 +85,7 @@ Deno.serve(async (req) => {
         overall_grade: remote?.overall_grade ?? null,
         inspector_name: remote?.inspector_name ?? null,
         stolen_status: typeof stolen === 'string' ? stolen : stolen ? JSON.stringify(stolen) : null,
-        has_issues: faults.length > 0,
+        has_issues: faults.length > 0 || emptyButHadIssues,
         status: completed ? 'completed' : inspection.status,
         completed_at: completed ? (inspection.completed_at ?? new Date().toISOString()) : inspection.completed_at,
         synced_at: new Date().toISOString(),
@@ -92,14 +116,19 @@ Deno.serve(async (req) => {
 
     const { count } = await supabase
       .from('inspection_faults').select('id', { count: 'exact', head: true }).eq('inspection_id', inspection.id);
-    await supabase.from('inspections').update({ has_issues: (count ?? 0) > 0 }).eq('id', inspection.id);
+    await supabase.from('inspections').update({ has_issues: (count ?? 0) > 0 || emptyButHadIssues }).eq('id', inspection.id);
 
     await syncBikeStatusFromFaults(supabase, bikeId, completed);
 
     if (saved < faults.length) {
       return json({ error: `InspectABike sent ${faults.length} faults but only ${saved} could be saved` }, 500);
     }
-    return json({ success: true, inspection: updated, fault_count: faults.length });
+    return json({
+      success: true,
+      inspection: updated,
+      fault_count: faults.length,
+      warning: emptyButHadIssues ? 'InspectABike returned no faults for this inspection, although issues were reported.' : undefined,
+    });
   } catch (e) {
     const status = (e as any).status && (e as any).status !== 401 ? (e as any).status : 500;
     console.error('inspectabike-sync failed:', (e as Error).message);
