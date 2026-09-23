@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FunctionsHttpError } from '@supabase/supabase-js';
+import { AUTO_LIST_PAUSED } from './ebay';
 
 export interface ShopifyStatus {
   connected: boolean;
