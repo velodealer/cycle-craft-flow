@@ -45,25 +45,32 @@ Deno.serve(async (req) => {
     const ctx = { supabase, businessId: (inspection as any).business_id };
     const attempts: string[] = [];
     const extId = inspection.external_inspection_id;
+    const urlMatch = String(inspection.report_url ?? '').match(/\/report\/([0-9a-f-]{8,})/i);
+    const fromUrl = urlMatch?.[1] ?? null;
+    if (fromUrl) attempts.push(`report_id=${encodeURIComponent(fromUrl)}`);
     if (extId) attempts.push(`id=${encodeURIComponent(extId)}`, `report_id=${encodeURIComponent(extId)}`);
+    if (fromUrl) attempts.push(`id=${encodeURIComponent(fromUrl)}`);
     for (const ref of [inspection.external_reference, (bikeRow as any)?.reference]) {
       if (ref) attempts.push(`reference=${encodeURIComponent(ref)}`);
     }
     let result: any = null;
     let lastErr: any = null;
+    const tried: string[] = [];
     for (const q of [...new Set(attempts)]) {
+      tried.push(decodeURIComponent(q));
       try {
         result = await iabFetch(`/partner-inspection?${q}`, {}, ctx);
         console.log(`inspectabike-sync: found via ${q}`);
         break;
       } catch (e) {
         lastErr = e;
+        console.log(`inspectabike-sync: ${q} -> ${(e as any).status ?? '?'} ${(e as Error).message}`);
         if ((e as any).status && (e as any).status !== 404 && (e as any).status !== 400) throw e;
       }
     }
     if (!result) {
       throw Object.assign(
-        new Error(`${(lastErr as Error)?.message || 'Inspection not found in InspectABike'} — check the inspection ID in Edit link`),
+        new Error(`Inspection not found in InspectABike (tried ${tried.join(', ')}) — check the details in Edit link`),
         { status: 404 },
       );
     }
