@@ -164,9 +164,13 @@ export default function ListingsPage() {
   const currentPage = Math.min(page, pageCount);
   const visibleBikes = filteredBikes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const ebayConnected = !!ebayStatus?.connected && !ebayStatus?.needs_reconnect;
+  const ebayConnected = !!ebayStatus?.connected;
+  const ebayNeedsReconnect = ebayConnected && !!ebayStatus?.needs_reconnect;
+  const ebaySandbox = ebayConnected && ebayStatus?.environment === 'sandbox';
   const shopifyConnected = !!shopifyStatus?.connected;
   const anyConnected = ebayConnected || shopifyConnected;
+
+  const isBusy = (bikeId: string, platform: 'ebay' | 'shopify') => listingIds.has(`${bikeId}:${platform}`);
 
   const listTargets = (bike: BikeWithPlatforms) => {
     const targets: { platform: 'ebay' | 'shopify' }[] = [];
@@ -181,7 +185,7 @@ export default function ListingsPage() {
         b.id === bikeId
           ? {
               ...b,
-              [platform === 'ebay' ? 'ebay' : 'shopify']: {
+              [platform]: {
                 bike_id: bikeId,
                 url,
                 status: 'listed',
@@ -194,38 +198,44 @@ export default function ListingsPage() {
     );
   };
 
-  const handleList = async (bike: BikeWithPlatforms) => {
-    const targets = listTargets(bike);
-    if (targets.length === 0) return;
-
-    setListingIds((prev) => new Set(prev).add(bike.id));
-
-    for (const { platform } of targets) {
-      const label = platform === 'ebay' ? 'eBay' : 'Shopify';
-      try {
-        if (platform === 'ebay') {
-          const res = await listBikeOnEbay(bike.id);
-          applyResult(bike.id, 'ebay', res.url ?? null);
-          if (res.warnings?.length) {
-            toast({ title: `Listed on eBay, with notes`, description: res.warnings.join(' '), variant: 'default' });
-          } else {
-            toast({ title: `Listed on eBay`, description: `${bike.make} ${bike.model} is now live.` });
-          }
-        } else {
-          const res = await listBikeOnShopify(bike.id);
-          applyResult(bike.id, 'shopify', res.url ?? null);
-          toast({ title: `Listed on Shopify`, description: `${bike.make} ${bike.model} is now live.` });
-        }
-      } catch (error: any) {
-        toast({ title: `Could not list on ${label}`, description: error.message, variant: 'destructive' });
-      }
-    }
-
+  const setBusy = (key: string, on: boolean) =>
     setListingIds((prev) => {
       const next = new Set(prev);
-      next.delete(bike.id);
+      if (on) next.add(key);
+      else next.delete(key);
       return next;
     });
+
+  const listOn = async (bike: BikeWithPlatforms, platform: 'ebay' | 'shopify') => {
+    const key = `${bike.id}:${platform}`;
+    setBusy(key, true);
+    const label = platform === 'ebay' ? 'eBay' : 'Shopify';
+    try {
+      if (platform === 'ebay') {
+        const res = await listBikeOnEbay(bike.id);
+        applyResult(bike.id, 'ebay', res.url ?? null);
+        if (res.warnings?.length) {
+          toast({ title: 'Listed on eBay, with notes', description: res.warnings.join(' ') });
+        } else {
+          toast({ title: 'Listed on eBay', description: `${bike.make} ${bike.model} is now live.` });
+        }
+      } else {
+        const res = await listBikeOnShopify(bike.id);
+        applyResult(bike.id, 'shopify', res.url ?? null);
+        toast({ title: 'Listed on Shopify', description: `${bike.make} ${bike.model} is now live.` });
+      }
+    } catch (error: any) {
+      toast({ title: `Could not list on ${label}`, description: error.message, variant: 'destructive' });
+    } finally {
+      setBusy(key, false);
+    }
+  };
+
+  const handleList = async (bike: BikeWithPlatforms, only?: ('ebay' | 'shopify')[]) => {
+    const targets = listTargets(bike).filter((t) => !only || only.includes(t.platform));
+    for (const { platform } of targets) {
+      await listOn(bike, platform);
+    }
   };
 
   const platformBadges = (bike: BikeWithPlatforms) => {
@@ -330,6 +340,14 @@ export default function ListingsPage() {
               Neither eBay nor Shopify is connected. Connect a platform under Settings → Integrations to list bikes.
             </p>
           )}
+          {ebayNeedsReconnect && (
+            <p className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+              eBay needs reconnecting before bikes can be listed.{' '}
+              <button type="button" className="underline font-medium" onClick={() => navigate('/settings?tab=integrations')}>
+                Settings → Integrations → eBay
+              </button>
+            </p>
+          )}
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {visibleBikes.length === 0 ? (
@@ -340,7 +358,7 @@ export default function ListingsPage() {
               visibleBikes.map((bike) => {
                 const targets = listTargets(bike);
                 const allListed = anyConnected && targets.length === 0;
-                const busy = listingIds.has(bike.id);
+                const busy = isBusy(bike.id, 'ebay') || isBusy(bike.id, 'shopify');
                 return (
                   <ListCard key={bike.id} onClick={() => navigate(`/bikes/${bike.id}`)}>
                     <div className="flex gap-3">
@@ -360,12 +378,8 @@ export default function ListingsPage() {
 
                     <ListCardRow label="Asking" value={bike.asking_price ? `£${bike.asking_price.toFixed(2)}` : '-'} />
 
-                    <div onClick={(e) => e.stopPropagation()}>
-                      {busy ? (
-                        <Button className="w-full" disabled>
-                          {stageLabel(bike.status) === 'Listed' ? 'Updating…' : 'Listing…'}
-                        </Button>
-                      ) : allListed ? (
+                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                      {allListed ? (
                         <Button className="w-full" variant="outline" disabled>
                           <CheckCircle2 className="h-4 w-4 mr-2" />
                           Listed everywhere
@@ -373,14 +387,39 @@ export default function ListingsPage() {
                       ) : (
                         <Button
                           className="w-full"
-                          disabled={!anyConnected}
+                          disabled={!anyConnected || busy}
                           onClick={() => handleList(bike)}
                           title={!anyConnected ? 'Connect eBay or Shopify in Settings first' : undefined}
                         >
                           <Globe className="h-4 w-4 mr-2" />
-                          List everywhere
+                          {busy ? 'Listing…' : 'List everywhere'}
                         </Button>
                       )}
+                      <div className="flex flex-wrap gap-2">
+                        {ebayConnected && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 min-w-[8rem]"
+                            disabled={isActive(bike.ebay) || isBusy(bike.id, 'ebay')}
+                            onClick={() => handleList(bike, ['ebay'])}
+                          >
+                            {isBusy(bike.id, 'ebay') ? 'Listing…' : isActive(bike.ebay) ? 'Listed on eBay' : 'List on eBay'}
+                            {ebaySandbox && <span className="ml-1 text-[10px] uppercase text-muted-foreground">sandbox</span>}
+                          </Button>
+                        )}
+                        {shopifyConnected && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 min-w-[8rem]"
+                            disabled={isActive(bike.shopify) || isBusy(bike.id, 'shopify')}
+                            onClick={() => handleList(bike, ['shopify'])}
+                          >
+                            {isBusy(bike.id, 'shopify') ? 'Listing…' : isActive(bike.shopify) ? 'Listed on Shopify' : 'List on Shopify'}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </ListCard>
                 );
