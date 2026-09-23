@@ -71,9 +71,12 @@ Deno.serve(async (req) => {
       .single();
     if (updateError) throw new Error(updateError.message);
 
+    let saved = 0;
     if (faults.length) {
+      const extId = String(remote?.id ?? inspection.external_inspection_id ?? inspection.id);
+      console.log('inspectabike-sync fault keys:', JSON.stringify(Object.keys(faults[0] ?? {})));
       const rows = faults
-        .map((f) => normaliseFault(f, inspection.id, bikeId, undefined, (inspection as any).business_id))
+        .map((f, i) => normaliseFault(f, inspection.id, bikeId, undefined, (inspection as any).business_id, `${extId}:${i}`))
         .filter((r) => r.external_fault_id);
       const { data: known } = await supabase
         .from('inspection_faults')
@@ -81,12 +84,21 @@ Deno.serve(async (req) => {
         .eq('bike_id', bikeId);
       const knownIds = new Set((known ?? []).map((k: any) => k.external_fault_id));
       await upsertFaults(supabase, rows);
+      saved = rows.length;
       const freshFaults = rows.filter((r) => !knownIds.has(r.external_fault_id));
       if (freshFaults.length) await notifyFaultsAwaitingApproval(supabase, bikeId, freshFaults);
     }
+    console.log(`inspectabike-sync: received ${faults.length}, saved ${saved}`);
+
+    const { count } = await supabase
+      .from('inspection_faults').select('id', { count: 'exact', head: true }).eq('inspection_id', inspection.id);
+    await supabase.from('inspections').update({ has_issues: (count ?? 0) > 0 }).eq('id', inspection.id);
 
     await syncBikeStatusFromFaults(supabase, bikeId, completed);
 
+    if (saved < faults.length) {
+      return json({ error: `InspectABike sent ${faults.length} faults but only ${saved} could be saved` }, 500);
+    }
     return json({ success: true, inspection: updated, fault_count: faults.length });
   } catch (e) {
     const status = (e as any).status && (e as any).status !== 401 ? (e as any).status : 500;
