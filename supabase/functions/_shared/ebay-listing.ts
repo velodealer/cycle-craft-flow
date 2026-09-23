@@ -16,6 +16,8 @@ export interface BikeRow {
   listing_description?: string | null;
   description?: string | null;
   condition?: string | null;
+  condition_notes?: string | null;
+  mpn?: string | null;
   accessories_included?: string | null;
   photos?: string[] | null;
   frame_number?: string | null;
@@ -468,7 +470,7 @@ async function findOfferId(conn: Connection, sku: string): Promise<string | null
 export async function pushBikeToEbay(
   supabase: Client,
   bike: BikeRow,
-): Promise<{ offerId: string; listingId: string | null; url: string | null }> {
+): Promise<{ offerId: string; listingId: string | null; url: string | null; warnings: string[]; substitution: { from: string; to: string } | null }> {
   const businessId = await businessIdForBike(supabase, bike.id);
   const conn = await requireConnection(supabase, businessId);
   const s = conn.settings;
@@ -557,7 +559,7 @@ export async function pushBikeToEbay(
     condition: bikeCondition,
     product,
   };
-  if (condDesc && !bikeCondition.startsWith('NEW') && bikeCondition !== 'LIKE_NEW') {
+  if (condDesc && bikeCondition !== 'NEW') {
     inventoryBody.conditionDescription = condDesc;
   }
 
@@ -623,9 +625,17 @@ export async function pushBikeToEbay(
     quantity: 1,
     last_synced_at: new Date().toISOString(),
     last_error: null,
+    condition_substituted_from: resolved.substituted ? wantedCondition : null,
+    condition_substituted_to: resolved.substituted ? bikeCondition : null,
   });
 
-  return { offerId: offerId!, listingId, url };
+  return {
+    offerId: offerId!,
+    listingId,
+    url,
+    warnings,
+    substitution: resolved.substituted ? { from: wantedCondition, to: bikeCondition } : null,
+  };
 }
 
 /** Ends the eBay listing (sold elsewhere or manual pull). */
