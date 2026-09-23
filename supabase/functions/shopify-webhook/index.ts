@@ -230,6 +230,20 @@ Deno.serve(async (req) => {
       await handleOrderPaid(supabase, payload);
     } else if (topic === 'orders/cancelled') {
       await handleOrderReversed(supabase, payload);
+    } else if (topic === 'app/uninstalled') {
+      const shop = String(req.headers.get('x-shopify-shop-domain') || payload?.myshopify_domain || '').toLowerCase();
+      if (shop) {
+        const { data: rows } = await supabase.from('integrations').select('id, settings').eq('name', 'shopify');
+        for (const r of rows ?? []) {
+          const st = (r.settings ?? {}) as Record<string, unknown>;
+          if (String(st.shop_domain || '').toLowerCase() !== shop) continue;
+          const { access_token: _t, ...rest } = st;
+          await supabase.from('integrations')
+            .update({ is_active: false, settings: { ...rest, uninstalled_at: new Date().toISOString() } })
+            .eq('id', r.id);
+        }
+        console.log(`Shopify app uninstalled by ${shop}`);
+      }
     } else if (topic === 'refunds/create') {
       const orderId = payload?.order_id;
       const lineItems = (payload?.refund_line_items ?? []).map((r: any) => r.line_item).filter(Boolean);

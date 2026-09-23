@@ -2,6 +2,7 @@
 // Shopify sends the merchant here (the app's App URL) with ?shop=&hmac=&timestamp=
 // We verify the signature and redirect straight to the OAuth grant screen.
 import {
+  serviceClient,
   normaliseShopDomain,
   redirectUri,
   hmacHex,
@@ -41,7 +42,10 @@ Deno.serve(async (req) => {
     if (!timingSafeEqual(expected, providedHmac)) throw new Error('Signature check failed');
 
     const shop = normaliseShopDomain(shopParam);
-    const state = encodeURIComponent(`install|${crypto.randomUUID()}`);
+    const nonce = `install|${crypto.randomUUID()}`;
+    const { error: stErr } = await serviceClient().from('shopify_oauth_states').insert({ state: nonce, shop });
+    if (stErr) throw new Error('Could not start a secure install session');
+    const state = nonce;
     const authUrl = `https://${shop}/admin/oauth/authorize?` + new URLSearchParams({
       client_id: clientId,
       scope: SHOPIFY_SCOPES,

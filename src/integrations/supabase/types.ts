@@ -2169,6 +2169,24 @@ export type Database = {
           },
         ]
       }
+      shopify_oauth_states: {
+        Row: {
+          created_at: string
+          shop: string
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          shop: string
+          state: string
+        }
+        Update: {
+          created_at?: string
+          shop?: string
+          state?: string
+        }
+        Relationships: []
+      }
       social_post_checklist: {
         Row: {
           business_id: string
