@@ -84,13 +84,18 @@ export function substituteHidingEmpty(body: string, values: Record<string, strin
   let html = body;
   // Pass A: innermost rows whose placeholders are all empty.
   for (const tag of ['tr', 'li', 'div']) {
-    const re = new RegExp(`<${tag}\\b[^>]*>((?:(?!<${tag}\\b)(?!</${tag}>)[\\s\\S])*)</${tag}>`, 'gi');
+    const kept = `<\u0001${tag}`; // marks a row we looked at and kept; still blocks its parent
+    const re = new RegExp(`<${tag}\\b[^>]*>((?:(?!<${tag}\\b)(?!<\u0001${tag})(?!</${tag}>)[\\s\\S])*)</${tag}>`, 'gi');
     let prev = '';
     while (prev !== html) {
       prev = html;
-      html = html.replace(re, (whole, inner) => (hasTokens(inner) && allEmpty(inner) && !/\bstyle=/.test(whole.slice(0, whole.indexOf('>'))) ? MARK : whole.replace(`<${tag}`, `<${tag}\u0000`)));
+      html = html.replace(re, (whole, inner) => {
+        const open = whole.slice(0, whole.indexOf('>'));
+        if (hasTokens(inner) && allEmpty(inner) && !/\bstyle=/.test(open)) return MARK;
+        return kept + whole.slice(tag.length + 1);
+      });
     }
-    html = html.split(`<${tag}\u0000`).join(`<${tag}`);
+    html = html.split(kept).join(`<${tag}`);
   }
   // Pass B: containers left holding only removed rows and headings.
   const visible = (s: string) => s.replace(/<(h[1-6]|dt|th)\b[\s\S]*?<\/\1>/gi, '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
