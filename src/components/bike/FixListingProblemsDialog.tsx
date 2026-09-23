@@ -131,8 +131,8 @@ export default function FixListingProblemsDialog({ bikeId, open, onOpenChange, o
       if (Object.keys(update).length) {
         const { error } = await supabase.from('bikes').update(update as any).eq('id', bikeId);
         if (error) throw error;
-        logActivity({
-          bikeId, kind: 'listing', action: 'details_fixed',
+        logActivity(bikeId, {
+          kind: 'listing', action: 'details_fixed',
           summary: `Listing details filled in: ${[...Object.keys(update).filter((k) => k !== 'spec_values'), ...Object.keys(filledAspects)].join(', ')}`,
           detail: { fields: Object.keys(update), aspects: filledAspects },
         } as any);
