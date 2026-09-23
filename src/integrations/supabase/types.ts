@@ -1877,6 +1877,7 @@ export type Database = {
         Row: {
           body: string
           business_id: string
+          field_map: Json
           format: string
           id: string
           platform: string
@@ -1887,6 +1888,7 @@ export type Database = {
         Insert: {
           body?: string
           business_id?: string
+          field_map?: Json
           format?: string
           id?: string
           platform: string
@@ -1897,6 +1899,7 @@ export type Database = {
         Update: {
           body?: string
           business_id?: string
+          field_map?: Json
           format?: string
           id?: string
           platform?: string
