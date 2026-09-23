@@ -77,3 +77,18 @@ export async function functionFieldIssues(error: any, data?: any): Promise<{ fie
   }
   return Array.isArray(body?.fields) && body.fields.length ? body.fields : null;
 }
+
+export const INSPECTABIKE_APP_BASE = 'https://inspectabike.com';
+
+/**
+ * Where "open report" should point: unfinished inspections go to the edit
+ * screen (inspections/<id>); finished ones go to the report itself.
+ */
+export function inspectionOpenUrl(inspection: any): string | null {
+  const reportUrl: string = inspection?.report_url || '';
+  const status = String(inspection?.status || '').toLowerCase();
+  if (status === 'completed') return reportUrl || null;
+  const reportId = /\/report\/([0-9a-f-]{36})/i.exec(reportUrl)?.[1];
+  const id = reportId || inspection?.external_inspection_id;
+  return id ? `${INSPECTABIKE_APP_BASE}/inspection/${id}` : reportUrl || null;
+}
