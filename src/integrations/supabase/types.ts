@@ -210,34 +210,49 @@ export type Database = {
       }
       bike_components: {
         Row: {
+          attributes: Json | null
           bike_id: string
+          brand: string | null
           business_id: string
           component_id: string
           created_at: string
           id: string
+          model: string | null
+          mpn: string | null
           notes: string | null
           position: string | null
           slot: string
+          spec_overrides: Json | null
         }
         Insert: {
+          attributes?: Json | null
           bike_id: string
+          brand?: string | null
           business_id?: string
           component_id: string
           created_at?: string
           id?: string
+          model?: string | null
+          mpn?: string | null
           notes?: string | null
           position?: string | null
           slot: string
+          spec_overrides?: Json | null
         }
         Update: {
+          attributes?: Json | null
           bike_id?: string
+          brand?: string | null
           business_id?: string
           component_id?: string
           created_at?: string
           id?: string
+          model?: string | null
+          mpn?: string | null
           notes?: string | null
           position?: string | null
           slot?: string
+          spec_overrides?: Json | null
         }
         Relationships: [
           {
@@ -782,11 +797,14 @@ export type Database = {
           brand: string
           business_id: string
           category_id: string
+          confidence: number | null
           created_at: string
           description: string | null
           id: string
           model: string
           mpn: string | null
+          raw_text: string | null
+          source: string | null
           updated_at: string
           weight_g: number | null
         }
@@ -795,11 +813,14 @@ export type Database = {
           brand: string
           business_id?: string
           category_id: string
+          confidence?: number | null
           created_at?: string
           description?: string | null
           id?: string
           model: string
           mpn?: string | null
+          raw_text?: string | null
+          source?: string | null
           updated_at?: string
           weight_g?: number | null
         }
@@ -808,11 +829,14 @@ export type Database = {
           brand?: string
           business_id?: string
           category_id?: string
+          confidence?: number | null
           created_at?: string
           description?: string | null
           id?: string
           model?: string
           mpn?: string | null
+          raw_text?: string | null
+          source?: string | null
           updated_at?: string
           weight_g?: number | null
         }
@@ -2406,6 +2430,30 @@ export type Database = {
           created_at?: string
           shop?: string
           state?: string
+        }
+        Relationships: []
+      }
+      slot_categories: {
+        Row: {
+          category_slug: string
+          label: string
+          position: string | null
+          slot: string
+          sort_order: number
+        }
+        Insert: {
+          category_slug: string
+          label: string
+          position?: string | null
+          slot: string
+          sort_order?: number
+        }
+        Update: {
+          category_slug?: string
+          label?: string
+          position?: string | null
+          slot?: string
+          sort_order?: number
         }
         Relationships: []
       }
