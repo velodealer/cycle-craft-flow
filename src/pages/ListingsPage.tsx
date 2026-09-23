@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Globe, ChevronLeft, ChevronRight, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Search, Globe, ChevronLeft, ChevronRight, ExternalLink, CheckCircle2, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { listBikeOnEbay, getEbayStatus, type EbayStatus } from '@/services/ebay';
 import { listBikeOnShopify, getShopifyStatus, type ShopifyStatus, type ShopifyListing } from '@/services/shopify';
@@ -59,6 +59,7 @@ export default function ListingsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [listingIds, setListingIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
+  const [bulk, setBulk] = useState<{ kind: 'list' | 'sync'; done: number; total: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,26 +207,37 @@ export default function ListingsPage() {
       return next;
     });
 
-  const listOn = async (bike: BikeWithPlatforms, platform: 'ebay' | 'shopify') => {
+  const labelOf = (p: 'ebay' | 'shopify') => (p === 'ebay' ? 'eBay' : 'Shopify');
+
+  // Lists (or, when already live, updates) a bike on one platform. Returns an error message or null.
+  const listOn = async (
+    bike: BikeWithPlatforms,
+    platform: 'ebay' | 'shopify',
+    opts: { quiet?: boolean; sync?: boolean } = {},
+  ): Promise<string | null> => {
     const key = `${bike.id}:${platform}`;
     setBusy(key, true);
-    const label = platform === 'ebay' ? 'eBay' : 'Shopify';
+    const label = labelOf(platform);
+    const done = opts.sync ? `Synced on ${label}` : `Listed on ${label}`;
     try {
       if (platform === 'ebay') {
         const res = await listBikeOnEbay(bike.id);
-        applyResult(bike.id, 'ebay', res.url ?? null);
-        if (res.warnings?.length) {
-          toast({ title: 'Listed on eBay, with notes', description: res.warnings.join(' ') });
-        } else {
-          toast({ title: 'Listed on eBay', description: `${bike.make} ${bike.model} is now live.` });
+        applyResult(bike.id, 'ebay', res.url ?? bike.ebay?.url ?? null);
+        if (!opts.quiet) {
+          toast(res.warnings?.length
+            ? { title: `${done}, with notes`, description: res.warnings.join(' ') }
+            : { title: done, description: `${bike.make} ${bike.model} is ${opts.sync ? 'up to date' : 'now live'}.` });
         }
       } else {
         const res = await listBikeOnShopify(bike.id);
-        applyResult(bike.id, 'shopify', res.url ?? null);
-        toast({ title: 'Listed on Shopify', description: `${bike.make} ${bike.model} is now live.` });
+        applyResult(bike.id, 'shopify', res.url ?? bike.shopify?.url ?? null);
+        if (!opts.quiet) toast({ title: done, description: `${bike.make} ${bike.model} is ${opts.sync ? 'up to date' : 'now live'}.` });
       }
+      return null;
     } catch (error: any) {
-      toast({ title: `Could not list on ${label}`, description: error.message, variant: 'destructive' });
+      const msg = error?.message || 'Unknown error';
+      if (!opts.quiet) toast({ title: `Could not ${opts.sync ? 'sync' : 'list'} on ${label}`, description: msg, variant: 'destructive' });
+      return msg;
     } finally {
       setBusy(key, false);
     }
@@ -236,6 +248,79 @@ export default function ListingsPage() {
     for (const { platform } of targets) {
       await listOn(bike, platform);
     }
+  };
+
+  const liveTargets = (bike: BikeWithPlatforms) => {
+    const t: ('ebay' | 'shopify')[] = [];
+    if (ebayConnected && isActive(bike.ebay)) t.push('ebay');
+    if (shopifyConnected && isActive(bike.shopify)) t.push('shopify');
+    return t;
+  };
+
+  const handleSync = async (bike: BikeWithPlatforms) => {
+    for (const p of liveTargets(bike)) await listOn(bike, p, { sync: true });
+  };
+
+  const toListCount = filteredBikes.filter((b) => listTargets(b).length > 0).length;
+  const toSyncCount = filteredBikes.filter((b) => liveTargets(b).length > 0).length;
+
+  const runBulk = async (kind: 'list' | 'sync') => {
+    const jobs = filteredBikes.flatMap((b) =>
+      (kind === 'list' ? listTargets(b).map((t) => t.platform) : liveTargets(b)).map((p) => ({ bike: b, p })),
+    );
+    if (jobs.length === 0) return;
+    const bikeCount = new Set(jobs.map((j) => j.bike.id)).size;
+    const sites = Array.from(new Set(jobs.map((j) => labelOf(j.p)))).join(' and ');
+    if (!window.confirm(`${kind === 'list' ? 'List' : 'Sync'} ${bikeCount} bike${bikeCount === 1 ? '' : 's'} on ${sites}?`)) return;
+    setBulk({ kind, done: 0, total: jobs.length });
+    const failures: string[] = [];
+    for (let i = 0; i < jobs.length; i++) {
+      const { bike, p } = jobs[i];
+      const err = await listOn(bike, p, { quiet: true, sync: kind === 'sync' });
+      if (err) failures.push(`${bikeRef(bike as any)} (${labelOf(p)}): ${err}`);
+      setBulk({ kind, done: i + 1, total: jobs.length });
+    }
+    setBulk(null);
+    const ok = jobs.length - failures.length;
+    toast({
+      title: `${kind === 'list' ? 'Listed' : 'Synced'} ${ok} of ${jobs.length}`,
+      description: failures.length ? failures.slice(0, 5).join(' · ') + (failures.length > 5 ? ` · +${failures.length - 5} more` : '') : 'All done.',
+      variant: failures.length && ok === 0 ? 'destructive' : undefined,
+    });
+  };
+  const runListAll = () => runBulk('list');
+  const runSyncAll = () => runBulk('sync');
+
+  const renderPlatformButton = (bike: BikeWithPlatforms, platform: 'ebay' | 'shopify') => {
+    const row = bike[platform];
+    const live = isActive(row);
+    const busyP = isBusy(bike.id, platform);
+    const label = labelOf(platform);
+    const tag = platform === 'ebay' && ebaySandbox
+      ? <span className="ml-1 text-[10px] uppercase text-muted-foreground">sandbox</span>
+      : null;
+    if (live && row?.url) {
+      return (
+        <Button key={platform} size="sm" variant="outline" className="flex-1 min-w-[8rem]" asChild>
+          <a href={row.url} target="_blank" rel="noopener noreferrer">
+            <CheckCircle2 className="h-4 w-4 mr-1" /> Listed on {label} <ExternalLink className="h-3 w-3 ml-1" />{tag}
+          </a>
+        </Button>
+      );
+    }
+    return (
+      <Button
+        key={platform}
+        size="sm"
+        variant="outline"
+        className="flex-1 min-w-[8rem]"
+        disabled={live || busyP || !!bulk}
+        onClick={() => handleList(bike, [platform])}
+      >
+        {busyP ? 'Working…' : live ? `Listed on ${label}` : `List on ${label}`}
+        {tag}
+      </Button>
+    );
   };
 
   const platformBadges = (bike: BikeWithPlatforms) => {
@@ -309,6 +394,35 @@ export default function ListingsPage() {
     <div>
       <PageHeader title="Listings" description="Bikes ready to go live, and what they're listed on." />
 
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <Button
+          size="lg"
+          className="flex-1 h-14 text-base"
+          disabled={!anyConnected || !!bulk || toListCount === 0}
+          onClick={runListAll}
+        >
+          <Globe className="h-5 w-5 mr-2" />
+          {bulk?.kind === 'list'
+            ? `Listing ${bulk.done + 1 > bulk.total ? bulk.total : bulk.done + 1} of ${bulk.total}…`
+            : toListCount === 0
+              ? 'All bikes listed'
+              : `List all bikes (${toListCount})`}
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className="flex-1 h-14 text-base"
+          disabled={!!bulk || toSyncCount === 0}
+          onClick={runSyncAll}
+        >
+          <RefreshCw className={`h-5 w-5 mr-2 ${bulk?.kind === 'sync' ? 'animate-spin' : ''}`} />
+          {bulk?.kind === 'sync'
+            ? `Syncing ${bulk.done + 1 > bulk.total ? bulk.total : bulk.done + 1} of ${bulk.total}…`
+            : `Sync all listings (${toSyncCount})`}
+        </Button>
+      </div>
+
+
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Bikes ({filteredBikes.length})</CardTitle>
@@ -379,47 +493,33 @@ export default function ListingsPage() {
                     <ListCardRow label="Asking" value={bike.asking_price ? `£${bike.asking_price.toFixed(2)}` : '-'} />
 
                     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                      {allListed ? (
-                        <Button className="w-full" variant="outline" disabled>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Listed everywhere
-                        </Button>
-                      ) : (
+                      {!allListed && (
                         <Button
                           className="w-full"
-                          disabled={!anyConnected || busy}
+                          disabled={!anyConnected || busy || !!bulk}
                           onClick={() => handleList(bike)}
                           title={!anyConnected ? 'Connect eBay or Shopify in Settings first' : undefined}
                         >
                           <Globe className="h-4 w-4 mr-2" />
-                          {busy ? 'Listing…' : 'List everywhere'}
+                          {busy ? 'Working…' : 'List everywhere'}
                         </Button>
                       )}
                       <div className="flex flex-wrap gap-2">
-                        {ebayConnected && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 min-w-[8rem]"
-                            disabled={isActive(bike.ebay) || isBusy(bike.id, 'ebay')}
-                            onClick={() => handleList(bike, ['ebay'])}
-                          >
-                            {isBusy(bike.id, 'ebay') ? 'Listing…' : isActive(bike.ebay) ? 'Listed on eBay' : 'List on eBay'}
-                            {ebaySandbox && <span className="ml-1 text-[10px] uppercase text-muted-foreground">sandbox</span>}
-                          </Button>
-                        )}
-                        {shopifyConnected && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 min-w-[8rem]"
-                            disabled={isActive(bike.shopify) || isBusy(bike.id, 'shopify')}
-                            onClick={() => handleList(bike, ['shopify'])}
-                          >
-                            {isBusy(bike.id, 'shopify') ? 'Listing…' : isActive(bike.shopify) ? 'Listed on Shopify' : 'List on Shopify'}
-                          </Button>
-                        )}
+                        {ebayConnected && renderPlatformButton(bike, 'ebay')}
+                        {shopifyConnected && renderPlatformButton(bike, 'shopify')}
                       </div>
+                      {liveTargets(bike).length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="w-full"
+                          disabled={busy || !!bulk}
+                          onClick={() => handleSync(bike)}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-2 ${busy ? 'animate-spin' : ''}`} />
+                          {busy ? 'Syncing…' : 'Sync listing'}
+                        </Button>
+                      )}
                     </div>
                   </ListCard>
                 );
