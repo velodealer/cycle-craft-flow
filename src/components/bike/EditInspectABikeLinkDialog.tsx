@@ -61,13 +61,9 @@ export default function EditInspectABikeLinkDialog({ open, onOpenChange, bikeId,
         if (dupes && dupes.length) throw new Error('That InspectABike inspection ID is already linked to another bike.');
       }
       const reportId = v.report_url.match(/\/report\/([0-9a-f-]{8,})/i)?.[1] ?? null;
-      const typedIsReport = !!reportId && v.external_inspection_id.toLowerCase() === reportId.toLowerCase();
       const values = {
         report_url: v.report_url || null,
-        // A report number is not the inspection ID — keep the existing ID and let Refresh resolve it.
-        external_inspection_id: typedIsReport
-          ? (inspection?.external_inspection_id ?? null)
-          : (v.external_inspection_id || (reportId ? inspection?.external_inspection_id ?? null : null)),
+        external_inspection_id: v.external_inspection_id || null,
         external_reference: v.external_reference || null,
       };
       const before = {
