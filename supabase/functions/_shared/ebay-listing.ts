@@ -1,5 +1,7 @@
 // Builds eBay listings from VeloDealer bikes and keeps the ebay_listings table in step.
-import { ebayFetch, requireConnection, businessIdForBike, itemBase, type Client, type Connection } from './ebay.ts';
+import { ebayFetch, requireConnection, businessIdForBike, itemBase, saveSettings, hasScope, type Client, type Connection } from './ebay.ts';
+import { buildEbayTitle, finalEbayTitle } from './ebay-title.ts';
+import { buildAspects, type AspectResult } from './ebay-aspects.ts';
 import { loadListingTemplate, renderListingHtml, loadBikeComponents } from './listing-template.ts';
 
 export interface BikeRow {
@@ -130,29 +132,6 @@ export function inventorySummary(bike: BikeRow): string {
   return (boundary > 500 ? cut.slice(0, boundary + 1) : cut.replace(/\s+\S*$/, '')).trim() + '…';
 }
 
-function aspects(bike: BikeRow): Record<string, string[]> {
-  const out: Record<string, string[]> = {};
-  const add = (key: string, value: unknown) => {
-    const v = String(value ?? '').trim();
-    if (v && !out[key]) out[key] = [v.slice(0, 60)];
-  };
-  add('Brand', bike.make);
-  add('Model', bike.model);
-  add('Bike Type', ebayBikeType(bike));
-  add('Type', ebayBikeType(bike));
-  add('Frame Size', bike.size);
-  add('Colour', bike.colour);
-  add('Color', bike.colour);
-  add('Frame Material', bike.frame_material);
-  add('Wheel Size', specValue(bike, 'wheel_size'));
-  add('Number of Gears', specValue(bike, 'gears') || specValue(bike, 'speeds'));
-  add('Brake Type', specValue(bike, 'brake_type'));
-  add('Suspension Type', specValue(bike, 'suspension'));
-  add('Gender', bike.gender);
-  if (bike.year) add('Year', String(bike.year));
-  return out;
-}
-
 const CATEGORY_TREE_ID: Record<string, string> = {
   EBAY_GB: '3',
   EBAY_US: '0',
@@ -215,13 +194,6 @@ async function categoryAspects(supabase: Client, conn: Connection, categoryId: s
     console.warn('Could not read eBay item specifics:', (e as Error).message);
     return [];
   }
-}
-
-function requiredAspectNames(meta: any[]): string[] {
-  return meta
-    .filter((a: any) => a?.aspectConstraint?.aspectRequired)
-    .map((a: any) => String(a?.localizedAspectName || '').trim())
-    .filter(Boolean);
 }
 
 /** Matches the bike's brand to eBay's spelling when the category offers a brand list. */
@@ -466,154 +438,386 @@ async function findOfferId(conn: Connection, sku: string): Promise<string | null
   }
 }
 
-/** Creates or updates the eBay listing for a bike and publishes it. */
-export async function pushBikeToEbay(
-  supabase: Client,
-  bike: BikeRow,
-): Promise<{ offerId: string; listingId: string | null; url: string | null; warnings: string[]; substitution: { from: string; to: string } | null }> {
+// ---------- Photos ----------
+
+/** Reads width/height from the first bytes of a JPEG, PNG or WebP. */
+function imageSize(buf: Uint8Array): { w: number; h: number } | null {
+  if (buf[0] === 0x89 && buf[1] === 0x50) {
+    const dv = new DataView(buf.buffer, buf.byteOffset);
+    return { w: dv.getUint32(16), h: dv.getUint32(20) };
+  }
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < buf.length) {
+      if (buf[i] !== 0xff) { i++; continue; }
+      const marker = buf[i + 1];
+      const len = (buf[i + 2] << 8) | buf[i + 3];
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return { h: (buf[i + 5] << 8) | buf[i + 6], w: (buf[i + 7] << 8) | buf[i + 8] };
+      }
+      i += 2 + len;
+    }
+    return null;
+  }
+  if (buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50) {
+    const fmt = String.fromCharCode(buf[12], buf[13], buf[14], buf[15]);
+    if (fmt === 'VP8X') return { w: 1 + (buf[24] | (buf[25] << 8) | (buf[26] << 16)), h: 1 + (buf[27] | (buf[28] << 8) | (buf[29] << 16)) };
+    if (fmt === 'VP8 ') return { w: (buf[26] | (buf[27] << 8)) & 0x3fff, h: (buf[28] | (buf[29] << 8)) & 0x3fff };
+    if (fmt === 'VP8L') {
+      const b = buf.slice(21, 25);
+      return { w: 1 + (((b[1] & 0x3f) << 8) | b[0]), h: 1 + (((b[3] & 0xf) << 10) | (b[2] << 2) | ((b[1] & 0xc0) >> 6)) };
+    }
+  }
+  return null;
+}
+
+/** Longest side of each photo in pixels (null when unknown). Cached per address. */
+async function photoSizes(supabase: Client, urls: string[]): Promise<Record<string, number | null>> {
+  const out: Record<string, number | null> = {};
+  if (!urls.length) return out;
+  const { data } = await supabase
+    .from('ebay_category_cache')
+    .select('category_id, payload')
+    .eq('marketplace_id', 'photo')
+    .eq('kind', 'size')
+    .in('category_id', urls);
+  for (const r of (data ?? []) as any[]) out[r.category_id] = r.payload?.longest ?? null;
+  const todo = urls.filter((u) => !(u in out));
+  await Promise.all(todo.map(async (url) => {
+    let longest: number | null = null;
+    try {
+      const res = await fetch(url, { headers: { Range: 'bytes=0-131071' } });
+      if (res.ok || res.status === 206) {
+        const size = imageSize(new Uint8Array(await res.arrayBuffer()));
+        if (size) longest = Math.max(size.w, size.h);
+      }
+    } catch { /* unknown */ }
+    out[url] = longest;
+    if (longest) {
+      await supabase.from('ebay_category_cache').upsert({
+        marketplace_id: 'photo', category_id: url, kind: 'size', payload: { longest }, fetched_at: new Date().toISOString(),
+      }, { onConflict: 'marketplace_id,category_id,kind' });
+    }
+  }));
+  return out;
+}
+
+// ---------- Preparation (shared by preview and publish) ----------
+
+export type CheckLevel = 'ok' | 'warn' | 'block';
+export interface CheckItem { key: string; level: CheckLevel; label: string; detail?: string }
+
+export interface PreparedListing {
+  conn: Connection;
+  businessId: string;
+  existing: any;
+  sku: string;
+  title: string;
+  builtTitle: string;
+  titleFormat: string | null;
+  categoryId: string;
+  categorySource: 'bike' | 'type' | 'default';
+  wantedCondition: string;
+  condition: string | null;
+  substituted: boolean;
+  conditionError: string | null;
+  conditionDescription: string;
+  brand: string;
+  aspectResult: AspectResult;
+  images: string[];
+  photoSizes: Record<string, number | null>;
+  descriptionHtml: string;
+  mobilePreview: string;
+  bestOffer: { enabled: boolean; accept: number | null; decline: number | null };
+  promotion: { enabled: boolean; rate: number | null; available: boolean };
+  checklist: CheckItem[];
+  warnings: string[];
+}
+
+export async function prepareListing(supabase: Client, bike: BikeRow): Promise<PreparedListing> {
   const businessId = await businessIdForBike(supabase, bike.id);
   const conn = await requireConnection(supabase, businessId);
   const s = conn.settings;
-  if (!s.fulfillment_policy_id || !s.payment_policy_id || !s.return_policy_id) {
-    throw new Error('Choose your eBay postage, payment and returns policies in Settings → Integrations first.');
-  }
-  if (bike.asking_price == null || Number(bike.asking_price) <= 0) {
-    throw new Error('Set an asking price on the bike before listing it on eBay.');
-  }
-  if (!ebayBikeType(bike)) {
-    throw new Error('Add a bike type before listing on eBay.');
-  }
+  const checklist: CheckItem[] = [];
+  const warnings: string[] = [];
+  const add = (key: string, level: CheckLevel, label: string, detail?: string) => checklist.push({ key, level, label, detail });
 
+  const { data: existing } = await supabase.from('ebay_listings').select('*').eq('bike_id', bike.id).maybeSingle();
+  const ex = (existing ?? {}) as any;
 
-  const sku = skuFor(bike);
-  // Use the dealer's saved eBay listing format when there is one.
+  // Description from the dealer's listing format.
   let descriptionHtml = bikeDescriptionHtml(bike);
+  let titleFormat: string | null = null;
   try {
     const tpl = await loadListingTemplate(supabase, 'ebay', businessId);
+    const { data: fmtRow } = await supabase
+      .from('listing_templates').select('title_format, business_id').eq('platform', 'ebay');
+    const rows = (fmtRow ?? []) as any[];
+    titleFormat = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
     if (tpl) {
-      const components = /\{components\}/.test(tpl.body || '')
-        ? await loadBikeComponents(supabase, bike.id)
-        : [];
+      const components = await loadBikeComponents(supabase, bike.id);
       descriptionHtml = renderListingHtml(tpl, bike, components) || descriptionHtml;
     }
   } catch (e) {
     console.error('listing template render failed, using default description:', (e as Error).message);
   }
-  const locationKey = await ensureLocation(supabase, conn, businessId);
-  const images = (bike.photos ?? [])
-    .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
-    .slice(0, 12);
+  const mobilePreview = descriptionHtml
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 800);
 
-  // Per-bike overrides take priority over the account defaults.
-  const { data: existing } = await supabase
-    .from('ebay_listings')
-    .select('*')
-    .eq('bike_id', bike.id)
-    .maybeSingle();
+  // Title
+  const builtTitle = buildEbayTitle(bike, titleFormat);
+  const title = finalEbayTitle(bike, titleFormat, ex.title_override);
+  add('title', title.length >= 40 ? 'ok' : 'warn', `Title ${title.length}/80`, title.length < 40 ? 'Short titles are found less often — add groupset, material or size.' : title);
 
-  const warnings: string[] = [];
-  const wantedCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
-  const bikeCategoryId = ((existing as any)?.category_id as string | null) || s.category_id || DEFAULT_CATEGORY;
-  const resolved = await resolveCondition(supabase, conn, bikeCategoryId, wantedCondition);
-  const bikeCondition = resolved.condition;
-  if (resolved.substituted) {
-    warnings.push(`eBay doesn't accept "${conditionLabel(wantedCondition)}" in this category, so it was listed as "${conditionLabel(bikeCondition)}".`);
+  // Basics that stop a listing
+  const policiesOk = Boolean(s.fulfillment_policy_id && s.payment_policy_id && s.return_policy_id);
+  add('policies', policiesOk ? 'ok' : 'block', policiesOk ? 'Postage, payment and returns policies set' : 'Choose postage, payment and returns policies in Settings → Integrations');
+  const priceOk = bike.asking_price != null && Number(bike.asking_price) > 0;
+  add('price', priceOk ? 'ok' : 'block', priceOk ? `Asking price £${Number(bike.asking_price).toLocaleString('en-GB')}` : 'Set an asking price');
+  add('type', bike.bike_type ? 'ok' : 'block', bike.bike_type ? `Bike type: ${ebayBikeType(bike)}` : 'Add a bike type');
+  const locationOk = Boolean(String(s.postcode ?? '').trim() && String(s.city ?? '').trim());
+  add('location', locationOk ? 'ok' : 'block', locationOk ? `Despatch from ${s.city}, ${s.postcode}` : LOCATION_MISSING_MESSAGE);
+
+  // Category: bike → bike type → default
+  let categorySource: 'bike' | 'type' | 'default' = 'default';
+  let categoryId = s.category_id || DEFAULT_CATEGORY;
+  const byType = s.category_by_type?.[String(bike.bike_type ?? '')];
+  if (ex.category_id) { categoryId = ex.category_id; categorySource = 'bike'; }
+  else if (byType) { categoryId = byType; categorySource = 'type'; }
+  add('category', 'ok', `Category ${categoryId}`, categorySource === 'bike' ? 'Chosen for this bike' : categorySource === 'type' ? 'From your bike-type categories' : 'Account default');
+
+  // Condition
+  const wantedCondition = ex.condition || s.condition || 'USED_EXCELLENT';
+  let condition: string | null = null;
+  let substituted = false;
+  let conditionError: string | null = null;
+  try {
+    const r = await resolveCondition(supabase, conn, categoryId, wantedCondition);
+    condition = r.condition;
+    substituted = r.substituted;
+  } catch (e) {
+    conditionError = (e as Error).message;
   }
+  if (conditionError) add('condition', 'block', conditionError);
+  else if (substituted) {
+    add('condition', 'warn', `Condition will be "${conditionLabel(condition!)}"`, `eBay doesn't accept "${conditionLabel(wantedCondition)}" in this category.`);
+    warnings.push(`eBay doesn't accept "${conditionLabel(wantedCondition)}" in this category, so it was listed as "${conditionLabel(condition!)}".`);
+  } else add('condition', 'ok', `Condition: ${conditionLabel(condition!)}`);
 
-  const meta = await categoryAspects(supabase, conn, bikeCategoryId);
-  const brand = normaliseBrand(meta, bike.make);
-  const itemAspects = aspects({ ...bike, make: brand });
-  const required = requiredAspectNames(meta);
-  const missing = required.filter((name) => !itemAspects[name]);
-  if (missing.length) {
-    throw new Error(`eBay needs these details on the bike before it can be listed: ${missing.join(', ')}.`);
-  }
-
-  // Condition notes, led by the InspectABike grade when there is one.
+  // Condition notes, led by the InspectABike grade.
   const { data: inspection } = await supabase
-    .from('inspections')
-    .select('overall_grade')
-    .eq('bike_id', bike.id)
-    .not('overall_grade', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .from('inspections').select('overall_grade').eq('bike_id', bike.id)
+    .not('overall_grade', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle();
   const grade = (inspection as any)?.overall_grade != null ? Number((inspection as any).overall_grade) : null;
   const condDesc = conditionDescription(bike.condition_notes, grade);
   if (!String(bike.condition_notes ?? '').trim()) {
+    add('condition_notes', 'warn', 'No condition notes', 'Used bikes sell better and get fewer disputes with condition notes.');
     warnings.push('Used bikes sell better and get fewer disputes with condition notes.');
+  } else add('condition_notes', 'ok', 'Condition notes added');
+
+  // Item specifics
+  const meta = await categoryAspects(supabase, conn, categoryId);
+  const brand = normaliseBrand(meta, bike.make);
+  const aspectResult = buildAspects(bike, meta, brand);
+  if (aspectResult.missingRequired.length) {
+    add('specifics_required', 'block', `Missing required item specifics: ${aspectResult.missingRequired.join(', ')}`);
+  }
+  if (aspectResult.recommendedTotal) {
+    const { recommendedFilled: f, recommendedTotal: t } = aspectResult;
+    add('specifics', f / t >= 0.7 ? 'ok' : 'warn', `Item specifics: ${f}/${t} recommended filled`,
+      aspectResult.missingRecommended.length ? `Missing: ${aspectResult.missingRecommended.slice(0, 12).join(', ')}` : undefined);
+  }
+  if (aspectResult.unmapped.length) {
+    add('specifics_unmapped', 'warn', "Couldn't match to eBay's choices",
+      aspectResult.unmapped.map((u) => `${u.name}: ${u.value}`).join('; '));
   }
 
-  const mpn = String(bike.mpn ?? '').trim();
-  const product: Record<string, unknown> = {
-    title: bikeTitle(bike),
-    description: inventorySummary(bike),
-    imageUrls: images,
-    aspects: itemAspects,
-    brand,
+  // Photos: up to 24, gallery photo first
+  let photos = (bike.photos ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u));
+  const gi = Number.isInteger(ex.gallery_photo_index) ? ex.gallery_photo_index : 0;
+  if (gi > 0 && gi < photos.length) photos = [photos[gi], ...photos.filter((_, i) => i !== gi)];
+  const images = photos.slice(0, 24);
+  const sizes = await photoSizes(supabase, images);
+  const tiny = images.filter((u) => sizes[u] != null && sizes[u]! < 500);
+  const small = images.filter((u) => sizes[u] != null && sizes[u]! >= 500 && sizes[u]! < 1600);
+  if (!images.length) add('photos', 'block', 'Add at least one photo');
+  else if (tiny.length) add('photos', 'block', `${tiny.length} photo(s) are under 500px — eBay rejects these`);
+  else if (images.length < 6 || small.length) {
+    add('photos', 'warn', `${images.length} photo(s)`, [images.length < 6 ? 'Listings with 6+ photos sell faster' : '', small.length ? `${small.length} under 1600px (no zoom on eBay)` : ''].filter(Boolean).join('. '));
+  } else add('photos', 'ok', `${images.length} photos`);
+
+  // Best Offer
+  const boEnabled = ex.best_offer_enabled ?? s.best_offer_enabled ?? false;
+  const acceptPct = s.best_offer_accept_pct ?? 95;
+  const declinePct = s.best_offer_decline_pct ?? 80;
+  const price = Number(bike.asking_price) || 0;
+  const bestOffer = {
+    enabled: Boolean(boEnabled),
+    accept: boEnabled && acceptPct ? Math.round(price * acceptPct) / 100 : null,
+    decline: boEnabled && declinePct ? Math.round(price * declinePct) / 100 : null,
   };
+  add('best_offer', 'ok', bestOffer.enabled ? 'Best Offer on' : 'Best Offer off');
+
+  // Promotion
+  const promoAvailable = hasScope(s, 'sell.marketing');
+  const promoRate = ex.ad_rate ?? (s.promote_enabled && s.promote_auto ? s.ad_rate ?? null : null);
+  const promotion = { enabled: Boolean(s.promote_enabled && promoRate), rate: promoRate != null ? Number(promoRate) : null, available: promoAvailable };
+  if (promotion.enabled && !promoAvailable) add('promotion', 'warn', 'Promotion needs eBay reconnecting', 'Reconnect eBay in Settings to allow Promoted Listings.');
+  else add('promotion', 'ok', promotion.enabled ? `Promoted at ${promotion.rate}%` : 'Not promoted');
+
+  add('mobile', mobilePreview.length >= 200 ? 'ok' : 'warn', 'Mobile description preview', mobilePreview || 'Empty — buyers on the eBay app see nothing.');
+
+  return {
+    conn, businessId, existing, sku: skuFor(bike), title, builtTitle, titleFormat, categoryId, categorySource,
+    wantedCondition, condition, substituted, conditionError, conditionDescription: condDesc, brand, aspectResult,
+    images, photoSizes: sizes, descriptionHtml, mobilePreview, bestOffer, promotion, checklist, warnings,
+  };
+}
+
+/** Creates or reuses the dealer's "VeloDealer auto" campaign. */
+async function ensureCampaign(supabase: Client, conn: Connection, businessId: string): Promise<string> {
+  if (conn.settings.campaign_id) return conn.settings.campaign_id;
+  const name = 'VeloDealer auto';
+  const find = async () => {
+    try {
+      const found = await ebayFetch<any>(conn, `/sell/marketing/v1/ad_campaign/get_campaign_by_name?campaign_name=${encodeURIComponent(name)}`);
+      return found?.campaignId as string | undefined;
+    } catch { return undefined; }
+  };
+  let id = await find();
+  if (!id) {
+    await ebayFetch(conn, '/sell/marketing/v1/ad_campaign', {
+      method: 'POST',
+      body: JSON.stringify({
+        campaignName: name,
+        marketplaceId: conn.settings.marketplace_id || 'EBAY_GB',
+        startDate: new Date(Date.now() + 60_000).toISOString(),
+        fundingStrategy: { fundingModel: 'COST_PER_SALE', bidPercentage: String(conn.settings.ad_rate ?? 5) },
+      }),
+    });
+    id = await find();
+  }
+  if (!id) throw new Error('eBay did not return the promotion campaign.');
+  await saveSettings(supabase, businessId, { campaign_id: id });
+  return id;
+}
+
+async function removeAd(conn: Connection, listing: any) {
+  if (!listing?.ad_id || !conn.settings.campaign_id) return;
+  try {
+    await ebayFetch(conn, `/sell/marketing/v1/ad_campaign/${conn.settings.campaign_id}/ad/${listing.ad_id}`, { method: 'DELETE' });
+  } catch (e) {
+    console.warn('Could not remove eBay ad:', (e as Error).message);
+  }
+}
+
+/** Creates or updates the eBay listing for a bike and publishes it. */
+export async function pushBikeToEbay(
+  supabase: Client,
+  bike: BikeRow,
+): Promise<{ offerId: string; listingId: string | null; url: string | null; warnings: string[]; substitution: { from: string; to: string } | null }> {
+  const p = await prepareListing(supabase, bike);
+  const blockers = p.checklist.filter((c) => c.level === 'block');
+  if (blockers.length) throw new Error(blockers.map((b) => b.label).join('. ') + '.');
+  const { conn, businessId, sku } = p;
+  const s = conn.settings;
+  const warnings = [...p.warnings];
+  const locationKey = await ensureLocation(supabase, conn, businessId);
+
+  const product: Record<string, unknown> = {
+    title: p.title,
+    description: inventorySummary(bike),
+    imageUrls: p.images,
+    aspects: p.aspectResult.aspects,
+    brand: p.brand,
+  };
+  const mpn = String(bike.mpn ?? '').trim();
   if (mpn) product.mpn = mpn.slice(0, 65);
 
   const inventoryBody: Record<string, unknown> = {
     availability: { shipToLocationAvailability: { quantity: 1 } },
-    condition: bikeCondition,
+    condition: p.condition,
     product,
   };
-  if (condDesc && bikeCondition !== 'NEW') {
-    inventoryBody.conditionDescription = condDesc;
-  }
+  if (p.conditionDescription && p.condition !== 'NEW') inventoryBody.conditionDescription = p.conditionDescription;
 
   await ebayFetch(conn, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
     method: 'PUT',
     body: JSON.stringify(inventoryBody),
   });
 
-  let offerId = ((existing as any)?.offer_id as string | undefined) || (await findOfferId(conn, sku));
-
+  let offerId = (p.existing?.offer_id as string | undefined) || (await findOfferId(conn, sku));
+  const currency = s.currency || 'GBP';
+  const listingPolicies: Record<string, unknown> = {
+    fulfillmentPolicyId: s.fulfillment_policy_id,
+    paymentPolicyId: s.payment_policy_id,
+    returnPolicyId: s.return_policy_id,
+  };
+  if (p.bestOffer.enabled) {
+    const terms: Record<string, unknown> = { bestOfferEnabled: true };
+    if (p.bestOffer.accept) terms.autoAcceptPrice = { value: p.bestOffer.accept.toFixed(2), currency };
+    if (p.bestOffer.decline) terms.autoDeclinePrice = { value: p.bestOffer.decline.toFixed(2), currency };
+    listingPolicies.bestOfferTerms = terms;
+  } else {
+    listingPolicies.bestOfferTerms = { bestOfferEnabled: false };
+  }
   const offerBody = {
     sku,
     marketplaceId: s.marketplace_id || 'EBAY_GB',
     format: 'FIXED_PRICE',
     availableQuantity: 1,
-    categoryId: bikeCategoryId,
-    listingDescription: descriptionHtml,
+    categoryId: p.categoryId,
+    listingDescription: p.descriptionHtml,
     merchantLocationKey: locationKey,
-    listingPolicies: {
-      fulfillmentPolicyId: s.fulfillment_policy_id,
-      paymentPolicyId: s.payment_policy_id,
-      returnPolicyId: s.return_policy_id,
-    },
-    pricingSummary: {
-      price: { value: String(bike.asking_price), currency: s.currency || 'GBP' },
-    },
+    listingPolicies,
+    pricingSummary: { price: { value: String(bike.asking_price), currency } },
   };
 
   if (offerId) {
-    await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}`, {
-      method: 'PUT',
-      body: JSON.stringify(offerBody),
-    });
+    await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}`, { method: 'PUT', body: JSON.stringify(offerBody) });
   } else {
-    const created = await ebayFetch<any>(conn, '/sell/inventory/v1/offer', {
-      method: 'POST',
-      body: JSON.stringify(offerBody),
-    });
+    const created = await ebayFetch<any>(conn, '/sell/inventory/v1/offer', { method: 'POST', body: JSON.stringify(offerBody) });
     offerId = created?.offerId as string;
   }
 
-  let listingId = ((existing as any)?.listing_id as string | null) ?? null;
+  let listingId = (p.existing?.listing_id as string | null) ?? null;
   try {
-    const published = await ebayFetch<any>(conn, `/sell/inventory/v1/offer/${offerId}/publish`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const published = await ebayFetch<any>(conn, `/sell/inventory/v1/offer/${offerId}/publish`, { method: 'POST', body: JSON.stringify({}) });
     listingId = published?.listingId ?? listingId;
   } catch (e) {
-    const message = (e as Error).message;
-    if (!/already published/i.test(message)) throw e;
+    if (!/already published/i.test((e as Error).message)) throw e;
   }
-
   const url = listingId ? `${itemBase(conn.environment)}${listingId}` : null;
+
+  // Promoted Listings — never blocks the listing itself.
+  let adId: string | null = p.existing?.ad_id ?? null;
+  if (listingId && p.promotion.enabled && p.promotion.available) {
+    try {
+      const campaignId = await ensureCampaign(supabase, conn, businessId);
+      const rate = String(p.promotion.rate);
+      if (adId) {
+        await ebayFetch(conn, `/sell/marketing/v1/ad_campaign/${campaignId}/ad/${adId}/update_bid`, {
+          method: 'POST', body: JSON.stringify({ bidPercentage: rate }),
+        }).catch(() => undefined);
+      } else {
+        await ebayFetch(conn, `/sell/marketing/v1/ad_campaign/${campaignId}/ad`, {
+          method: 'POST', body: JSON.stringify({ listingId, bidPercentage: rate }),
+        }).catch((e) => { if (!/already/i.test((e as Error).message)) throw e; });
+        const ads = await ebayFetch<any>(conn, `/sell/marketing/v1/ad_campaign/${campaignId}/ad?listing_ids=${listingId}`);
+        adId = ads?.ads?.[0]?.adId ?? null;
+      }
+    } catch (e) {
+      warnings.push(`Listed, but promotion failed: ${(e as Error).message}`);
+    }
+  } else if (adId && !p.promotion.enabled) {
+    await removeAd(conn, p.existing);
+    adId = null;
+  }
 
   await upsertListing(supabase, bike.id, {
     environment: conn.environment,
@@ -625,8 +829,15 @@ export async function pushBikeToEbay(
     quantity: 1,
     last_synced_at: new Date().toISOString(),
     last_error: null,
-    condition_substituted_from: resolved.substituted ? wantedCondition : null,
-    condition_substituted_to: resolved.substituted ? bikeCondition : null,
+    condition_substituted_from: p.substituted ? p.wantedCondition : null,
+    condition_substituted_to: p.substituted ? p.condition : null,
+    ad_id: adId,
+    unmapped_aspects: p.aspectResult.unmapped,
+    aspect_summary: {
+      filled: p.aspectResult.recommendedFilled,
+      total: p.aspectResult.recommendedTotal,
+      missing: p.aspectResult.missingRecommended,
+    },
   });
 
   return {
@@ -634,7 +845,7 @@ export async function pushBikeToEbay(
     listingId,
     url,
     warnings,
-    substitution: resolved.substituted ? { from: wantedCondition, to: bikeCondition } : null,
+    substitution: p.substituted ? { from: p.wantedCondition, to: p.condition! } : null,
   };
 }
 
@@ -649,6 +860,7 @@ export async function endEbayListing(supabase: Client, bikeId: string): Promise<
   if (!offerId) return false;
 
   const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
+  await removeAd(conn, listing);
   try {
     await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}/withdraw`, {
       method: 'POST',
@@ -663,6 +875,7 @@ export async function endEbayListing(supabase: Client, bikeId: string): Promise<
     status: 'ended',
     quantity: 0,
     listing_id: null,
+    ad_id: null,
     last_synced_at: new Date().toISOString(),
     last_error: null,
   });
@@ -681,6 +894,7 @@ export async function deleteEbayListing(supabase: Client, bikeId: string): Promi
   const sku = (listing as any).sku as string | undefined;
 
   const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
+  await removeAd(conn, listing);
   if (offerId) {
     try {
       await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}/withdraw`, {
