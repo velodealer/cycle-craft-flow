@@ -542,7 +542,9 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   const warnings: string[] = [];
   const add = (key: string, level: CheckLevel, label: string, detail?: string) => checklist.push({ key, level, label, detail });
 
-  const { data: existing } = await supabase.from('ebay_listings').select('*').eq('bike_id', bike.id).maybeSingle();
+  const { data: existing, error: existingErr } = await supabase.from('ebay_listings').select('*').eq('bike_id', bike.id).maybeSingle();
+  // A failed read must not look like "never listed" — that would create a duplicate offer.
+  if (existingErr) throw new Error(`Could not load the existing eBay listing: ${existingErr.message}`);
   const ex = (existing ?? {}) as any;
 
   // Description from the dealer's listing format.
