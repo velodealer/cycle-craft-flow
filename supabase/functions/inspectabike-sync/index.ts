@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!inspection) return json({ error: 'No inspection record for this bike' }, 404);
-    if (!inspection.external_inspection_id && !inspection.external_reference) {
+    if (!inspection.external_inspection_id && !inspection.external_reference && !/\/report\//.test(String(inspection.report_url ?? ''))) {
       return json({ error: 'This bike has not been sent to InspectABike yet' }, 400);
     }
 
