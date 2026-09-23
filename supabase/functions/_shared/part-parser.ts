@@ -214,11 +214,11 @@ function parseShimano(text: string, slot: string): ShimanoInfo {
 const pick = (re: RegExp, s: string) => s.match(re);
 
 /** Structured facts + a short spec line per slot. */
-function extractSpec(slot: string, text: string, model: string | null): { attrs: Record<string, unknown>; spec: string[]; used: RegExp[] } {
+function extractSpec(slot: string, text: string, model: string | null): { attrs: Record<string, unknown>; spec: string[]; used: string[] } {
   const a: Record<string, unknown> = {};
   const spec: string[] = [];
-  const used: RegExp[] = [];
-  const take = (re: RegExp) => { used.push(re); return pick(re, text); };
+  const used: string[] = [];
+  const take = (re: RegExp) => { const m = pick(re, text); if (m) used.push(m[0]); return m; };
   let m: RegExpMatchArray | null;
 
   const speedRe = /\b(\d{1,2})[\s-]*(?:speed|spd)\b/i;
@@ -356,7 +356,12 @@ export function parsePart(input: ParseInput): ParsedPart {
   if (brand && /[:]/.test(brand)) { brand = null; flags.push('brand looked like a fragment — cleared'); }
 
   // Spec
-  const { attrs, spec } = extractSpec(slot, text, model);
+  const { attrs, spec, used } = extractSpec(slot, text, model);
+  const consumed = (c: string) => {
+    let rest = c;
+    for (const u of used) rest = rest.split(u).join(' ');
+    return rest !== c && !clean(rest.replace(/\b(length|width|rim|mm|degree)\b/gi, ''));
+  };
 
   // Extra = clauses not used for model, not covered by spec, not the brand
   const specFold = spec.map(fold);
@@ -365,6 +370,7 @@ export function parsePart(input: ParseInput): ParsedPart {
     .filter((c) => {
       const f = fold(c);
       if (!f) return false;
+      if (consumed(c)) return false;
       if (model && fold(model).includes(f)) return false;
       if (mpn && f.includes(fold(mpn))) return false;
       if (specFold.some((s) => f.includes(s) || s.includes(f))) return false;
@@ -384,7 +390,7 @@ export function parsePart(input: ParseInput): ParsedPart {
   }
 
   // Di2 / AXS battery filed as an e-bike battery
-  if (slot === 'ebike_battery' && !input.isElectric && /\b(Di2|BT-DN|eTap|AXS)\b/i.test(text + ' ' + (mpn ?? ''))) {
+  if (slot === 'ebike_battery' && !input.isElectric && /\b(Di2|BT-DN\w*|eTap|AXS)\b/i.test(text + ' ' + (mpn ?? ''))) {
     slot = 'groupset_battery';
     flags.push('Di2/AXS battery on a non-e-bike — moved from ebike_battery to groupset_battery');
   }
