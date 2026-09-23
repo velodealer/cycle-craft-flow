@@ -57,3 +57,12 @@ verify_jwt = false
 
 [functions.ebay-fulfilment]
 verify_jwt = false
+
+[functions.squarespace-oauth]
+verify_jwt = false
+
+[functions.squarespace-webhook]
+verify_jwt = false
+
+[functions.squarespace-sync-bike]
+verify_jwt = false
