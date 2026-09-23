@@ -99,7 +99,7 @@ export function substituteHidingEmpty(body: string, values: Record<string, strin
     prev = html;
     for (const tag of ['dl', 'ul', 'ol', 'table', 'tbody', 'div', 'section']) {
       const re = new RegExp(`<${tag}\\b[^>]*>((?:(?!<${tag}\\b)(?!</${tag}>)[\\s\\S])*)</${tag}>`, 'gi');
-      html = html.replace(re, (whole, inner) => (inner.includes(MARK) && !hasTokens(inner) && !visible(inner.split(MARK).join('')) ? MARK : whole));
+      html = html.replace(re, (whole, inner) => (inner.includes(MARK) && !hasTokens(inner) && !/<img\b/i.test(inner) && !visible(inner.split(MARK).join('')) ? MARK : whole));
     }
   }
   return html.split(MARK).join('').replace(TOKEN, (_m, k) => val(k));

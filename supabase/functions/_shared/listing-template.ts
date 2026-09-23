@@ -1,6 +1,7 @@
 // Renders the dealer's saved listing format (Settings -> Listing Formats) server-side.
 // Mirrors src/lib/listingTemplate.ts so eBay listings look the same as the copy button.
 import { fetchBikeComponents, isPartsFetchError } from './bike-components.ts';
+import { partName, partDetail, partTokens as sharedPartTokens, substituteHidingEmpty } from './part-tokens.ts';
 export { PartsFetchError, isPartsFetchError } from './bike-components.ts';
 
 export interface TemplateRow {
@@ -55,29 +56,9 @@ export function specTokens(bike: any): Record<string, string> {
   return out;
 }
 
-const partName = (c: any) => [c.brand, c.model || c.name].filter(Boolean).join(' ');
 
-const partDetail = (c: any) =>
-  [
-    c.description || '',
-    c.mpn ? `MPN: ${c.mpn}` : '',
-    c.weight_g ? `${c.weight_g} g` : '',
-    flatValue(c.attributes),
-    c.notes || '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-export function partTokens(components: any[] = []): Record<string, string> {
-  const out: Record<string, string> = {};
-  components.forEach((c) => {
-    if (!c?.slot) return;
-    const slot = String(c.slot).replace(/\W+/g, '_');
-    out[`part_${slot}`] = partName(c);
-    out[`part_${slot}_detail`] = partDetail(c);
-  });
-  return out;
-}
+/** Every fitted part as {part_<slot>}, _detail, _brand, _model, _mpn, _spec, _extra tokens. */
+export const partTokens = sharedPartTokens;
 
 export function buildValues(bike: any, components: any[] = []): Record<string, string> {
   const compLines = components
