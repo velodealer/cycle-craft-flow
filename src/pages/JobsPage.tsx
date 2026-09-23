@@ -77,19 +77,51 @@ export default function JobsPage() {
 
   const update = async (job: JobRow, patch: Record<string, unknown>) => {
     setBusyId(job.id);
+    const nextStatus = patch.status as string | undefined;
+
+    // A job belonging to an InspectABike fault is only "done" once InspectABike
+    // accepts it — that call also repairs the fault, completes the job and
+    // advances the bike, so nothing is written locally before it agrees.
+    if (nextStatus && isDone(nextStatus)) {
+      const { data: openFault } = await supabase
+        .from('inspection_faults')
+        .select('id')
+        .eq('job_id', job.id)
+        .not('status', 'in', '(repaired,declined)')
+        .maybeSingle();
+      if (openFault) {
+        const { error: fnError, data: fnData } = await supabase.functions.invoke(
+          'inspectabike-complete-repair',
+          { body: { fault_row_id: (openFault as { id: string }).id } },
+        );
+        setBusyId(null);
+        if (fnError || (fnData as { error?: string } | null)?.error) {
+          toast.error(await functionErrorMessage(fnError, fnData));
+          return;
+        }
+        logActivity(job.bike_id, {
+          kind: 'job',
+          action: 'complete',
+          summary: `Job completed: ${job.title} (marked repaired on InspectABike)`,
+          detail: { job_id: job.id, status: 'completed' },
+        });
+        await load();
+        return;
+      }
+    }
+
     const { error } = await supabase.from('jobs').update(patch).eq('id', job.id);
     setBusyId(null);
     if (error) {
       toast.error('Could not update the job.');
       return;
     }
-    const nextStatus = patch.status as string | undefined;
     if (nextStatus) {
-      const label = nextStatus === 'complete' ? 'completed' : nextStatus === 'in_progress' ? 'started' : 'set to pending';
+      const label = nextStatus === 'complete' || nextStatus === 'completed' ? 'completed' : nextStatus === 'in_progress' ? 'started' : 'set to pending';
       logActivity(job.bike_id, {
         kind: 'job',
         action: nextStatus,
-        summary: `Job ${label}: ${job.title}${nextStatus === 'complete' ? ` (${money(job.actual_cost ?? job.estimated_cost)})` : ''}`,
+        summary: `Job ${label}: ${job.title}${isDone(nextStatus) ? ` (${money(job.actual_cost ?? job.estimated_cost)})` : ''}`,
         detail: { job_id: job.id, status: nextStatus },
       });
     }
@@ -134,7 +166,7 @@ export default function JobsPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-foreground">{job.title}</span>
-                  <Badge variant={job.status === 'complete' ? 'success' : job.status === 'in_progress' ? 'warning' : 'outline'}>
+                  <Badge variant={isDone(job.status) ? 'success' : job.status === 'in_progress' ? 'warning' : 'outline'}>
                     {statusLabel(job.status)}
                   </Badge>
                   <Badge variant="secondary">{job.type.replace(/_/g, ' ')}</Badge>
