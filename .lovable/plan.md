@@ -16,13 +16,14 @@
 4. **Old shared key stays as a backup only.** It is only used when a dealer has no key of their own, and the card warns when that happens.
 
 ## Once built (you and InspectABike)
-- InspectABike saves VeloDealer's update address on their side (their step 1).
+- InspectABike has already saved VeloDealer's update address on their side.
 - Open Settings > Integrations. The key is fetched on its own, and the card should show "Ready".
 - Mark a fault repaired on BPS-GIA-5137 in InspectABike. I'll then check that the update arrived, its signature matched and it was matched to Broximo.
 - Press Refresh on BPS-GIA-5137 and check its faults.
 
 ## Technical
-- Add a `fetch_webhook_secret` action to inspectabike-oauth. It POSTs `{base}/functions/v1/partner-webhook-config` with the dealer's bearer token, refreshing the token first if it has expired. It saves the returned `webhook_secret` to `inspectabike_connections.webhook_secret` using the service role. The secret value is never returned to the browser.
+- Add a `fetch_webhook_secret` action to inspectabike-oauth. It sends `PUT {INSPECTABIKE_BASE_URL}/partner-webhook-config` with the dealer's bearer token (via getAccessToken, which refreshes it if needed) and body `{ "webhook_url": webhookUrl() }`. It saves the returned `webhook_secret` to `inspectabike_connections.webhook_secret` using the service role. The secret value is never returned to the browser.
+- InspectABike has already saved VeloDealer's update address and all five events on their side.
 - Call this action at the end of the OAuth callback when the token response has no `webhook_secret`.
 - Add `fetchWebhookSecret()` to src/services/inspectabike.ts. InspectABikeIntegration.tsx calls it automatically when `has_webhook_secret` is false, and shows the button to admin/owner users.
 - inspectabike-webhook keeps checking the dealer's own key first and the shared key second, and logs which key matched.
