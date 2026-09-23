@@ -11,6 +11,7 @@ export type NotificationKind =
   | 'logistics_update'
   | 'support_ticket'
   | 'job_application'
+  | 'ebay_sale'
   | 'test';
 
 interface KindSettings {
