@@ -163,22 +163,72 @@ const CATEGORY_TREE_ID: Record<string, string> = {
   EBAY_ES: '186',
 };
 
-/** Required item specifics for a category, as eBay names them. Empty when the lookup fails. */
-async function requiredAspects(conn: Connection, categoryId: string): Promise<string[]> {
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Reads a category lookup from the 24-hour cache, fetching and storing it when stale. */
+async function cachedCategoryData<T>(
+  supabase: Client,
+  conn: Connection,
+  categoryId: string,
+  kind: string,
+  fetcher: () => Promise<T>,
+): Promise<T> {
+  const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
+  const cacheKey = `${conn.environment}:${marketplace}`;
+  try {
+    const { data } = await supabase
+      .from('ebay_category_cache')
+      .select('payload, fetched_at')
+      .eq('marketplace_id', cacheKey)
+      .eq('category_id', categoryId)
+      .eq('kind', kind)
+      .maybeSingle();
+    if (data && Date.now() - Date.parse((data as any).fetched_at) < CACHE_TTL_MS) {
+      return (data as any).payload as T;
+    }
+  } catch { /* fetch fresh */ }
+  const fresh = await fetcher();
+  await supabase.from('ebay_category_cache').upsert({
+    marketplace_id: cacheKey,
+    category_id: categoryId,
+    kind,
+    payload: fresh as any,
+    fetched_at: new Date().toISOString(),
+  }, { onConflict: 'marketplace_id,category_id,kind' });
+  return fresh;
+}
+
+/** The category's item specifics metadata (cached). Empty when the lookup fails. */
+async function categoryAspects(supabase: Client, conn: Connection, categoryId: string): Promise<any[]> {
   const treeId = CATEGORY_TREE_ID[conn.settings.marketplace_id || 'EBAY_GB'] || '3';
   try {
-    const data = await ebayFetch<any>(
-      conn,
-      `/commerce/taxonomy/v1/category_tree/${treeId}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`,
-    );
-    return (data?.aspects ?? [])
-      .filter((a: any) => a?.aspectConstraint?.aspectRequired)
-      .map((a: any) => String(a?.localizedAspectName || '').trim())
-      .filter(Boolean);
+    return await cachedCategoryData(supabase, conn, categoryId, 'aspects', async () => {
+      const data = await ebayFetch<any>(
+        conn,
+        `/commerce/taxonomy/v1/category_tree/${treeId}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`,
+      );
+      return (data?.aspects ?? []) as any[];
+    });
   } catch (e) {
-    console.warn('Could not read required eBay item specifics:', (e as Error).message);
+    console.warn('Could not read eBay item specifics:', (e as Error).message);
     return [];
   }
+}
+
+function requiredAspectNames(meta: any[]): string[] {
+  return meta
+    .filter((a: any) => a?.aspectConstraint?.aspectRequired)
+    .map((a: any) => String(a?.localizedAspectName || '').trim())
+    .filter(Boolean);
+}
+
+/** Matches the bike's brand to eBay's spelling when the category offers a brand list. */
+function normaliseBrand(meta: any[], brand: string): string {
+  const clean = String(brand ?? '').trim().replace(/\s+/g, ' ');
+  const brandAspect = meta.find((a: any) => String(a?.localizedAspectName).toLowerCase() === 'brand');
+  const values: string[] = (brandAspect?.aspectValues ?? []).map((v: any) => String(v?.localizedValue ?? ''));
+  const match = values.find((v) => v.toLowerCase() === clean.toLowerCase());
+  return match || clean;
 }
 
 /** eBay condition enums and their numeric ids. */
@@ -194,60 +244,113 @@ const CONDITION_ID: Record<string, string> = {
   FOR_PARTS_OR_NOT_WORKING: '7000',
 };
 
-/** Where to fall back to when a category doesn't accept the chosen condition. */
-const CONDITION_FALLBACK: Record<string, string[]> = {
-  NEW: ['NEW', 'LIKE_NEW', 'NEW_OTHER', 'USED_EXCELLENT'],
-  LIKE_NEW: ['LIKE_NEW', 'NEW_OTHER', 'USED_EXCELLENT', 'NEW'],
-  NEW_OTHER: ['NEW_OTHER', 'LIKE_NEW', 'USED_EXCELLENT', 'NEW'],
-  NEW_WITH_DEFECTS: ['NEW_WITH_DEFECTS', 'NEW_OTHER', 'USED_EXCELLENT'],
-  USED_EXCELLENT: ['USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_GOOD', 'USED_ACCEPTABLE'],
-  USED_VERY_GOOD: ['USED_VERY_GOOD', 'USED_EXCELLENT', 'USED_GOOD', 'USED_ACCEPTABLE'],
-  USED_GOOD: ['USED_GOOD', 'USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_ACCEPTABLE'],
-  USED_ACCEPTABLE: ['USED_ACCEPTABLE', 'USED_GOOD', 'USED_EXCELLENT', 'USED_VERY_GOOD'],
-  FOR_PARTS_OR_NOT_WORKING: ['FOR_PARTS_OR_NOT_WORKING', 'USED_ACCEPTABLE'],
+/** Best condition first. We never swap to a condition better than the one chosen. */
+const CONDITION_RANK: Record<string, number> = {
+  NEW: 0,
+  LIKE_NEW: 1,
+  NEW_OTHER: 2,
+  NEW_WITH_DEFECTS: 3,
+  USED_EXCELLENT: 4,
+  USED_VERY_GOOD: 5,
+  USED_GOOD: 6,
+  USED_ACCEPTABLE: 7,
+  FOR_PARTS_OR_NOT_WORKING: 8,
 };
 
-/** Condition ids a category accepts. Null when the lookup fails (then we don't second-guess). */
-async function allowedConditionIds(conn: Connection, categoryId: string): Promise<Set<string> | null> {
+const CONDITION_LABEL: Record<string, string> = {
+  NEW: 'New',
+  LIKE_NEW: 'Like new',
+  NEW_OTHER: 'New (other)',
+  NEW_WITH_DEFECTS: 'New with defects',
+  USED_EXCELLENT: 'Used – excellent',
+  USED_VERY_GOOD: 'Used – very good',
+  USED_GOOD: 'Used – good',
+  USED_ACCEPTABLE: 'Used – acceptable',
+  FOR_PARTS_OR_NOT_WORKING: 'For parts or not working',
+};
+export const conditionLabel = (c: string) => CONDITION_LABEL[c] || c;
+
+/** Where to fall back to when a category doesn't accept the chosen condition (never better). */
+const CONDITION_FALLBACK: Record<string, string[]> = {
+  NEW: ['NEW', 'LIKE_NEW', 'NEW_OTHER', 'NEW_WITH_DEFECTS', 'USED_EXCELLENT'],
+  LIKE_NEW: ['LIKE_NEW', 'NEW_OTHER', 'NEW_WITH_DEFECTS', 'USED_EXCELLENT'],
+  NEW_OTHER: ['NEW_OTHER', 'NEW_WITH_DEFECTS', 'USED_EXCELLENT'],
+  NEW_WITH_DEFECTS: ['NEW_WITH_DEFECTS', 'USED_EXCELLENT', 'USED_VERY_GOOD'],
+  USED_EXCELLENT: ['USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_GOOD', 'USED_ACCEPTABLE'],
+  USED_VERY_GOOD: ['USED_VERY_GOOD', 'USED_GOOD', 'USED_ACCEPTABLE'],
+  USED_GOOD: ['USED_GOOD', 'USED_ACCEPTABLE'],
+  USED_ACCEPTABLE: ['USED_ACCEPTABLE', 'FOR_PARTS_OR_NOT_WORKING'],
+  FOR_PARTS_OR_NOT_WORKING: ['FOR_PARTS_OR_NOT_WORKING'],
+};
+
+/** Condition ids a category accepts (cached). Null when the lookup fails (then we don't second-guess). */
+async function allowedConditionIds(supabase: Client, conn: Connection, categoryId: string): Promise<Set<string> | null> {
   const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
   try {
-    const data = await ebayFetch<any>(
-      conn,
-      `/sell/metadata/v1/marketplace/${marketplace}/get_item_condition_policies?filter=categoryIds:%7B${encodeURIComponent(categoryId)}%7D`,
-    );
-    const policy = (data?.itemConditionPolicies ?? [])[0];
-    if (!policy) return null;
-    if (policy.itemConditionRequired === false && !(policy.itemConditions ?? []).length) return null;
-    const ids = (policy.itemConditions ?? [])
-      .map((c: any) => String(c?.conditionId || '').trim())
-      .filter(Boolean);
-    return ids.length ? new Set<string>(ids) : null;
+    const ids = await cachedCategoryData<string[] | null>(supabase, conn, categoryId, 'conditions', async () => {
+      const data = await ebayFetch<any>(
+        conn,
+        `/sell/metadata/v1/marketplace/${marketplace}/get_item_condition_policies?filter=categoryIds:%7B${encodeURIComponent(categoryId)}%7D`,
+      );
+      const policy = (data?.itemConditionPolicies ?? [])[0];
+      if (!policy) return null;
+      const list = (policy.itemConditions ?? [])
+        .map((c: any) => String(c?.conditionId || '').trim())
+        .filter(Boolean);
+      return list.length ? list : null;
+    });
+    return ids && ids.length ? new Set<string>(ids) : null;
   } catch (e) {
     console.warn('Could not read eBay condition policy:', (e as Error).message);
     return null;
   }
 }
 
-/** Picks a condition the category actually accepts, as close as possible to the chosen one. */
+/**
+ * Picks a condition the category accepts, as close as possible to the chosen one and never better.
+ * Throws when the only accepted conditions would describe the bike as better than it is.
+ */
 async function resolveCondition(
+  supabase: Client,
   conn: Connection,
   categoryId: string,
   wanted: string,
-): Promise<string> {
-  const allowed = await allowedConditionIds(conn, categoryId);
-  if (!allowed) return wanted;
+): Promise<{ condition: string; substituted: boolean }> {
+  const allowed = await allowedConditionIds(supabase, conn, categoryId);
+  if (!allowed) return { condition: wanted, substituted: false };
   const ok = (c: string) => CONDITION_ID[c] && allowed.has(CONDITION_ID[c]);
-  if (ok(wanted)) return wanted;
-  for (const candidate of CONDITION_FALLBACK[wanted] ?? []) {
+  if (ok(wanted)) return { condition: wanted, substituted: false };
+  const wantedRank = CONDITION_RANK[wanted] ?? 99;
+  const candidates = [
+    ...(CONDITION_FALLBACK[wanted] ?? []),
+    ...Object.keys(CONDITION_ID).sort((a, b) => CONDITION_RANK[a] - CONDITION_RANK[b]),
+  ];
+  for (const candidate of candidates) {
+    if ((CONDITION_RANK[candidate] ?? -1) < wantedRank) continue;
     if (ok(candidate)) {
       console.log(`eBay category ${categoryId} rejects ${wanted}; using ${candidate}.`);
-      return candidate;
+      return { condition: candidate, substituted: true };
     }
   }
-  for (const candidate of Object.keys(CONDITION_ID)) {
-    if (ok(candidate)) return candidate;
-  }
-  return wanted;
+  throw new Error(
+    `This eBay category doesn't accept "${conditionLabel(wanted)}", and the only conditions it allows would describe the bike as better than it is. Pick a different category or condition for this bike.`,
+  );
+}
+
+/** Plain text, at most 1,000 characters, cut at a sentence end. */
+function conditionDescription(notes: string | null | undefined, grade: number | null): string {
+  const text = String(notes ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const prefix = grade != null ? `InspectABike grade: ${grade}/5. ` : '';
+  const full = `${prefix}${text}`.trim();
+  const LIMIT = 1000;
+  if (full.length <= LIMIT) return full;
+  const cut = full.slice(0, LIMIT - 1);
+  const boundary = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  return (boundary > 200 ? cut.slice(0, boundary + 1) : cut.replace(/\s+\S*$/, '') + '…').trim();
 }
 
 
