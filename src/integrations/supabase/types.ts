@@ -2604,6 +2604,83 @@ export type Database = {
           },
         ]
       }
+      squarespace_listings: {
+        Row: {
+          bike_id: string
+          business_id: string
+          created_at: string
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          product_id: string | null
+          status: string
+          updated_at: string
+          url: string | null
+          variant_id: string | null
+          website_id: string | null
+        }
+        Insert: {
+          bike_id: string
+          business_id: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+          url?: string | null
+          variant_id?: string | null
+          website_id?: string | null
+        }
+        Update: {
+          bike_id?: string
+          business_id?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+          url?: string | null
+          variant_id?: string | null
+          website_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squarespace_listings_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: true
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      squarespace_oauth_states: {
+        Row: {
+          business_id: string
+          created_at: string
+          return_origin: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          return_origin?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          return_origin?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       storage_bays: {
         Row: {
           business_id: string
