@@ -29,6 +29,8 @@ const LABELS: Record<string, string> = {
   ended: 'Listing ended',
 };
 
+const conditionName = (value: string) => CONDITIONS.find((c) => c.value === value)?.label ?? value;
+
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
   { value: 'USED_EXCELLENT', label: 'Used — excellent' },
