@@ -16,6 +16,7 @@ import {
   authBase,
   redirectUri,
   EBAY_SCOPES,
+  hasCurrentScopes,
   type EbayEnvironment,
   type EbaySettings,
 } from '../_shared/ebay.ts';
@@ -233,6 +234,7 @@ Deno.serve(async (req) => {
         connected_at: new Date().toISOString(),
         marketplace_id: 'EBAY_GB',
         currency: 'GBP',
+        granted_scopes: EBAY_SCOPES,
       });
 
       try {
@@ -253,9 +255,10 @@ Deno.serve(async (req) => {
   // ---- Authenticated JSON API ----
   let userId: string;
   let businessId: string;
+  let role: string;
   try {
     const user = await requireUser(req, supabase);
-    await requireRole(supabase, user.id, ['admin', 'owner']);
+    role = await requireRole(supabase, user.id, ['admin', 'owner', 'customer_service', 'mechanic', 'detailer', 'accountant', 'social_manager']);
     userId = user.id;
     businessId = await businessIdForUser(supabase, user.id);
   } catch (e) {
@@ -265,6 +268,10 @@ Deno.serve(async (req) => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
     const action = body.action || url.searchParams.get('action') || 'status';
+    const manager = role === 'admin' || role === 'owner';
+    if (!manager && !['status', 'categories'].includes(action)) {
+      return json({ error: 'You do not have permission to do that' }, 403);
+    }
 
     if (action === 'status') {
       const row = await loadIntegration(supabase, businessId);
@@ -288,6 +295,15 @@ Deno.serve(async (req) => {
         payment_policy_id: s.payment_policy_id ?? '',
         return_policy_id: s.return_policy_id ?? '',
         callback_url: redirectUri(),
+        needs_reconnect: Boolean(row?.is_active && s.refresh_token) && !hasCurrentScopes(s),
+        category_by_type: s.category_by_type ?? {},
+        best_offer_enabled: s.best_offer_enabled ?? false,
+        best_offer_accept_pct: manager ? (s.best_offer_accept_pct ?? 95) : null,
+        best_offer_decline_pct: manager ? (s.best_offer_decline_pct ?? 80) : null,
+        promote_enabled: s.promote_enabled ?? false,
+        promote_auto: s.promote_auto ?? false,
+        ad_rate: s.ad_rate ?? 5,
+        can_manage: manager,
       });
     }
 
@@ -364,6 +380,55 @@ Deno.serve(async (req) => {
         console.warn('Could not update eBay despatch location:', locationError);
       }
       return json({ ok: true, auto_list: settings.auto_list, location_error: locationError });
+    }
+
+    if (action === 'save_listing_settings') {
+      const pct = (v: unknown, def: number) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 1 && n <= 100 ? Math.round(n * 10) / 10 : def;
+      };
+      const byType: Record<string, string> = {};
+      if (body.category_by_type && typeof body.category_by_type === 'object') {
+        for (const [k, v] of Object.entries(body.category_by_type as Record<string, unknown>)) {
+          const id = String(v ?? '').trim();
+          if (/^[a-z_]{1,30}$/.test(k) && /^\d{1,12}$/.test(id)) byType[k] = id;
+        }
+      }
+      const accept = pct(body.best_offer_accept_pct, 95);
+      const decline = pct(body.best_offer_decline_pct, 80);
+      if (decline >= accept) return json({ error: 'Auto-decline must be lower than auto-accept.' }, 400);
+      const rate = Number(body.ad_rate);
+      if (body.promote_enabled && !(rate >= 2 && rate <= 100)) {
+        return json({ error: 'Ad rate must be between 2% and 100%.' }, 400);
+      }
+      await saveSettings(supabase, businessId, {
+        category_by_type: byType,
+        best_offer_enabled: Boolean(body.best_offer_enabled),
+        best_offer_accept_pct: accept,
+        best_offer_decline_pct: decline,
+        promote_enabled: Boolean(body.promote_enabled),
+        promote_auto: Boolean(body.promote_auto),
+        ad_rate: Number.isFinite(rate) && rate > 0 ? Math.round(rate * 10) / 10 : 5,
+      });
+      return json({ ok: true });
+    }
+
+    if (action === 'suggest_category') {
+      const conn = await requireConnection(supabase, businessId);
+      const query = String(body.query ?? '').slice(0, 60) || 'bike';
+      const treeId = conn.settings.marketplace_id === 'EBAY_US' ? '0' : '3';
+      const data = await ebayFetch<any>(
+        conn,
+        `/commerce/taxonomy/v1/category_tree/${treeId}/get_category_suggestions?q=${encodeURIComponent(query)}`,
+      );
+      const first = (data?.categorySuggestions ?? [])[0];
+      return json({
+        category: first ? {
+          id: first.category?.categoryId,
+          name: [...(first.categoryTreeNodeAncestors ?? [])].reverse().map((a: any) => a.categoryName)
+            .concat(first.category?.categoryName).filter(Boolean).join(' › '),
+        } : null,
+      });
     }
 
     if (action === 'policies') {

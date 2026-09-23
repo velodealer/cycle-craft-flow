@@ -3,13 +3,27 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 export const EBAY_INTEGRATION_NAME = 'ebay';
 
-export const EBAY_SCOPES = [
+/** Scopes requested by connections made before sale sync and promotion were added. */
+export const LEGACY_SCOPES = [
   'https://api.ebay.com/oauth/api_scope',
   'https://api.ebay.com/oauth/api_scope/sell.inventory',
   'https://api.ebay.com/oauth/api_scope/sell.account',
   'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
   'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly',
 ].join(' ');
+
+export const EBAY_SCOPES = [
+  LEGACY_SCOPES,
+  'https://api.ebay.com/oauth/api_scope/sell.marketing',
+].join(' ');
+
+/** True when the saved connection was granted every scope we now ask for. */
+export function hasCurrentScopes(settings: EbaySettings): boolean {
+  return Boolean(settings.granted_scopes) && EBAY_SCOPES.split(' ').every((s) => settings.granted_scopes!.split(' ').includes(s));
+}
+export function hasScope(settings: EbaySettings, suffix: string): boolean {
+  return (settings.granted_scopes || LEGACY_SCOPES).split(' ').some((s) => s.endsWith(`/${suffix}`));
+}
 
 export type EbayEnvironment = 'sandbox' | 'production';
 
@@ -34,6 +48,16 @@ export interface EbaySettings {
   payment_policy_id?: string;
   return_policy_id?: string;
   currency?: string;
+  granted_scopes?: string;
+  category_by_type?: Record<string, string>;
+  best_offer_enabled?: boolean;
+  best_offer_accept_pct?: number;
+  best_offer_decline_pct?: number;
+  promote_enabled?: boolean;
+  promote_auto?: boolean;
+  ad_rate?: number;
+  campaign_id?: string;
+  last_order_sync_at?: string;
 }
 
 export type Client = ReturnType<typeof serviceClient>;

@@ -893,6 +893,10 @@ export type Database = {
       }
       ebay_listings: {
         Row: {
+          ad_id: string | null
+          ad_rate: number | null
+          aspect_summary: Json | null
+          best_offer_enabled: boolean | null
           bike_id: string
           business_id: string
           category_id: string | null
@@ -901,6 +905,7 @@ export type Database = {
           condition_substituted_to: string | null
           created_at: string
           environment: string
+          gallery_photo_index: number | null
           id: string
           last_error: string | null
           last_synced_at: string | null
@@ -910,9 +915,15 @@ export type Database = {
           quantity: number
           sku: string | null
           status: string
+          title_override: string | null
+          unmapped_aspects: Json | null
           updated_at: string
         }
         Insert: {
+          ad_id?: string | null
+          ad_rate?: number | null
+          aspect_summary?: Json | null
+          best_offer_enabled?: boolean | null
           bike_id: string
           business_id?: string
           category_id?: string | null
@@ -921,6 +932,7 @@ export type Database = {
           condition_substituted_to?: string | null
           created_at?: string
           environment?: string
+          gallery_photo_index?: number | null
           id?: string
           last_error?: string | null
           last_synced_at?: string | null
@@ -930,9 +942,15 @@ export type Database = {
           quantity?: number
           sku?: string | null
           status?: string
+          title_override?: string | null
+          unmapped_aspects?: Json | null
           updated_at?: string
         }
         Update: {
+          ad_id?: string | null
+          ad_rate?: number | null
+          aspect_summary?: Json | null
+          best_offer_enabled?: boolean | null
           bike_id?: string
           business_id?: string
           category_id?: string | null
@@ -941,6 +959,7 @@ export type Database = {
           condition_substituted_to?: string | null
           created_at?: string
           environment?: string
+          gallery_photo_index?: number | null
           id?: string
           last_error?: string | null
           last_synced_at?: string | null
@@ -950,6 +969,8 @@ export type Database = {
           quantity?: number
           sku?: string | null
           status?: string
+          title_override?: string | null
+          unmapped_aspects?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -997,6 +1018,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ebay_oauth_states_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ebay_orders: {
+        Row: {
+          bike_id: string | null
+          business_id: string
+          buyer_username: string | null
+          carrier: string | null
+          created_at: string
+          currency: string | null
+          despatched_at: string | null
+          id: string
+          line_item_id: string | null
+          order_id: string
+          raw: Json
+          status: string
+          total: number | null
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          bike_id?: string | null
+          business_id: string
+          buyer_username?: string | null
+          carrier?: string | null
+          created_at?: string
+          currency?: string | null
+          despatched_at?: string | null
+          id?: string
+          line_item_id?: string | null
+          order_id: string
+          raw?: Json
+          status?: string
+          total?: number | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bike_id?: string | null
+          business_id?: string
+          buyer_username?: string | null
+          carrier?: string | null
+          created_at?: string
+          currency?: string | null
+          despatched_at?: string | null
+          id?: string
+          line_item_id?: string | null
+          order_id?: string
+          raw?: Json
+          status?: string
+          total?: number | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ebay_orders_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ebay_orders_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
@@ -1790,6 +1880,7 @@ export type Database = {
           format: string
           id: string
           platform: string
+          title_format: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1799,6 +1890,7 @@ export type Database = {
           format?: string
           id?: string
           platform: string
+          title_format?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1808,6 +1900,7 @@ export type Database = {
           format?: string
           id?: string
           platform?: string
+          title_format?: string | null
           updated_at?: string
           updated_by?: string | null
         }
