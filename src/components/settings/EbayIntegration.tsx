@@ -14,6 +14,7 @@ import {
   getEbayAuthUrl,
   disconnectEbay,
   saveEbaySettings,
+  getEbayHeldLocation,
   getEbayPolicies,
   searchEbayCategories,
   type AnyPolicy,
@@ -45,6 +46,10 @@ export default function EbayIntegration() {
   const [categoryId, setCategoryId] = useState('');
   const [condition, setCondition] = useState('USED_EXCELLENT');
   const [postcode, setPostcode] = useState('');
+  const [city, setCity] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [held, setHeld] = useState<{ city: string | null; postcode: string | null } | null | undefined>(undefined);
   const [fulfillment, setFulfillment] = useState('');
   const [payment, setPayment] = useState('');
   const [returns, setReturns] = useState('');
@@ -64,11 +69,15 @@ export default function EbayIntegration() {
       setCategoryId(result.category_id || '');
       setCondition(result.condition || 'USED_EXCELLENT');
       setPostcode(result.postcode || '');
+      setCity(result.city || '');
+      setLocationName(result.location_name || '');
+      setAddressLine1(result.address_line1 || '');
       setFulfillment(result.fulfillment_policy_id || '');
       setPayment(result.payment_policy_id || '');
       setReturns(result.return_policy_id || '');
       setError(null);
       if (result.connected) {
+        getEbayHeldLocation().then((r) => setHeld(r.held)).catch(() => setHeld(null));
         try {
           setPolicies(await getEbayPolicies());
         } catch { /* non-fatal */ }
@@ -117,18 +126,27 @@ export default function EbayIntegration() {
   };
 
   const handleSave = async () => {
+    if (!city.trim() || !postcode.trim()) {
+      toast.error('Enter the town and postcode your bikes are sent from.');
+      return;
+    }
     setSaving(true);
     try {
-      await saveEbaySettings({
+      const res = await saveEbaySettings({
         auto_list: autoList,
         category_id: categoryId,
         condition,
         postcode,
+        city,
+        location_name: locationName,
+        address_line1: addressLine1,
+        country: 'GB',
         fulfillment_policy_id: fulfillment,
         payment_policy_id: payment,
         return_policy_id: returns,
       });
-      toast.success('eBay settings saved');
+      if (res.location_error) toast.warning(`Settings saved, but eBay didn't take the new address: ${res.location_error}`);
+      else toast.success('eBay settings saved');
       load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -315,14 +333,44 @@ export default function EbayIntegration() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ebay-postcode">Despatch postcode</Label>
-                <Input
-                  id="ebay-postcode"
-                  value={postcode}
-                  onChange={(e) => setPostcode(e.target.value)}
-                  placeholder="BN1 1AA"
-                />
+              <div className="space-y-3 rounded border p-3 sm:col-span-2">
+                <div>
+                  <p className="text-sm font-medium">Despatch location</p>
+                  <p className="text-xs text-muted-foreground">
+                    Where your bikes are sent from. Buyers see this town on your listings.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ebay-loc-name">Location name</Label>
+                    <Input
+                      id="ebay-loc-name"
+                      value={locationName}
+                      onChange={(e) => setLocationName(e.target.value)}
+                      placeholder={status?.business_name || 'Your dealership'}
+                      maxLength={80}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ebay-address">Address line</Label>
+                    <Input id="ebay-address" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} maxLength={120} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ebay-city">Town *</Label>
+                    <Input id="ebay-city" value={city} onChange={(e) => setCity(e.target.value)} maxLength={80} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ebay-postcode">Postcode *</Label>
+                    <Input id="ebay-postcode" value={postcode} onChange={(e) => setPostcode(e.target.value)} maxLength={12} />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {held === undefined
+                    ? 'Checking what eBay holds…'
+                    : held?.postcode
+                      ? `eBay currently shows: ${[held.city, held.postcode].filter(Boolean).join(', ')}`
+                      : 'eBay has no despatch location for you yet — save to set it.'}
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ebay-category">Default eBay category number</Label>

@@ -123,6 +123,7 @@ export function buildValues(bike: any, components: any[] = []): Record<string, s
     bike_type: bike.bike_type ?? '',
     frame_material: bike.frame_material ?? '',
     frame_number: bike.frame_number ?? '',
+    mpn: (bike as any).mpn ?? '',
     serial_number: bike.serial_number ?? '',
     condition: bike.condition ?? '',
     condition_notes: bike.condition_notes ?? '',

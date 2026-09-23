@@ -26,6 +26,10 @@ export interface EbaySettings {
   condition?: string;
   merchant_location_key?: string;
   postcode?: string;
+  location_name?: string;
+  address_line1?: string;
+  city?: string;
+  country?: string;
   fulfillment_policy_id?: string;
   payment_policy_id?: string;
   return_policy_id?: string;

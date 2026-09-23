@@ -195,3 +195,12 @@ EBAY_GB en-GB, EBAY_US en-US, EBAY_AU en-AU, EBAY_IE en-IE, EBAY_CA en-CA, EBAY_
 ## 13. Who can list
 
 Admin, owner and customer_service. Customer service can list, update and remove listings and edit asking or sale prices. They can't see costs or margins.
+
+## Phase 1 accuracy updates (Sep 2026)
+
+- **Despatch location** is set by each dealer in Settings → Integrations → eBay: location name (defaults to the dealership name), address line, town and postcode (town and postcode required, no default). Saving pushes it to eBay (`update_location_details` when it changes). Listing is blocked until it's set.
+- **Condition description**: `condition_notes` go to eBay's condition box as plain text, max 1,000 characters, led by "InspectABike grade: X/5." when a grade exists. Empty notes give a warning.
+- **Condition substitution**: never swaps to a better condition (the listing is blocked instead). Any swap is saved on `ebay_listings.condition_substituted_from/to`, logged in Activity and shown as an amber badge.
+- **MPN**: sent only from the bike's own "Manufacturer part number (MPN)" field. Blank means nothing is sent. `{mpn}` is available in listing formats.
+- **Brand**: trimmed and matched to eBay's spelling when the category provides a brand list.
+- **Category cache**: item specifics and condition lookups are cached for 24 hours per category in `ebay_category_cache`.

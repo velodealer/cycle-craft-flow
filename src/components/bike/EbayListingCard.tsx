@@ -29,6 +29,8 @@ const LABELS: Record<string, string> = {
   ended: 'Listing ended',
 };
 
+const conditionName = (value: string) => CONDITIONS.find((c) => c.value === value)?.label ?? value;
+
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
   { value: 'USED_EXCELLENT', label: 'Used — excellent' },
@@ -177,6 +179,12 @@ export default function EbayListingCard({ bikeId }: Props) {
           </p>
         )}
         {listing?.last_error && <p className="text-xs text-destructive">{listing.last_error}</p>}
+        {listing?.condition_substituted_from && listing?.condition_substituted_to && (
+          <div className="rounded border border-warning/50 bg-warning/10 p-2 text-xs">
+            <Badge variant="outline" className="mr-2 border-warning text-warning">Condition changed</Badge>
+            eBay didn't accept "{conditionName(listing.condition_substituted_from)}" in this category, so it's listed as "{conditionName(listing.condition_substituted_to)}".
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
@@ -198,7 +206,8 @@ export default function EbayListingCard({ bikeId }: Props) {
               'list',
               async () => {
                 await saveBikeEbayOptions(bikeId, { condition, category_id: categoryId.trim() || null });
-                await listBikeOnEbay(bikeId);
+                const result = await listBikeOnEbay(bikeId);
+                (result.warnings ?? []).forEach((w) => toast.warning(w));
               },
               listing?.offer_id ? 'eBay listing updated' : 'Bike listed on eBay',
             )}
