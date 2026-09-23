@@ -28,6 +28,9 @@ import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { useStorageBays } from '@/hooks/useStorageBays';
 import LocationSelect from '@/components/bike/LocationSelect';
 import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
+import { Progress } from '@/components/ui/progress';
+import { BIKE_TYPES } from '@/lib/bikeSpec';
+import { FRAME_MATERIALS, readinessScore } from '@/lib/listingReadiness';
 import { saveCatalogBike, spokesCatalogColumns, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
 
 
@@ -41,6 +44,9 @@ const bikeSchema = z.object({
   colour: z.string().optional(),
   storage_bay_id: z.string().optional(),
   condition: z.string().optional(),
+  bike_type: z.string().optional(),
+  frame_material: z.string().max(65).optional(),
+  condition_notes: z.string().max(1000).optional(),
   frame_number: z.string().optional(),
   mpn: z.string().trim().max(65).optional(),
   accessories_included: z.string().optional(),
@@ -159,6 +165,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       colour: bike?.colour || '',
       storage_bay_id: bike?.storage_bay_id || '',
       condition: bike?.condition || '',
+      bike_type: (bike as any)?.bike_type || '',
+      frame_material: (bike as any)?.frame_material || '',
+      condition_notes: (bike as any)?.condition_notes || '',
       frame_number: bike?.frame_number || '',
       mpn: (bike as any)?.mpn || '',
       accessories_included: bike?.accessories_included || '',
@@ -209,6 +218,10 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         Object.assign(spokesExtras, spokesCatalogColumns(spokesFill.raw, spokesFill.size));
       }
 
+      for (const k of ['bike_type', 'frame_material', 'condition_notes'] as const) {
+        if ((bikeFields as any)[k]) delete spokesExtras[k];
+        else delete (bikeFields as any)[k];
+      }
       const bikeData = {
         ...bikeFields,
         ...spokesExtras,
@@ -362,6 +375,8 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   if (f.model) form.setValue('model', f.model, { shouldDirty: true, shouldValidate: true });
                   if (f.year) form.setValue('year', f.year, { shouldDirty: true });
                   if (size) form.setValue('size', size, { shouldDirty: true });
+                  if ((f as any).bike_type && !form.getValues('bike_type')) form.setValue('bike_type', (f as any).bike_type, { shouldDirty: true });
+                  if ((f as any).frame_material && !form.getValues('frame_material')) form.setValue('frame_material', (f as any).frame_material, { shouldDirty: true });
                   if (f.colour && !form.getValues('colour')?.trim()) {
                     form.setValue('colour', f.colour, { shouldDirty: true });
                   }
@@ -1053,6 +1068,58 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               </div>
             </CardContent>
           </Card>
+
+          {(() => {
+            const w = form.watch();
+            const score = readinessScore({ ...w, photos });
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ready to list</CardTitle>
+                  <FormDescription>
+                    {score.filled} of {score.total} listing details filled. Filling these now means the bike can go on eBay, Shopify and Squarespace in one click later. You can still save with gaps.
+                  </FormDescription>
+                  <Progress value={(score.filled / score.total) * 100} className="h-2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {score.missing.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Everything needed for listing is filled in.</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Still missing: {score.missing.map((m) => m.label).join(', ')}</p>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField control={form.control} name="bike_type" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bike type</FormLabel>
+                        <Select value={field.value || undefined} onValueChange={field.onChange}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Choose…" /></SelectTrigger></FormControl>
+                          <SelectContent>{BIKE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="frame_material" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Frame material</FormLabel>
+                        <Select value={field.value || undefined} onValueChange={field.onChange}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Choose…" /></SelectTrigger></FormControl>
+                          <SelectContent>{FRAME_MATERIALS.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <FormField control={form.control} name="condition_notes" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Condition notes</FormLabel>
+                      <FormControl><Textarea maxLength={1000} placeholder="Marks, wear, recent servicing — shown in eBay's condition box." {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={onCancel}>

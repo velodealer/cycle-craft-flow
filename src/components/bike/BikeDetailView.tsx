@@ -24,6 +24,8 @@ import AdminStatusSelect from './AdminStatusSelect';
 import ShopifyListingCard from './ShopifyListingCard';
 import SquarespaceListingCard from './SquarespaceListingCard';
 import EbayListingCard from './EbayListingCard';
+import FixListingProblemsDialog from './FixListingProblemsDialog';
+import { missingListingFields } from '@/lib/listingReadiness';
 
 
 
@@ -72,6 +74,7 @@ export default function BikeDetailView({
 }: BikeDetailViewProps) {
   const [dialogDirection, setDialogDirection] = useState<'forward' | 'back' | null>(null);
   const [showBreak, setShowBreak] = useState(false);
+  const [showFixDetails, setShowFixDetails] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [labelBusy, setLabelBusy] = useState(false);
   const { profile } = useAuth();
@@ -490,6 +493,16 @@ export default function BikeDetailView({
 
           {/* Pricing & finance lives in the rail (see below) */}
 
+          {!isMechanic && !inspectionMode && bike.status !== 'sold' && (() => {
+            const miss = missingListingFields(bike as any);
+            return miss.length ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-warning/50 bg-warning/10 p-3 text-sm">
+                <span>Listing details: {miss.length} missing ({miss.map((m) => m.label.replace(/ \(.*\)$/, '')).join(', ')})</span>
+                <Button size="sm" variant="outline" onClick={() => setShowFixDetails(true)}>Fill in</Button>
+              </div>
+            ) : null;
+          })()}
+          <FixListingProblemsDialog bikeId={bike.id} open={showFixDetails} onOpenChange={setShowFixDetails} saveOnly onDone={onUpdate} />
           {!isMechanic && !inspectionMode && <ShopifyListingCard bikeId={bike.id} />}
           {!isMechanic && !inspectionMode && <SquarespaceListingCard bikeId={bike.id} />}
 

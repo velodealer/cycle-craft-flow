@@ -7,6 +7,8 @@ import { bikeRef } from '@/lib/bikeReference';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import { ListCard, ListCardRow, ListEmpty } from '@/components/ui/list-card';
 import { Badge } from '@/components/ui/badge';
+import FixListingProblemsDialog from '@/components/bike/FixListingProblemsDialog';
+import { missingListingFields } from '@/lib/listingReadiness';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +32,13 @@ interface Bike {
   photos: string[] | null;
   storage_bay_id: string | null;
   frame_number: string | null;
+  bike_type?: string | null;
+  size?: string | null;
+  colour?: string | null;
+  frame_material?: string | null;
+  condition?: string | null;
+  condition_notes?: string | null;
+  mpn?: string | null;
   serial_number?: string | null;
 }
 
@@ -65,6 +74,13 @@ export default function ListingsPage() {
   const [listingIds, setListingIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [bulk, setBulk] = useState<{ kind: 'list' | 'sync'; done: number; total: number } | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [fixQueue, setFixQueue] = useState<string[]>([]);
+  const [fixIndex, setFixIndex] = useState(0);
+  const [fixOpen, setFixOpen] = useState(false);
+  const [fixSaveOnly, setFixSaveOnly] = useState(false);
+  const [needsFixing, setNeedsFixing] = useState<string[]>([]);
+  const openFix = (ids: string[]) => { if (!ids.length) return; setFixSaveOnly(false); setFixQueue(ids); setFixIndex(0); setFixOpen(true); };
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +90,7 @@ export default function ListingsPage() {
       try {
         const { data: bikeRows, error } = await supabase
           .from('bikes')
-          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, storage_bay_id, frame_number, serial_number')
+          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, storage_bay_id, frame_number, serial_number, bike_type, size, colour, frame_material, condition, condition_notes, mpn')
           .in('status', ['ready', 'listed'])
           .order('created_at', { ascending: false });
         if (error) throw error;
@@ -152,7 +168,7 @@ export default function ListingsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     setPage(1);
@@ -295,13 +311,17 @@ export default function ListingsPage() {
     if (!window.confirm(`${kind === 'list' ? 'List' : 'Sync'} ${bikeCount} bike${bikeCount === 1 ? '' : 's'} on ${sites}?`)) return;
     setBulk({ kind, done: 0, total: jobs.length });
     const failures: string[] = [];
+    const ebayFailed: string[] = [];
     for (let i = 0; i < jobs.length; i++) {
       const { bike, p } = jobs[i];
       const err = await listOn(bike, p, { quiet: true, sync: kind === 'sync' });
+      if (err && p === 'ebay') ebayFailed.push(bike.id);
       if (err) failures.push(`${bikeRef(bike as any)} (${labelOf(p)}): ${err}`);
       setBulk({ kind, done: i + 1, total: jobs.length });
     }
     setBulk(null);
+    setNeedsFixing(Array.from(new Set(ebayFailed)));
+    if (ebayFailed.length) setReloadKey((k) => k + 1);
     const ok = jobs.length - failures.length;
     toast({
       title: `${kind === 'list' ? 'Listed' : 'Synced'} ${ok} of ${jobs.length}`,
@@ -410,7 +430,9 @@ export default function ListingsPage() {
     }
     if (bike.ebay?.last_error && !isActive(bike.ebay)) {
       badges.push(
-        <Badge key="ebay-err" variant="destructive">eBay error</Badge>,
+        <button key="ebay-err" type="button" onClick={(e) => { e.stopPropagation(); openFix([bike.id]); }}>
+          <Badge variant="destructive" className="cursor-pointer">eBay error · Fix</Badge>
+        </button>,
       );
     }
     return badges;
@@ -457,6 +479,29 @@ export default function ListingsPage() {
         </Button>
       </div>
 
+
+      {needsFixing.length > 0 && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded border border-destructive/50 bg-destructive/10 p-3 text-sm">
+          <span>{needsFixing.length} bike{needsFixing.length === 1 ? '' : 's'} need fixing before eBay will take them.</span>
+          <Button size="sm" onClick={() => openFix(needsFixing)}>Fix problems</Button>
+        </div>
+      )}
+
+      <FixListingProblemsDialog
+        bikeId={fixQueue[fixIndex] ?? null}
+        open={fixOpen}
+        saveOnly={fixSaveOnly}
+        queueLabel={fixQueue.length > 1 ? `Bike ${fixIndex + 1} of ${fixQueue.length}` : undefined}
+        onOpenChange={(o) => {
+          if (!o && fixIndex + 1 < fixQueue.length && fixOpen) { setFixIndex((i) => i + 1); return; }
+          setFixOpen(o);
+          if (!o) setReloadKey((k) => k + 1);
+        }}
+        onDone={(listed) => {
+          const id = fixQueue[fixIndex];
+          if (listed) setNeedsFixing((l) => l.filter((x) => x !== id));
+        }}
+      />
 
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -525,6 +570,16 @@ export default function ListingsPage() {
                       </div>
                     </div>
 
+                    {(() => {
+                      const miss = missingListingFields(bike as any);
+                      return miss.length ? (
+                        <button type="button" className="w-full text-left text-xs text-warning underline-offset-2 hover:underline"
+                          onClick={(e) => { e.stopPropagation(); setFixSaveOnly(true); setFixQueue([bike.id]); setFixIndex(0); setFixOpen(true); }}
+                          title={miss.map((m) => m.label).join(', ')}>
+                          {miss.length} listing detail{miss.length === 1 ? '' : 's'} missing — fill in
+                        </button>
+                      ) : null;
+                    })()}
                     <ListCardRow label="Asking" value={bike.asking_price ? `£${bike.asking_price.toFixed(2)}` : '-'} />
 
                     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>

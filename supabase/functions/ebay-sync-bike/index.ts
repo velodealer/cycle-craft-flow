@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
           missing_required: p.aspectResult.missingRequired,
           missing_recommended: p.aspectResult.missingRecommended,
           unmapped: p.aspectResult.unmapped,
+          choices: p.aspectResult.choices ?? {},
         },
         photos: p.images.map((u) => ({ url: u, longest: p.photoSizes[u] ?? null })),
         mobile_preview: p.mobilePreview,

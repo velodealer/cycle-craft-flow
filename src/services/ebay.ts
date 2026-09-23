@@ -47,6 +47,7 @@ export interface EbayPreview {
     missing_required: string[];
     missing_recommended: string[];
     unmapped: { name: string; value: string }[];
+    choices?: Record<string, string[]>;
   };
   photos: { url: string; longest: number | null }[];
   mobile_preview: string;
