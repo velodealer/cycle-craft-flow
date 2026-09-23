@@ -19,6 +19,55 @@ export interface EbayStatus {
   payment_policy_id: string;
   return_policy_id: string;
   callback_url: string;
+  needs_reconnect?: boolean;
+  category_by_type?: Record<string, string>;
+  best_offer_enabled?: boolean;
+  best_offer_accept_pct?: number | null;
+  best_offer_decline_pct?: number | null;
+  promote_enabled?: boolean;
+  promote_auto?: boolean;
+  ad_rate?: number;
+  can_manage?: boolean;
+}
+
+export interface CheckItem { key: string; level: 'ok' | 'warn' | 'block'; label: string; detail?: string }
+
+export interface EbayPreview {
+  title: string;
+  built_title: string;
+  title_format: string | null;
+  category_id: string;
+  category_source: 'bike' | 'type' | 'default';
+  condition: string | null;
+  wanted_condition: string;
+  aspects: Record<string, string[]>;
+  specifics: {
+    filled: number;
+    total: number;
+    missing_required: string[];
+    missing_recommended: string[];
+    unmapped: { name: string; value: string }[];
+  };
+  photos: { url: string; longest: number | null }[];
+  mobile_preview: string;
+  best_offer: { enabled: boolean };
+  promotion: { enabled: boolean; rate: number | null; available: boolean };
+  checklist: CheckItem[];
+  can_publish: boolean;
+}
+
+export interface EbayOrder {
+  id: string;
+  order_id: string;
+  bike_id: string | null;
+  buyer_username: string | null;
+  total: number | null;
+  currency: string | null;
+  status: string;
+  carrier: string | null;
+  tracking_number: string | null;
+  despatched_at: string | null;
+  created_at: string;
 }
 
 export interface EbayListing {
@@ -34,6 +83,11 @@ export interface EbayListing {
   last_error: string | null;
   condition_substituted_from: string | null;
   condition_substituted_to: string | null;
+  title_override: string | null;
+  best_offer_enabled: boolean | null;
+  ad_rate: number | null;
+  ad_id: string | null;
+  gallery_photo_index: number | null;
 }
 
 export interface PolicyOption { id: string; name: string }
@@ -153,7 +207,7 @@ export const removeBikeFromEbay = (bikeId: string) =>
 export async function getBikeEbayListing(bikeId: string): Promise<EbayListing | null> {
   const { data, error } = await supabase
     .from('ebay_listings')
-    .select('bike_id, condition, category_id, offer_id, listing_id, listing_url, status, quantity, last_synced_at, last_error, condition_substituted_from, condition_substituted_to')
+    .select('bike_id, condition, category_id, offer_id, listing_id, listing_url, status, quantity, last_synced_at, last_error, condition_substituted_from, condition_substituted_to, title_override, best_offer_enabled, ad_rate, ad_id, gallery_photo_index')
     .eq('bike_id', bikeId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -163,17 +217,28 @@ export async function getBikeEbayListing(bikeId: string): Promise<EbayListing | 
 /** Saves per-bike eBay options (condition and category). Blank means use the account default. */
 export async function saveBikeEbayOptions(
   bikeId: string,
-  options: { condition: string | null; category_id: string | null },
+  options: {
+    condition: string | null;
+    category_id: string | null;
+    title_override?: string | null;
+    best_offer_enabled?: boolean | null;
+    gallery_photo_index?: number | null;
+    ad_rate?: number | null;
+  },
 ) {
+  const row: Record<string, unknown> = {
+    bike_id: bikeId,
+    condition: options.condition || null,
+    category_id: options.category_id || null,
+    updated_at: new Date().toISOString(),
+  };
+  for (const k of ['title_override', 'best_offer_enabled', 'gallery_photo_index', 'ad_rate'] as const) {
+    if (options[k] !== undefined) row[k] = options[k] === '' ? null : options[k];
+  }
   const { error } = await supabase
     .from('ebay_listings')
     .upsert(
-      {
-        bike_id: bikeId,
-        condition: options.condition || null,
-        category_id: options.category_id || null,
-        updated_at: new Date().toISOString(),
-      },
+      row as any,
       { onConflict: 'bike_id' },
     );
   if (error) throw new Error(error.message);
@@ -193,4 +258,35 @@ export async function syncEbayQuietly(bikeId: string, action: 'list' | 'end' | '
   } catch (e) {
     console.error('eBay sync skipped:', (e as Error).message);
   }
+}
+
+export const previewBikeOnEbay = (bikeId: string) =>
+  invoke<EbayPreview>('ebay-sync-bike', { bike_id: bikeId, action: 'preview' });
+
+export const saveEbayListingSettings = (settings: {
+  category_by_type: Record<string, string>;
+  best_offer_enabled: boolean;
+  best_offer_accept_pct: number;
+  best_offer_decline_pct: number;
+  promote_enabled: boolean;
+  promote_auto: boolean;
+  ad_rate: number;
+}) => invoke<{ ok: true }>('ebay-oauth', { action: 'save_listing_settings', ...settings });
+
+export const suggestEbayCategory = (query: string) =>
+  invoke<{ category: PolicyOption | null }>('ebay-oauth', { action: 'suggest_category', query });
+
+export const syncEbayOrders = () => invoke<{ ok: true; results: unknown[] }>('ebay-order-sync', {});
+
+export const markEbayOrderDespatched = (orderRowId: string, carrier: string, trackingNumber: string) =>
+  invoke<{ ok: true }>('ebay-fulfilment', { order_row_id: orderRowId, carrier, tracking_number: trackingNumber });
+
+export async function getBikeEbayOrders(bikeId: string): Promise<EbayOrder[]> {
+  const { data, error } = await supabase
+    .from('ebay_orders')
+    .select('id, order_id, bike_id, buyer_username, total, currency, status, carrier, tracking_number, despatched_at, created_at')
+    .eq('bike_id', bikeId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return (data ?? []) as EbayOrder[];
 }

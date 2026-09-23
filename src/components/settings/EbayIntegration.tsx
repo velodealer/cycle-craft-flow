@@ -24,6 +24,7 @@ import {
   type PolicyOption,
 } from '@/services/ebay';
 import EbayPolicyDialog from './EbayPolicyDialog';
+import EbayListingSettings from './EbayListingSettings';
 
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
@@ -424,6 +425,8 @@ export default function EbayIntegration() {
                 <Unlink className="mr-2 h-4 w-4" /> Disconnect
               </Button>
             </div>
+
+            {status && <EbayListingSettings status={status} onReconnect={handleConnect} />}
           </>
         ) : (
           <>

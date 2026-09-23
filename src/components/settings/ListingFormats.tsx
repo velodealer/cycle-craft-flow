@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { buildEbayTitle, DEFAULT_TITLE_FORMAT, TITLE_TOKENS } from '@/lib/ebayTitle';
 import {
   LISTING_FIELD_GROUPS,
   PLATFORMS,
@@ -60,6 +61,7 @@ type TemplateRow = {
   platform: ListingPlatform;
   format: ListingFormat;
   body: string;
+  title_format?: string | null;
 };
 
 export default function ListingFormats() {
@@ -99,6 +101,7 @@ export default function ListingFormats() {
             platform: row.platform,
             format: row.format,
             body: row.body || '',
+            title_format: row.title_format ?? null,
           };
         }
       });
@@ -141,6 +144,7 @@ export default function ListingFormats() {
           platform,
           format: current.format,
           body: current.body,
+          ...(platform === 'ebay' ? { title_format: current.title_format?.trim() || null } : {}),
           updated_by: userRes.user?.id ?? null,
           updated_at: new Date().toISOString(),
         },
@@ -193,6 +197,30 @@ export default function ListingFormats() {
                   </div>
                 </RadioGroup>
               </div>
+
+              {p.value === 'ebay' && (
+                <div className="space-y-2 rounded border p-3">
+                  <Label htmlFor="ebay-title-format">Title format</Label>
+                  <Input
+                    id="ebay-title-format"
+                    value={current.title_format ?? ''}
+                    onChange={(e) => updateCurrent({ title_format: e.target.value })}
+                    placeholder={DEFAULT_TITLE_FORMAT}
+                  />
+                  <div className="flex flex-wrap gap-1">
+                    {TITLE_TOKENS.map((t) => (
+                      <Button key={t.token} type="button" size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => updateCurrent({ title_format: `${(current.title_format ?? '').trim()} {${t.token}}`.trim() })}>
+                        {t.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Example: <span className="text-foreground">{buildEbayTitle(SAMPLE_BIKE, current.title_format)}</span>{' '}
+                    ({buildEbayTitle(SAMPLE_BIKE, current.title_format).length}/80). Titles are capped at 80 characters — items later in the format are dropped first. Repeated words are removed.
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-4">
                 <div className="space-y-2">
