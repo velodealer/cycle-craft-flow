@@ -204,3 +204,15 @@ Admin, owner and customer_service. Customer service can list, update and remove 
 - **MPN**: sent only from the bike's own "Manufacturer part number (MPN)" field. Blank means nothing is sent. `{mpn}` is available in listing formats.
 - **Brand**: trimmed and matched to eBay's spelling when the category provides a brand list.
 - **Category cache**: item specifics and condition lookups are cached for 24 hours per category in `ebay_category_cache`.
+
+## Phases 2–7 updates (Sep 2026)
+
+- **Smart titles:** built in this order: make, model, groupset, frame material, bike type, key feature (Di2/eTap/AXS/Disc/Full Suspension/motor), size, wheel size (MTB/gravel), year. Repeated words are removed, shouting is tidied, and items later in the format are dropped to stay within 80 characters. Set a "Title format" under Listing Formats → eBay. Each bike can have a custom title on its eBay panel.
+- **Item specifics:** filled from eBay's own list for the category (required and recommended), with values matched to eBay's choices (56 → 56 cm, M → Medium). Values that can't be matched are listed under "Couldn't match". Only required specifics block a listing. The duplicate "Type" is no longer sent.
+- **Category order:** the bike's own category, then the category for its bike type (Settings → eBay, with a Suggest button), then the default.
+- **Photos:** up to 24 are sent, with the chosen main photo first. You're warned under 6 photos or under 1600px. A photo under 500px blocks the listing.
+- **Best Offer:** off by default. Auto-accept is 95% and auto-decline is 80% of the asking price (both editable). It can be switched on or off per bike.
+- **Sale sync:** eBay orders are checked every 5 minutes. A sold bike is marked sold at the eBay price, taken off Shopify, logged in its activity, and the dealer is emailed. Each order is processed once (`ebay_orders`). Use "Mark despatched" on the bike's eBay panel to send the carrier and tracking to eBay. The sale invoice is still recorded by hand.
+- **Promoted Listings:** switch on, set a default ad rate, and optionally promote every new listing. This uses one "VeloDealer auto" campaign per dealer, where you pay only when the item sells. Ads are removed when a listing ends.
+- **Pre-publish checklist:** on the bike's eBay panel. Red items block listing and amber items warn.
+- **Permissions:** connections made before this update must reconnect once to allow promotion (the card shows a banner).
