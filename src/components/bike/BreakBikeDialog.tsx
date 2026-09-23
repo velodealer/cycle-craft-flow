@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 import { syncShopifyQuietly } from '@/services/shopify';
+import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
 
 interface Props {
@@ -313,6 +314,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         .eq('id', bike.id);
       if (bikeErr) throw bikeErr;
       void syncShopifyQuietly(bike.id, 'sold_out');
+      void syncSquarespaceQuietly(bike.id, 'sold_out');
       void syncEbayQuietly(bike.id, 'end');
       logActivity(bike.id, {
         kind: 'status_change',

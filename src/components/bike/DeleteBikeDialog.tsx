@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { syncShopifyQuietly } from '@/services/shopify';
+import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
 import { toast } from '@/hooks/use-toast';
 import { bikeRef } from '@/lib/bikeReference';
@@ -76,6 +77,7 @@ export default function DeleteBikeDialog({ bike, open, onOpenChange, onDeleted }
   const handleDelete = async () => {
     setDeleting(true);
     await syncShopifyQuietly(bike.id, 'unlist');
+    await syncSquarespaceQuietly(bike.id, 'unlist');
     await syncEbayQuietly(bike.id, 'remove');
     const { data, error } = await supabase.functions.invoke('delete-bike', {
       body: { bike_id: bike.id },

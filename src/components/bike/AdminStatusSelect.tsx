@@ -7,6 +7,7 @@ import { logActivity } from '@/lib/activity';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { syncShopifyQuietly } from '@/services/shopify';
+import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
 import { ensureInspectionQuietly } from '@/services/inspectabike';
 import {
@@ -89,6 +90,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
         void syncEbayQuietly(bike.id, 'list');
       } else if (['sold', 'split_for_parts', 'delivered', 'collected'].includes(pending)) {
         void syncShopifyQuietly(bike.id, 'sold_out');
+        void syncSquarespaceQuietly(bike.id, 'sold_out');
         void syncEbayQuietly(bike.id, 'end');
       }
 

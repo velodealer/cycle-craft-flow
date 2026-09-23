@@ -1,12 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 
-export type ListingPlatform = 'ebay' | 'shopify' | 'instagram' | 'facebook';
+export type ListingPlatform = 'ebay' | 'shopify' | 'squarespace' | 'instagram' | 'facebook';
 export type ListingFormat = 'html' | 'text';
 
 export const PLATFORMS: { value: ListingPlatform; label: string }[] = [
   { value: 'ebay', label: 'eBay' },
   { value: 'shopify', label: 'Shopify' },
+  { value: 'squarespace', label: 'Squarespace' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'facebook', label: 'Facebook' },
 ];
