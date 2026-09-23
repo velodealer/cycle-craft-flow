@@ -51,3 +51,9 @@ verify_jwt = false
 
 [functions.cycle-courier-order-sync]
 verify_jwt = true
+
+[functions.ebay-order-sync]
+verify_jwt = false
+
+[functions.ebay-fulfilment]
+verify_jwt = false
