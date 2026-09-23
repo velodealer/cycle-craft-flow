@@ -328,7 +328,8 @@ export async function deleteShopifyProduct(supabase: Client, bikeId: string): Pr
   const errors = data?.productDelete?.userErrors ?? [];
   if (errors.length) throw new Error(errors.map((e: any) => e.message).join('; '));
 
-  await supabase.from('shopify_listings').delete().eq('bike_id', bikeId);
+  const { error: delErr } = await supabase.from('shopify_listings').delete().eq('bike_id', bikeId);
+  if (delErr) throw new Error(`Shopify product removed, but the listing record could not be cleared: ${delErr.message}`);
   return true;
 }
 
