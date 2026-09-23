@@ -3,6 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, requireUser, requireRole, businessIdForUser, businessIdForBike } from '../_shared/ebay.ts';
 import {
   pushBikeToEbay,
+  prepareListing,
   endEbayListing,
   deleteEbayListing,
   recordListingError,
@@ -16,7 +17,7 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const STAFF = ['admin', 'owner', 'mechanic', 'detailer', 'accountant', 'social_manager'];
+const STAFF = ['admin', 'owner', 'mechanic', 'detailer', 'accountant', 'social_manager', 'customer_service'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -75,6 +76,33 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error || !bike) return json({ error: 'Bike not found' }, 404);
 
+    if (action === 'preview') {
+      const p = await prepareListing(supabase, bike as any);
+      return json({
+        title: p.title,
+        built_title: p.builtTitle,
+        title_format: p.titleFormat,
+        category_id: p.categoryId,
+        category_source: p.categorySource,
+        condition: p.condition,
+        wanted_condition: p.wantedCondition,
+        aspects: p.aspectResult.aspects,
+        specifics: {
+          filled: p.aspectResult.recommendedFilled,
+          total: p.aspectResult.recommendedTotal,
+          missing_required: p.aspectResult.missingRequired,
+          missing_recommended: p.aspectResult.missingRecommended,
+          unmapped: p.aspectResult.unmapped,
+        },
+        photos: p.images.map((u) => ({ url: u, longest: p.photoSizes[u] ?? null })),
+        mobile_preview: p.mobilePreview,
+        best_offer: { enabled: p.bestOffer.enabled },
+        promotion: p.promotion,
+        checklist: p.checklist,
+        can_publish: !p.checklist.some((c) => c.level === 'block'),
+      });
+    }
+
     const result = await pushBikeToEbay(supabase, bike as any);
     await logBikeActivity(bikeId, {
       kind: 'listing',
@@ -102,6 +130,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const message = (e as Error).message;
     console.error('ebay-sync-bike failed:', message);
+    if (action === 'preview') return json({ error: message }, 400);
     await recordListingError(supabase, bikeId, message);
     await logBikeActivity(bikeId, {
       kind: 'listing',
