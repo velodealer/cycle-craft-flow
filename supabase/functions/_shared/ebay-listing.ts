@@ -497,7 +497,7 @@ export async function pushBikeToEbay(
   } catch (e) {
     console.error('listing template render failed, using default description:', (e as Error).message);
   }
-  const locationKey = await ensureLocation(conn);
+  const locationKey = await ensureLocation(supabase, conn, businessId);
   const images = (bike.photos ?? [])
     .filter((u) => typeof u === 'string' && /^https?:\/\//.test(u))
     .slice(0, 12);
@@ -509,32 +509,61 @@ export async function pushBikeToEbay(
     .eq('bike_id', bike.id)
     .maybeSingle();
 
+  const warnings: string[] = [];
   const wantedCondition = ((existing as any)?.condition as string | null) || s.condition || 'USED_EXCELLENT';
   const bikeCategoryId = ((existing as any)?.category_id as string | null) || s.category_id || DEFAULT_CATEGORY;
-  const bikeCondition = await resolveCondition(conn, bikeCategoryId, wantedCondition);
+  const resolved = await resolveCondition(supabase, conn, bikeCategoryId, wantedCondition);
+  const bikeCondition = resolved.condition;
+  if (resolved.substituted) {
+    warnings.push(`eBay doesn't accept "${conditionLabel(wantedCondition)}" in this category, so it was listed as "${conditionLabel(bikeCondition)}".`);
+  }
 
-  const itemAspects = aspects(bike);
-  const required = await requiredAspects(conn, bikeCategoryId);
+  const meta = await categoryAspects(supabase, conn, bikeCategoryId);
+  const brand = normaliseBrand(meta, bike.make);
+  const itemAspects = aspects({ ...bike, make: brand });
+  const required = requiredAspectNames(meta);
   const missing = required.filter((name) => !itemAspects[name]);
   if (missing.length) {
     throw new Error(`eBay needs these details on the bike before it can be listed: ${missing.join(', ')}.`);
   }
 
+  // Condition notes, led by the InspectABike grade when there is one.
+  const { data: inspection } = await supabase
+    .from('inspections')
+    .select('overall_grade')
+    .eq('bike_id', bike.id)
+    .not('overall_grade', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const grade = (inspection as any)?.overall_grade != null ? Number((inspection as any).overall_grade) : null;
+  const condDesc = conditionDescription(bike.condition_notes, grade);
+  if (!String(bike.condition_notes ?? '').trim()) {
+    warnings.push('Used bikes sell better and get fewer disputes with condition notes.');
+  }
+
+  const mpn = String(bike.mpn ?? '').trim();
+  const product: Record<string, unknown> = {
+    title: bikeTitle(bike),
+    description: inventorySummary(bike),
+    imageUrls: images,
+    aspects: itemAspects,
+    brand,
+  };
+  if (mpn) product.mpn = mpn.slice(0, 65);
+
+  const inventoryBody: Record<string, unknown> = {
+    availability: { shipToLocationAvailability: { quantity: 1 } },
+    condition: bikeCondition,
+    product,
+  };
+  if (condDesc && !bikeCondition.startsWith('NEW') && bikeCondition !== 'LIKE_NEW') {
+    inventoryBody.conditionDescription = condDesc;
+  }
 
   await ebayFetch(conn, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
     method: 'PUT',
-    body: JSON.stringify({
-      availability: { shipToLocationAvailability: { quantity: 1 } },
-      condition: bikeCondition,
-      product: {
-        title: bikeTitle(bike),
-        description: inventorySummary(bike),
-        imageUrls: images,
-        aspects: itemAspects,
-        brand: bike.make,
-        mpn: bike.model,
-      },
-    }),
+    body: JSON.stringify(inventoryBody),
   });
 
   let offerId = ((existing as any)?.offer_id as string | undefined) || (await findOfferId(conn, sku));
