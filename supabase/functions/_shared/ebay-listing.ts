@@ -373,30 +373,83 @@ async function upsertListing(supabase: Client, bikeId: string, patch: Record<str
   if (error) console.error('ebay_listings upsert failed:', error.message);
 }
 
-/** Makes sure a merchant location exists — eBay requires one for every offer. */
-async function ensureLocation(conn: Connection): Promise<string> {
-  const key = conn.settings.merchant_location_key || DEFAULT_LOCATION_KEY;
+export const LOCATION_MISSING_MESSAGE =
+  'Set your despatch location (town and postcode) in Settings → Integrations → eBay first.';
+
+async function businessName(supabase: Client, businessId: string): Promise<string> {
+  const { data } = await supabase.from('businesses').select('name').eq('id', businessId).maybeSingle();
+  return String((data as any)?.name || '').trim();
+}
+
+/**
+ * Makes sure the dealer's despatch location exists on eBay and matches their settings.
+ * Creates it when missing and updates it when the address or name has changed.
+ */
+export async function ensureLocation(supabase: Client, conn: Connection, businessId: string): Promise<string> {
+  const s = conn.settings;
+  const postcode = String(s.postcode ?? '').trim();
+  const city = String(s.city ?? '').trim();
+  if (!postcode || !city) throw new Error(LOCATION_MISSING_MESSAGE);
+
+  const key = s.merchant_location_key || DEFAULT_LOCATION_KEY;
+  const name = (String(s.location_name ?? '').trim() || (await businessName(supabase, businessId)) || 'Despatch location').slice(0, 1000);
+  const address: Record<string, string> = {
+    country: (s.country || 'GB').toUpperCase(),
+    postalCode: postcode,
+    city,
+  };
+  if (s.address_line1?.trim()) address.addressLine1 = s.address_line1.trim();
+
+  let current: any = null;
   try {
-    await ebayFetch(conn, `/sell/inventory/v1/location/${encodeURIComponent(key)}`);
-    return key;
+    current = await ebayFetch<any>(conn, `/sell/inventory/v1/location/${encodeURIComponent(key)}`);
   } catch { /* create below */ }
 
-  await ebayFetch(conn, `/sell/inventory/v1/location/${encodeURIComponent(key)}`, {
-    method: 'POST',
-    body: JSON.stringify({
-      location: {
-        address: {
-          country: 'GB',
-          postalCode: conn.settings.postcode || 'BN1 1AA',
-        },
-      },
-      locationInstructions: 'Collection and despatch point',
-      name: 'VeloDealer',
-      merchantLocationStatus: 'ENABLED',
-      locationTypes: ['WAREHOUSE'],
-    }),
-  });
+  if (!current) {
+    await ebayFetch(conn, `/sell/inventory/v1/location/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        location: { address },
+        locationInstructions: 'Collection and despatch point',
+        name,
+        merchantLocationStatus: 'ENABLED',
+        locationTypes: ['WAREHOUSE'],
+      }),
+    });
+    return key;
+  }
+
+  const held = current?.location?.address ?? {};
+  const norm = (v: unknown) => String(v ?? '').replace(/\s+/g, '').toLowerCase();
+  const differs =
+    norm(held.postalCode) !== norm(address.postalCode) ||
+    norm(held.city) !== norm(address.city) ||
+    norm(held.addressLine1) !== norm(address.addressLine1) ||
+    norm(held.country) !== norm(address.country) ||
+    String(current?.name ?? '') !== name;
+  if (differs) {
+    await ebayFetch(conn, `/sell/inventory/v1/location/${encodeURIComponent(key)}/update_location_details`, {
+      method: 'POST',
+      body: JSON.stringify({
+        location: { address },
+        locationInstructions: 'Collection and despatch point',
+        name,
+      }),
+    });
+  }
   return key;
+}
+
+/** The address eBay currently holds for the dealer's despatch location, or null. */
+export async function heldLocation(conn: Connection): Promise<{ city: string | null; postcode: string | null } | null> {
+  const key = conn.settings.merchant_location_key || DEFAULT_LOCATION_KEY;
+  try {
+    const current = await ebayFetch<any>(conn, `/sell/inventory/v1/location/${encodeURIComponent(key)}`);
+    const a = current?.location?.address ?? {};
+    return { city: a.city ?? null, postcode: a.postalCode ?? null };
+  } catch {
+    return null;
+  }
 }
 
 async function findOfferId(conn: Connection, sku: string): Promise<string | null> {
