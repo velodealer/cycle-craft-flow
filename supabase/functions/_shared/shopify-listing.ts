@@ -5,7 +5,7 @@ import {
   type Client,
   type ShopifySettings,
 } from './shopify.ts';
-import { loadFieldMap, renderFieldValue, loadBikeComponents } from './listing-template.ts';
+import { loadFieldMap, renderFieldValue, loadBikeComponents, isPublishBlockingError } from './listing-template.ts';
 
 export interface BikeRow {
   id: string;
@@ -198,6 +198,7 @@ async function buildMetafields(
     }
     return { metafields, warnings };
   } catch (e) {
+    if (isPublishBlockingError(e)) throw e; // failed data load must stop the publish
     warnings.push(`Metafield mapping failed: ${(e as Error).message}`);
     return { metafields: [], warnings };
   }

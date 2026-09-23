@@ -1,5 +1,7 @@
 // Renders the dealer's saved listing format (Settings -> Listing Formats) server-side.
 // Mirrors src/lib/listingTemplate.ts so eBay listings look the same as the copy button.
+import { fetchBikeComponents, isPartsFetchError } from './bike-components.ts';
+export { PartsFetchError, isPartsFetchError } from './bike-components.ts';
 
 export interface TemplateRow {
   platform: string;
@@ -178,7 +180,19 @@ export function sanitiseForEbay(html: string): string {
 }
 
 
-/** Loads the saved format for a platform, preferring the dealer's own row. */
+export class TemplateFetchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TemplateFetchError';
+  }
+}
+
+/** True for load failures that must stop a publish instead of falling back to a default. */
+export function isPublishBlockingError(e: unknown): boolean {
+  return isPartsFetchError(e) || (!!e && (e as any).name === 'TemplateFetchError');
+}
+
+/** Loads the saved format for a platform, preferring the dealer's own row. null = none saved; throws on query failure. */
 export async function loadListingTemplate(
   supabase: any,
   platform: string,
@@ -188,7 +202,8 @@ export async function loadListingTemplate(
     .from('listing_templates')
     .select('platform, format, body, business_id')
     .eq('platform', platform);
-  if (error || !Array.isArray(data) || data.length === 0) return null;
+  if (error) throw new TemplateFetchError(`Could not load the ${platform} listing format: ${error.message}`);
+  if (!Array.isArray(data) || data.length === 0) return null;
   const own = businessId ? data.find((r: any) => r.business_id === businessId) : null;
   const row = own || data.find((r: any) => !r.business_id) || data[0];
   if (!row || !String(row.body ?? '').trim()) return null;
@@ -218,34 +233,19 @@ export function renderFieldValue(template: string, bike: any, components: any[] 
     .trim();
 }
 
-/** Loads the dealer's field mapping (Settings -> Listing Formats) for a platform. */
+/** Loads the dealer's field mapping (Settings -> Listing Formats) for a platform. null = none; throws on query failure. */
 export async function loadFieldMap(supabase: any, platform: string, businessId?: string | null): Promise<any> {
   const { data, error } = await supabase
     .from('listing_templates')
     .select('field_map, business_id')
     .eq('platform', platform);
-  if (error || !Array.isArray(data) || data.length === 0) return null;
+  if (error) throw new TemplateFetchError(`Could not load the ${platform} field mapping: ${error.message}`);
+  if (!Array.isArray(data) || data.length === 0) return null;
   const own = businessId ? data.find((r: any) => r.business_id === businessId) : null;
   return (own || data.find((r: any) => !r.business_id) || null)?.field_map ?? null;
 }
 
-/** Fitted components for the template's {components} token. */
+/** Fitted components for the template's tokens. Throws PartsFetchError on failure — never []. */
 export async function loadBikeComponents(supabase: any, bikeId: string): Promise<any[]> {
-  const { data, error } = await supabase
-    .from('bike_components')
-    .select('*, components(name, brand, model, mpn, weight_g, description, attributes, component_categories(name))')
-    .eq('bike_id', bikeId);
-  if (error || !Array.isArray(data)) return [];
-  return data.map((row: any) => ({
-    slot: row.slot,
-    notes: row.notes,
-    brand: row.components?.brand,
-    model: row.components?.model,
-    name: row.components?.name,
-    mpn: row.components?.mpn,
-    weight_g: row.components?.weight_g,
-    description: row.components?.description,
-    attributes: row.components?.attributes,
-    category: row.components?.component_categories?.name,
-  }));
+  return await fetchBikeComponents(supabase, bikeId);
 }

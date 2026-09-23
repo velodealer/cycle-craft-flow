@@ -1,6 +1,6 @@
 // Builds Squarespace products from VeloDealer bikes and keeps squarespace_listings in step.
 import { accessToken, sqsFetch, businessIdForBike, type Client } from './squarespace.ts';
-import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMap, renderFieldValue } from './listing-template.ts';
+import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMap, renderFieldValue, isPublishBlockingError } from './listing-template.ts';
 
 const BIKE_FIELDS = '*';
 
@@ -21,6 +21,7 @@ async function description(supabase: Client, bike: any, businessId: string) {
     const html = renderListingHtml(tpl, bike, comps);
     if (html) return html;
   } catch (e) {
+    if (isPublishBlockingError(e)) throw e;
     console.error('Squarespace template render failed:', (e as Error).message);
   }
   const text = bike.listing_description || bike.description || title(bike);
@@ -103,6 +104,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
       if (s) urlSlug = s;
     }
   } catch (e) {
+    if (isPublishBlockingError(e)) throw e;
     console.error('Squarespace field mapping failed:', (e as Error).message);
   }
 

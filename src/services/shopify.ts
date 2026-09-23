@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FunctionsHttpError } from '@supabase/supabase-js';
+import { AUTO_LIST_PAUSED } from './ebay';
 
 export interface ShopifyStatus {
   connected: boolean;
@@ -78,6 +79,7 @@ export async function getBikeListing(bikeId: string): Promise<ShopifyListing | n
 /** Fire-and-forget sync used by status changes — never blocks or throws. */
 export async function syncShopifyQuietly(bikeId: string, action: 'list' | 'sold_out' | 'unlist') {
   try {
+    if (action === 'list' && AUTO_LIST_PAUSED) return; // see AUTO_LIST_PAUSED in services/ebay.ts
     const status = await getShopifyStatus();
     if (!status.connected) return;
     if (action === 'list' && !status.auto_list) return;

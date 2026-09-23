@@ -542,24 +542,28 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   const warnings: string[] = [];
   const add = (key: string, level: CheckLevel, label: string, detail?: string) => checklist.push({ key, level, label, detail });
 
-  const { data: existing } = await supabase.from('ebay_listings').select('*').eq('bike_id', bike.id).maybeSingle();
+  const { data: existing, error: existingErr } = await supabase.from('ebay_listings').select('*').eq('bike_id', bike.id).maybeSingle();
+  // A failed read must not look like "never listed" — that would create a duplicate offer.
+  if (existingErr) throw new Error(`Could not load the existing eBay listing: ${existingErr.message}`);
   const ex = (existing ?? {}) as any;
 
   // Description from the dealer's listing format.
   let descriptionHtml = bikeDescriptionHtml(bike);
   let titleFormat: string | null = null;
-  try {
-    const tpl = await loadListingTemplate(supabase, 'ebay', businessId);
-    const { data: fmtRow } = await supabase
-      .from('listing_templates').select('title_format, business_id').eq('platform', 'ebay');
-    const rows = (fmtRow ?? []) as any[];
-    titleFormat = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
-    if (tpl) {
-      const components = await loadBikeComponents(supabase, bike.id);
+  // Data loads must fail loudly: a failed fetch is NOT the same as "no parts" / "no format".
+  const tpl = await loadListingTemplate(supabase, 'ebay', businessId);
+  const { data: fmtRow, error: fmtErr } = await supabase
+    .from('listing_templates').select('title_format, business_id').eq('platform', 'ebay');
+  if (fmtErr) throw new Error(`Could not load the eBay title format: ${fmtErr.message}`);
+  const rows = (fmtRow ?? []) as any[];
+  titleFormat = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
+  if (tpl) {
+    const components = await loadBikeComponents(supabase, bike.id);
+    try {
       descriptionHtml = renderListingHtml(tpl, bike, components) || descriptionHtml;
+    } catch (e) {
+      console.error('listing template render failed, using default description:', (e as Error).message);
     }
-  } catch (e) {
-    console.error('listing template render failed, using default description:', (e as Error).message);
   }
   const mobilePreview = descriptionHtml
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')

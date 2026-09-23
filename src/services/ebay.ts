@@ -246,8 +246,16 @@ export async function saveBikeEbayOptions(
 }
 
 /** Fire-and-forget sync used by status changes — never blocks or throws. */
+/**
+ * TEMPORARY HOLD (fitted-parts rework, Checkpoint 2): automatic "list" pushes triggered by
+ * stage changes are paused so half-parsed part data never reaches live listings unattended.
+ * End/remove still run so sold bikes always come down. Set to false to resume.
+ */
+export const AUTO_LIST_PAUSED = true;
+
 export async function syncEbayQuietly(bikeId: string, action: 'list' | 'end' | 'remove') {
   try {
+    if (action === 'list' && AUTO_LIST_PAUSED) return;
     const status = await getEbayStatus();
     if (!status.connected) return;
     if (action === 'list' && !status.auto_list) return;

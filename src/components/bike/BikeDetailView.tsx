@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { copyListing, PLATFORMS, type ListingPlatform } from '@/lib/listingTemplate';
 import { toast } from '@/hooks/use-toast';
+import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 import { stockInDocNumber, stockOutDocNumber } from '@/lib/quickbooks';
 
 
@@ -219,23 +220,12 @@ export default function BikeDetailView({
   useEffect(() => {
     if (!bike?.id) return;
     (async () => {
-      const { data } = await supabase
-        .from('bike_components')
-        .select('*, components(name, brand, model, mpn, weight_g, description, attributes, component_categories(name))')
-        .eq('bike_id', bike.id);
-      const flat = (data || []).map((row: any) => ({
-        slot: row.slot,
-        notes: row.notes,
-        brand: row.components?.brand,
-        model: row.components?.model,
-        name: row.components?.name,
-        mpn: row.components?.mpn,
-        weight_g: row.components?.weight_g,
-        description: row.components?.description,
-        attributes: row.components?.attributes,
-        category: row.components?.component_categories?.name,
-      }));
-      setBikeComponents(flat);
+      try {
+        setBikeComponents(await fetchBikeComponents(supabase, bike.id));
+      } catch (e) {
+        setBikeComponents([]);
+        toast({ title: 'Fitted parts could not be loaded', description: (e as Error).message, variant: 'destructive' });
+      }
     })();
   }, [bike?.id]);
 
