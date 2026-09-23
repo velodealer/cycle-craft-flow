@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw } from 'lucide-react';
+import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw, Pencil } from 'lucide-react';
 import InspectionFaults from './InspectionFaults';
+import EditInspectABikeLinkDialog from './EditInspectABikeLinkDialog';
 
 
 interface InspectionTaskProps {
@@ -37,8 +38,10 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [editLinkOpen, setEditLinkOpen] = useState(false);
 
   const canEdit = !!profile && ['admin', 'mechanic'].includes(profile.role);
+  const canEditLink = !!profile && ['admin', 'owner'].includes(profile.role);
 
   useEffect(() => {
     loadInspection();
@@ -282,6 +285,13 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
             </div>
           )}
 
+          {canEditLink && (
+            <Button variant="ghost" size="sm" onClick={() => setEditLinkOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit link
+            </Button>
+          )}
+
           {inspection.synced_at && (
             <p className="text-xs text-muted-foreground">
               Last synced {new Date(inspection.synced_at).toLocaleString()}
@@ -375,6 +385,15 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
       </CardContent>
     </Card>
     <InspectionFaults bikeId={bike.id} onUpdate={() => { loadInspection(); onUpdate(); }} />
+    {canEditLink && (
+      <EditInspectABikeLinkDialog
+        open={editLinkOpen}
+        onOpenChange={setEditLinkOpen}
+        bikeId={bike.id}
+        inspection={inspection}
+        onSaved={() => { loadInspection(); onUpdate(); }}
+      />
+    )}
     </>
   );
 }
