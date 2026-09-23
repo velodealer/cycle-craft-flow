@@ -30,13 +30,16 @@ async function description(supabase: Client, bike: any, businessId: string) {
 
 async function loadBike(supabase: Client, bikeId: string) {
   const { data, error } = await supabase.from('bikes').select(BIKE_FIELDS).eq('id', bikeId).maybeSingle();
-  if (error || !data) throw new Error('Bike not found');
+  if (error) throw new Error(`Could not load bike: ${error.message}`);
+  if (!data) throw new Error('Bike not found');
   return data as any;
 }
 
-async function listingRow(supabase: Client, bikeId: string) {
-  const { data } = await supabase.from('squarespace_listings').select('*').eq('bike_id', bikeId).maybeSingle();
-  return data as any;
+/** Existing Squarespace listing. null = never listed; throws if the read fails (never "not listed"). */
+export async function listingRow(supabase: Client, bikeId: string) {
+  const { data, error } = await supabase.from('squarespace_listings').select('*').eq('bike_id', bikeId).maybeSingle();
+  if (error) throw new Error(`Could not check the existing Squarespace listing: ${error.message}`);
+  return (data ?? null) as any;
 }
 
 async function upsertListing(supabase: Client, bikeId: string, businessId: string, patch: Record<string, unknown>) {

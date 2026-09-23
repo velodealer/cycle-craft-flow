@@ -79,7 +79,8 @@ export async function businessIdForUser(supabase: Client, userId: string): Promi
 }
 
 export async function businessIdForBike(supabase: Client, bikeId: string): Promise<string> {
-  const { data } = await supabase.from('bikes').select('business_id').eq('id', bikeId).maybeSingle();
+  const { data, error } = await supabase.from('bikes').select('business_id').eq('id', bikeId).maybeSingle();
+  if (error) throw new Error(`Could not load bike: ${error.message}`);
   if (!data?.business_id) throw new Error('Bike not found');
   return data.business_id as string;
 }
