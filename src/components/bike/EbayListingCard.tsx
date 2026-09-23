@@ -26,6 +26,7 @@ import {
   type PolicyOption,
 } from '@/services/ebay';
 import { EBAY_TITLE_MAX } from '@/lib/ebayTitle';
+import FixListingProblemsDialog from './FixListingProblemsDialog';
 
 interface Props {
   bikeId: string;
@@ -77,6 +78,7 @@ export default function EbayListingCard({ bikeId }: Props) {
   const [allPhotos, setAllPhotos] = useState<string[]>([]);
 
   const [orders, setOrders] = useState<EbayOrder[]>([]);
+  const [fixOpen, setFixOpen] = useState(false);
   const [despatch, setDespatch] = useState<{ id: string; carrier: string; tracking: string } | null>(null);
 
   const runPreview = useCallback(async () => {
@@ -325,6 +327,13 @@ export default function EbayListingCard({ bikeId }: Props) {
           <p className="text-xs text-muted-foreground">Last updated {new Date(listing.last_synced_at).toLocaleString()}</p>
         )}
         {listing?.last_error && <p className="text-xs text-destructive">{listing.last_error}</p>}
+        {(listing?.last_error || preview?.checklist.some((c) => c.level === 'block')) && (
+          <Button size="sm" variant="destructive" onClick={() => setFixOpen(true)}>
+            <AlertTriangle className="mr-2 h-4 w-4" /> Fix problems
+          </Button>
+        )}
+        <FixListingProblemsDialog bikeId={bikeId} open={fixOpen} onOpenChange={setFixOpen}
+          onDone={() => { void load(); void runPreview(); }} />
         {listing?.condition_substituted_from && listing?.condition_substituted_to && (
           <div className="rounded border border-warning/50 bg-warning/10 p-2 text-xs">
             <Badge variant="outline" className="mr-2 border-warning text-warning">Condition changed</Badge>
