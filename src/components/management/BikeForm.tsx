@@ -42,6 +42,7 @@ const bikeSchema = z.object({
   storage_bay_id: z.string().optional(),
   condition: z.string().optional(),
   frame_number: z.string().optional(),
+  mpn: z.string().trim().max(65).optional(),
   accessories_included: z.string().optional(),
   source: z.enum(['owned', 'customer_consignment', 'investor']),
   external_owner_id: z.string().uuid().optional(),
@@ -159,6 +160,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       storage_bay_id: bike?.storage_bay_id || '',
       condition: bike?.condition || '',
       frame_number: bike?.frame_number || '',
+      mpn: (bike as any)?.mpn || '',
       accessories_included: bike?.accessories_included || '',
       source: bike?.source || 'owned',
       external_owner_id: bike?.external_owner_id || undefined,
@@ -516,6 +518,20 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 )}
               />
 
+
+              <FormField
+                control={form.control}
+                name="mpn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Manufacturer part number (MPN)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Leave blank if unknown" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
