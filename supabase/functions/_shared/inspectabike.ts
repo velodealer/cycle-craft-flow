@@ -278,14 +278,41 @@ export async function iabFetch(path: string, init: RequestInit = {}, ctx?: IabCo
   try { body = text ? JSON.parse(text) : null; } catch { body = { raw: text }; }
 
   if (!res.ok) {
+    console.error(`InspectABike ${path} -> ${res.status}: ${JSON.stringify(body).slice(0, 1000)}`);
+    const detail = errText(body);
     const message =
       res.status === 401 ? 'InspectABike rejected the connection'
-      : res.status === 404 ? 'Inspection not found in InspectABike'
-      : res.status === 400 ? (body?.error || body?.message || 'InspectABike rejected the request')
-      : (body?.error || body?.message || 'InspectABike request failed');
+      : res.status === 404 ? (detail && !/not found/i.test(detail) ? `Inspection not found in InspectABike: ${detail}` : 'Inspection not found in InspectABike')
+      : detail || (res.status === 400 ? 'InspectABike rejected the request' : `InspectABike request failed [${res.status}]`);
     throw Object.assign(new Error(message), { status: res.status, body });
   }
   return body;
+}
+
+/** Turn any InspectABike error body into readable text. */
+export function errText(body: any): string {
+  if (body == null) return '';
+  if (typeof body === 'string') return body;
+  const parts: string[] = [];
+  const pick = (v: any) => {
+    if (v == null || v === '') return;
+    if (typeof v === 'string') parts.push(v);
+    else if (Array.isArray(v)) v.forEach(pick);
+    else if (typeof v === 'object') {
+      const field = v.field || v.path || v.param;
+      const msg = v.message || v.error || v.detail || v.msg;
+      if (msg) parts.push(field ? `${field}: ${typeof msg === 'string' ? msg : JSON.stringify(msg)}` : (typeof msg === 'string' ? msg : JSON.stringify(msg)));
+      if (v.details) pick(v.details);
+      if (v.errors) pick(v.errors);
+      if (!msg && !v.details && !v.errors) parts.push(JSON.stringify(v));
+    } else parts.push(String(v));
+  };
+  pick(body.error);
+  if (body.message && !parts.includes(body.message)) pick(body.message);
+  pick(body.errors);
+  pick(body.details);
+  if (!parts.length && body.raw) parts.push(String(body.raw).slice(0, 300));
+  return [...new Set(parts)].join('; ').slice(0, 500);
 }
 
 /** Map a VeloDealer bike onto InspectABike's bike_type enum. */
