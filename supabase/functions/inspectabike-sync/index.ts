@@ -47,9 +47,8 @@ Deno.serve(async (req) => {
     const extId = inspection.external_inspection_id;
     const urlMatch = String(inspection.report_url ?? '').match(/\/report\/([0-9a-f-]{8,})/i);
     const fromUrl = urlMatch?.[1] ?? null;
-    if (fromUrl) attempts.push(`report_id=${encodeURIComponent(fromUrl)}`);
     if (extId) attempts.push(`id=${encodeURIComponent(extId)}`, `report_id=${encodeURIComponent(extId)}`);
-    if (fromUrl) attempts.push(`id=${encodeURIComponent(fromUrl)}`);
+    if (fromUrl) attempts.push(`report_id=${encodeURIComponent(fromUrl)}`, `id=${encodeURIComponent(fromUrl)}`);
     for (const ref of [inspection.external_reference, (bikeRow as any)?.reference]) {
       if (ref) attempts.push(`reference=${encodeURIComponent(ref)}`);
     }
@@ -87,7 +86,7 @@ Deno.serve(async (req) => {
     const { data: updated, error: updateError } = await supabase
       .from('inspections')
       .update({
-        external_inspection_id: remote?.id ? String(remote.id) : inspection.external_inspection_id,
+        external_inspection_id: inspection.external_inspection_id || (remote?.id ? String(remote.id) : null),
         report_url: remote?.report_url ?? inspection.report_url,
         overall_grade: remote?.overall_grade ?? null,
         inspector_name: remote?.inspector_name ?? null,
@@ -104,7 +103,7 @@ Deno.serve(async (req) => {
 
     let saved = 0;
     if (faults.length) {
-      const extId = String(remote?.id ?? inspection.external_inspection_id ?? inspection.id);
+      const extId = String(inspection.external_inspection_id ?? remote?.id ?? inspection.id);
       console.log('inspectabike-sync fault keys:', JSON.stringify(Object.keys(faults[0] ?? {})));
       const rows = faults
         .map((f, i) => normaliseFault(f, inspection.id, bikeId, undefined, (inspection as any).business_id, `${extId}:${i}`))
@@ -134,7 +133,11 @@ Deno.serve(async (req) => {
       success: true,
       inspection: updated,
       fault_count: faults.length,
-      warning: emptyButHadIssues ? 'InspectABike returned no faults for this inspection, although issues were reported.' : undefined,
+      warning: [
+        emptyButHadIssues ? 'InspectABike returned no faults for this inspection, although issues were reported.' : null,
+        inspection.external_inspection_id && remote?.id && String(remote.id) !== inspection.external_inspection_id
+          ? `Kept your inspection ID ${inspection.external_inspection_id}; InspectABike reports it as ${remote.id}.` : null,
+      ].filter(Boolean).join(' ') || undefined,
     });
   } catch (e) {
     const status = (e as any).status && (e as any).status !== 401 ? (e as any).status : 500;
