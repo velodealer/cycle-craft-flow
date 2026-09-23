@@ -127,9 +127,10 @@ export function buildValues(bike: any, components: any[] = []): Record<string, s
   };
 }
 
-export function renderTemplate(body: string, bike: any, components: any[] = []): string {
+/** Fills placeholders; rows (and then groups) whose placeholders are all empty are left out. */
+export function renderTemplate(body: string, bike: any, components: any[] = [], format: 'html' | 'text' = 'html'): string {
   const values = buildValues(bike, components);
-  return body.replace(/\{(\w+)\}/g, (_m, key) => (key in values ? values[key] : ''));
+  return substituteHidingEmpty(body, values, format);
 }
 
 const escapeHtml = (value: unknown) =>
