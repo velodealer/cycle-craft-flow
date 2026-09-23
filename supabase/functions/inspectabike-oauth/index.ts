@@ -154,6 +154,7 @@ Deno.serve(async (req) => {
         callback_url: redirectUri(),
         webhook_url: webhookUrl(),
         has_webhook_secret: Boolean(row?.webhook_secret),
+        has_platform_webhook_secret: Boolean(Deno.env.get('INSPECTABIKE_WEBHOOK_SECRET')),
       });
     }
 

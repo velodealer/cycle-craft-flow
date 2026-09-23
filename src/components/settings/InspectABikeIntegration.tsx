@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ClipboardCheck, Copy, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
+import { ClipboardCheck, Copy, ExternalLink, Link2, AlertTriangle, BellRing, BellOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -136,6 +136,23 @@ export default function InspectABikeIntegration() {
             </Button>
           </div>
         )}
+
+        {status?.configured &&
+          (status.has_webhook_secret || status.has_platform_webhook_secret ? (
+            <div className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3 text-sm text-success">
+              <BellRing className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Live updates: on — faults from InspectABike arrive here on their own.</span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
+              <BellOff className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Live updates: not receiving — ask InspectABike to send updates to{' '}
+                <span className="font-mono">{status.webhook_url}</span> and share the signing key
+                they create.
+              </span>
+            </div>
+          ))}
 
         {isSuperAdmin && status && (
           <div className="space-y-2 pt-2">
