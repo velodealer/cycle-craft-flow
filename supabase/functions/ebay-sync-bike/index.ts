@@ -6,6 +6,7 @@ import {
   endEbayListing,
   deleteEbayListing,
   recordListingError,
+  conditionLabel,
 } from '../_shared/ebay-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 
@@ -82,7 +83,22 @@ Deno.serve(async (req) => {
       detail: { offer_id: result.offerId, listing_id: result.listingId, url: result.url },
       actorLabel: 'eBay',
     }, callerBusinessId);
-    return json({ ok: true, offer_id: result.offerId, listing_id: result.listingId, url: result.url });
+    if (result.substitution) {
+      await logBikeActivity(bikeId, {
+        kind: 'listing',
+        action: 'condition_substituted',
+        summary: `eBay condition changed from ${conditionLabel(result.substitution.from)} to ${conditionLabel(result.substitution.to)}`,
+        detail: { from: result.substitution.from, to: result.substitution.to },
+        actorLabel: 'eBay',
+      }, callerBusinessId);
+    }
+    return json({
+      ok: true,
+      offer_id: result.offerId,
+      listing_id: result.listingId,
+      url: result.url,
+      warnings: result.warnings,
+    });
   } catch (e) {
     const message = (e as Error).message;
     console.error('ebay-sync-bike failed:', message);

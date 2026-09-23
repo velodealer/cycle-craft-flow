@@ -19,6 +19,7 @@ import {
   type EbayEnvironment,
   type EbaySettings,
 } from '../_shared/ebay.ts';
+import { ensureLocation, heldLocation } from '../_shared/ebay-listing.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -268,6 +269,7 @@ Deno.serve(async (req) => {
     if (action === 'status') {
       const row = await loadIntegration(supabase, businessId);
       const s = ((row?.settings ?? {}) as EbaySettings) || {};
+      const { data: biz } = await supabase.from('businesses').select('name').eq('id', businessId).maybeSingle();
       return json({
         connected: Boolean(row?.is_active && s.refresh_token),
         environment: s.environment ?? 'sandbox',
@@ -277,11 +279,21 @@ Deno.serve(async (req) => {
         category_id: s.category_id ?? '',
         condition: s.condition ?? 'USED_EXCELLENT',
         postcode: s.postcode ?? '',
+        location_name: s.location_name ?? '',
+        address_line1: s.address_line1 ?? '',
+        city: s.city ?? '',
+        country: s.country ?? 'GB',
+        business_name: (biz as any)?.name ?? '',
         fulfillment_policy_id: s.fulfillment_policy_id ?? '',
         payment_policy_id: s.payment_policy_id ?? '',
         return_policy_id: s.return_policy_id ?? '',
         callback_url: redirectUri(),
       });
+    }
+
+    if (action === 'location') {
+      const conn = await requireConnection(supabase, businessId);
+      return json({ held: await heldLocation(conn) });
     }
 
     if (action === 'auth_url') {
@@ -320,16 +332,38 @@ Deno.serve(async (req) => {
     if (action === 'save_settings') {
       const clean = (v: unknown, max = 80) =>
         typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined;
+      const postcode = clean(body.postcode, 12)?.toUpperCase();
+      const city = clean(body.city, 80);
+      const country = (clean(body.country, 2) || 'GB').toUpperCase();
+      if (!postcode || !city) {
+        return json({ error: 'Enter the town and postcode your bikes are sent from.' }, 400);
+      }
+      if (country === 'GB' && !/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/.test(postcode)) {
+        return json({ error: 'That doesn\'t look like a UK postcode.' }, 400);
+      }
       const settings = await saveSettings(supabase, businessId, {
         auto_list: Boolean(body.auto_list),
         category_id: clean(body.category_id, 20),
         condition: clean(body.condition, 40),
-        postcode: clean(body.postcode, 12),
+        postcode,
+        city,
+        country,
+        location_name: clean(body.location_name, 80) ?? '',
+        address_line1: clean(body.address_line1, 120) ?? '',
         fulfillment_policy_id: clean(body.fulfillment_policy_id, 60),
         payment_policy_id: clean(body.payment_policy_id, 60),
         return_policy_id: clean(body.return_policy_id, 60),
       });
-      return json({ ok: true, auto_list: settings.auto_list });
+      // Push the address to eBay straight away so live listings show the right town.
+      let locationError: string | null = null;
+      try {
+        const conn = await requireConnection(supabase, businessId);
+        await ensureLocation(supabase, conn, businessId);
+      } catch (e) {
+        locationError = (e as Error).message;
+        console.warn('Could not update eBay despatch location:', locationError);
+      }
+      return json({ ok: true, auto_list: settings.auto_list, location_error: locationError });
     }
 
     if (action === 'policies') {
