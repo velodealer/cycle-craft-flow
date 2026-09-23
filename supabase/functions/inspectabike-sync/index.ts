@@ -116,14 +116,19 @@ Deno.serve(async (req) => {
 
     const { count } = await supabase
       .from('inspection_faults').select('id', { count: 'exact', head: true }).eq('inspection_id', inspection.id);
-    await supabase.from('inspections').update({ has_issues: (count ?? 0) > 0 }).eq('id', inspection.id);
+    await supabase.from('inspections').update({ has_issues: (count ?? 0) > 0 || emptyButHadIssues }).eq('id', inspection.id);
 
     await syncBikeStatusFromFaults(supabase, bikeId, completed);
 
     if (saved < faults.length) {
       return json({ error: `InspectABike sent ${faults.length} faults but only ${saved} could be saved` }, 500);
     }
-    return json({ success: true, inspection: updated, fault_count: faults.length });
+    return json({
+      success: true,
+      inspection: updated,
+      fault_count: faults.length,
+      warning: emptyButHadIssues ? 'InspectABike returned no faults for this inspection, although issues were reported.' : undefined,
+    });
   } catch (e) {
     const status = (e as any).status && (e as any).status !== 401 ? (e as any).status : 500;
     console.error('inspectabike-sync failed:', (e as Error).message);
