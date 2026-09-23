@@ -69,6 +69,7 @@ export default function ListingFormats() {
   const [templates, setTemplates] = useState<Record<ListingPlatform, TemplateRow>>({
     ebay: { platform: 'ebay', format: 'text', body: '' },
     shopify: { platform: 'shopify', format: 'text', body: '' },
+    squarespace: { platform: 'squarespace', format: 'html', body: '' },
     instagram: { platform: 'instagram', format: 'text', body: '' },
     facebook: { platform: 'facebook', format: 'text', body: '' },
   });
