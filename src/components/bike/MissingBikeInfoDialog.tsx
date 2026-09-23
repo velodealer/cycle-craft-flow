@@ -65,7 +65,7 @@ export default function MissingBikeInfoDialog({ open, onOpenChange, bikeId, busi
     });
     const { error } = await supabase.from('bikes').update(update).eq('id', bikeId);
     if (error) { setErrors({ _: error.message }); setSaving(false); return; }
-    logActivity({ bikeId, businessId: businessId ?? null, kind: 'details', action: 'updated', summary: `Details completed for inspection: ${Object.keys(update).map((k) => LABELS[k] ?? k).join(', ')}`, detail: update } as any);
+    logActivity(bikeId, { kind: 'details', action: 'updated', summary: `Details completed for inspection: ${Object.keys(update).map((k) => LABELS[k] ?? k).join(', ')}`, detail: update } as any);
     setSaving(false);
     onOpenChange(false);
     await onSaved();

@@ -13,7 +13,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw, Pencil } from 'lucide-react';
 import InspectionFaults from './InspectionFaults';
 import EditInspectABikeLinkDialog from './EditInspectABikeLinkDialog';
-import { functionErrorMessage } from '@/services/inspectabike';
+import { functionErrorMessage, functionFieldIssues } from '@/services/inspectabike';
+import MissingBikeInfoDialog, { FieldIssue } from './MissingBikeInfoDialog';
 
 
 interface InspectionTaskProps {
@@ -40,6 +41,7 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [editLinkOpen, setEditLinkOpen] = useState(false);
+  const [fieldIssues, setFieldIssues] = useState<FieldIssue[] | null>(null);
 
   const canEdit = !!profile && ['admin', 'mechanic'].includes(profile.role);
   const canEditLink = !!profile && ['admin', 'owner'].includes(profile.role);
@@ -102,7 +104,11 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke(name, { body: { bike_id: bike.id } });
-      if (error || (data as any)?.error) throw new Error(await functionErrorMessage(error, data));
+      if (error || (data as any)?.error) {
+        const issues = name === 'inspectabike-create' ? await functionFieldIssues(error, data) : null;
+        if (issues) { setFieldIssues(issues); return; }
+        throw new Error(await functionErrorMessage(error, data));
+      }
       await loadInspection();
       onUpdate();
       toast({ title: successTitle, description: successDescription });
@@ -222,6 +228,15 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
 
   return (
     <>
+    {fieldIssues && (
+      <MissingBikeInfoDialog
+        open={!!fieldIssues}
+        onOpenChange={(o) => { if (!o) setFieldIssues(null); }}
+        bikeId={bike.id}
+        issues={fieldIssues}
+        onSaved={() => { setFieldIssues(null); onUpdate(); return sendToInspectABike(); }}
+      />
+    )}
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">

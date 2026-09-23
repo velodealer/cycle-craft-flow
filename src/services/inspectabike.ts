@@ -63,8 +63,17 @@ export async function ensureInspectionQuietly(bikeId: string): Promise<void> {
 export async function functionErrorMessage(error: any, data?: any): Promise<string> {
   if (data?.error) return String(data.error);
   try {
-    const body = await error?.context?.json?.();
+    const body = await (error?.context?.clone?.() ?? error?.context)?.json?.();
     if (body?.error) return String(body.error);
   } catch { /* ignore */ }
   return error?.message || 'InspectABike request failed';
+}
+
+/** Read field issues (missing/invalid bike details) from a failed inspectabike-create call. */
+export async function functionFieldIssues(error: any, data?: any): Promise<{ field: string; message: string }[] | null> {
+  let body = data;
+  if (!body?.fields) {
+    try { body = await error?.context?.clone?.().json?.(); } catch { body = null; }
+  }
+  return Array.isArray(body?.fields) && body.fields.length ? body.fields : null;
 }
