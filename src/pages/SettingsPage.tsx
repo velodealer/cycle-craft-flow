@@ -3,6 +3,7 @@ import UserManagement from '@/components/UserManagement';
 import CycleCourierIntegration from '@/components/settings/CycleCourierIntegration';
 import TypeformIntegration from '@/components/settings/TypeformIntegration';
 import ShopifyIntegration from '@/components/settings/ShopifyIntegration';
+import SquarespaceIntegration from '@/components/settings/SquarespaceIntegration';
 import EbayIntegration from '@/components/settings/EbayIntegration';
 import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
@@ -83,6 +84,7 @@ export default function SettingsPage() {
             <CycleCourierIntegration />
             <TypeformIntegration />
             <ShopifyIntegration />
+            <SquarespaceIntegration />
             <EbayIntegration />
             <QuickBooksIntegration />
             <InspectABikeIntegration />

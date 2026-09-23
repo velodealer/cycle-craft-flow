@@ -22,6 +22,7 @@ import BikeActivity from './BikeActivity';
 import { logActivity, priceChangeSummaries } from '@/lib/activity';
 import AdminStatusSelect from './AdminStatusSelect';
 import ShopifyListingCard from './ShopifyListingCard';
+import SquarespaceListingCard from './SquarespaceListingCard';
 import EbayListingCard from './EbayListingCard';
 
 
@@ -490,6 +491,7 @@ export default function BikeDetailView({
           {/* Pricing & finance lives in the rail (see below) */}
 
           {!isMechanic && !inspectionMode && <ShopifyListingCard bikeId={bike.id} />}
+          {!isMechanic && !inspectionMode && <SquarespaceListingCard bikeId={bike.id} />}
 
           {!isMechanic && !inspectionMode && <EbayListingCard bikeId={bike.id} />}
 
