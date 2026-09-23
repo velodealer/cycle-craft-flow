@@ -165,7 +165,7 @@ function hexToBytes(hex: string): Uint8Array {
 
 /** Squarespace signs webhook bodies with HMAC-SHA256; the secret is hex-encoded. */
 export async function verifySignature(secretHex: string, body: string, signature: string) {
-  const key = await crypto.subtle.importKey('raw', hexToBytes(secretHex), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', hexToBytes(secretHex) as BufferSource, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body)));
   const expected = Array.from(sig).map((b) => b.toString(16).padStart(2, '0')).join('');
   const got = signature.trim().toLowerCase();
