@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { buildEbayTitle, DEFAULT_TITLE_FORMAT, TITLE_TOKENS } from '@/lib/ebayTitle';
+import { ShopifyMetafieldEditor, SquarespaceMappingEditor, validMetafieldKey } from './FieldMappingEditor';
 import {
   LISTING_FIELD_GROUPS,
   PLATFORMS,
@@ -62,6 +63,7 @@ type TemplateRow = {
   format: ListingFormat;
   body: string;
   title_format?: string | null;
+  field_map?: any;
 };
 
 export default function ListingFormats() {
@@ -103,6 +105,7 @@ export default function ListingFormats() {
             format: row.format,
             body: row.body || '',
             title_format: row.title_format ?? null,
+            field_map: row.field_map ?? null,
           };
         }
       });
@@ -136,6 +139,23 @@ export default function ListingFormats() {
   };
 
   const handleSave = async () => {
+    let fieldMap: any = undefined;
+    if (platform === 'shopify') {
+      const rows = (Array.isArray(current.field_map) ? current.field_map : []).filter((r: any) => r.key || r.value);
+      const bad = rows.find((r: any) => !validMetafieldKey(r.key));
+      if (bad) {
+        toast({ title: 'Check metafield keys', description: `"${bad.key || '(blank)'}" should look like namespace.key`, variant: 'destructive' });
+        return;
+      }
+      fieldMap = rows;
+    } else if (platform === 'squarespace') {
+      const m = current.field_map && !Array.isArray(current.field_map) ? current.field_map : {};
+      fieldMap = {
+        ...m,
+        tags: (m.tags ?? []).filter((t: string) => t.trim()),
+        categories: (m.categories ?? []).filter((t: string) => t.trim()),
+      };
+    }
     setSaving(true);
     const { data: userRes } = await supabase.auth.getUser();
     const { error } = await supabase
@@ -146,6 +166,7 @@ export default function ListingFormats() {
           format: current.format,
           body: current.body,
           ...(platform === 'ebay' ? { title_format: current.title_format?.trim() || null } : {}),
+          ...(fieldMap !== undefined ? { field_map: fieldMap } : {}),
           updated_by: userRes.user?.id ?? null,
           updated_at: new Date().toISOString(),
         },
@@ -286,6 +307,23 @@ export default function ListingFormats() {
                   </pre>
                 )}
               </div>
+
+              {p.value === 'shopify' && (
+                <ShopifyMetafieldEditor
+                  rows={Array.isArray(current.field_map) ? current.field_map : []}
+                  onChange={(rows) => updateCurrent({ field_map: rows })}
+                  bike={SAMPLE_BIKE}
+                  components={SAMPLE_COMPONENTS}
+                />
+              )}
+              {p.value === 'squarespace' && (
+                <SquarespaceMappingEditor
+                  map={current.field_map && !Array.isArray(current.field_map) ? current.field_map : {}}
+                  onChange={(m) => updateCurrent({ field_map: m })}
+                  bike={SAMPLE_BIKE}
+                  components={SAMPLE_COMPONENTS}
+                />
+              )}
 
               <div className="flex justify-end">
                 <Button onClick={handleSave} disabled={saving}>
