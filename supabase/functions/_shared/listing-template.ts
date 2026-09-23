@@ -199,7 +199,7 @@ export function renderListingHtml(
   components: any[] = [],
 ): string | null {
   if (!tpl) return null;
-  const rendered = renderTemplate(tpl.body || '', bike, components).trim();
+  const rendered = renderTemplate(tpl.body || '', bike, components, tpl.format === 'html' ? 'html' : 'text').trim();
   if (!rendered) return null;
   const html = tpl.format === 'html' ? rendered : textToHtml(rendered);
   const clean = sanitiseForEbay(html);

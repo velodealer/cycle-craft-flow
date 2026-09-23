@@ -263,7 +263,7 @@ export async function copyListing(
   if (!data) return { ok: false, reason: 'No template configured' };
   const tpl = data as any;
   const format: ListingFormat = tpl.format === 'html' ? 'html' : 'text';
-  const rendered = renderTemplate(tpl.body || '', bike, components);
+  const rendered = renderTemplate(tpl.body || '', bike, components, format);
 
   if (format === 'html') {
     // Put the raw HTML source on both text/html (for rich editors) and text/plain
