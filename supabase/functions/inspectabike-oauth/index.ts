@@ -10,6 +10,8 @@ import {
   redirectUri,
   webhookUrl,
   clientCredentials,
+  getAccessToken,
+  INSPECTABIKE_BASE_URL,
   IAB_AUTHORIZE_URL,
 } from '../_shared/inspectabike.ts';
 
@@ -43,6 +45,33 @@ const backToApp = (origin: string, params: Record<string, string>) => {
   const qs = new URLSearchParams({ tab: 'integrations', ...params });
   return new Response(null, { status: 302, headers: { Location: `${origin}/settings?${qs}` } });
 };
+
+/** Ask InspectABike for this dealer's signing key and store it. Never returns the value. */
+async function fetchWebhookSecret(supabase: ReturnType<typeof serviceClient>, businessId: string) {
+  const token = await getAccessToken(supabase, businessId);
+  const res = await fetch(`${INSPECTABIKE_BASE_URL}/partner-webhook-config`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ webhook_url: webhookUrl() }),
+  });
+  const text = await res.text();
+  let body: any = null;
+  try { body = text ? JSON.parse(text) : null; } catch { body = null; }
+  if (!res.ok) {
+    throw new Error(`InspectABike refused the signing key request [${res.status}]: ${(body?.error || body?.message || text).toString().slice(0, 200)}`);
+  }
+  const secret = body?.webhook_secret ?? body?.data?.webhook_secret;
+  if (!secret) {
+    console.log('partner-webhook-config returned no webhook_secret; keys:', Object.keys(body || {}));
+    throw new Error('InspectABike did not return a signing key');
+  }
+  const { error } = await supabase
+    .from('inspectabike_connections')
+    .update({ webhook_secret: String(secret) })
+    .eq('business_id', businessId);
+  if (error) throw new Error(error.message);
+  console.log('Stored InspectABike signing key for business', businessId);
+}
 
 async function profileFor(supabase: ReturnType<typeof serviceClient>, userId: string) {
   const { data, error } = await supabase
@@ -112,6 +141,11 @@ Deno.serve(async (req) => {
           { onConflict: 'business_id' },
         );
       if (upsertError) throw new Error(upsertError.message);
+
+      if (!tokens.webhook_secret) {
+        try { await fetchWebhookSecret(supabase, row.business_id); }
+        catch (e) { console.error('Signing key fetch after connect failed:', (e as Error).message); }
+      }
 
       return backToApp(origin, { inspectabike: 'connected' });
     } catch (e) {
@@ -188,6 +222,11 @@ Deno.serve(async (req) => {
       }).toString();
 
       return json({ url: authUrl.toString() });
+    }
+
+    if (action === 'fetch_webhook_secret') {
+      await fetchWebhookSecret(supabase, profile.business_id);
+      return json({ ok: true, has_webhook_secret: true });
     }
 
     if (action === 'disconnect') {
