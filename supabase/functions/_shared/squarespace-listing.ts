@@ -1,6 +1,6 @@
 // Builds Squarespace products from VeloDealer bikes and keeps squarespace_listings in step.
 import { accessToken, sqsFetch, businessIdForBike, type Client } from './squarespace.ts';
-import { loadListingTemplate, renderListingHtml, loadBikeComponents } from './listing-template.ts';
+import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMap, renderFieldValue } from './listing-template.ts';
 
 const BIKE_FIELDS = '*';
 
@@ -83,6 +83,29 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
   const desc = await description(supabase, bike, businessId);
   const photos = (bike.photos ?? []).filter((u: unknown) => typeof u === 'string' && /^https?:\/\//.test(u as string));
 
+  // Dealer field mapping: tags, categories, SEO and URL slug.
+  const extra: Record<string, unknown> = {};
+  let tags = [bike.make, bike.bike_type, bike.size].filter(Boolean).map(String);
+  let urlSlug = slug(bike);
+  try {
+    const map = await loadFieldMap(supabase, 'squarespace', businessId);
+    if (map && !Array.isArray(map)) {
+      const comps = await loadBikeComponents(supabase, bikeId);
+      const r = (t: unknown) => renderFieldValue(String(t ?? ''), bike, comps);
+      const list = (xs: unknown) => (Array.isArray(xs) ? xs.map(r).filter(Boolean).map((s) => s.slice(0, 80)) : []);
+      const mt = list(map.tags);
+      if (mt.length) tags = [...new Set(mt)];
+      const cats = list(map.categories);
+      if (cats.length) extra.categories = [...new Set(cats)];
+      const seoTitle = r(map.seo_title), seoDesc = r(map.seo_description);
+      if (seoTitle || seoDesc) extra.seoOptions = { ...(seoTitle ? { title: seoTitle.slice(0, 200) } : {}), ...(seoDesc ? { description: seoDesc.slice(0, 400) } : {}) };
+      const s = r(map.url_slug).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 120);
+      if (s) urlSlug = s;
+    }
+  } catch (e) {
+    console.error('Squarespace field mapping failed:', (e as Error).message);
+  }
+
   let productId: string = existing?.product_id;
   let variantId: string = existing?.variant_id;
   let url: string | null = existing?.url ?? null;
@@ -91,7 +114,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
     if (productId) {
       const p = await sqsFetch(token, `/1.0/commerce/products/${productId}`, {
         method: 'POST',
-        body: JSON.stringify({ name: title(bike), description: desc, isVisible: true }),
+        body: JSON.stringify({ name: title(bike), description: desc, isVisible: true, tags, urlSlug, ...extra }),
       });
       url = p?.url ?? url;
       if (variantId) {
@@ -108,9 +131,10 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
           storePageId: settings.store_page_id,
           name: title(bike),
           description: desc,
-          urlSlug: slug(bike),
+          urlSlug,
           isVisible: true,
-          tags: [bike.make, bike.bike_type, bike.size].filter(Boolean).map(String),
+          tags,
+          ...extra,
           variants: [{
             sku: bike.reference || bike.id,
             pricing: { basePrice: price },

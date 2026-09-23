@@ -5,6 +5,7 @@ import {
   type Client,
   type ShopifySettings,
 } from './shopify.ts';
+import { loadFieldMap, renderFieldValue, loadBikeComponents } from './listing-template.ts';
 
 export interface BikeRow {
   id: string;
@@ -125,6 +126,83 @@ async function setInventory(
   if (errors.length) throw new Error(errors.map((e: any) => e.message).join('; '));
 }
 
+const METAFIELD_TYPES = new Set(['single_line_text_field', 'multi_line_text_field', 'number_integer', 'number_decimal', 'boolean']);
+
+const DEFINITION_CREATE = `
+mutation velodealerMetafieldDefinition($definition: MetafieldDefinitionInput!) {
+  metafieldDefinitionCreate(definition: $definition) {
+    createdDefinition { id }
+    userErrors { field message code }
+  }
+}`;
+
+function coerce(type: string, value: string): string | null {
+  if (type === 'boolean') {
+    const v = value.toLowerCase();
+    if (['yes', 'true', '1'].includes(v)) return 'true';
+    if (['no', 'false', '0'].includes(v)) return 'false';
+    return null;
+  }
+  if (type === 'number_integer') {
+    const n = parseInt(value.replace(/[^0-9-]/g, ''), 10);
+    return Number.isFinite(n) ? String(n) : null;
+  }
+  if (type === 'number_decimal') {
+    const n = parseFloat(value.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(n) ? String(n) : null;
+  }
+  if (type === 'single_line_text_field') return value.replace(/\s*\n\s*/g, ' ').slice(0, 255);
+  return value;
+}
+
+/** Renders the dealer's Shopify metafield mapping for a bike and ensures definitions exist. */
+async function buildMetafields(
+  supabase: Client,
+  settings: ShopifySettings & { shop_domain: string; access_token: string },
+  bikeId: string,
+): Promise<{ metafields: any[]; warnings: string[] }> {
+  const warnings: string[] = [];
+  try {
+    const { data: full } = await supabase.from('bikes').select('*').eq('id', bikeId).maybeSingle();
+    if (!full) return { metafields: [], warnings };
+    const map = await loadFieldMap(supabase, 'shopify', (full as any).business_id);
+    const rows = Array.isArray(map) ? map : [];
+    if (!rows.length) return { metafields: [], warnings };
+    const comps = await loadBikeComponents(supabase, bikeId);
+    const metafields: any[] = [];
+    for (const r of rows) {
+      const [namespace, ...rest] = String(r?.key ?? '').split('.');
+      const key = rest.join('.');
+      const type = METAFIELD_TYPES.has(r?.type) ? r.type : 'single_line_text_field';
+      if (!namespace || !key) continue;
+      const raw = renderFieldValue(String(r?.value ?? ''), full, comps);
+      if (!raw) continue;
+      const value = coerce(type, raw);
+      if (value == null) { warnings.push(`${r.key}: "${raw}" isn't a valid ${type}`); continue; }
+      metafields.push({ namespace, key, type, value });
+    }
+    for (const m of metafields) {
+      try {
+        const d = await shopifyGraphql(settings, DEFINITION_CREATE, {
+          definition: {
+            name: m.key.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+            namespace: m.namespace, key: m.key, type: m.type, ownerType: 'PRODUCT',
+          },
+        });
+        const errs = d?.metafieldDefinitionCreate?.userErrors ?? [];
+        const real = errs.filter((e: any) => e.code !== 'TAKEN');
+        if (real.length) warnings.push(`${m.namespace}.${m.key}: ${real.map((e: any) => e.message).join('; ')}`);
+      } catch (e) {
+        console.error('Metafield definition failed:', (e as Error).message);
+      }
+    }
+    return { metafields, warnings };
+  } catch (e) {
+    warnings.push(`Metafield mapping failed: ${(e as Error).message}`);
+    return { metafields: [], warnings };
+  }
+}
+
 /** Creates or updates the Shopify product for a bike. quantity 1 = for sale, 0 = sold out. */
 export async function pushBikeToShopify(
   supabase: Client,
@@ -142,6 +220,8 @@ export async function pushBikeToShopify(
 
   const images = (bike.photos ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).slice(0, 10);
 
+  const { metafields, warnings } = await buildMetafields(supabase, settings, bike.id);
+
   const input: Record<string, unknown> = {
     title: bikeTitle(bike),
     descriptionHtml: bikeDescriptionHtml(bike),
@@ -158,14 +238,21 @@ export async function pushBikeToShopify(
       },
     ],
   };
+  if (metafields.length) input.metafields = metafields;
   if (existingProductId) {
     input.id = existingProductId;
   } else if (images.length) {
     input.files = images.map((src) => ({ originalSource: src, contentType: 'IMAGE' }));
   }
 
-  const data = await shopifyGraphql(settings, PRODUCT_SET, { input });
-  const errors = data?.productSet?.userErrors ?? [];
+  let data = await shopifyGraphql(settings, PRODUCT_SET, { input });
+  let errors = data?.productSet?.userErrors ?? [];
+  if (errors.length && metafields.length && errors.some((e: any) => JSON.stringify(e.field ?? '').includes('metafields'))) {
+    warnings.push(`Metafields skipped: ${errors.map((e: any) => e.message).join('; ')}`);
+    delete input.metafields;
+    data = await shopifyGraphql(settings, PRODUCT_SET, { input });
+    errors = data?.productSet?.userErrors ?? [];
+  }
   if (errors.length) throw new Error(errors.map((e: any) => e.message).join('; '));
 
   const product = data.productSet.product;
@@ -192,7 +279,7 @@ export async function pushBikeToShopify(
     status: quantity > 0 ? 'listed' : 'sold_out',
     quantity,
     last_synced_at: new Date().toISOString(),
-    last_error: null,
+    last_error: warnings.length ? `Listed, with warnings: ${warnings.join(' | ')}`.slice(0, 500) : null,
   });
 
   return { productId: product.id, url: product.onlineStoreUrl ?? adminUrl };

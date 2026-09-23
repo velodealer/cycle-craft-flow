@@ -209,6 +209,26 @@ export function renderListingHtml(
   return clean || null;
 }
 
+/** Renders a mapping value template as trimmed plain text (HTML stripped). */
+export function renderFieldValue(template: string, bike: any, components: any[] = []): string {
+  return renderTemplate(String(template ?? ''), bike, components)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
+/** Loads the dealer's field mapping (Settings -> Listing Formats) for a platform. */
+export async function loadFieldMap(supabase: any, platform: string, businessId?: string | null): Promise<any> {
+  const { data, error } = await supabase
+    .from('listing_templates')
+    .select('field_map, business_id')
+    .eq('platform', platform);
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const own = businessId ? data.find((r: any) => r.business_id === businessId) : null;
+  return (own || data.find((r: any) => !r.business_id) || null)?.field_map ?? null;
+}
+
 /** Fitted components for the template's {components} token. */
 export async function loadBikeComponents(supabase: any, bikeId: string): Promise<any[]> {
   const { data, error } = await supabase

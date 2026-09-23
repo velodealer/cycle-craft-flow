@@ -1,0 +1,1 @@
+ALTER TABLE public.listing_templates ADD COLUMN IF NOT EXISTS field_map jsonb NOT NULL DEFAULT '[]'::jsonb;
