@@ -3,7 +3,7 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { functionErrorMessage, functionFieldIssues } from '@/services/inspectabike';
+import { functionErrorMessage, functionFieldIssues, inspectionOpenUrl } from '@/services/inspectabike';
 import MissingBikeInfoDialog, { FieldIssue } from '@/components/bike/MissingBikeInfoDialog';
 import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
 import { StageFlap } from '@/components/velo/StageFlap';
@@ -74,7 +74,7 @@ export default function InspectionPage() {
         if (issues) { setFixBike({ bike, issues }); setStartingBikeId(null); return; }
         throw new Error(await functionErrorMessage(error, data));
       }
-      const inspectionUrl = data?.inspection?.report_url;
+      const inspectionUrl = inspectionOpenUrl(data?.inspection);
       if (!inspectionUrl) throw new Error('InspectABike did not return an inspection link');
       window.location.assign(inspectionUrl);
     } catch (error: any) {

@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw, Pencil } from 'lucide-react';
 import InspectionFaults from './InspectionFaults';
 import EditInspectABikeLinkDialog from './EditInspectABikeLinkDialog';
-import { functionErrorMessage, functionFieldIssues } from '@/services/inspectabike';
+import { functionErrorMessage, functionFieldIssues, inspectionOpenUrl } from '@/services/inspectabike';
 import MissingBikeInfoDialog, { FieldIssue } from './MissingBikeInfoDialog';
 
 
@@ -272,15 +272,15 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
             </div>
           )}
 
-          {inspection.report_url && (
+          {inspection.report_url && inspectionOpenUrl(inspection) && (
             <a
-              href={inspection.report_url}
+              href={inspectionOpenUrl(inspection)!}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm text-primary underline break-all"
             >
               <ExternalLink className="h-4 w-4" />
-              Open inspection report
+              {String(inspection.status).toLowerCase() === 'completed' ? 'Open inspection report' : 'Continue inspection'}
             </a>
           )}
 
@@ -321,12 +321,12 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
           {readOnly ? (
             inspection.report_url ? (
               <a
-                href={inspection.report_url}
+                href={inspectionOpenUrl(inspection) ?? inspection.report_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-sm text-primary underline break-all"
               >
-                {inspection.report_url}
+                {inspectionOpenUrl(inspection) ?? inspection.report_url}
               </a>
             ) : (
               <p className="text-sm text-muted-foreground">No report link recorded</p>
