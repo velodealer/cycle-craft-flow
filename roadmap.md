@@ -9,3 +9,10 @@
 - [x] Phase 7 pre-publish checklist
 - [x] Docs update
 - [ ] Blocked on user: reconnect eBay (current sign-in has expired; also grants promotion permission)
+
+## Checkpoint 2 additions (2026-09-24)
+- [ ] {model} family de-dup ("Émonda Émonda SL 6 Pro Di2") + backfill; share de-dup rule with part parser ("Bontrager Bontrager")
+- [ ] Report why {condition}, {condition_notes}, {description}, {sku} are empty (data vs mapping vs elsewhere)
+- [ ] 2.6: clear bike_components.notes that merely duplicate components.description
+- [ ] bikes.mpn from 99spokes model code
+- [ ] Then: eBay Taxonomy getItemAspectsForCategory for Brand/MPN + full aspect set
