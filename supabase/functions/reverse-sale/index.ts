@@ -130,7 +130,8 @@ Deno.serve(async (req) => {
 
     for (const inv of invoices) {
       if (inv.part_exchange_bike_id) {
-        await supabase.from('bikes').update({ part_exchange_invoice_id: null }).eq('id', inv.part_exchange_bike_id);
+        const { error: unlinkErr } = await supabase.from('bikes').update({ part_exchange_invoice_id: null }).eq('id', inv.part_exchange_bike_id);
+        if (unlinkErr) throw new Error(unlinkErr.message);
       }
       const { error } = await supabase.from('invoices').delete().eq('id', inv.id);
       if (error) throw new Error(error.message);
