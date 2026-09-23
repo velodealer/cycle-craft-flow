@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { functionErrorMessage } from '@/services/inspectabike';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,8 +34,10 @@ const FILTERS = [
   { value: 'all', label: 'All' },
 ];
 
+const isDone = (status: string) => status === 'complete' || status === 'completed';
+
 const statusLabel = (status: string) =>
-  status === 'complete' ? 'Done' : status === 'in_progress' ? 'In progress' : 'Pending';
+  isDone(status) ? 'Done' : status === 'in_progress' ? 'In progress' : 'Pending';
 
 const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—';
@@ -67,7 +70,8 @@ export default function JobsPage() {
 
   const visible = useMemo(() => {
     if (filter === 'all') return jobs;
-    if (filter === 'open') return jobs.filter((j) => j.status !== 'complete');
+    if (filter === 'open') return jobs.filter((j) => !isDone(j.status));
+    if (filter === 'complete') return jobs.filter((j) => isDone(j.status));
     return jobs.filter((j) => j.status === filter);
   }, [jobs, filter]);
 
