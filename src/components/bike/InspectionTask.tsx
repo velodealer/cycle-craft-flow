@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ClipboardCheck, ExternalLink, Save, CheckCircle, Send, RefreshCw, Pencil } from 'lucide-react';
 import InspectionFaults from './InspectionFaults';
 import EditInspectABikeLinkDialog from './EditInspectABikeLinkDialog';
+import { functionErrorMessage } from '@/services/inspectabike';
 
 
 interface InspectionTaskProps {
@@ -101,11 +102,11 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke(name, { body: { bike_id: bike.id } });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      if (error || (data as any)?.error) throw new Error(await functionErrorMessage(error, data));
       await loadInspection();
       onUpdate();
       toast({ title: successTitle, description: successDescription });
+      if ((data as any)?.warning) toast({ title: 'Check InspectABike', description: (data as any).warning, variant: 'destructive' });
     } catch (e: any) {
       toast({ title: 'InspectABike error', description: e.message, variant: 'destructive' });
     } finally {

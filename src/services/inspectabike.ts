@@ -49,3 +49,13 @@ export async function ensureInspectionQuietly(bikeId: string): Promise<void> {
     console.warn('Automatic InspectABike inspection skipped:', e);
   }
 }
+
+/** Pull the real error message out of an edge function failure. */
+export async function functionErrorMessage(error: any, data?: any): Promise<string> {
+  if (data?.error) return String(data.error);
+  try {
+    const body = await error?.context?.json?.();
+    if (body?.error) return String(body.error);
+  } catch { /* ignore */ }
+  return error?.message || 'InspectABike request failed';
+}

@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/activity';
+import { functionErrorMessage } from '@/services/inspectabike';
 
 const schema = z.object({
   report_url: z.string().trim().max(500).refine((v) => {
@@ -88,9 +89,11 @@ export default function EditInspectABikeLinkDialog({ open, onOpenChange, bikeId,
         if (error || (data as any)?.error) {
           toast({
             title: 'Link saved, refresh failed',
-            description: (data as any)?.error || error?.message || 'Could not pull results from InspectABike',
+            description: await functionErrorMessage(error, data),
             variant: 'destructive',
           });
+        } else if ((data as any)?.warning) {
+          toast({ title: 'Link saved', description: (data as any).warning, variant: 'destructive' });
         } else {
           toast({ title: 'Link saved', description: 'Latest results pulled from InspectABike.' });
         }
