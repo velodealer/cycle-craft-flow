@@ -11,6 +11,7 @@ import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
+import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 interface Props {
   open: boolean;
