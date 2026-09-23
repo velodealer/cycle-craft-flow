@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Globe, ChevronLeft, ChevronRight, ExternalLink, CheckCircle2, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { listBikeOnEbay, getEbayStatus, type EbayStatus } from '@/services/ebay';
+import { listBikeOnSquarespace, getSquarespaceStatus, type SquarespaceStatus } from '@/services/squarespace';
 import { listBikeOnShopify, getShopifyStatus, type ShopifyStatus, type ShopifyListing } from '@/services/shopify';
 
 interface Bike {
@@ -40,9 +41,12 @@ interface PlatformRow {
   last_error: string | null;
 }
 
+type Platform = 'ebay' | 'shopify' | 'squarespace';
+
 interface BikeWithPlatforms extends Bike {
   ebay: PlatformRow | null;
   shopify: PlatformRow | null;
+  squarespace: PlatformRow | null;
 }
 
 const PAGE_SIZE = 25;
@@ -55,6 +59,7 @@ export default function ListingsPage() {
   const [bikes, setBikes] = useState<BikeWithPlatforms[]>([]);
   const [ebayStatus, setEbayStatus] = useState<EbayStatus | null>(null);
   const [shopifyStatus, setShopifyStatus] = useState<ShopifyStatus | null>(null);
+  const [sqsStatus, setSqsStatus] = useState<SquarespaceStatus | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [listingIds, setListingIds] = useState<Set<string>>(new Set());
@@ -76,7 +81,7 @@ export default function ListingsPage() {
         const rows = (bikeRows as Bike[]) || [];
 
         const ids = rows.map((b) => b.id);
-        const [ebayRows, shopifyRows, ebaySt, shopifySt] = await Promise.all([
+        const [ebayRows, shopifyRows, ebaySt, shopifySt, sqsRows, sqsSt] = await Promise.all([
           ids.length
             ? supabase
                 .from('ebay_listings')
@@ -91,6 +96,10 @@ export default function ListingsPage() {
             : Promise.resolve({ data: [], error: null } as any),
           getEbayStatus().catch(() => null),
           getShopifyStatus().catch(() => null),
+          ids.length
+            ? (supabase as any).from('squarespace_listings').select('bike_id, url, status, last_synced_at, last_error').in('bike_id', ids)
+            : Promise.resolve({ data: [], error: null } as any),
+          getSquarespaceStatus().catch(() => null),
         ]);
         if (ebayRows.error) throw ebayRows.error;
         if (shopifyRows.error) throw shopifyRows.error;
@@ -118,15 +127,20 @@ export default function ListingsPage() {
           }),
         );
 
+        const sqsById = new Map<string, PlatformRow>();
+        ((sqsRows?.data as any[]) || []).forEach((r) => sqsById.set(r.bike_id, r as PlatformRow));
+
         setBikes(
           rows.map((b) => ({
             ...b,
             ebay: ebayById.get(b.id) ?? null,
             shopify: shopifyById.get(b.id) ?? null,
+            squarespace: sqsById.get(b.id) ?? null,
           })),
         );
         setEbayStatus(ebaySt);
         setShopifyStatus(shopifySt);
+        setSqsStatus(sqsSt);
       } catch (error: any) {
         toast({ title: 'Error loading listings', description: error.message, variant: 'destructive' });
       } finally {
@@ -169,18 +183,20 @@ export default function ListingsPage() {
   const ebayNeedsReconnect = ebayConnected && !!ebayStatus?.needs_reconnect;
   const ebaySandbox = ebayConnected && ebayStatus?.environment === 'sandbox';
   const shopifyConnected = !!shopifyStatus?.connected;
-  const anyConnected = ebayConnected || shopifyConnected;
+  const sqsConnected = !!sqsStatus?.connected;
+  const anyConnected = ebayConnected || shopifyConnected || sqsConnected;
 
-  const isBusy = (bikeId: string, platform: 'ebay' | 'shopify') => listingIds.has(`${bikeId}:${platform}`);
+  const isBusy = (bikeId: string, platform: Platform) => listingIds.has(`${bikeId}:${platform}`);
 
   const listTargets = (bike: BikeWithPlatforms) => {
-    const targets: { platform: 'ebay' | 'shopify' }[] = [];
+    const targets: { platform: Platform }[] = [];
     if (ebayConnected && !isActive(bike.ebay)) targets.push({ platform: 'ebay' });
     if (shopifyConnected && !isActive(bike.shopify)) targets.push({ platform: 'shopify' });
+    if (sqsConnected && !isActive(bike.squarespace)) targets.push({ platform: 'squarespace' });
     return targets;
   };
 
-  const applyResult = (bikeId: string, platform: 'ebay' | 'shopify', url: string | null) => {
+  const applyResult = (bikeId: string, platform: Platform, url: string | null) => {
     setBikes((prev) =>
       prev.map((b) =>
         b.id === bikeId
@@ -207,12 +223,12 @@ export default function ListingsPage() {
       return next;
     });
 
-  const labelOf = (p: 'ebay' | 'shopify') => (p === 'ebay' ? 'eBay' : 'Shopify');
+  const labelOf = (p: Platform) => (p === 'ebay' ? 'eBay' : p === 'shopify' ? 'Shopify' : 'Squarespace');
 
   // Lists (or, when already live, updates) a bike on one platform. Returns an error message or null.
   const listOn = async (
     bike: BikeWithPlatforms,
-    platform: 'ebay' | 'shopify',
+    platform: Platform,
     opts: { quiet?: boolean; sync?: boolean } = {},
   ): Promise<string | null> => {
     const key = `${bike.id}:${platform}`;
@@ -228,6 +244,10 @@ export default function ListingsPage() {
             ? { title: `${done}, with notes`, description: res.warnings.join(' ') }
             : { title: done, description: `${bike.make} ${bike.model} is ${opts.sync ? 'up to date' : 'now live'}.` });
         }
+      } else if (platform === 'squarespace') {
+        const res = await listBikeOnSquarespace(bike.id);
+        applyResult(bike.id, 'squarespace', res.url ?? bike.squarespace?.url ?? null);
+        if (!opts.quiet) toast({ title: done, description: `${bike.make} ${bike.model} is ${opts.sync ? 'up to date' : 'now live'}.` });
       } else {
         const res = await listBikeOnShopify(bike.id);
         applyResult(bike.id, 'shopify', res.url ?? bike.shopify?.url ?? null);
@@ -243,7 +263,7 @@ export default function ListingsPage() {
     }
   };
 
-  const handleList = async (bike: BikeWithPlatforms, only?: ('ebay' | 'shopify')[]) => {
+  const handleList = async (bike: BikeWithPlatforms, only?: (Platform)[]) => {
     const targets = listTargets(bike).filter((t) => !only || only.includes(t.platform));
     for (const { platform } of targets) {
       await listOn(bike, platform);
@@ -251,9 +271,10 @@ export default function ListingsPage() {
   };
 
   const liveTargets = (bike: BikeWithPlatforms) => {
-    const t: ('ebay' | 'shopify')[] = [];
+    const t: (Platform)[] = [];
     if (ebayConnected && isActive(bike.ebay)) t.push('ebay');
     if (shopifyConnected && isActive(bike.shopify)) t.push('shopify');
+    if (sqsConnected && isActive(bike.squarespace)) t.push('squarespace');
     return t;
   };
 
@@ -291,7 +312,7 @@ export default function ListingsPage() {
   const runListAll = () => runBulk('list');
   const runSyncAll = () => runBulk('sync');
 
-  const renderPlatformButton = (bike: BikeWithPlatforms, platform: 'ebay' | 'shopify') => {
+  const renderPlatformButton = (bike: BikeWithPlatforms, platform: Platform) => {
     const row = bike[platform];
     const live = isActive(row);
     const busyP = isBusy(bike.id, platform);
@@ -373,6 +394,20 @@ export default function ListingsPage() {
         );
       }
     }
+    if (isActive(bike.squarespace)) {
+      badges.push(
+        bike.squarespace!.url ? (
+          <a key="sqs" href={bike.squarespace!.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20">
+            Squarespace <ExternalLink className="h-3 w-3" />
+          </a>
+        ) : (
+          <Badge key="sqs" variant="default">Squarespace</Badge>
+        ),
+      );
+    } else if (bike.squarespace?.status === 'sold_out') {
+      badges.push(<Badge key="sqs" variant="outline" className="text-muted-foreground">Squarespace · sold out</Badge>);
+    }
     if (bike.ebay?.last_error && !isActive(bike.ebay)) {
       badges.push(
         <Badge key="ebay-err" variant="destructive">eBay error</Badge>,
@@ -451,7 +486,7 @@ export default function ListingsPage() {
         <CardContent>
           {!anyConnected && (
             <p className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-              Neither eBay nor Shopify is connected. Connect a platform under Settings → Integrations to list bikes.
+              No selling site (eBay, Shopify or Squarespace) is connected. Connect a platform under Settings → Integrations to list bikes.
             </p>
           )}
           {ebayNeedsReconnect && (
@@ -507,6 +542,7 @@ export default function ListingsPage() {
                       <div className="flex flex-wrap gap-2">
                         {ebayConnected && renderPlatformButton(bike, 'ebay')}
                         {shopifyConnected && renderPlatformButton(bike, 'shopify')}
+                        {sqsConnected && renderPlatformButton(bike, 'squarespace')}
                       </div>
                       {liveTargets(bike).length > 0 && (
                         <Button
