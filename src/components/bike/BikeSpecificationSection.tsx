@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import ComponentPicker from '@/components/components/ComponentPicker';
 import ComponentAttributes from '@/components/components/ComponentAttributes';
+import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 import StripComponentDialog from './StripComponentDialog';
 import { PackageMinus, Sparkles } from 'lucide-react';
@@ -38,22 +39,21 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
   const [spokesOpen, setSpokesOpen] = useState(false);
 
-  const reloadComponents = () => {
+  const reloadComponents = async () => {
     if (!bike?.id) return;
-    supabase
-      .from('bike_components')
-      .select('slot, component_id, notes, components(brand, model, mpn, weight_g, description, attributes)')
-      .eq('bike_id', bike.id)
-      .then(({ data }) => {
-        const map: Record<string, string> = {};
-        const details: Record<string, any> = {};
-        (data || []).forEach((r: any) => {
-          map[r.slot] = r.component_id;
-          details[r.slot] = { ...(r.components || {}), notes: r.notes };
-        });
-        setBikeComponents(map);
-        setComponentDetails(details);
+    try {
+      const parts = await fetchBikeComponents(supabase, bike.id);
+      const map: Record<string, string> = {};
+      const details: Record<string, any> = {};
+      parts.forEach((p) => {
+        if (p.component_id) map[p.slot] = p.component_id;
+        details[p.slot] = p;
       });
+      setBikeComponents(map);
+      setComponentDetails(details);
+    } catch (e) {
+      toast({ title: 'Fitted parts could not be loaded', description: (e as Error).message, variant: 'destructive' });
+    }
   };
 
 

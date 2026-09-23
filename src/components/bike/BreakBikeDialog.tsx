@@ -11,6 +11,7 @@ import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
+import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 interface Props {
   open: boolean;
@@ -67,11 +68,22 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
   const [groupCockpit, setGroupCockpit] = useState(false);
 
   const load = useCallback(async () => {
-    const [{ data: comps }, { data: parts }, { data: jobs }] = await Promise.all([
-      supabase.from('bike_components').select('id, slot, notes, component:components(id, brand, model, description)').eq('bike_id', bike.id),
-      supabase.from('parts').select('*').eq('bike_id', bike.id),
-      supabase.from('jobs').select('actual_cost, estimated_cost').eq('bike_id', bike.id),
-    ]);
+    let comps: Awaited<ReturnType<typeof fetchBikeComponents>>;
+    let parts: any[] | null, jobs: any[] | null;
+    try {
+      const [c, p, j] = await Promise.all([
+        fetchBikeComponents(supabase, bike.id),
+        supabase.from('parts').select('*').eq('bike_id', bike.id),
+        supabase.from('jobs').select('actual_cost, estimated_cost').eq('bike_id', bike.id),
+      ]);
+      // Costs drive the break-even split — a failed read must not look like £0.
+      if (p.error) throw new Error(`Could not load parts: ${p.error.message}`);
+      if (j.error) throw new Error(`Could not load jobs: ${j.error.message}`);
+      comps = c; parts = p.data; jobs = j.data;
+    } catch (e) {
+      toast({ title: 'Could not load this bike', description: (e as Error).message, variant: 'destructive' });
+      return;
+    }
 
     const partsCost = (parts || []).reduce((s, p: any) => s + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1), 0);
     const jobsCost = (jobs || []).reduce((s, j: any) => s + Number(j.actual_cost ?? j.estimated_cost ?? 0), 0);
@@ -80,13 +92,13 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     const delivery = Number(bike.delivery_cost ?? 0);
     setBikeTotalCost(acquisition + collection + delivery + partsCost + jobsCost);
 
-    const cRows: ComponentRow[] = (comps || []).map((c: any) => ({
+    const cRows: ComponentRow[] = comps.map((c) => ({
       kind: 'component',
-      id: c.id,
+      id: c.id as string,
       slot: c.slot,
       label: slotLabelMap[c.slot] || c.slot,
-      brand: c.component?.brand,
-      description: [c.component?.brand, c.component?.model].filter(Boolean).join(' ') || c.component?.description || c.slot,
+      brand: c.brand ?? undefined,
+      description: [c.brand, c.model].filter(Boolean).join(' ') || c.description || c.slot,
     }));
     const pRows: PartRow[] = (parts || []).map((p: any) => ({
       kind: 'part',

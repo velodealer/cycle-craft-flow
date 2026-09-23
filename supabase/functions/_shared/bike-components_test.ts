@@ -1,18 +1,26 @@
 import { assert, assertEquals, assertRejects } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { fetchBikeComponents, BIKE_COMPONENTS_SELECT, isPartsFetchError } from './bike-components.ts';
 import { renderTemplate } from './listing-template.ts';
+import { resolvePart } from './fitted-part.ts';
 
 // Real columns of public.components (checked 2026-09-23). The fake client rejects any
 // embedded column not in this list with PostgREST's 42703 — exactly what hit production.
 const COMPONENT_COLUMNS = new Set(['id', 'category_id', 'brand', 'model', 'mpn', 'description', 'weight_g', 'attributes', 'created_at', 'updated_at', 'business_id']);
 
+const BC_COLUMNS = new Set(['id', 'component_id', 'slot', 'notes', 'brand', 'model', 'mpn', 'attributes', 'spec_overrides', 'bike_id', 'created_at', 'business_id', 'position']);
+
 function fakeClient(rows: any[]) {
   return {
-    from: () => ({
+    from: (table: string) => table === 'slot_categories'
+      ? ({ select: async () => ({ data: [{ slot: 'wheelset', category_slug: 'wheels', position: null, label: 'Wheelset', sort_order: 50 }], error: null }) })
+      : ({
       select: (sel: string) => ({
         eq: async () => {
           const inner = sel.match(/components\(([^()]*(?:\([^)]*\))?[^()]*)\)/)?.[1] ?? '';
           const cols = inner.replace(/\w+\([^)]*\)/g, '').split(',').map((s) => s.trim()).filter(Boolean);
+          const outer = sel.replace(/components\((?:[^()]|\([^)]*\))*\)/, '').split(',').map((x) => x.trim()).filter(Boolean);
+          const badOuter = outer.find((c) => !BC_COLUMNS.has(c));
+          if (badOuter) return { data: null, error: { code: '42703', message: `column bike_components.${badOuter} does not exist` } };
           const bad = cols.find((c) => !COMPONENT_COLUMNS.has(c));
           if (bad) return { data: null, error: { code: '42703', message: `column components_1.${bad} does not exist` } };
           return { data: rows, error: null };
@@ -40,7 +48,7 @@ Deno.test('regression: known fitted parts render non-empty part tokens', async (
 Deno.test('a failed fetch throws PartsFetchError, never []', async () => {
   const broken = fakeClient(ROWS);
   const orig = broken.from;
-  broken.from = () => ({ select: () => orig().select('slot, components(name, brand)') }) as any;
+  broken.from = (t: string) => (t === 'slot_categories' ? orig(t) : ({ select: () => orig(t).select('slot, components(name, brand)') })) as any;
   const err = await assertRejects(() => fetchBikeComponents(broken, 'bike-1'));
   assert(isPartsFetchError(err));
   assert(String((err as Error).message).includes('42703'));
@@ -65,4 +73,20 @@ Deno.test({
     const out = renderTemplate('{part_shifters}|{part_crank}|{part_wheelset}', bike, parts);
     assert(out.split('|').every((v) => v.trim().length > 0), out);
   },
+});
+
+Deno.test('resolver: override wins, library is the fallback, attributes merge', () => {
+  const lib = { brand: 'Bontrager', model: 'Bontrager', mpn: null, weight_g: 250, description: 'd', attributes: { width: '25c', tpi: 60 }, component_categories: { name: 'Tyres' } };
+  const none = resolvePart({ slot: 'front_tyre', components: lib });
+  assertEquals([none.brand, none.model, none.mpn, none.overridden], ['Bontrager', 'Bontrager', null, []]);
+  const ov = resolvePart({ slot: 'front_tyre', brand: '', model: 'R2 Hard-Case Lite', mpn: 'W123', attributes: { width: '28c' }, components: lib });
+  assertEquals([ov.brand, ov.model, ov.mpn], ['Bontrager', 'R2 Hard-Case Lite', 'W123']);
+  assertEquals(ov.attributes, { width: '28c', tpi: 60 });
+  assertEquals([...ov.overridden].sort(), ['attributes', 'model', 'mpn']);
+});
+
+Deno.test('resolver output with no overrides renders identically to library values', async () => {
+  const parts = await fetchBikeComponents(fakeClient(ROWS), 'bike-1');
+  assertEquals(parts[1].slot_title, 'Wheelset');
+  assertEquals(renderTemplate('{part_wheelset}', {}, parts), 'Bontrager Aeolus Elite');
 });
