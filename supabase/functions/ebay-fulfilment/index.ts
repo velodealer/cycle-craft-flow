@@ -29,8 +29,9 @@ Deno.serve(async (req) => {
   if (!parsed.success) return json({ error: 'Enter a carrier and a tracking number.' }, 400);
   const { order_row_id, carrier, tracking_number } = parsed.data;
 
-  const { data: row } = await supabase
+  const { data: row, error: rowErr } = await supabase
     .from('ebay_orders').select('*').eq('id', order_row_id).eq('business_id', businessId).maybeSingle();
+  if (rowErr) return json({ error: `Could not load the order: ${rowErr.message}` }, 500);
   if (!row) return json({ error: 'Order not found' }, 404);
   const r = row as any;
 
@@ -49,9 +50,11 @@ Deno.serve(async (req) => {
         trackingNumber: tracking_number.replace(/\s+/g, ''),
       }),
     });
-    await supabase.from('ebay_orders').update({
+    const { error: upErr } = await supabase.from('ebay_orders').update({
       status: 'despatched', carrier, tracking_number, despatched_at: new Date().toISOString(),
     }).eq('id', order_row_id);
+    // eBay already has the tracking; say so plainly so nobody re-submits it.
+    if (upErr) return json({ error: `Marked despatched on eBay, but VeloDealer could not record it: ${upErr.message}. Do not resubmit.` }, 500);
     if (r.bike_id) {
       await logBikeActivity(r.bike_id, {
         kind: 'listing',

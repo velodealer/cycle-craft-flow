@@ -925,5 +925,9 @@ export async function deleteEbayListing(supabase: Client, bikeId: string): Promi
 
 /** Records a failure against the bike's listing without throwing. */
 export async function recordListingError(supabase: Client, bikeId: string, message: string) {
-  await upsertListing(supabase, bikeId, { last_error: message.slice(0, 500) });
+  try {
+    await upsertListing(supabase, bikeId, { last_error: message.slice(0, 500) });
+  } catch (e) {
+    console.error('Could not record eBay listing error:', (e as Error).message); // deliberate: already on an error path
+  }
 }

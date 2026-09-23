@@ -301,7 +301,8 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       if (invoiceError) throw invoiceError;
 
       if (partExBikeId) {
-        await supabase.from('bikes').update({ part_exchange_invoice_id: invoice.id }).eq('id', partExBikeId);
+        const { error: pxLinkErr } = await supabase.from('bikes').update({ part_exchange_invoice_id: invoice.id }).eq('id', partExBikeId);
+        if (pxLinkErr) throw pxLinkErr;
       }
 
       const absorbedDelivery = fulfilment === 'delivery' && !chargeDelivery ? Number(deliveryCharge) || 0 : 0;

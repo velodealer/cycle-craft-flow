@@ -41,8 +41,10 @@ async function syncBusiness(supabase: Client, businessId: string) {
       const sku = String(li.sku ?? '');
       let bikeId: string | null = null;
       if (sku) {
-        const { data: listing } = await supabase
+        const { data: listing, error: lErr } = await supabase
           .from('ebay_listings').select('bike_id').eq('business_id', businessId).eq('sku', sku).maybeSingle();
+        // Must throw: the order row below is insert-once, so a bikeless insert would never be retried.
+        if (lErr) throw new Error(`Could not match eBay order ${orderId} to a bike: ${lErr.message}`);
         bikeId = (listing as any)?.bike_id ?? null;
       }
       const total = Number(li.total?.value ?? li.lineItemCost?.value ?? order.pricingSummary?.total?.value ?? 0);
@@ -69,17 +71,20 @@ async function syncBusiness(supabase: Client, businessId: string) {
       processed++;
       if (!bikeId) continue;
 
-      const { data: bike } = await supabase
+      const { data: bike, error: bErr } = await supabase
         .from('bikes').select('id, status, make, model, reference').eq('id', bikeId).maybeSingle();
+      if (bErr) console.error(`SALE NOT APPLIED: eBay order ${orderId} recorded but bike ${bikeId} could not be loaded: ${bErr.message}`);
       if (!bike) continue;
       if ((bike as any).status !== 'sold') {
-        await supabase.from('bikes').update({
+        const { error: soldErr } = await supabase.from('bikes').update({
           status: 'sold',
           sale_price: total,
           sold_at: order.creationDate ?? new Date().toISOString(),
         }).eq('id', bikeId);
+        if (soldErr) console.error(`SALE NOT APPLIED: eBay order ${orderId} recorded but bike ${bikeId} not marked sold: ${soldErr.message}`);
       }
-      await supabase.from('ebay_listings').update({ status: 'sold', quantity: 0, updated_at: new Date().toISOString() }).eq('bike_id', bikeId);
+      const { error: elErr } = await supabase.from('ebay_listings').update({ status: 'sold', quantity: 0, updated_at: new Date().toISOString() }).eq('bike_id', bikeId);
+      if (elErr) console.error(`eBay listing ${bikeId} not marked sold: ${elErr.message}`);
       try { await markBikeSoldOut(supabase, bikeId); } catch (e) { console.warn('Shopify sold-out failed:', (e as Error).message); }
 
       const name = [(bike as any).reference, (bike as any).make, (bike as any).model].filter(Boolean).join(' ');

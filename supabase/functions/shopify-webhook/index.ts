@@ -40,11 +40,12 @@ async function findOrCreateCustomer(supabase: Client, order: any, businessId: st
   const email = customer.email || order?.email || null;
 
   if (email) {
-    const { data: existing } = await supabase
+    const { data: existing, error: exErr } = await supabase
       .from('external_owners')
       .select('id')
       .eq('email', email)
       .maybeSingle();
+    if (exErr) throw new Error(`Could not look up customer ${email}: ${exErr.message}`);
     if (existing) return (existing as { id: string }).id;
   }
 
@@ -152,13 +153,15 @@ async function handleOrderReversed(supabase: Client, order: any) {
   for (const { bike } of matches) {
     if (bike.status !== 'sold') continue;
 
-    const { data: invoice } = await supabase
+    const { data: invoice, error: invErr } = await supabase
       .from('invoices')
       .select('id, quickbooks_invoice_id')
       .eq('bike_id', bike.id)
       .eq('type', 'sale')
       .order('created_at', { ascending: false })
       .maybeSingle();
+    // Unknown invoice state must not put the bike back on sale.
+    if (invErr) throw new Error(`Could not check the sale invoice for ${bike.reference}: ${invErr.message}`);
 
     if (invoice && (invoice as any).quickbooks_invoice_id) {
       await recordListingError(
@@ -170,7 +173,10 @@ async function handleOrderReversed(supabase: Client, order: any) {
       continue;
     }
 
-    if (invoice) await supabase.from('invoices').delete().eq('id', (invoice as any).id);
+    if (invoice) {
+      const { error: delErr } = await supabase.from('invoices').delete().eq('id', (invoice as any).id);
+      if (delErr) throw new Error(`Could not remove the sale invoice for ${bike.reference}: ${delErr.message}`);
+    }
 
     await supabase
       .from('bikes')
