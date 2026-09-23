@@ -1,0 +1,411 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { PageHeader } from '@/components/velo/PageShell';
+import { StageFlap, stageLabel } from '@/components/velo/StageFlap';
+import { bikeRef } from '@/lib/bikeReference';
+import BikeThumbnail from '@/components/bike/BikeThumbnail';
+import { ListCard, ListCardRow, ListEmpty } from '@/components/ui/list-card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Globe, ChevronLeft, ChevronRight, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { listBikeOnEbay, getEbayStatus, type EbayStatus } from '@/services/ebay';
+import { listBikeOnShopify, getShopifyStatus, type ShopifyStatus, type ShopifyListing } from '@/services/shopify';
+
+interface Bike {
+  id: string;
+  reference: string | null;
+  make: string;
+  model: string;
+  year: number | null;
+  status: string;
+  source: string;
+  asking_price: number | null;
+  sale_price: number | null;
+  photos: string[] | null;
+  storage_bay_id: string | null;
+  frame_number: string | null;
+  serial_number?: string | null;
+}
+
+interface PlatformRow {
+  bike_id: string;
+  url: string | null;
+  status: string;
+  last_synced_at: string | null;
+  last_error: string | null;
+}
+
+interface BikeWithPlatforms extends Bike {
+  ebay: PlatformRow | null;
+  shopify: PlatformRow | null;
+}
+
+const PAGE_SIZE = 25;
+
+const isActive = (row: PlatformRow | null) => !!row && row.status === 'listed';
+
+export default function ListingsPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [bikes, setBikes] = useState<BikeWithPlatforms[]>([]);
+  const [ebayStatus, setEbayStatus] = useState<EbayStatus | null>(null);
+  const [shopifyStatus, setShopifyStatus] = useState<ShopifyStatus | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [listingIds, setListingIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const { data: bikeRows, error } = await supabase
+          .from('bikes')
+          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, storage_bay_id, frame_number, serial_number')
+          .in('status', ['ready', 'listed'])
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const rows = (bikeRows as Bike[]) || [];
+
+        const ids = rows.map((b) => b.id);
+        const [ebayRows, shopifyRows, ebaySt, shopifySt] = await Promise.all([
+          ids.length
+            ? supabase
+                .from('ebay_listings')
+                .select('bike_id, listing_url, status, last_synced_at, last_error')
+                .in('bike_id', ids)
+            : Promise.resolve({ data: [], error: null } as any),
+          ids.length
+            ? supabase
+                .from('shopify_listings')
+                .select('bike_id, product_url, status, last_synced_at, last_error')
+                .in('bike_id', ids)
+            : Promise.resolve({ data: [], error: null } as any),
+          getEbayStatus().catch(() => null),
+          getShopifyStatus().catch(() => null),
+        ]);
+        if (ebayRows.error) throw ebayRows.error;
+        if (shopifyRows.error) throw shopifyRows.error;
+
+        if (cancelled) return;
+
+        const ebayById = new Map<string, PlatformRow>();
+        ((ebayRows.data as any[]) || []).forEach((r) =>
+          ebayById.set(r.bike_id, {
+            bike_id: r.bike_id,
+            url: r.listing_url ?? null,
+            status: r.status,
+            last_synced_at: r.last_synced_at,
+            last_error: r.last_error,
+          }),
+        );
+        const shopifyById = new Map<string, PlatformRow>();
+        ((shopifyRows.data as any[]) || []).forEach((r) =>
+          shopifyById.set(r.bike_id, {
+            bike_id: r.bike_id,
+            url: r.product_url ?? null,
+            status: r.status,
+            last_synced_at: r.last_synced_at,
+            last_error: r.last_error,
+          }),
+        );
+
+        setBikes(
+          rows.map((b) => ({
+            ...b,
+            ebay: ebayById.get(b.id) ?? null,
+            shopify: shopifyById.get(b.id) ?? null,
+          })),
+        );
+        setEbayStatus(ebaySt);
+        setShopifyStatus(shopifySt);
+      } catch (error: any) {
+        toast({ title: 'Error loading listings', description: error.message, variant: 'destructive' });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const filteredBikes = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    return bikes.filter((bike) => {
+      const matchesSearch =
+        term === '' ||
+        bike.make.toLowerCase().includes(term) ||
+        bike.model.toLowerCase().includes(term) ||
+        `${bike.make} ${bike.model}`.toLowerCase().includes(term) ||
+        bike.frame_number?.toLowerCase().includes(term) ||
+        bike.serial_number?.toLowerCase().includes(term) ||
+        bike.reference?.toLowerCase().includes(term) ||
+        bike.id.toLowerCase().includes(term);
+      const matchesStatus = statusFilter === 'all' || bike.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [bikes, searchTerm, statusFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredBikes.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visibleBikes = filteredBikes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const ebayConnected = !!ebayStatus?.connected && !ebayStatus?.needs_reconnect;
+  const shopifyConnected = !!shopifyStatus?.connected;
+  const anyConnected = ebayConnected || shopifyConnected;
+
+  const listTargets = (bike: BikeWithPlatforms) => {
+    const targets: { platform: 'ebay' | 'shopify' }[] = [];
+    if (ebayConnected && !isActive(bike.ebay)) targets.push({ platform: 'ebay' });
+    if (shopifyConnected && !isActive(bike.shopify)) targets.push({ platform: 'shopify' });
+    return targets;
+  };
+
+  const applyResult = (bikeId: string, platform: 'ebay' | 'shopify', url: string | null) => {
+    setBikes((prev) =>
+      prev.map((b) =>
+        b.id === bikeId
+          ? {
+              ...b,
+              [platform === 'ebay' ? 'ebay' : 'shopify']: {
+                bike_id: bikeId,
+                url,
+                status: 'listed',
+                last_synced_at: new Date().toISOString(),
+                last_error: null,
+              } as PlatformRow,
+            }
+          : b,
+      ),
+    );
+  };
+
+  const handleList = async (bike: BikeWithPlatforms) => {
+    const targets = listTargets(bike);
+    if (targets.length === 0) return;
+
+    setListingIds((prev) => new Set(prev).add(bike.id));
+
+    for (const { platform } of targets) {
+      const label = platform === 'ebay' ? 'eBay' : 'Shopify';
+      try {
+        if (platform === 'ebay') {
+          const res = await listBikeOnEbay(bike.id);
+          applyResult(bike.id, 'ebay', res.url ?? null);
+          if (res.warnings?.length) {
+            toast({ title: `Listed on eBay, with notes`, description: res.warnings.join(' '), variant: 'default' });
+          } else {
+            toast({ title: `Listed on eBay`, description: `${bike.make} ${bike.model} is now live.` });
+          }
+        } else {
+          const res = await listBikeOnShopify(bike.id);
+          applyResult(bike.id, 'shopify', res.url ?? null);
+          toast({ title: `Listed on Shopify`, description: `${bike.make} ${bike.model} is now live.` });
+        }
+      } catch (error: any) {
+        toast({ title: `Could not list on ${label}`, description: error.message, variant: 'destructive' });
+      }
+    }
+
+    setListingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(bike.id);
+      return next;
+    });
+  };
+
+  const platformBadges = (bike: BikeWithPlatforms) => {
+    const badges: React.ReactNode[] = [];
+    if (bike.ebay) {
+      if (isActive(bike.ebay)) {
+        badges.push(
+          bike.ebay.url ? (
+            <a
+              key="ebay"
+              href={bike.ebay.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+            >
+              eBay <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : (
+            <Badge key="ebay" variant="default">eBay</Badge>
+          ),
+        );
+      } else if (bike.ebay.status === 'ended') {
+        badges.push(
+          <Badge key="ebay" variant="outline" className="text-muted-foreground">eBay · ended</Badge>,
+        );
+      }
+    }
+    if (bike.shopify) {
+      if (isActive(bike.shopify)) {
+        badges.push(
+          bike.shopify.url ? (
+            <a
+              key="shopify"
+              href={bike.shopify.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+            >
+              Shopify <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : (
+            <Badge key="shopify" variant="default">Shopify</Badge>
+          ),
+        );
+      } else if (bike.shopify.status === 'sold_out') {
+        badges.push(
+          <Badge key="shopify" variant="outline" className="text-muted-foreground">Shopify · sold out</Badge>,
+        );
+      }
+    }
+    if (bike.ebay?.last_error && !isActive(bike.ebay)) {
+      badges.push(
+        <Badge key="ebay-err" variant="destructive">eBay error</Badge>,
+      );
+    }
+    return badges;
+  };
+
+  if (loading) {
+    return (
+      <div>
+        <PageHeader title="Listings" description="Bikes ready to go live, and what they're listed on." />
+        <div className="flex justify-center p-8">Loading listings...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PageHeader title="Listings" description="Bikes ready to go live, and what they're listed on." />
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle>Bikes ({filteredBikes.length})</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative sm:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search bikes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="ready">Ready</SelectItem>
+                <SelectItem value="listed">Listed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!anyConnected && (
+            <p className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+              Neither eBay nor Shopify is connected. Connect a platform under Settings → Integrations to list bikes.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {visibleBikes.length === 0 ? (
+              <div className="md:col-span-2 xl:col-span-3">
+                <ListEmpty message={bikes.length === 0 ? 'No bikes are Ready or Listed yet' : 'No bikes match your search'} />
+              </div>
+            ) : (
+              visibleBikes.map((bike) => {
+                const targets = listTargets(bike);
+                const allListed = anyConnected && targets.length === 0;
+                const busy = listingIds.has(bike.id);
+                return (
+                  <ListCard key={bike.id} onClick={() => navigate(`/bikes/${bike.id}`)}>
+                    <div className="flex gap-3">
+                      <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-16 w-16 shrink-0" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="font-semibold leading-tight break-words">
+                          {bike.make} {bike.model}
+                          {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
+                        </div>
+                        <div className="id-text">{bikeRef(bike as any)}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <StageFlap stage={bike.status} size="sm" />
+                          {platformBadges(bike)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <ListCardRow label="Asking" value={bike.asking_price ? `£${bike.asking_price.toFixed(2)}` : '-'} />
+
+                    <div onClick={(e) => e.stopPropagation()}>
+                      {busy ? (
+                        <Button className="w-full" disabled>
+                          {stageLabel(bike.status) === 'Listed' ? 'Updating…' : 'Listing…'}
+                        </Button>
+                      ) : allListed ? (
+                        <Button className="w-full" variant="outline" disabled>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Listed everywhere
+                        </Button>
+                      ) : (
+                        <Button
+                          className="w-full"
+                          disabled={!anyConnected}
+                          onClick={() => handleList(bike)}
+                          title={!anyConnected ? 'Connect eBay or Shopify in Settings first' : undefined}
+                        >
+                          <Globe className="h-4 w-4 mr-2" />
+                          List everywhere
+                        </Button>
+                      )}
+                    </div>
+                  </ListCard>
+                );
+              })
+            )}
+          </div>
+
+          {filteredBikes.length > 0 && (
+            <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredBikes.length)} of {filteredBikes.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
+                  <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                </Button>
+                <span className="text-sm tabular">Page {currentPage} of {pageCount}</span>
+                <Button variant="outline" size="sm" disabled={currentPage === pageCount} onClick={() => setPage((v) => Math.min(pageCount, v + 1))}>
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

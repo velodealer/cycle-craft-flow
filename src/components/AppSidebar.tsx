@@ -18,6 +18,7 @@ import {
   Briefcase,
   Cog,
   Calculator,
+  Globe,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -74,6 +75,7 @@ const navGroups: NavGroup[] = [
     label: "Stock",
     items: [
       { title: "Bikes", url: "/bikes", icon: Bike, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'customer_service'] },
+      { title: "Listings", url: "/listings", icon: Globe, roles: ['admin', 'mechanic', 'detailer', 'accountant', 'customer_service'] },
       { title: "Parts", url: "/parts", icon: Package, roles: ['admin', 'mechanic', 'accountant', 'customer_service'] },
       { title: "Components", url: "/components", icon: Cog, roles: ['admin', 'mechanic', 'accountant', 'customer_service'] },
       { title: "Logistics", url: "/logistics", icon: Truck, roles: ['admin', 'mechanic', 'accountant', 'customer_service'] },
