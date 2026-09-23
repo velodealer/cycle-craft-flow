@@ -29,6 +29,14 @@ export const getInspectABikeAuthUrl = () =>
 export const disconnectInspectABike = () =>
   callOauth<{ ok: boolean }>({ action: 'disconnect' });
 
+export async function fetchInspectABikeWebhookSecret() {
+  const { data, error } = await supabase.functions.invoke('inspectabike-oauth', {
+    body: { action: 'fetch_webhook_secret' },
+  });
+  if (error || (data as any)?.error) throw new Error(await functionErrorMessage(error, data));
+  return data as { ok: boolean };
+}
+
 /**
  * Make sure a bike has an inspection on the dealer's InspectABike account.
  * Fire-and-forget: never blocks or alerts the user when the dealer has not
