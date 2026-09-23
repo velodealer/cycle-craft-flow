@@ -212,6 +212,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       const bikeData = {
         ...bikeFields,
         ...spokesExtras,
+        mpn: bikeFields.mpn?.trim() || null,
         external_owner_id: bikeFields.source === 'customer_consignment' ? bikeFields.external_owner_id : null,
         investor_id: bikeFields.source === 'investor' ? bikeFields.investor_id : null,
         profit_share_pct: bikeFields.source === 'investor' ? bikeFields.profit_share_pct : null,
