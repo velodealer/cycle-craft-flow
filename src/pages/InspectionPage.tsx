@@ -3,6 +3,7 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { functionErrorMessage } from '@/services/inspectabike';
 import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
