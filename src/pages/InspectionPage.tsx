@@ -66,8 +66,7 @@ export default function InspectionPage() {
     setStartingBikeId(bike.id);
     try {
       const { data, error } = await supabase.functions.invoke('inspectabike-create', { body: { bike_id: bike.id } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error || data?.error) throw new Error(await functionErrorMessage(error, data));
       const inspectionUrl = data?.inspection?.report_url;
       if (!inspectionUrl) throw new Error('InspectABike did not return an inspection link');
       window.location.assign(inspectionUrl);
