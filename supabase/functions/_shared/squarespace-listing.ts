@@ -17,7 +17,7 @@ async function description(supabase: Client, bike: any, businessId: string) {
   try {
     const comps = await loadBikeComponents(supabase, bike.id);
     const tpl = (await loadListingTemplate(supabase, 'squarespace', businessId))
-      || (await loadListingTemplate(supabase, 'website', businessId));
+      || (await loadListingTemplate(supabase, 'shopify', businessId));
     const html = renderListingHtml(tpl, bike, comps);
     if (html) return html;
   } catch (e) {
