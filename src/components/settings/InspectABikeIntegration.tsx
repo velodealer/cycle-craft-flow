@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,14 +11,19 @@ import {
   getInspectABikeStatus,
   getInspectABikeAuthUrl,
   disconnectInspectABike,
+  fetchInspectABikeWebhookSecret,
   type InspectABikeStatus,
 } from '@/services/inspectabike';
 
 export default function InspectABikeIntegration() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, profile } = useAuth();
+  const canManage = profile?.role === 'admin' || profile?.role === 'owner';
   const [status, setStatus] = useState<InspectABikeStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [fetchingKey, setFetchingKey] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const autoTried = useRef(false);
 
   useEffect(() => {
     load();
@@ -36,6 +41,14 @@ export default function InspectABikeIntegration() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (canManage && status?.connected && !status.has_webhook_secret && !autoTried.current) {
+      autoTried.current = true;
+      getKey(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, canManage]);
+
   const load = async () => {
     try {
       setLoading(true);
@@ -44,6 +57,21 @@ export default function InspectABikeIntegration() {
       console.error('InspectABike status failed', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getKey = async (quiet = false) => {
+    try {
+      setFetchingKey(true);
+      setKeyError(null);
+      await fetchInspectABikeWebhookSecret();
+      if (!quiet) toast({ title: 'Live updates ready', description: 'Signing key saved' });
+      setStatus(await getInspectABikeStatus());
+    } catch (e) {
+      setKeyError((e as Error).message);
+      if (!quiet) toast({ title: 'Could not get signing key', description: (e as Error).message, variant: 'destructive' });
+    } finally {
+      setFetchingKey(false);
     }
   };
 
@@ -137,20 +165,29 @@ export default function InspectABikeIntegration() {
           </div>
         )}
 
-        {status?.configured &&
-          (status.has_webhook_secret || status.has_platform_webhook_secret ? (
+        {status?.configured && status.connected &&
+          (status.has_webhook_secret ? (
             <div className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3 text-sm text-success">
               <BellRing className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Live updates: on — faults from InspectABike arrive here on their own.</span>
+              <span>Live updates: ready — faults from InspectABike arrive here on their own.</span>
             </div>
           ) : (
-            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
-              <BellOff className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Live updates: not receiving — ask InspectABike to send updates to{' '}
-                <span className="font-mono">{status.webhook_url}</span> and share the signing key
-                they create.
-              </span>
+            <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
+              <div className="flex items-start gap-2">
+                <BellOff className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  {fetchingKey
+                    ? 'Live updates: getting the signing key from InspectABike…'
+                    : `Live updates: not set up yet${keyError ? ` — ${keyError}` : ''}.${
+                        status.has_platform_webhook_secret ? ' Using the shared backup key for now.' : ''
+                      }`}
+                </span>
+              </div>
+              {canManage && (
+                <Button size="sm" variant="outline" onClick={() => getKey()} disabled={fetchingKey}>
+                  Get signing key
+                </Button>
+              )}
             </div>
           ))}
 
