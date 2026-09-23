@@ -10,6 +10,8 @@ export interface AspectResult {
   missingRequired: string[];
   missingRecommended: string[];
   unmapped: { name: string; value: string }[];
+  /** eBay's allowed values for aspects that still need filling (empty = free text). */
+  choices?: Record<string, string[]>;
 }
 
 const EBAY_BIKE_TYPE: Record<string, string> = {
@@ -166,6 +168,8 @@ export function buildAspects(bike: any, meta: any[], brand: string): AspectResul
     return { aspects, requiredTotal: 0, recommendedTotal: 0, recommendedFilled: 0, missingRequired, missingRecommended, unmapped };
   }
 
+  const overrides: Record<string, unknown> = (bike?.spec_values?.ebay_aspects && typeof bike.spec_values.ebay_aspects === 'object') ? bike.spec_values.ebay_aspects : {};
+  const choicesFor: Record<string, string[]> = {};
   for (const a of meta) {
     const name = String(a?.localizedAspectName ?? '').trim();
     if (!name) continue;
@@ -176,7 +180,7 @@ export function buildAspects(bike: any, meta: any[], brand: string): AspectResul
     if (recommended) recommendedTotal++;
 
     const hit = cands.find(([re]) => re.test(name.toLowerCase()));
-    const raw = hit?.[1];
+    const raw = has(overrides[name]) ? overrides[name] : hit?.[1];
     const values = (Array.isArray(raw) ? raw : [raw]).filter(has).map((x) => String(x).trim());
     const selectionOnly = c.aspectMode === 'SELECTION_ONLY';
     const choices: string[] = (a?.aspectValues ?? []).map((v: any) => String(v?.localizedValue ?? '')).filter(Boolean);
@@ -197,7 +201,12 @@ export function buildAspects(bike: any, meta: any[], brand: string): AspectResul
     } else {
       if (required) missingRequired.push(name);
       else if (recommended) missingRecommended.push(name);
+      if (recommended) choicesFor[name] = choices.slice(0, 200);
     }
   }
-  return { aspects, requiredTotal, recommendedTotal, recommendedFilled, missingRequired, missingRecommended, unmapped };
+  for (const u of unmapped) if (!choicesFor[u.name]) {
+    const a = meta.find((m) => String(m?.localizedAspectName ?? '').trim() === u.name);
+    choicesFor[u.name] = (a?.aspectValues ?? []).map((v: any) => String(v?.localizedValue ?? '')).filter(Boolean).slice(0, 200);
+  }
+  return { aspects, requiredTotal, recommendedTotal, recommendedFilled, missingRequired, missingRecommended, unmapped, choices: choicesFor };
 }
