@@ -10,6 +10,11 @@ export interface EbayStatus {
   category_id: string;
   condition: string;
   postcode: string;
+  location_name: string;
+  address_line1: string;
+  city: string;
+  country: string;
+  business_name: string;
   fulfillment_policy_id: string;
   payment_policy_id: string;
   return_policy_id: string;
@@ -27,6 +32,8 @@ export interface EbayListing {
   quantity: number;
   last_synced_at: string | null;
   last_error: string | null;
+  condition_substituted_from: string | null;
+  condition_substituted_to: string | null;
 }
 
 export interface PolicyOption { id: string; name: string }
@@ -119,13 +126,20 @@ export const saveEbaySettings = (settings: {
   category_id?: string;
   condition?: string;
   postcode?: string;
+  location_name?: string;
+  address_line1?: string;
+  city?: string;
+  country?: string;
   fulfillment_policy_id?: string;
   payment_policy_id?: string;
   return_policy_id?: string;
-}) => invoke<{ ok: true }>('ebay-oauth', { action: 'save_settings', ...settings });
+}) => invoke<{ ok: true; location_error: string | null }>('ebay-oauth', { action: 'save_settings', ...settings });
+
+export const getEbayHeldLocation = () =>
+  invoke<{ held: { city: string | null; postcode: string | null } | null }>('ebay-oauth', { action: 'location' });
 
 export const listBikeOnEbay = (bikeId: string) =>
-  invoke<{ ok: true; offer_id: string; listing_id: string | null; url: string | null }>(
+  invoke<{ ok: true; offer_id: string; listing_id: string | null; url: string | null; warnings?: string[] }>(
     'ebay-sync-bike',
     { bike_id: bikeId, action: 'list' },
   );
@@ -139,7 +153,7 @@ export const removeBikeFromEbay = (bikeId: string) =>
 export async function getBikeEbayListing(bikeId: string): Promise<EbayListing | null> {
   const { data, error } = await supabase
     .from('ebay_listings')
-    .select('bike_id, condition, category_id, offer_id, listing_id, listing_url, status, quantity, last_synced_at, last_error')
+    .select('bike_id, condition, category_id, offer_id, listing_id, listing_url, status, quantity, last_synced_at, last_error, condition_substituted_from, condition_substituted_to')
     .eq('bike_id', bikeId)
     .maybeSingle();
   if (error) throw new Error(error.message);
