@@ -114,7 +114,8 @@ async function upsertListing(supabase: Client, bikeId: string, patch: Record<str
       { bike_id: bikeId, business_id: (bikeRow as any)?.business_id ?? null, ...patch, updated_at: new Date().toISOString() },
       { onConflict: 'bike_id' },
     );
-  if (error) console.error('shopify_listings upsert failed:', error.message);
+  // Losing product/variant ids here would make the next sync create a duplicate — fail loudly.
+  if (error) throw new Error(`Shopify accepted the change, but VeloDealer could not save the listing record: ${error.message}`);
 }
 
 async function setInventory(
@@ -335,5 +336,9 @@ export async function deleteShopifyProduct(supabase: Client, bikeId: string): Pr
 
 /** Records a failure against the bike's listing without throwing. */
 export async function recordListingError(supabase: Client, bikeId: string, message: string) {
-  await upsertListing(supabase, bikeId, { last_error: message.slice(0, 500) });
+  try {
+    await upsertListing(supabase, bikeId, { last_error: message.slice(0, 500) });
+  } catch (e) {
+    console.error('Could not record Shopify listing error:', (e as Error).message); // deliberate: already on an error path
+  }
 }

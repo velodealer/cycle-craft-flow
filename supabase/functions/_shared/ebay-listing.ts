@@ -332,19 +332,28 @@ function skuFor(bike: BikeRow) {
   return String(bike.reference || bike.id).replace(/[^A-Za-z0-9._-]/g, '-').slice(0, 50);
 }
 
+/** Existing eBay listing. null = never listed; throws if the read fails (never "not listed" — that would duplicate the offer). */
+export async function loadEbayListing(supabase: Client, bikeId: string): Promise<any | null> {
+  const { data, error } = await supabase.from('ebay_listings').select('*').eq('bike_id', bikeId).maybeSingle();
+  if (error) throw new Error(`Could not check the existing eBay listing: ${error.message}`);
+  return data ?? null;
+}
+
 async function upsertListing(supabase: Client, bikeId: string, patch: Record<string, unknown>) {
-  const { data: bikeRow } = await supabase
+  const { data: bikeRow, error: bikeErr } = await supabase
     .from('bikes')
     .select('business_id')
     .eq('id', bikeId)
     .maybeSingle();
+  if (bikeErr) throw new Error(`Could not load bike for eBay listing record: ${bikeErr.message}`);
   const { error } = await supabase
     .from('ebay_listings')
     .upsert(
       { bike_id: bikeId, business_id: (bikeRow as any)?.business_id ?? null, ...patch, updated_at: new Date().toISOString() },
       { onConflict: 'bike_id' },
     );
-  if (error) console.error('ebay_listings upsert failed:', error.message);
+  // Losing offer/listing ids here would make the next sync create a duplicate — fail loudly.
+  if (error) throw new Error(`eBay accepted the change, but VeloDealer could not save the listing record: ${error.message}`);
 }
 
 export const LOCATION_MISSING_MESSAGE =
@@ -542,9 +551,7 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   const warnings: string[] = [];
   const add = (key: string, level: CheckLevel, label: string, detail?: string) => checklist.push({ key, level, label, detail });
 
-  const { data: existing, error: existingErr } = await supabase.from('ebay_listings').select('*').eq('bike_id', bike.id).maybeSingle();
-  // A failed read must not look like "never listed" — that would create a duplicate offer.
-  if (existingErr) throw new Error(`Could not load the existing eBay listing: ${existingErr.message}`);
+  const existing = await loadEbayListing(supabase, bike.id);
   const ex = (existing ?? {}) as any;
 
   // Description from the dealer's listing format.
@@ -614,9 +621,10 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   } else add('condition', 'ok', `Condition: ${conditionLabel(condition!)}`);
 
   // Condition notes, led by the InspectABike grade.
-  const { data: inspection } = await supabase
+  const { data: inspection, error: inspErr } = await supabase
     .from('inspections').select('overall_grade').eq('bike_id', bike.id)
     .not('overall_grade', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (inspErr) throw new Error(`Could not load the inspection grade: ${inspErr.message}`);
   const grade = (inspection as any)?.overall_grade != null ? Number((inspection as any).overall_grade) : null;
   const condDesc = conditionDescription(bike.condition_notes, grade);
   if (!String(bike.condition_notes ?? '').trim()) {
@@ -855,11 +863,7 @@ export async function pushBikeToEbay(
 
 /** Ends the eBay listing (sold elsewhere or manual pull). */
 export async function endEbayListing(supabase: Client, bikeId: string): Promise<boolean> {
-  const { data: listing } = await supabase
-    .from('ebay_listings')
-    .select('*')
-    .eq('bike_id', bikeId)
-    .maybeSingle();
+  const listing = await loadEbayListing(supabase, bikeId);
   const offerId = (listing as any)?.offer_id as string | undefined;
   if (!offerId) return false;
 
@@ -888,11 +892,7 @@ export async function endEbayListing(supabase: Client, bikeId: string): Promise<
 
 /** Removes the offer and inventory item entirely. */
 export async function deleteEbayListing(supabase: Client, bikeId: string): Promise<boolean> {
-  const { data: listing } = await supabase
-    .from('ebay_listings')
-    .select('*')
-    .eq('bike_id', bikeId)
-    .maybeSingle();
+  const listing = await loadEbayListing(supabase, bikeId);
   if (!listing) return false;
   const offerId = (listing as any).offer_id as string | undefined;
   const sku = (listing as any).sku as string | undefined;
@@ -918,7 +918,8 @@ export async function deleteEbayListing(supabase: Client, bikeId: string): Promi
     } catch { /* already gone */ }
   }
 
-  await supabase.from('ebay_listings').delete().eq('bike_id', bikeId);
+  const { error: delErr } = await supabase.from('ebay_listings').delete().eq('bike_id', bikeId);
+  if (delErr) throw new Error(`eBay listing removed, but the listing record could not be cleared: ${delErr.message}`);
   return true;
 }
 
