@@ -12,6 +12,10 @@ api_version = "2026-07"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
   uri = "https://api.velodealer.com/functions/v1/shopify-compliance"
 
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "https://api.velodealer.com/functions/v1/shopify-webhook"
+
 [auth]
 redirect_urls = [
   "https://api.velodealer.com/functions/v1/shopify-oauth"

@@ -65,8 +65,7 @@ const toSignUp = (shop: string, params: Record<string, string> = {}) => {
 };
 
 const WEBHOOK_TOPICS = ['orders/paid', 'orders/cancelled', 'refunds/create'];
-// Compliance topics (customers/data_request, customers/redact, shop/redact) and
-// app/uninstalled are declared in the Partner Dashboard app configuration, not here.
+// Compliance topics and app/uninstalled are declared in shopify.app.toml.
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -93,6 +92,14 @@ Deno.serve(async (req) => {
       if (!timingSafeEqual(expected, providedHmac)) throw new Error('Signature check failed');
 
       const shop = normaliseShopDomain(url.searchParams.get('shop')!);
+
+      // Install flow: the state must be one we issued, for this shop, unused and < 10 minutes old.
+      if (isInstallState(state)) {
+        const { data: st } = await supabase.from('shopify_oauth_states')
+          .delete().eq('state', decodeURIComponent(state!)).select('shop, created_at').maybeSingle();
+        const fresh = st && Date.now() - new Date(st.created_at).getTime() < 10 * 60 * 1000;
+        if (!st || !fresh || st.shop !== shop) throw new Error('Install session expired or invalid — please start the install again from Shopify');
+      }
       const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
