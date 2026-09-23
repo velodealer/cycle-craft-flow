@@ -263,6 +263,39 @@ export type Database = {
           },
         ]
       }
+      bike_components_backup_20260923: {
+        Row: {
+          bike_id: string | null
+          business_id: string | null
+          component_id: string | null
+          created_at: string | null
+          id: string | null
+          notes: string | null
+          position: string | null
+          slot: string | null
+        }
+        Insert: {
+          bike_id?: string | null
+          business_id?: string | null
+          component_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          notes?: string | null
+          position?: string | null
+          slot?: string | null
+        }
+        Update: {
+          bike_id?: string | null
+          business_id?: string | null
+          component_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          notes?: string | null
+          position?: string | null
+          slot?: string | null
+        }
+        Relationships: []
+      }
       bikes: {
         Row: {
           accessories_included: string | null
@@ -494,6 +527,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bikes_spec_backup_20260923: {
+        Row: {
+          accessories_included: string | null
+          id: string | null
+          spec_values: Json | null
+        }
+        Insert: {
+          accessories_included?: string | null
+          id?: string | null
+          spec_values?: Json | null
+        }
+        Update: {
+          accessories_included?: string | null
+          id?: string | null
+          spec_values?: Json | null
+        }
+        Relationships: []
       }
       blog_posts: {
         Row: {
@@ -781,6 +832,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      components_backup_20260923: {
+        Row: {
+          attributes: Json | null
+          brand: string | null
+          business_id: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          model: string | null
+          mpn: string | null
+          updated_at: string | null
+          weight_g: number | null
+        }
+        Insert: {
+          attributes?: Json | null
+          brand?: string | null
+          business_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          model?: string | null
+          mpn?: string | null
+          updated_at?: string | null
+          weight_g?: number | null
+        }
+        Update: {
+          attributes?: Json | null
+          brand?: string | null
+          business_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          model?: string | null
+          mpn?: string | null
+          updated_at?: string | null
+          weight_g?: number | null
+        }
+        Relationships: []
       }
       cycle_courier_connections: {
         Row: {

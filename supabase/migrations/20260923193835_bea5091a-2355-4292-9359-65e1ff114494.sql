@@ -1,0 +1,11 @@
+CREATE TABLE public.components_backup_20260923 AS TABLE public.components;
+CREATE TABLE public.bike_components_backup_20260923 AS TABLE public.bike_components;
+CREATE TABLE public.bikes_spec_backup_20260923 AS SELECT id, spec_values, accessories_included FROM public.bikes;
+GRANT ALL ON public.components_backup_20260923, public.bike_components_backup_20260923, public.bikes_spec_backup_20260923 TO service_role;
+GRANT SELECT ON public.components_backup_20260923, public.bike_components_backup_20260923, public.bikes_spec_backup_20260923 TO authenticated;
+ALTER TABLE public.components_backup_20260923 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bike_components_backup_20260923 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bikes_spec_backup_20260923 ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Super admin reads backup" ON public.components_backup_20260923 FOR SELECT TO authenticated USING (public.is_super_admin());
+CREATE POLICY "Super admin reads backup" ON public.bike_components_backup_20260923 FOR SELECT TO authenticated USING (public.is_super_admin());
+CREATE POLICY "Super admin reads backup" ON public.bikes_spec_backup_20260923 FOR SELECT TO authenticated USING (public.is_super_admin());
