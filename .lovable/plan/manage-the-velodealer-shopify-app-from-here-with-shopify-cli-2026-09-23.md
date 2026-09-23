@@ -24,3 +24,6 @@ Yes, this can be done. The Shopify CLI can't use a normal browser sign-in from h
 ## Technical notes
 - Run the CLI with `npx @shopify/cli@latest` and `SHOPIFY_CLI_PARTNERS_TOKEN` taken from the secret, plus `--client-id` and `--force` so no prompts appear.
 - The CLI runs only in the sandbox. Nothing is added to the live website.
+
+## About Shopify's AI Toolkit
+The AI Toolkit is an add-on for coding assistants that run on your own computer, such as Cursor, Claude Code or VS Code. It gives those assistants Shopify's documentation and a way to check code against Shopify's API rules. The changes themselves are still made through the Shopify CLI. The toolkit can't be plugged into this workspace, so the CLI route above is how to make those changes from here. I'll still check the code against Shopify's current docs as I go.
