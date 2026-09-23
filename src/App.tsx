@@ -11,6 +11,7 @@ import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import BikesPage from "./pages/BikesPage";
+import ListingsPage from "./pages/ListingsPage";
 import BikeDetailPage from "./pages/BikeDetailPage";
 import IntakePage from "./pages/IntakePage";
 import CleaningPage from "./pages/CleaningPage";
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/dashboard" element={guarded(<Layout><BPSDashboard /></Layout>)} />
             <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
+            <Route path="/listings" element={guarded(<Layout><ListingsPage /></Layout>)} />
             <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />
             <Route path="/intake" element={guarded(<Layout><IntakePage /></Layout>)} />
             <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
