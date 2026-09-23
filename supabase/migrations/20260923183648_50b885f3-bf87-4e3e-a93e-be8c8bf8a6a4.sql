@@ -1,0 +1,2 @@
+ALTER TABLE public.listing_templates DROP CONSTRAINT listing_templates_platform_check;
+ALTER TABLE public.listing_templates ADD CONSTRAINT listing_templates_platform_check CHECK (platform = ANY (ARRAY['ebay','shopify','squarespace','instagram','facebook']));
