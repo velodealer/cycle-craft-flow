@@ -78,8 +78,9 @@ export default function ListingsPage() {
   const [fixQueue, setFixQueue] = useState<string[]>([]);
   const [fixIndex, setFixIndex] = useState(0);
   const [fixOpen, setFixOpen] = useState(false);
+  const [fixSaveOnly, setFixSaveOnly] = useState(false);
   const [needsFixing, setNeedsFixing] = useState<string[]>([]);
-  const openFix = (ids: string[]) => { if (!ids.length) return; setFixQueue(ids); setFixIndex(0); setFixOpen(true); };
+  const openFix = (ids: string[]) => { if (!ids.length) return; setFixSaveOnly(false); setFixQueue(ids); setFixIndex(0); setFixOpen(true); };
 
   useEffect(() => {
     let cancelled = false;
@@ -489,6 +490,7 @@ export default function ListingsPage() {
       <FixListingProblemsDialog
         bikeId={fixQueue[fixIndex] ?? null}
         open={fixOpen}
+        saveOnly={fixSaveOnly}
         queueLabel={fixQueue.length > 1 ? `Bike ${fixIndex + 1} of ${fixQueue.length}` : undefined}
         onOpenChange={(o) => {
           if (!o && fixIndex + 1 < fixQueue.length && fixOpen) { setFixIndex((i) => i + 1); return; }
@@ -572,7 +574,7 @@ export default function ListingsPage() {
                       const miss = missingListingFields(bike as any);
                       return miss.length ? (
                         <button type="button" className="w-full text-left text-xs text-warning underline-offset-2 hover:underline"
-                          onClick={(e) => { e.stopPropagation(); setFixQueue([bike.id]); setFixIndex(0); setFixOpen(true); }}
+                          onClick={(e) => { e.stopPropagation(); setFixSaveOnly(true); setFixQueue([bike.id]); setFixIndex(0); setFixOpen(true); }}
                           title={miss.map((m) => m.label).join(', ')}>
                           {miss.length} listing detail{miss.length === 1 ? '' : 's'} missing — fill in
                         </button>
