@@ -315,23 +315,35 @@ export function mergeFaultStatus(localStatus: string, incomingStatus: string): s
   return VALID_FAULT_STATUSES.includes(incomingStatus) ? incomingStatus : localStatus;
 }
 
-export function normaliseFault(fault: any, inspectionId: string, bikeId: string, event?: string, businessId?: string | null) {
-  const id = String(fault?.id ?? fault?.fault_id ?? '');
+export function normaliseFault(
+  input: any, inspectionId: string, bikeId: string, event?: string, businessId?: string | null,
+  fallbackKey?: string,
+) {
+  // InspectABike sometimes nests the fault (e.g. { fault: {...} }).
+  const fault = input?.fault && typeof input.fault === 'object' ? { ...input, ...input.fault } : input;
+  const rawId = fault?.id ?? fault?.fault_id ?? fault?.faultId ?? fault?.uuid ?? fault?.external_id ?? fault?.external_fault_id ?? '';
+  let id = rawId != null ? String(rawId) : '';
+  if (!id && fallbackKey) id = fallbackKey;
   let status = String(fault?.status ?? 'reported').toLowerCase();
   if (event === 'fault.repaired') status = 'repaired';
+  const num = (...vals: any[]) => {
+    for (const v of vals) { const n = Number(v); if (v != null && v !== '' && Number.isFinite(n)) return n; }
+    return 0;
+  };
+  const component = fault?.component ?? fault?.component_name ?? fault?.category ?? fault?.area ?? null;
   return {
     inspection_id: inspectionId,
     bike_id: bikeId,
     business_id: businessId ?? null,
     external_fault_id: id,
-    title: String(fault?.title ?? fault?.name ?? fault?.component ?? 'Fault'),
-    description: fault?.description ?? fault?.notes ?? null,
-    component: fault?.component ?? fault?.component_name ?? null,
-    severity: fault?.severity ?? null,
-    parts_cost: Number(fault?.parts_cost ?? 0) || 0,
-    labour_cost: Number(fault?.labour_cost ?? 0) || 0,
+    title: String(fault?.title ?? fault?.name ?? fault?.fault_name ?? fault?.issue ?? component ?? 'Fault'),
+    description: fault?.description ?? fault?.notes ?? fault?.details ?? null,
+    component: typeof component === 'object' && component ? (component.name ?? JSON.stringify(component)) : component,
+    severity: fault?.severity ?? fault?.priority ?? null,
+    parts_cost: num(fault?.parts_cost, fault?.partsCost, fault?.parts_price, fault?.part_cost),
+    labour_cost: num(fault?.labour_cost, fault?.labor_cost, fault?.labourCost, fault?.labour_price),
     status: VALID_FAULT_STATUSES.includes(status) ? status : 'reported',
-    raw: fault ?? {},
+    raw: input ?? {},
   };
 }
 

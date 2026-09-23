@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       // All faults are repaired or declined — fires once, but handle idempotently.
       const faults: any[] = Array.isArray(payload?.faults) ? payload.faults : [];
       const rows = faults
-        .map((f) => normaliseFault(f, inspection.id, inspection.bike_id, 'fault.updated', inspection.business_id))
+        .map((f, i) => normaliseFault(f, inspection.id, inspection.bike_id, 'fault.updated', inspection.business_id, `${externalInspectionId}:${i}`))
         .filter((r) => r.external_fault_id);
       await upsertFaults(supabase, rows);
 
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     const fault = payload?.fault ?? null;
     if (!fault) return json({ received: true });
 
-    const faultId = String(fault?.id ?? fault?.fault_id ?? '');
+    const faultId = normaliseFault(fault, inspection.id, inspection.bike_id, event, inspection.business_id).external_fault_id;
     if (!faultId) return json({ received: true });
 
     if (event === 'fault.deleted') {
