@@ -3,7 +3,8 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { functionErrorMessage } from '@/services/inspectabike';
+import { functionErrorMessage, functionFieldIssues } from '@/services/inspectabike';
+import MissingBikeInfoDialog, { FieldIssue } from '@/components/bike/MissingBikeInfoDialog';
 import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ export default function InspectionPage() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingBikeId, setStartingBikeId] = useState<string | null>(null);
+  const [fixBike, setFixBike] = useState<{ bike: Bike; issues: FieldIssue[] } | null>(null);
   const labelSel = useLabelSelection(bikes.map((b) => b.id));
 
   const loadInspectionBikes = async () => {
@@ -67,7 +69,11 @@ export default function InspectionPage() {
     setStartingBikeId(bike.id);
     try {
       const { data, error } = await supabase.functions.invoke('inspectabike-create', { body: { bike_id: bike.id } });
-      if (error || data?.error) throw new Error(await functionErrorMessage(error, data));
+      if (error || data?.error) {
+        const issues = await functionFieldIssues(error, data);
+        if (issues) { setFixBike({ bike, issues }); setStartingBikeId(null); return; }
+        throw new Error(await functionErrorMessage(error, data));
+      }
       const inspectionUrl = data?.inspection?.report_url;
       if (!inspectionUrl) throw new Error('InspectABike did not return an inspection link');
       window.location.assign(inspectionUrl);
@@ -222,6 +228,15 @@ export default function InspectionPage() {
         </div>
       </Panel>
 
+      {fixBike && (
+        <MissingBikeInfoDialog
+          open={!!fixBike}
+          onOpenChange={(o) => { if (!o) setFixBike(null); }}
+          bikeId={fixBike.bike.id}
+          issues={fixBike.issues}
+          onSaved={() => { const b = fixBike.bike; setFixBike(null); return handleStart(b); }}
+        />
+      )}
     </div>
   );
 }

@@ -10,6 +10,32 @@ const json = (body: unknown, status = 200) =>
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// InspectABike field name -> our bike column.
+const FIELD_MAP: Record<string, string> = {
+  bike_year: 'year', serial_number: 'frame_number', bike_make: 'make', bike_model: 'model',
+};
+
+function plain(msg: string, field: string) {
+  if (/expected string|expected number|invalid/i.test(msg)) return `Please check the ${field.replace('_', ' ')} and try again`;
+  return msg;
+}
+
+/** Pull a {field: [messages]} map out of an InspectABike error body. */
+function fieldErrors(b: any): { field: string; message: string }[] {
+  const out: { field: string; message: string }[] = [];
+  const candidates = [b, b?.error, b?.details, b?.errors, b?.error?.details];
+  for (const c of candidates) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) continue;
+    for (const [k, v] of Object.entries(c)) {
+      const col = FIELD_MAP[k];
+      if (!col) continue;
+      const msg = Array.isArray(v) ? String(v[0] ?? '') : typeof v === 'string' ? v : '';
+      if (!out.some((o) => o.field === col)) out.push({ field: col, message: plain(msg, col) });
+    }
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -80,15 +106,28 @@ Deno.serve(async (req) => {
       if (owner?.name) customerName = owner.name;
     }
 
+    const str = (v: unknown) => {
+      if (v === null || v === undefined) return null;
+      const s = String(v).trim();
+      return s ? s : null;
+    };
+
+    // Ask the user for anything InspectABike needs before sending.
+    const missing: { field: string; message: string }[] = [];
+    if (!str(bike.make)) missing.push({ field: 'make', message: 'Make is required' });
+    if (!str(bike.model)) missing.push({ field: 'model', message: 'Model is required' });
+    if (!str(bike.frame_number) && !str(bike.serial_number)) missing.push({ field: 'frame_number', message: 'Frame number is required' });
+    if (missing.length) return json({ error: 'Some bike details are missing', code: 'MISSING_FIELDS', fields: missing }, 422);
+
     const payload = {
       reference,
-      serial_number: bike.frame_number || bike.serial_number || reference,
-      bike_make: bike.make,
-      bike_model: bike.model,
+      serial_number: str(bike.frame_number) || str(bike.serial_number) || reference,
+      bike_make: str(bike.make),
+      bike_model: str(bike.model),
       bike_type: mapBikeType(bike),
-      bike_year: bike.year ?? null,
+      bike_year: str(bike.year),
       customer_name: customerName,
-      notes: bike.condition_notes || null,
+      notes: str(bike.condition_notes),
     };
 
     let result: any;
@@ -102,7 +141,11 @@ Deno.serve(async (req) => {
       const b = (err as any).body;
       const existingId = b?.inspection_id ?? b?.inspection?.id ?? b?.existing_inspection_id ?? b?.error?.inspection_id;
       if ((err as any).status === 409 && existingId) result = { inspection_id: existingId, report_url: b?.report_url ?? b?.inspection?.report_url ?? b?.error?.report_url };
-      else throw err;
+      else {
+        const fields = fieldErrors(b);
+        if (fields.length) return json({ error: 'InspectABike needs some bike details corrected', code: 'INVALID_FIELDS', fields }, 422);
+        throw err;
+      }
     }
 
     const externalId = result?.inspection_id ?? result?.inspection?.id ?? null;
