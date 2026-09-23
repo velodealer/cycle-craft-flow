@@ -184,7 +184,7 @@ export default function JobsPage() {
                     Open bike
                   </Button>
                 )}
-                {job.status !== 'complete' && !job.started_at && (
+                {!isDone(job.status) && !job.started_at && (
                   <Button
                     size="bench"
                     variant="outline"
@@ -194,7 +194,7 @@ export default function JobsPage() {
                     Start
                   </Button>
                 )}
-                {job.status !== 'complete' && (
+                {!isDone(job.status) && (
                   <Button
                     size="bench"
                     disabled={busyId === job.id}
