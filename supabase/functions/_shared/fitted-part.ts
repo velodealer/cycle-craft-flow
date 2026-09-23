@@ -17,7 +17,7 @@ export interface FittedPart {
   id: string | null;            // bike_components.id
   component_id: string | null;
   slot: string;
-  slot_label: string | null;    // from slot_categories
+  slot_title: string | null;    // from slot_categories (not slot_label: renderers treat that as a table label override)
   position: string | null;      // from slot_categories
   notes: string | null;
   brand: string | null;
@@ -54,7 +54,7 @@ export function resolvePart(row: any, slotMap: Record<string, SlotCategory> = {}
     id: row?.id ?? null,
     component_id: row?.component_id ?? null,
     slot: row?.slot,
-    slot_label: sc?.label ?? null,
+    slot_title: sc?.label ?? null,
     position: sc?.position ?? null,
     notes: row?.notes ?? null,
     brand: pick('brand'),
