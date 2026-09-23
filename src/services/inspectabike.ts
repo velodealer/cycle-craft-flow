@@ -10,6 +10,7 @@ export interface InspectABikeStatus {
   callback_url: string;
   webhook_url: string;
   has_webhook_secret: boolean;
+  has_platform_webhook_secret?: boolean;
 }
 
 async function callOauth<T>(body: Record<string, unknown>): Promise<T> {
