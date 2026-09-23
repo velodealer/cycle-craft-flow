@@ -301,6 +301,7 @@ export type Database = {
           listing_description: string | null
           make: string
           model: string
+          mpn: string | null
           owner_id: string | null
           part_exchange_invoice_id: string | null
           photos: string[] | null
@@ -362,6 +363,7 @@ export type Database = {
           listing_description?: string | null
           make: string
           model: string
+          mpn?: string | null
           owner_id?: string | null
           part_exchange_invoice_id?: string | null
           photos?: string[] | null
@@ -423,6 +425,7 @@ export type Database = {
           listing_description?: string | null
           make?: string
           model?: string
+          mpn?: string | null
           owner_id?: string | null
           part_exchange_invoice_id?: string | null
           photos?: string[] | null
@@ -864,12 +867,38 @@ export type Database = {
           },
         ]
       }
+      ebay_category_cache: {
+        Row: {
+          category_id: string
+          fetched_at: string
+          kind: string
+          marketplace_id: string
+          payload: Json
+        }
+        Insert: {
+          category_id: string
+          fetched_at?: string
+          kind: string
+          marketplace_id: string
+          payload?: Json
+        }
+        Update: {
+          category_id?: string
+          fetched_at?: string
+          kind?: string
+          marketplace_id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       ebay_listings: {
         Row: {
           bike_id: string
           business_id: string
           category_id: string | null
           condition: string | null
+          condition_substituted_from: string | null
+          condition_substituted_to: string | null
           created_at: string
           environment: string
           id: string
@@ -888,6 +917,8 @@ export type Database = {
           business_id?: string
           category_id?: string | null
           condition?: string | null
+          condition_substituted_from?: string | null
+          condition_substituted_to?: string | null
           created_at?: string
           environment?: string
           id?: string
@@ -906,6 +937,8 @@ export type Database = {
           business_id?: string
           category_id?: string | null
           condition?: string | null
+          condition_substituted_from?: string | null
+          condition_substituted_to?: string | null
           created_at?: string
           environment?: string
           id?: string
