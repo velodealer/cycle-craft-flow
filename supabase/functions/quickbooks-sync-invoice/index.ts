@@ -68,12 +68,14 @@ Deno.serve(async (req) => {
     let vatRegistered = true;
     const businessId = (invoice as any).business_id ?? bike?.business_id ?? null;
     if (businessId) {
-      const { data: vatSetting } = await supabase
+      const { data: vatSetting, error: vatErr } = await supabase
         .from('app_settings')
         .select('value')
         .eq('business_id', businessId)
         .eq('key', 'vat_registered')
         .maybeSingle();
+      // Guessing VAT status would post the wrong VAT to the ledger.
+      if (vatErr) throw new Error(`Could not read VAT registration setting: ${vatErr.message}`);
       if (vatSetting && vatSetting.value === false) vatRegistered = false;
     }
 
@@ -219,12 +221,16 @@ Deno.serve(async (req) => {
       journalId = journalResult?.JournalEntry?.Id ?? journalId;
     }
 
-    await supabase.from('invoices').update({
+    const { error: recErr } = await supabase.from('invoices').update({
       quickbooks_invoice_id: qbInvoiceId,
       quickbooks_journal_id: journalId,
       sync_status: 'synced',
       sync_error: null,
     }).eq('id', invoiceId);
+    if (recErr) {
+      console.error(`POSTED BUT NOT RECORDED: QuickBooks invoice ${qbInvoiceId} / journal ${journalId} for ${invoiceId}: ${recErr.message}`);
+      return json({ error: `Posted to QuickBooks (invoice ${qbInvoiceId}) but VeloDealer could not record it: ${recErr.message}. Do not re-sync.`, posted: true }, 500);
+    }
 
     return json({ ok: true, quickbooks_invoice_id: qbInvoiceId, quickbooks_journal_id: journalId, margin_vat: marginVat });
   } catch (e) {

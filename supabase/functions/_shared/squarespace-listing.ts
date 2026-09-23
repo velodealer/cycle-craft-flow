@@ -30,13 +30,16 @@ async function description(supabase: Client, bike: any, businessId: string) {
 
 async function loadBike(supabase: Client, bikeId: string) {
   const { data, error } = await supabase.from('bikes').select(BIKE_FIELDS).eq('id', bikeId).maybeSingle();
-  if (error || !data) throw new Error('Bike not found');
+  if (error) throw new Error(`Could not load bike: ${error.message}`);
+  if (!data) throw new Error('Bike not found');
   return data as any;
 }
 
-async function listingRow(supabase: Client, bikeId: string) {
-  const { data } = await supabase.from('squarespace_listings').select('*').eq('bike_id', bikeId).maybeSingle();
-  return data as any;
+/** Existing Squarespace listing. null = never listed; throws if the read fails (never "not listed"). */
+export async function listingRow(supabase: Client, bikeId: string) {
+  const { data, error } = await supabase.from('squarespace_listings').select('*').eq('bike_id', bikeId).maybeSingle();
+  if (error) throw new Error(`Could not check the existing Squarespace listing: ${error.message}`);
+  return (data ?? null) as any;
 }
 
 async function upsertListing(supabase: Client, bikeId: string, businessId: string, patch: Record<string, unknown>) {
@@ -172,7 +175,8 @@ export async function markSquarespaceSoldOut(supabase: Client, bikeId: string): 
   if (!row?.variant_id || row.status !== 'listed') return false;
   const { token } = await accessToken(supabase, row.business_id);
   await setStock(token, row.variant_id, 0);
-  await supabase.from('squarespace_listings').update({ status: 'sold_out', last_synced_at: new Date().toISOString() }).eq('bike_id', bikeId);
+  const { error: upErr } = await supabase.from('squarespace_listings').update({ status: 'sold_out', last_synced_at: new Date().toISOString() }).eq('bike_id', bikeId);
+  if (upErr) throw new Error(`Squarespace stock set to 0, but the listing record could not be updated: ${upErr.message}`);
   return true;
 }
 
@@ -185,6 +189,7 @@ export async function removeSquarespaceProduct(supabase: Client, bikeId: string)
   } catch (e) {
     if (!String((e as Error).message).includes('[404]')) throw e;
   }
-  await supabase.from('squarespace_listings').delete().eq('bike_id', bikeId);
+  const { error: delErr } = await supabase.from('squarespace_listings').delete().eq('bike_id', bikeId);
+  if (delErr) throw new Error(`Squarespace product removed, but the listing record could not be cleared: ${delErr.message}`);
   return true;
 }

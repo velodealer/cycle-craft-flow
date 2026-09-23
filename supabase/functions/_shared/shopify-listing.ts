@@ -90,19 +90,32 @@ export function bikeTags(bike: BikeRow): string[] {
     .slice(0, 10);
 }
 
+export class ListingReadError extends Error {
+  constructor(message: string) { super(message); this.name = 'ListingReadError'; }
+}
+
+/** Existing Shopify listing for a bike. null = never listed; throws if the read fails (never "not listed"). */
+export async function loadShopifyListing(supabase: Client, bikeId: string): Promise<any | null> {
+  const { data, error } = await supabase.from('shopify_listings').select('*').eq('bike_id', bikeId).maybeSingle();
+  if (error) throw new ListingReadError(`Could not check the existing Shopify listing: ${error.message}`);
+  return data ?? null;
+}
+
 async function upsertListing(supabase: Client, bikeId: string, patch: Record<string, unknown>) {
-  const { data: bikeRow } = await supabase
+  const { data: bikeRow, error: bikeErr } = await supabase
     .from('bikes')
     .select('business_id')
     .eq('id', bikeId)
     .maybeSingle();
+  if (bikeErr) throw new Error(`Could not load bike for Shopify listing record: ${bikeErr.message}`);
   const { error } = await supabase
     .from('shopify_listings')
     .upsert(
       { bike_id: bikeId, business_id: (bikeRow as any)?.business_id ?? null, ...patch, updated_at: new Date().toISOString() },
       { onConflict: 'bike_id' },
     );
-  if (error) console.error('shopify_listings upsert failed:', error.message);
+  // Losing product/variant ids here would make the next sync create a duplicate — fail loudly.
+  if (error) throw new Error(`Shopify accepted the change, but VeloDealer could not save the listing record: ${error.message}`);
 }
 
 async function setInventory(
@@ -163,7 +176,8 @@ async function buildMetafields(
 ): Promise<{ metafields: any[]; warnings: string[] }> {
   const warnings: string[] = [];
   try {
-    const { data: full } = await supabase.from('bikes').select('*').eq('id', bikeId).maybeSingle();
+    const { data: full, error: fullErr } = await supabase.from('bikes').select('*').eq('id', bikeId).maybeSingle();
+    if (fullErr) throw new ListingReadError(`Could not load bike for Shopify metafields: ${fullErr.message}`);
     if (!full) return { metafields: [], warnings };
     const map = await loadFieldMap(supabase, 'shopify', (full as any).business_id);
     const rows = Array.isArray(map) ? map : [];
@@ -198,7 +212,7 @@ async function buildMetafields(
     }
     return { metafields, warnings };
   } catch (e) {
-    if (isPublishBlockingError(e)) throw e; // failed data load must stop the publish
+    if (isPublishBlockingError(e) || e instanceof ListingReadError) throw e; // failed data load must stop the publish
     warnings.push(`Metafield mapping failed: ${(e as Error).message}`);
     return { metafields: [], warnings };
   }
@@ -212,11 +226,7 @@ export async function pushBikeToShopify(
 ): Promise<{ productId: string; url: string | null }> {
   const settings = await requireConnection(supabase);
 
-  const { data: listing } = await supabase
-    .from('shopify_listings')
-    .select('*')
-    .eq('bike_id', bike.id)
-    .maybeSingle();
+  const listing = await loadShopifyListing(supabase, bike.id);
   const existingProductId = (listing as any)?.product_id as string | undefined;
 
   const images = (bike.photos ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).slice(0, 10);
@@ -288,11 +298,7 @@ export async function pushBikeToShopify(
 
 /** Leaves the product active but sets its stock to zero (sold elsewhere). */
 export async function markBikeSoldOut(supabase: Client, bikeId: string): Promise<boolean> {
-  const { data: listing } = await supabase
-    .from('shopify_listings')
-    .select('*')
-    .eq('bike_id', bikeId)
-    .maybeSingle();
+  const listing = await loadShopifyListing(supabase, bikeId);
   if (!listing || !(listing as any).inventory_item_id) return false;
 
   const settings = await requireConnection(supabase);
@@ -308,11 +314,7 @@ export async function markBikeSoldOut(supabase: Client, bikeId: string): Promise
 
 /** Removes the product from Shopify entirely (manual "Remove listing"). */
 export async function deleteShopifyProduct(supabase: Client, bikeId: string): Promise<boolean> {
-  const { data: listing } = await supabase
-    .from('shopify_listings')
-    .select('*')
-    .eq('bike_id', bikeId)
-    .maybeSingle();
+  const listing = await loadShopifyListing(supabase, bikeId);
   const productId = (listing as any)?.product_id as string | undefined;
   if (!productId) return false;
 
@@ -327,11 +329,16 @@ export async function deleteShopifyProduct(supabase: Client, bikeId: string): Pr
   const errors = data?.productDelete?.userErrors ?? [];
   if (errors.length) throw new Error(errors.map((e: any) => e.message).join('; '));
 
-  await supabase.from('shopify_listings').delete().eq('bike_id', bikeId);
+  const { error: delErr } = await supabase.from('shopify_listings').delete().eq('bike_id', bikeId);
+  if (delErr) throw new Error(`Shopify product removed, but the listing record could not be cleared: ${delErr.message}`);
   return true;
 }
 
 /** Records a failure against the bike's listing without throwing. */
 export async function recordListingError(supabase: Client, bikeId: string, message: string) {
-  await upsertListing(supabase, bikeId, { last_error: message.slice(0, 500) });
+  try {
+    await upsertListing(supabase, bikeId, { last_error: message.slice(0, 500) });
+  } catch (e) {
+    console.error('Could not record Shopify listing error:', (e as Error).message); // deliberate: already on an error path
+  }
 }

@@ -157,11 +157,16 @@ Deno.serve(async (req) => {
     });
     const journalId = result?.JournalEntry?.Id;
 
-    await supabase.from('bikes').update({
+    const { error: recErr } = await supabase.from('bikes').update({
       quickbooks_purchase_journal_id: journalId,
       purchase_sync_status: 'synced',
       purchase_sync_error: null,
     }).eq('id', bikeId);
+    // Posted but not recorded: returning here (not via catch) stops it being marked for retry and double-posted.
+    if (recErr) {
+      console.error(`POSTED BUT NOT RECORDED: QuickBooks journal ${journalId} for bike ${bikeId}: ${recErr.message}`);
+      return json({ error: `Posted to QuickBooks (journal ${journalId}) but VeloDealer could not record it: ${recErr.message}. Do not re-sync.`, posted: true, journal_id: journalId }, 500);
+    }
 
     return json({ ok: true, journal_id: journalId, amount });
   } catch (e) {

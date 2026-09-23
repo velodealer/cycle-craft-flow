@@ -94,10 +94,12 @@ Deno.serve(async (req) => {
     const pxBikeIds = invoices.map((i) => i.part_exchange_bike_id).filter(Boolean) as string[];
     let pxBikes: any[] = [];
     if (pxBikeIds.length) {
-      const { data } = await supabase
+      const { data, error: pxErr } = await supabase
         .from('bikes')
         .select('id, make, model, reference, quickbooks_purchase_journal_id')
         .in('id', pxBikeIds);
+      // Without these rows their QuickBooks journals would be skipped — stop before touching the ledger.
+      if (pxErr) throw new Error(`Could not load part-exchange bikes: ${pxErr.message}`);
       pxBikes = data ?? [];
     }
 
@@ -120,17 +122,16 @@ Deno.serve(async (req) => {
 
     // ---- Local cleanup
     for (const px of pxBikes) {
-      await supabase.from('bike_components').delete().eq('bike_id', px.id);
-      await supabase.from('fulfilment_events').delete().eq('bike_id', px.id);
-      await supabase.from('bike_collections').delete().eq('bike_id', px.id);
-      await supabase.from('inspections').delete().eq('bike_id', px.id);
-      await supabase.from('jobs').delete().eq('bike_id', px.id);
-      await supabase.from('parts').delete().eq('bike_id', px.id);
+      for (const table of ['bike_components', 'fulfilment_events', 'bike_collections', 'inspections', 'jobs', 'parts']) {
+        const { error: delErr } = await supabase.from(table).delete().eq('bike_id', px.id);
+        if (delErr) throw new Error(`QuickBooks reversed, but clearing ${table} for ${px.reference ?? px.id} failed: ${delErr.message}`);
+      }
     }
 
     for (const inv of invoices) {
       if (inv.part_exchange_bike_id) {
-        await supabase.from('bikes').update({ part_exchange_invoice_id: null }).eq('id', inv.part_exchange_bike_id);
+        const { error: unlinkErr } = await supabase.from('bikes').update({ part_exchange_invoice_id: null }).eq('id', inv.part_exchange_bike_id);
+        if (unlinkErr) throw new Error(unlinkErr.message);
       }
       const { error } = await supabase.from('invoices').delete().eq('id', inv.id);
       if (error) throw new Error(error.message);

@@ -79,7 +79,8 @@ export async function businessIdForUser(supabase: Client, userId: string): Promi
 }
 
 export async function businessIdForBike(supabase: Client, bikeId: string): Promise<string> {
-  const { data } = await supabase.from('bikes').select('business_id').eq('id', bikeId).maybeSingle();
+  const { data, error } = await supabase.from('bikes').select('business_id').eq('id', bikeId).maybeSingle();
+  if (error) throw new Error(`Could not load bike: ${error.message}`);
   if (!data?.business_id) throw new Error('Bike not found');
   return data.business_id as string;
 }
@@ -164,7 +165,7 @@ function hexToBytes(hex: string): Uint8Array {
 
 /** Squarespace signs webhook bodies with HMAC-SHA256; the secret is hex-encoded. */
 export async function verifySignature(secretHex: string, body: string, signature: string) {
-  const key = await crypto.subtle.importKey('raw', hexToBytes(secretHex), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', hexToBytes(secretHex) as BufferSource, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body)));
   const expected = Array.from(sig).map((b) => b.toString(16).padStart(2, '0')).join('');
   const got = signature.trim().toLowerCase();

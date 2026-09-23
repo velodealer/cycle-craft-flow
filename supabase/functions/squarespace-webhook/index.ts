@@ -30,22 +30,27 @@ Deno.serve(async (req) => {
     const { token } = await accessToken(supabase, businessId);
     const order = await sqsFetch(token, `/1.0/commerce/orders/${orderId}`);
     for (const li of order.lineItems ?? []) {
-      const { data: listing } = await supabase.from('squarespace_listings').select('bike_id')
+      const { data: listing, error: lErr } = await supabase.from('squarespace_listings').select('bike_id')
         .eq('business_id', businessId)
         .or(`variant_id.eq.${li.variantId},product_id.eq.${li.productId}`).maybeSingle();
+      if (lErr) throw new Error(`Could not match Squarespace order ${orderId}: ${lErr.message}`);
       let bikeId = listing?.bike_id as string | undefined;
       if (!bikeId && li.sku) {
-        const { data: b } = await supabase.from('bikes').select('id').eq('business_id', businessId).eq('reference', li.sku).maybeSingle();
+        const { data: b, error: bErr } = await supabase.from('bikes').select('id').eq('business_id', businessId).eq('reference', li.sku).maybeSingle();
+        if (bErr) throw new Error(`Could not match Squarespace order ${orderId} by SKU: ${bErr.message}`);
         bikeId = b?.id;
       }
       if (!bikeId) continue;
       const total = Number(li.unitPricePaid?.value ?? order.grandTotal?.value ?? 0);
       const currency = li.unitPricePaid?.currency ?? order.grandTotal?.currency ?? 'GBP';
-      const { data: bike } = await supabase.from('bikes').select('status').eq('id', bikeId).maybeSingle();
+      const { data: bike, error: sErr } = await supabase.from('bikes').select('status').eq('id', bikeId).maybeSingle();
+      if (sErr) throw new Error(`Could not load bike for Squarespace order ${orderId}: ${sErr.message}`);
       if (bike && bike.status !== 'sold') {
-        await supabase.from('bikes').update({ status: 'sold', sale_price: total || null, sold_at: order.createdOn ?? new Date().toISOString() }).eq('id', bikeId);
+        const { error: soldErr } = await supabase.from('bikes').update({ status: 'sold', sale_price: total || null, sold_at: order.createdOn ?? new Date().toISOString() }).eq('id', bikeId);
+        if (soldErr) throw new Error(`Could not mark bike sold for Squarespace order ${orderId}: ${soldErr.message}`);
       }
-      await supabase.from('squarespace_listings').update({ status: 'sold_out', updated_at: new Date().toISOString() }).eq('bike_id', bikeId);
+      const { error: slErr } = await supabase.from('squarespace_listings').update({ status: 'sold_out', updated_at: new Date().toISOString() }).eq('bike_id', bikeId);
+      if (slErr) console.error(`Squarespace listing ${bikeId} not marked sold out: ${slErr.message}`);
       try { await markBikeSoldOut(supabase, bikeId); } catch (e) { console.warn('Shopify sold-out failed', (e as Error).message); }
       try { await endEbayListing(supabase, bikeId); } catch (e) { console.warn('eBay end failed', (e as Error).message); }
       await logBikeActivity(bikeId, {
