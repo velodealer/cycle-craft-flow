@@ -82,7 +82,7 @@ Deno.test('resolver: override wins, library is the fallback, attributes merge', 
   const ov = resolvePart({ slot: 'front_tyre', brand: '', model: 'R2 Hard-Case Lite', mpn: 'W123', attributes: { width: '28c' }, components: lib });
   assertEquals([ov.brand, ov.model, ov.mpn], ['Bontrager', 'R2 Hard-Case Lite', 'W123']);
   assertEquals(ov.attributes, { width: '28c', tpi: 60 });
-  assertEquals(ov.overridden, ['model', 'mpn', 'attributes']);
+  assertEquals([...ov.overridden].sort(), ['attributes', 'model', 'mpn']);
 });
 
 Deno.test('resolver output with no overrides renders identically to library values', async () => {
