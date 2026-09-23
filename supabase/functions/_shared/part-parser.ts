@@ -117,7 +117,15 @@ export function resolveForSize(text: string, bikeSize: string | null | undefined
       while (i < parts.length && normSizeToken(parts[i])) { sizes.push(normSizeToken(parts[i])!); i++; }
       if (key && sizes.includes(key)) return { text: clean(parts.slice(i).join(', ')), resolved: true, hadSizes: true };
     }
-    return { text, resolved: false, hadSizes: true };
+    // Not found: keep only what every size shares, never another size's numbers.
+    const bodies = segments.map((seg) => {
+      const parts = seg.replace(/^Size:\s*/i, '').split(/,\s*/);
+      let i = 0;
+      while (i < parts.length && normSizeToken(parts[i])) i++;
+      return parts.slice(i);
+    });
+    const common = bodies[0].filter((c) => bodies.every((b) => b.includes(c)));
+    return { text: clean(common.join(', ')), resolved: false, hadSizes: true };
   }
   // Format B: "S:40cm, M:42cm, M/L:42cm"
   const re = /\b(XXS|XS|S|M|M\/L|L|XL|XXL):\s*(\d+(?:\.\d+)?\s*(?:mm|cm))/g;
@@ -127,7 +135,7 @@ export function resolveForSize(text: string, bikeSize: string | null | undefined
     const start = matches[0].index!;
     const last = matches[matches.length - 1];
     const end = last.index! + last[0].length;
-    if (!hit) return { text, resolved: false, hadSizes: true };
+    if (!hit) return { text: clean(`${text.slice(0, start)}${text.slice(end)}`), resolved: false, hadSizes: true };
     return { text: clean(`${text.slice(0, start)}${hit[2].replace(/\s+/g, '')}${text.slice(end)}`), resolved: true, hadSizes: true };
   }
   return { text, resolved: false, hadSizes: false };
@@ -278,7 +286,7 @@ function extractSpec(slot: string, text: string, model: string | null): { attrs:
       if ((m = take(/\b(\d{1,2})[\s-]*degree\b/i))) { a.angle_deg = Number(m[1]); spec.push(`${m[1]}°`); }
       break;
     case 'seatpost':
-      if ((m = take(/\b(-?\d{1,2}(?:\/\+\d{1,2})?)\s*mm offset\b/i))) { a.offset = `${m[1]}mm`; spec.push(`${m[1]}mm offset`); }
+      if ((m = take(/(-?\d{1,2}(?:\/\+\d{1,2})?)\s*mm offset\b/i))) { a.offset = `${m[1]}mm`; spec.push(`${m[1]}mm offset`); }
       if ((m = take(/\b(short|tall|long)\s+length\b/i))) { a.length = m[1].toLowerCase(); spec.push(m[1].toLowerCase()); }
       break;
     case 'saddle':
@@ -303,7 +311,7 @@ export function parsePart(input: ParseInput): ParsedPart {
   let slot = input.slot;
 
   const sized = resolveForSize(source_text, input.bikeSize);
-  if (sized.hadSizes && !sized.resolved) flags.push(`size list present but bike size "${input.bikeSize ?? ''}" not found in it — left unresolved`);
+  if (sized.hadSizes && !sized.resolved) flags.push(`size list present but bike size "${input.bikeSize ?? ''}" not found in it — left out the per-size values`);
   const fr = collapseFrontRear(sized.text);
   if (fr.differs) flags.push('front and rear differ — kept the parts they share');
   let text = dedupeWords(fr.text.replace(/^(19|20)\d{2}\s+/, ''));
