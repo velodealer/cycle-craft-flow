@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ClipboardCheck, Copy, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
+import { ClipboardCheck, Copy, ExternalLink, Link2, AlertTriangle, BellRing, BellOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -121,12 +121,6 @@ export default function InspectABikeIntegration() {
                 : ''}
               .
             </p>
-            <div className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3 text-sm text-success">
-              <BellRing className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Live updates: on — faults from InspectABike appear here on their own.
-              </span>
-            </div>
             <Button variant="outline" size="sm" onClick={disconnect}>
               Disconnect
             </Button>
