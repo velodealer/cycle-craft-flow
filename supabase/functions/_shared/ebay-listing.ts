@@ -548,18 +548,20 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   // Description from the dealer's listing format.
   let descriptionHtml = bikeDescriptionHtml(bike);
   let titleFormat: string | null = null;
-  try {
-    const tpl = await loadListingTemplate(supabase, 'ebay', businessId);
-    const { data: fmtRow } = await supabase
-      .from('listing_templates').select('title_format, business_id').eq('platform', 'ebay');
-    const rows = (fmtRow ?? []) as any[];
-    titleFormat = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
-    if (tpl) {
-      const components = await loadBikeComponents(supabase, bike.id);
+  // Data loads must fail loudly: a failed fetch is NOT the same as "no parts" / "no format".
+  const tpl = await loadListingTemplate(supabase, 'ebay', businessId);
+  const { data: fmtRow, error: fmtErr } = await supabase
+    .from('listing_templates').select('title_format, business_id').eq('platform', 'ebay');
+  if (fmtErr) throw new Error(`Could not load the eBay title format: ${fmtErr.message}`);
+  const rows = (fmtRow ?? []) as any[];
+  titleFormat = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
+  if (tpl) {
+    const components = await loadBikeComponents(supabase, bike.id);
+    try {
       descriptionHtml = renderListingHtml(tpl, bike, components) || descriptionHtml;
+    } catch (e) {
+      console.error('listing template render failed, using default description:', (e as Error).message);
     }
-  } catch (e) {
-    console.error('listing template render failed, using default description:', (e as Error).message);
   }
   const mobilePreview = descriptionHtml
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
