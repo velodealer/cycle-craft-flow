@@ -91,10 +91,19 @@ Deno.serve(async (req) => {
       notes: bike.condition_notes || null,
     };
 
-    const result = await iabFetch('/partner-create-inspection', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }, { supabase, businessId: (bike as any).business_id });
+    let result: any;
+    try {
+      result = await iabFetch('/partner-create-inspection', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }, { supabase, businessId: (bike as any).business_id });
+    } catch (err) {
+      // Duplicate: reuse the existing inspection if InspectABike tells us which one.
+      const b = (err as any).body;
+      const existingId = b?.inspection_id ?? b?.inspection?.id ?? b?.existing_inspection_id ?? b?.error?.inspection_id;
+      if ((err as any).status === 409 && existingId) result = { inspection_id: existingId, report_url: b?.report_url ?? b?.inspection?.report_url ?? b?.error?.report_url };
+      else throw err;
+    }
 
     const externalId = result?.inspection_id ?? result?.inspection?.id ?? null;
     const reportUrl = result?.report_url ?? result?.inspection?.report_url ?? null;

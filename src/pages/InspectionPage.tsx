@@ -3,6 +3,7 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { functionErrorMessage } from '@/services/inspectabike';
 import { PageHeader, Panel, FieldLabel, EmptyState } from '@/components/velo/PageShell';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { Button } from '@/components/ui/button';
@@ -66,8 +67,7 @@ export default function InspectionPage() {
     setStartingBikeId(bike.id);
     try {
       const { data, error } = await supabase.functions.invoke('inspectabike-create', { body: { bike_id: bike.id } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error || data?.error) throw new Error(await functionErrorMessage(error, data));
       const inspectionUrl = data?.inspection?.report_url;
       if (!inspectionUrl) throw new Error('InspectABike did not return an inspection link');
       window.location.assign(inspectionUrl);
