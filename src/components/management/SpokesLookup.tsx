@@ -203,7 +203,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
         </div>
       )}
 
-      {nextCursor && results.length > 0 && !selected && (
+      {canLoadMore && (
         <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void loadMore()} disabled={paging}>
           {paging ? (
             <>
