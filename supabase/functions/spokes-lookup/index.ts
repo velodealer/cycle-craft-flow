@@ -112,18 +112,17 @@ Deno.serve(async (req) => {
     if (action === 'search') {
       const query = String(body?.query ?? '').trim().slice(0, 300);
       if (query.length < 2) return json({ items: [], total: 0 });
+      // This API key is not permitted to use cursor paging — sending a `cursor`
+      // parameter makes 99spokes reject the request. "Show more" instead asks
+      // for a larger page of the same query (this key honours limits up to 200).
       const limit = Math.min(Math.max(Number(body?.limit ?? 20) || 20, 1), 200);
-      const cursor = typeof body?.cursor === 'string' && body.cursor ? body.cursor : '';
 
       const run = async (q: string) => {
         const params = new URLSearchParams({ q, queryMode: 'prefix', limit: String(limit), include: SEARCH_INCLUDE });
-        // NOTE: this API key is not permitted to use cursor paging — sending a
-        // `cursor` parameter (even 'start') makes 99spokes reject the request.
         const data = await spokes(`/bikes?${params.toString()}`);
         return {
           items: (data?.items ?? []) as any[],
           total: Number(data?.total ?? 0) || 0,
-          nextCursor: (data?.nextCursor ?? null) as string | null,
         };
       };
 
@@ -135,20 +134,10 @@ Deno.serve(async (req) => {
         if (!items.length) items = await run(`${link.maker} ${words.split(' ').slice(0, 2).join(' ')}`).then((p) => p.items);
         const exact = items.filter((b) => sameLink(b.url, link) || (String(b.year) === link.year && slugOf(b.url) === link.slug));
         const chosen = exact.length ? exact : items.filter((b) => !link.year || String(b.year) === link.year);
-        // A link already targets one exact bike, so there is nothing to page.
-        return json({ items: chosen.map(toItem), total: chosen.length, nextCursor: null, relaxed: !exact.length, droppedTerms: [] });
+        return json({ items: chosen.map(toItem), total: chosen.length, relaxed: !exact.length, droppedTerms: [] });
       }
 
       const { cleaned } = normaliseQuery(query);
-
-      // "Show more": fetch the next page of the query that produced the
-      // current results instead of re-running the fallback chain.
-      const usedQuery = typeof body?.usedQuery === 'string' ? body.usedQuery.trim().slice(0, 300) : '';
-      if (cursor && usedQuery) {
-        const page = await run(usedQuery);
-        return json({ items: page.items.map(toItem), total: page.total, nextCursor: page.nextCursor, relaxed: false, droppedTerms: [], usedQuery });
-      }
-
       const attempts = [query];
       if (cleaned && cleaned.toLowerCase() !== query.toLowerCase()) attempts.push(cleaned);
       const tokens = (cleaned || query).split(/\s+/).filter(Boolean);
