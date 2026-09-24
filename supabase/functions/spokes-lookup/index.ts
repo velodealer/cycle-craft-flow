@@ -146,12 +146,10 @@ Deno.serve(async (req) => {
       let items: any[] = [];
       let used = query;
       let total = 0;
-      let nextCursor: string | null = null;
       for (const q of [...new Set(attempts)]) {
         const page = await run(q);
         items = page.items;
         total = page.total;
-        nextCursor = page.nextCursor;
         used = q;
         if (items.length) break;
       }
@@ -160,7 +158,7 @@ Deno.serve(async (req) => {
       const ignored = relaxed
         ? query.split(/\s+/).filter((w) => !usedWords.has(w.toLowerCase()))
         : [];
-      return json({ items: items.map(toItem), total, nextCursor, relaxed, usedQuery: used, droppedTerms: ignored });
+      return json({ items: items.map(toItem), total, relaxed, usedQuery: used, droppedTerms: ignored });
     }
 
 
