@@ -72,9 +72,9 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
     try {
       const [local, remote] = await Promise.all([
         searchLocalCatalog(term),
-        searchSpokesDetailed(term).catch((e) => {
+        searchSpokesDetailed(term).catch((e): SpokesSearchResult => {
           toast({ title: '99spokes search failed', description: e.message, variant: 'destructive' });
-          return { items: [] as SpokesSearchItem[], relaxed: false, droppedTerms: [] as string[], total: undefined as number | undefined };
+          return { items: [], relaxed: false, droppedTerms: [] };
         }),
       ]);
       const remoteRes = remote;
