@@ -73,11 +73,34 @@ export async function searchSpokes(query: string, limit = 20): Promise<SpokesSea
   return (await searchSpokesDetailed(query, limit)).items;
 }
 
-export interface SpokesSearchResult { items: SpokesSearchItem[]; relaxed: boolean; droppedTerms: string[] }
+export interface SpokesSearchResult {
+  items: SpokesSearchItem[];
+  relaxed: boolean;
+  droppedTerms: string[];
+  /** Paging cursor for the next page of results, when there is one. */
+  nextCursor?: string | null;
+  /** Total bikes matching the search, regardless of page size. */
+  total?: number;
+  /** The query that actually produced these results (after fallbacks). */
+  usedQuery?: string;
+}
 
-export async function searchSpokesDetailed(query: string, limit = 20): Promise<SpokesSearchResult> {
-  const data = await callSpokes<any>({ action: 'search', query, limit });
-  return { items: data.items || [], relaxed: !!data.relaxed, droppedTerms: data.droppedTerms || [] };
+export async function searchSpokesDetailed(
+  query: string,
+  limit = 20,
+  cursor?: string | null,
+): Promise<SpokesSearchResult> {
+  const body: Record<string, unknown> = { action: 'search', query, limit };
+  if (cursor) body.cursor = cursor;
+  const data = await callSpokes<any>(body);
+  return {
+    items: data.items || [],
+    relaxed: !!data.relaxed,
+    droppedTerms: data.droppedTerms || [],
+    nextCursor: data.nextCursor ?? null,
+    total: typeof data.total === 'number' ? data.total : undefined,
+    usedQuery: typeof data.usedQuery === 'string' ? data.usedQuery : undefined,
+  };
 }
 
 export async function getSpokesBike(id: string): Promise<any> {

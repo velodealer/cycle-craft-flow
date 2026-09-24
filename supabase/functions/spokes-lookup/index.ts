@@ -113,25 +113,43 @@ Deno.serve(async (req) => {
       const query = String(body?.query ?? '').trim().slice(0, 300);
       if (query.length < 2) return json({ items: [], total: 0 });
       const limit = Math.min(Math.max(Number(body?.limit ?? 20) || 20, 1), 50);
+      const cursor = typeof body?.cursor === 'string' && body.cursor ? body.cursor : '';
 
       const run = async (q: string) => {
         const params = new URLSearchParams({ q, queryMode: 'prefix', limit: String(limit), include: SEARCH_INCLUDE });
+        // 99spokes only hands out a paging cursor when the request carries one;
+        // 'start' fetches the first page and returns nextCursor for later pages.
+        params.set('cursor', cursor || 'start');
         const data = await spokes(`/bikes?${params.toString()}`);
-        return (data?.items ?? []) as any[];
+        return {
+          items: (data?.items ?? []) as any[],
+          total: Number(data?.total ?? 0) || 0,
+          nextCursor: (data?.nextCursor ?? null) as string | null,
+        };
       };
 
       // Pasted 99spokes link: search by maker/year/slug and pick the exact bike.
       const link = parseSpokesUrl(query);
       if (link) {
         const words = link.slug.replace(/-/g, ' ');
-        let items = await run(`${link.maker} ${words}`).catch(() => []);
-        if (!items.length) items = await run(`${link.maker} ${words.split(' ').slice(0, 2).join(' ')}`);
+        let items = await run(`${link.maker} ${words}`).then((p) => p.items).catch(() => []);
+        if (!items.length) items = await run(`${link.maker} ${words.split(' ').slice(0, 2).join(' ')}`).then((p) => p.items);
         const exact = items.filter((b) => sameLink(b.url, link) || (String(b.year) === link.year && slugOf(b.url) === link.slug));
         const chosen = exact.length ? exact : items.filter((b) => !link.year || String(b.year) === link.year);
-        return json({ items: chosen.map(toItem), total: chosen.length, relaxed: !exact.length, droppedTerms: [] });
+        // A link already targets one exact bike, so there is nothing to page.
+        return json({ items: chosen.map(toItem), total: chosen.length, nextCursor: null, relaxed: !exact.length, droppedTerms: [] });
       }
 
       const { cleaned } = normaliseQuery(query);
+
+      // "Show more": fetch the next page of the query that produced the
+      // current results instead of re-running the fallback chain.
+      const usedQuery = typeof body?.usedQuery === 'string' ? body.usedQuery.trim().slice(0, 300) : '';
+      if (cursor && usedQuery) {
+        const page = await run(usedQuery);
+        return json({ items: page.items.map(toItem), total: page.total, nextCursor: page.nextCursor, relaxed: false, droppedTerms: [], usedQuery });
+      }
+
       const attempts = [query];
       if (cleaned && cleaned.toLowerCase() !== query.toLowerCase()) attempts.push(cleaned);
       const tokens = (cleaned || query).split(/\s+/).filter(Boolean);
@@ -139,8 +157,13 @@ Deno.serve(async (req) => {
 
       let items: any[] = [];
       let used = query;
+      let total = 0;
+      let nextCursor: string | null = null;
       for (const q of [...new Set(attempts)]) {
-        items = await run(q);
+        const page = await run(q);
+        items = page.items;
+        total = page.total;
+        nextCursor = page.nextCursor;
         used = q;
         if (items.length) break;
       }
@@ -149,7 +172,7 @@ Deno.serve(async (req) => {
       const ignored = relaxed
         ? query.split(/\s+/).filter((w) => !usedWords.has(w.toLowerCase()))
         : [];
-      return json({ items: items.map(toItem), total: items.length, relaxed, usedQuery: used, droppedTerms: ignored });
+      return json({ items: items.map(toItem), total, nextCursor, relaxed, usedQuery: used, droppedTerms: ignored });
     }
 
 
