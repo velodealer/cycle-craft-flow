@@ -3158,6 +3158,10 @@ export type Database = {
       }
       is_investor_for_bike: { Args: { _bike_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      link_bike_components: {
+        Args: { _bike_id: string; _components: Json }
+        Returns: Json
+      }
       next_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
