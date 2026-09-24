@@ -26,8 +26,11 @@ interface SpokesLookupProps {
 export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike', initialQuery = '' }: SpokesLookupProps) {
   const [query, setQuery] = useState(initialQuery);
   const [searching, setSearching] = useState(false);
+  const [paging, setPaging] = useState(false);
   const [results, setResults] = useState<SpokesSearchItem[]>([]);
   const [searched, setSearched] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [usedQuery, setUsedQuery] = useState<string>('');
   const [selected, setSelected] = useState<SpokesSearchItem | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [raw, setRaw] = useState<any>(null);
@@ -50,6 +53,8 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
     setSearched(true);
     setSelected(null);
     setRaw(null);
+    setNextCursor(null);
+    setUsedQuery('');
     try {
       const [local, remote] = await Promise.all([
         searchLocalCatalog(term),
@@ -66,8 +71,29 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
       );
       const localIds = new Set(local.map((l) => l.id));
       setResults([...local, ...remoteRes.items.filter((r) => !localIds.has(r.id))]);
+      setNextCursor(remoteRes.nextCursor ?? null);
+      setUsedQuery(remoteRes.usedQuery || term);
     } finally {
       setSearching(false);
+    }
+  }
+
+  async function loadMore() {
+    if (!nextCursor || paging) return;
+    setPaging(true);
+    try {
+      const page = await searchSpokesDetailed(usedQuery || query.trim(), 20, nextCursor);
+      setResults((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...page.items.filter((r) => !seen.has(r.id))];
+      });
+      setNextCursor(page.nextCursor ?? null);
+et:
+      setUsedQuery(page.usedQuery || usedQuery);
+    } catch (e: any) {
+      toast({ title: 'Could not load more results', description: e.message, variant: 'destructive' });
+    } finally {
+      setPaging(false);
     }
   }
 
