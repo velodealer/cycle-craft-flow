@@ -200,75 +200,113 @@ async function categoryIds(): Promise<Record<string, string>> {
   return map;
 }
 
+export interface LinkResult {
+  linked: number;
+  total: number;
+  failed: { slot: string; reason: string }[];
+}
+
+/** Short, human summary of a link result for toasts. */
+export function describeLinkResult(r: LinkResult): string {
+  if (r.total === 0) return 'No parts in the 99spokes record.';
+  const head = `${r.linked} of ${r.total} parts linked`;
+  if (!r.failed.length) return `${head}.`;
+  return `${head}. Failed: ${r.failed.map((f) => `${f.slot} (${f.reason})`).join('; ')}`;
+}
+
 /**
  * Upserts the mapped components into the shared components library and links
- * them to a bike. Matching is on category + brand + model so the library grows
- * without duplicating entries.
+ * them to a bike. Matching is on category + brand + model + part number so the
+ * library grows without duplicating entries. Every failure is reported back —
+ * nothing is skipped silently.
  */
-export async function upsertComponentsForBike(bikeId: string, components: MappedComponent[]): Promise<number> {
-  if (!bikeId || components.length === 0) return 0;
+export async function upsertComponentsForBike(bikeId: string, components: MappedComponent[]): Promise<LinkResult> {
+  const result: LinkResult = { linked: 0, total: components.length, failed: [] };
+  if (!bikeId || components.length === 0) return result;
   const cats = await categoryIds();
-  let linked = 0;
-
-  for (const c of components) {
-    const categoryId = cats[c.categorySlug] || cats['accessories'];
-    if (!categoryId || !c.brand || !c.model) continue;
-
-    const { data: found } = await supabase
-      .from('components')
-      .select('id, description, mpn, weight_g, attributes')
-      .eq('category_id', categoryId)
-      .ilike('brand', c.brand)
-      .ilike('model', c.model)
-      .maybeSingle();
-
-    let componentId = (found as any)?.id as string | undefined;
-
-    if (!componentId) {
-      const { data: created, error } = await supabase
-        .from('components')
-        .insert({
-          category_id: categoryId,
-          brand: c.brand,
-          model: c.model,
-          description: c.description || null,
-          mpn: c.mpn || null,
-          weight_g: c.weightG ?? null,
-          attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : {},
-        })
-        .select('id')
-        .single();
-      if (error || !created) continue;
-      componentId = (created as any).id;
-    } else {
-      // Top up blanks only — never overwrite something a person typed.
-      const row = found as any;
-      const patch: Record<string, any> = {};
-      if (!row.description && c.description) patch.description = c.description;
-      if (!row.mpn && c.mpn) patch.mpn = c.mpn;
-      if ((row.weight_g === null || row.weight_g === undefined) && c.weightG != null) patch.weight_g = c.weightG;
-      const incoming = c.attributes || {};
-      if (Object.keys(incoming).length) {
-        const existing = (row.attributes && typeof row.attributes === 'object' ? row.attributes : {}) as Record<string, any>;
-        const merged = { ...incoming, ...existing };
-        if (Object.keys(merged).length !== Object.keys(existing).length) patch.attributes = merged;
-      }
-      if (Object.keys(patch).length) {
-        await supabase.from('components').update(patch).eq('id', componentId);
-      }
-    }
-
-    const { error: linkError } = await supabase
-      .from('bike_components')
-      .upsert(
-        { bike_id: bikeId, slot: c.slot, component_id: componentId!, position: c.position || null, notes: c.description || null },
-        { onConflict: 'bike_id,slot' },
-      );
-    if (!linkError) linked += 1;
+  if (!Object.keys(cats).length) {
+    result.failed = components.map((c) => ({ slot: c.slot, reason: 'part categories could not be loaded' }));
+    return result;
   }
 
+  for (const c of components) {
+    try {
+      const categoryId = cats[c.categorySlug] || cats['accessories'];
+      if (!categoryId) { result.failed.push({ slot: c.slot, reason: `no category "${c.categorySlug}"` }); continue; }
+      if (!c.brand || !c.model) { result.failed.push({ slot: c.slot, reason: 'no brand or model in the source' }); continue; }
 
-  return linked;
+      const brand = c.brand.slice(0, 120);
+      const model = c.model.slice(0, 200);
+      const mpn = c.mpn || null;
+
+      let q = supabase
+        .from('components')
+        .select('id, description, mpn, weight_g, attributes')
+        .eq('category_id', categoryId)
+        .eq('brand', brand)
+        .eq('model', model);
+      q = mpn ? q.eq('mpn', mpn) : q.is('mpn', null);
+      const { data: foundRows, error: findError } = await q.limit(1);
+      if (findError) throw new Error(`library lookup failed: ${findError.message}`);
+      const found = (foundRows || [])[0] as any;
+
+      let componentId = found?.id as string | undefined;
+
+      if (!componentId) {
+        const { data: created, error } = await supabase
+          .from('components')
+          .insert({
+            category_id: categoryId,
+            brand,
+            model,
+            description: c.description || null,
+            mpn,
+            weight_g: c.weightG ?? null,
+            attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : {},
+            source: '99spokes',
+            raw_text: c.description || null,
+          } as any)
+          .select('id')
+          .single();
+        if (error || !created) throw new Error(`library save failed: ${error?.message || 'no row returned'}`);
+        componentId = (created as any).id;
+      } else {
+        // Top up blanks only — never overwrite something a person typed.
+        const patch: Record<string, any> = {};
+        if (!found.description && c.description) patch.description = c.description;
+        if ((found.weight_g === null || found.weight_g === undefined) && c.weightG != null) patch.weight_g = c.weightG;
+        if (Object.keys(patch).length) {
+          const { error } = await supabase.from('components').update(patch).eq('id', componentId);
+          if (error) throw new Error(`library top-up failed: ${error.message}`);
+        }
+      }
+
+      // Per-bike values live on the bike's own row so shared entries never leak between bikes.
+      const { error: linkError } = await supabase
+        .from('bike_components')
+        .upsert(
+          {
+            bike_id: bikeId,
+            slot: c.slot,
+            component_id: componentId!,
+            position: c.position || null,
+            notes: c.description || null,
+            brand,
+            model,
+            mpn,
+            attributes: c.attributes && Object.keys(c.attributes).length ? c.attributes : null,
+          } as any,
+          { onConflict: 'bike_id,slot' },
+        );
+      if (linkError) throw new Error(`link failed: ${linkError.message}`);
+      result.linked += 1;
+    } catch (e: any) {
+      result.failed.push({ slot: c.slot, reason: e?.message || String(e) });
+    }
+  }
+
+  if (result.failed.length) console.error('[99spokes] parts not linked', bikeId, result.failed);
+  return result;
 }
 
 /* ---------------------------------------------------------------- mapper -- */

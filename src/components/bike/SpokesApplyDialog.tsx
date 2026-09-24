@@ -86,14 +86,15 @@ export default function SpokesApplyDialog({ bike, open, onOpenChange, onApplied 
 
       await saveCatalogBike(payload.raw, payload.mapped);
 
-      let linked = 0;
+      let link: LinkResult | null = null;
       if (linkComponents) {
-        linked = await upsertComponentsForBike(bike.id, payload.mapped.components);
+        link = await upsertComponentsForBike(bike.id, payload.mapped.components);
       }
 
       toast({
-        title: 'Specification applied',
-        description: linked > 0 ? `${linked} components linked to this bike.` : undefined,
+        title: link?.failed.length ? 'Specification applied — some parts failed' : 'Specification applied',
+        description: link ? describeLinkResult(link) : undefined,
+        variant: link?.failed.length ? 'destructive' : undefined,
       });
       reset();
       onOpenChange(false);
