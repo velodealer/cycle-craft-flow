@@ -49,7 +49,7 @@ export default function ResetPassword() {
     }
     toast({ title: 'Password updated', description: 'You can now sign in with your new password.' });
     await supabase.auth.signOut();
-    navigate('/auth', { replace: true });
+    navigate('/auth?reset=1', { replace: true });
   };
 
   return (

@@ -108,6 +108,12 @@ export default function Auth() {
           <CardDescription>Dealer management for the used bike trade</CardDescription>
         </CardHeader>
         <CardContent>
+          {shopifyParams.get('reset') === '1' && (
+            <div className="mb-4 rounded-lg border border-accent bg-accent/10 p-3 text-sm">
+              <div className="font-medium">Password updated</div>
+              <div className="text-muted-foreground">Please sign in with your new password.</div>
+            </div>
+          )}
           {shopifyResult === 'connected' && (
             <div className="mb-4 rounded-lg border border-accent bg-accent/10 p-3 text-sm">
               <div className="font-medium">
