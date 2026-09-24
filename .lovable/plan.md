@@ -1,7 +1,7 @@
 # Fix: investor page shows "not signed in" instead of the sign-in screen
 
 ## What's actually happening
-Asif's password is fine (you can sign in with it). The message means his browser has no active sign-in when he opens velodealer.com/investor. The investments page doesn't send signed-out visitors to the sign-in screen — it just shows the empty page with "You are not signed in". The reset flow also signs people out after they set a new password, so if he then went straight to /investor (e.g. from a bookmark) he'd land here.
+Asif has never requested a password reset, and his account last signed in successfully today at 15:24. So his password isn't the problem. The message means that browser tab had no active sign-in when it opened velodealer.com/investor. The investments page doesn't send signed-out visitors to the sign-in screen — it just shows the empty page with "You are not signed in". First step: confirm with a test that a fresh sign-in as an investor lands on the page with bikes showing (to rule out a sign-in timing problem on that page).
 
 ## Changes
 1. Investments page and single-bike investor page: if nobody is signed in, go straight to the sign-in screen instead of showing an empty page.
