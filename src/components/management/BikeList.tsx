@@ -64,6 +64,17 @@ interface BikeListProps {
 
 export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   const PAGE_SIZE = 25;
+  const bikeHref = (id: string) => `/bikes/${id}`;
+  const openInNewTab = (bike: Bike) => {
+    window.open(bikeHref(bike.id), '_blank', 'noopener');
+  };
+  // Plain click navigates in-app; Cmd/Ctrl/Shift/Alt clicks and middle-click fall
+  // through to the browser so the link can be opened in a new tab natively.
+  const handleTitleClick = (e: React.MouseEvent, bike: Bike) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onEdit(bike);
+  };
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
