@@ -29,13 +29,24 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
   const [paging, setPaging] = useState(false);
   const [results, setResults] = useState<SpokesSearchItem[]>([]);
   const [searched, setSearched] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  // 99spokes paging cursors are not permitted on this API key, so "Show more"
+  // re-asks for a larger page of the same search instead of a next page.
+  const MAX_FETCH = 200;
+  const [fetchLimit, setFetchLimit] = useState(20);
+  const [remoteCount, setRemoteCount] = useState(0);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [usedQuery, setUsedQuery] = useState<string>('');
+  const [lastTerm, setLastTerm] = useState('');
   const [selected, setSelected] = useState<SpokesSearchItem | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [raw, setRaw] = useState<any>(null);
   const [size, setSize] = useState<string>('');
   const [relaxedNote, setRelaxedNote] = useState<string | null>(null);
+  const canLoadMore = !selected
+    && !searching
+    && results.length > 0
+    && fetchLimit < MAX_FETCH
+    && (totalCount === null || remoteCount < totalCount);
 
   const mapped = useMemo(() => (raw ? mapSpokesBike(raw, size || null) : null), [raw, size]);
 
@@ -53,14 +64,17 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
     setSearched(true);
     setSelected(null);
     setRaw(null);
-    setNextCursor(null);
+    setFetchLimit(20);
+    setRemoteCount(0);
+    setTotalCount(null);
     setUsedQuery('');
+    setLastTerm(term);
     try {
       const [local, remote] = await Promise.all([
         searchLocalCatalog(term),
         searchSpokesDetailed(term).catch((e) => {
           toast({ title: '99spokes search failed', description: e.message, variant: 'destructive' });
-          return { items: [] as SpokesSearchItem[], relaxed: false, droppedTerms: [] as string[] };
+          return { items: [] as SpokesSearchItem[], relaxed: false, droppedTerms: [] as string[], total: undefined as number | undefined };
         }),
       ]);
       const remoteRes = remote;
@@ -71,7 +85,8 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
       );
       const localIds = new Set(local.map((l) => l.id));
       setResults([...local, ...remoteRes.items.filter((r) => !localIds.has(r.id))]);
-      setNextCursor(remoteRes.nextCursor ?? null);
+      setRemoteCount(remoteRes.items.length);
+      setTotalCount(typeof remoteRes.total === 'number' ? remoteRes.total : null);
       setUsedQuery(remoteRes.usedQuery || term);
     } finally {
       setSearching(false);
@@ -79,16 +94,21 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
   }
 
   async function loadMore() {
-    if (!nextCursor || paging) return;
+    if (paging || fetchLimit >= MAX_FETCH) return;
     setPaging(true);
     try {
-      const page = await searchSpokesDetailed(usedQuery || query.trim(), 20, nextCursor);
-      setResults((prev) => {
-        const seen = new Set(prev.map((r) => r.id));
-        return [...prev, ...page.items.filter((r) => !seen.has(r.id))];
-      });
-      setNextCursor(page.nextCursor ?? null);
+      const term = lastTerm || query.trim();
+      const nextLimit = Math.min(fetchLimit + 50, MAX_FETCH);
+      const [local, page] = await Promise.all([
+        searchLocalCatalog(term),
+        searchSpokesDetailed(usedQuery || term, nextLimit),
+      ]);
+      const localIds = new Set(local.map((l) => l.id));
+      setResults([...local, ...page.items.filter((r) => !localIds.has(r.id))]);
+      setRemoteCount(page.items.length);
+      setTotalCount(typeof page.total === 'number' ? page.total : totalCount);
       setUsedQuery(page.usedQuery || usedQuery);
+      setFetchLimit(nextLimit);
     } catch (e: any) {
       toast({ title: 'Could not load more results', description: e.message, variant: 'destructive' });
     } finally {
