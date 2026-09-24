@@ -183,6 +183,18 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
         </div>
       )}
 
+      {nextCursor && results.length > 0 && !selected && (
+        <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void loadMore()} disabled={paging}>
+          {paging ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading more…
+            </>
+          ) : (
+            'Show more results'
+          )}
+        </Button>
+      )}
+
       {selected && (
         <div className="rounded-md border p-3 space-y-3">
           <div className="flex items-start justify-between gap-3">
