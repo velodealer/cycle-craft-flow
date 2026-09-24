@@ -88,7 +88,6 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
         return [...prev, ...page.items.filter((r) => !seen.has(r.id))];
       });
       setNextCursor(page.nextCursor ?? null);
-et:
       setUsedQuery(page.usedQuery || usedQuery);
     } catch (e: any) {
       toast({ title: 'Could not load more results', description: e.message, variant: 'destructive' });
