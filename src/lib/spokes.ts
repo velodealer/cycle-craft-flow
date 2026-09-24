@@ -421,7 +421,14 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
 
   /* --- bike columns --- */
   bikeFields.make = bike?.maker || undefined;
-  bikeFields.model = [bike?.family, bike?.model].filter(Boolean).join(' ').trim() || bike?.model;
+  // Prepend the family only when the model doesn't already start with it
+  // (99spokes model "Aeroad CF SL 8" already contains family "Aeroad").
+  const family = String(bike?.family ?? '').trim();
+  const modelName = String(bike?.model ?? '').trim();
+  bikeFields.model =
+    (family && modelName.toLowerCase().startsWith(family.toLowerCase() + ' ')) || !family
+      ? modelName || undefined
+      : [family, modelName].filter(Boolean).join(' ').trim() || undefined;
   if (bike?.year) bikeFields.year = bike.year;
   const bikeType = mapBikeType(bike);
   if (bikeType) bikeFields.bike_type = bikeType;
