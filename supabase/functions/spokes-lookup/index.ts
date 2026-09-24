@@ -117,9 +117,8 @@ Deno.serve(async (req) => {
 
       const run = async (q: string) => {
         const params = new URLSearchParams({ q, queryMode: 'prefix', limit: String(limit), include: SEARCH_INCLUDE });
-        // 99spokes only hands out a paging cursor when the request carries one;
-        // 'start' fetches the first page and returns nextCursor for later pages.
-        params.set('cursor', cursor || 'start');
+        // NOTE: this API key is not permitted to use cursor paging — sending a
+        // `cursor` parameter (even 'start') makes 99spokes reject the request.
         const data = await spokes(`/bikes?${params.toString()}`);
         return {
           items: (data?.items ?? []) as any[],
