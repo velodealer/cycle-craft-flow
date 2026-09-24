@@ -14,6 +14,7 @@ import {
   mapSpokesBike,
   type SpokesSearchItem,
   type MappedBike,
+  type SpokesSearchResult,
 } from '@/lib/spokes';
 
 interface SpokesLookupProps {
