@@ -105,7 +105,11 @@ export default function InvestorDashboardPage() {
       {error && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 flex items-center justify-between gap-3 text-sm">
           <span>{error}</span>
-          <button className="underline" onClick={() => setReloadKey((k) => k + 1)}>Retry</button>
+          {userId ? (
+            <button className="underline" onClick={() => setReloadKey((k) => k + 1)}>Retry</button>
+          ) : (
+            <Link className="underline" to="/auth">Sign in</Link>
+          )}
         </div>
       )}
 

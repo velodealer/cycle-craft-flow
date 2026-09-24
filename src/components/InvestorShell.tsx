@@ -1,12 +1,15 @@
 import { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
 /** Slim, read-only frame for investor screens — no sidebar, mobile first. */
 export default function InvestorShell({ children }: { children: ReactNode }) {
-  const { profile, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
