@@ -367,10 +367,18 @@ export function mapBikeType(bike: any): string | null {
   }
 }
 
-function label(part: any): { brand: string; model: string; description?: string } | null {
+function label(part: any, houseBrand?: string | null): { brand: string; model: string; description?: string } | null {
   if (!part) return null;
-  const brand = part.maker || (part.display || part.description || '').split(' ')[0];
-  const model = part.model || part.display || part.description;
+  const text = String(part.display || part.description || '');
+  // No maker published: frames/forks are the bike maker's own; otherwise use the first word.
+  const brand = part.maker || houseBrand || text.split(' ')[0];
+  let model = part.model || part.display;
+  if (!model && part.description) {
+    // Keep a short name (first clause), never the whole marketing paragraph.
+    model = String(part.description).split(',')[0].trim();
+    if (brand && model.toLowerCase().startsWith(String(brand).toLowerCase() + ' ')) model = model.slice(String(brand).length + 1);
+    model = model.slice(0, 80);
+  }
   if (!brand || !model) return null;
   return { brand: String(brand), model: String(model), description: part.description || part.display || null };
 }
@@ -448,8 +456,10 @@ export function parseSpecFromText(text?: string | null): { partNumber?: string; 
   return { partNumber, attributes };
 }
 
+let houseBrandForPush: string | null = null;
+
 function push(list: MappedComponent[], slot: string, categorySlug: string, part: any, position?: 'front' | 'rear') {
-  const l = label(part);
+  const l = label(part, slot === 'frame' || slot === 'fork' ? houseBrandForPush : null);
   if (!l) return;
   const description = position ? splitFrontRear(l.description, position) : l.description;
   const derived = parseSpecFromText(description);
@@ -581,6 +591,7 @@ export function mapSpokesBike(bike: any, sizeName?: string | null): MappedBike {
 
   /* --- components library --- */
   const components: MappedComponent[] = [];
+  houseBrandForPush = bike?.maker || null;
   push(components, 'frame', 'frame', c.frame);
   push(components, 'fork', 'fork', c.fork);
   push(components, 'rear_shock', 'rear_shock', c.rearShock);
