@@ -232,7 +232,13 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         purchase_cost: bikeFields.source === 'investor' ? bikeFields.purchase_cost : (bikeFields as any).purchase_cost ?? null,
         purchase_date: purchase_date ? purchase_date.toISOString() : null,
         fulfillment_type: 'stocked_by_me',
-        status: arrange_collection ? 'awaiting_collection' : 'pending_intake',
+        // Only set status on create, or when arranging collection for a bike
+        // still awaiting intake. Plain edits never change the stage.
+        ...(!bike
+          ? { status: arrange_collection ? 'awaiting_collection' : 'pending_intake' }
+          : arrange_collection && bike.status === 'pending_intake'
+            ? { status: 'awaiting_collection' }
+            : {}),
         storage_bay_id: bikeFields.storage_bay_id || null,
         photos,
       };
