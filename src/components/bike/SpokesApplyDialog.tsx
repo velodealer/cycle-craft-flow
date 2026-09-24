@@ -14,6 +14,8 @@ import {
   saveCatalogBike,
   spokesCatalogColumns,
   upsertComponentsForBike,
+  describeLinkResult,
+  type LinkResult,
   type MappedBike,
   type ReviewRow,
 } from '@/lib/spokes';

@@ -31,7 +31,7 @@ import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
 import { Progress } from '@/components/ui/progress';
 import { BIKE_TYPES } from '@/lib/bikeSpec';
 import { FRAME_MATERIALS, readinessScore } from '@/lib/listingReadiness';
-import { saveCatalogBike, spokesCatalogColumns, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
+import { saveCatalogBike, spokesCatalogColumns, upsertComponentsForBike, describeLinkResult, type MappedBike } from '@/lib/spokes';
 
 
 
