@@ -30,38 +30,54 @@ interface InvestorBike {
 const fmt = (n: number | null | undefined) => (n != null ? `£${Number(n).toFixed(2)}` : '-');
 
 export default function InvestorDashboardPage() {
-  const { profile } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [bikes, setBikes] = useState<InvestorBike[]>([]);
   const [costsByBike, setCostsByBike] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Use the signed-in account id directly so the page never waits on the profile load.
+  const userId = user?.id ?? null;
 
   useEffect(() => {
-    if (!profile?.user_id) return;
+    if (authLoading) return;
+    if (!userId) { setLoading(false); setError('You are not signed in. Please sign in again.'); return; }
+    let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data: bikeData } = await supabase
-        .from('bikes')
-        .select('id, make, model, year, status, purchase_cost, purchase_price, collection_cost, delivery_cost, sale_price, asking_price, profit_share_pct, finance_scheme, intake_date, photos')
-        .eq('investor_id', profile.user_id)
-        .order('intake_date', { ascending: false });
+      setError(null);
+      try {
+        const { data: bikeData, error: bikeErr } = await supabase
+          .from('bikes')
+          .select('id, make, model, year, status, purchase_cost, purchase_price, collection_cost, delivery_cost, sale_price, asking_price, profit_share_pct, finance_scheme, intake_date, photos')
+          .eq('investor_id', userId)
+          .order('intake_date', { ascending: false });
+        if (bikeErr) throw bikeErr;
 
-      const list = (bikeData || []) as InvestorBike[];
-      setBikes(list);
-
-      if (list.length > 0) {
-        const ids = list.map((b) => b.id);
-        const [{ data: jobs }, { data: parts }] = await Promise.all([
-          supabase.from('jobs').select('bike_id, actual_cost, estimated_cost').in('bike_id', ids),
-          supabase.from('parts').select('bike_id, cost_price, quantity').in('bike_id', ids),
-        ]);
+        const list = (bikeData || []) as InvestorBike[];
         const totals: Record<string, number> = {};
-        (jobs || []).forEach((j: any) => { if (j.bike_id) totals[j.bike_id] = (totals[j.bike_id] || 0) + Number(j.actual_cost ?? j.estimated_cost ?? 0); });
-        (parts || []).forEach((p: any) => { if (p.bike_id) totals[p.bike_id] = (totals[p.bike_id] || 0) + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1); });
-        setCostsByBike(totals);
+        if (list.length > 0) {
+          const ids = list.map((b) => b.id);
+          const [{ data: jobs, error: jErr }, { data: parts, error: pErr }] = await Promise.all([
+            supabase.from('jobs').select('bike_id, actual_cost, estimated_cost').in('bike_id', ids),
+            supabase.from('parts').select('bike_id, cost_price, quantity').in('bike_id', ids),
+          ]);
+          if (jErr) console.error('Investor jobs load failed', jErr);
+          if (pErr) console.error('Investor parts load failed', pErr);
+          (jobs || []).forEach((j: any) => { if (j.bike_id) totals[j.bike_id] = (totals[j.bike_id] || 0) + Number(j.actual_cost ?? j.estimated_cost ?? 0); });
+          (parts || []).forEach((p: any) => { if (p.bike_id) totals[p.bike_id] = (totals[p.bike_id] || 0) + Number(p.cost_price ?? 0) * Number(p.quantity ?? 1); });
+        }
+        if (!cancelled) { setBikes(list); setCostsByBike(totals); }
+      } catch (e: any) {
+        console.error('Investor dashboard load failed', e);
+        if (!cancelled) setError(e?.message || 'Could not load your investments.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
-  }, [profile?.user_id]);
+    return () => { cancelled = true; };
+  }, [userId, authLoading, reloadKey]);
 
   const computeBike = (b: InvestorBike) => {
     const acquisition = Number(b.purchase_cost ?? b.purchase_price ?? 0);
@@ -85,6 +101,13 @@ export default function InvestorDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="My investments" description="The bikes you've funded and what they've returned." />
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 flex items-center justify-between gap-3 text-sm">
+          <span>{error}</span>
+          <button className="underline" onClick={() => setReloadKey((k) => k + 1)}>Retry</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={<Bike className="h-4 w-4" />} label="Bikes" value={loading ? '…' : bikes.length.toString()} />
