@@ -372,12 +372,12 @@ function label(part: any, houseBrand?: string | null): { brand: string; model: s
   const text = String(part.display || part.description || '');
   // No maker published: frames/forks are the bike maker's own; otherwise use the first word.
   const brand = part.maker || houseBrand || text.split(' ')[0];
-  let model = part.model || part.display;
+  const strip = (m: string) => (brand && m.toLowerCase().startsWith(String(brand).toLowerCase() + ' ') ? m.slice(String(brand).length + 1) : m).trim();
+  let model: string | undefined = part.model;
+  if (!model && part.display && String(part.display).trim().toLowerCase() !== String(brand).toLowerCase()) model = strip(String(part.display));
   if (!model && part.description) {
-    // Keep a short name (first clause), never the whole marketing paragraph.
-    model = String(part.description).split(',')[0].trim();
-    if (brand && model.toLowerCase().startsWith(String(brand).toLowerCase() + ' ')) model = model.slice(String(brand).length + 1);
-    model = model.slice(0, 80);
+    // Short name: first listed option, first clause — never the whole marketing paragraph.
+    model = strip(String(part.description).split('|')[0].split(',')[0].trim()).slice(0, 80);
   }
   if (!brand || !model) return null;
   return { brand: String(brand), model: String(model), description: part.description || part.display || null };
