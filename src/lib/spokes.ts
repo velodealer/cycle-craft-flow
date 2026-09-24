@@ -70,8 +70,14 @@ async function callSpokes<T>(body: Record<string, unknown>): Promise<T> {
 }
 
 export async function searchSpokes(query: string, limit = 20): Promise<SpokesSearchItem[]> {
-  const data = await callSpokes<{ items: SpokesSearchItem[] }>({ action: 'search', query, limit });
-  return data.items || [];
+  return (await searchSpokesDetailed(query, limit)).items;
+}
+
+export interface SpokesSearchResult { items: SpokesSearchItem[]; relaxed: boolean; droppedTerms: string[] }
+
+export async function searchSpokesDetailed(query: string, limit = 20): Promise<SpokesSearchResult> {
+  const data = await callSpokes<any>({ action: 'search', query, limit });
+  return { items: data.items || [], relaxed: !!data.relaxed, droppedTerms: data.droppedTerms || [] };
 }
 
 export async function getSpokesBike(id: string): Promise<any> {
