@@ -18,6 +18,7 @@ import StripComponentDialog from './StripComponentDialog';
 import { PackageMinus, Sparkles } from 'lucide-react';
 import SpokesApplyDialog from './SpokesApplyDialog';
 import SpokesFullSpec from './SpokesFullSpec';
+import { mapSpokesBike, upsertComponentsForBike, describeLinkResult } from '@/lib/spokes';
 import {
   BIKE_TYPES, FRAME_MATERIALS, GENDERS, CONDITIONS,
   SPEC_SECTIONS, applyTypeDefaults, getAtPath, setAtPath,
@@ -62,6 +63,26 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   useEffect(() => { reloadComponents(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [bike?.id]);
 
   const visibleSections = useMemo(() => SPEC_SECTIONS.filter((s) => !s.show || s.show(draft)), [draft]);
+
+  // Parts the stored 99spokes record lists that never made it onto the bike.
+  const [retrying, setRetrying] = useState(false);
+  const spokesParts = useMemo(
+    () => (bike?.catalog_data ? mapSpokesBike(bike.catalog_data, bike.catalog_size).components : []),
+    [bike?.catalog_data, bike?.catalog_size],
+  );
+  const missingParts = spokesParts.filter((p) => !componentDetails[p.slot]).length;
+  const retryParts = async () => {
+    setRetrying(true);
+    const missing = spokesParts.filter((p) => !componentDetails[p.slot]);
+    const res = await upsertComponentsForBike(bike.id, missing);
+    setRetrying(false);
+    toast({
+      title: res.failed.length ? 'Parts still not saved' : 'Parts saved',
+      description: describeLinkResult(res),
+      variant: res.failed.length ? 'destructive' : undefined,
+    });
+    reloadComponents();
+  };
 
   const updateDraft = (patch: any) => setDraft((d: any) => ({ ...d, ...patch }));
   const updateSpec = (path: string, value: any) =>
@@ -181,6 +202,19 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
           onOpenChange={setSpokesOpen}
           onApplied={() => { reloadComponents(); onUpdate(); }}
         />
+
+        {missingParts > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+            <span>
+              Parts not saved — the 99spokes record lists {spokesParts.length} parts but only{' '}
+              {Object.keys(componentDetails).length} are on this bike.
+            </span>
+            <Button size="sm" variant="outline" disabled={retrying} onClick={retryParts}>
+              {retrying ? 'Saving…' : 'Retry'}
+            </Button>
+          </div>
+        )}
+
 
         {/* General */}
         <div className="rounded-md border p-4 space-y-4">
