@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { partName, partDetail, partTokens as sharedPartTokens, substituteHidingEmpty } from '../../supabase/functions/_shared/part-tokens';
 import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 
 export type ListingPlatform = 'ebay' | 'shopify' | 'squarespace' | 'instagram' | 'facebook';
@@ -122,30 +123,9 @@ export function specTokens(bike: any): Record<string, string> {
   return out;
 }
 
-const partName = (c: any) => [c.brand, c.model || c.name].filter(Boolean).join(' ');
 
-const partDetail = (c: any) =>
-  [
-    c.description || '',
-    c.mpn ? `MPN: ${c.mpn}` : '',
-    c.weight_g ? `${c.weight_g} g` : '',
-    flatValue(c.attributes),
-    c.notes || '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-/** Every fitted part as {part_<slot>} / {part_<slot>_detail} tokens. */
-export function partTokens(components: any[] = []): Record<string, string> {
-  const out: Record<string, string> = {};
-  components.forEach((c) => {
-    if (!c?.slot) return;
-    const slot = String(c.slot).replace(/\W+/g, '_');
-    out[`part_${slot}`] = partName(c);
-    out[`part_${slot}_detail`] = partDetail(c);
-  });
-  return out;
-}
+/** Every fitted part as {part_<slot>}, _detail, _brand, _model, _mpn, _spec, _extra tokens. */
+export const partTokens = sharedPartTokens;
 
 export function buildValues(bike: any, components: any[] = []): Record<string, string> {
   const compLines = components
@@ -214,9 +194,10 @@ export function buildValues(bike: any, components: any[] = []): Record<string, s
   };
 }
 
-export function renderTemplate(body: string, bike: any, components: any[] = []): string {
+/** Fills placeholders; rows (and then groups) whose placeholders are all empty are left out. */
+export function renderTemplate(body: string, bike: any, components: any[] = [], format: 'html' | 'text' = 'html'): string {
   const values = buildValues(bike, components);
-  return body.replace(/\{(\w+)\}/g, (_m, key) => (key in values ? values[key] : ''));
+  return substituteHidingEmpty(body, values, format);
 }
 
 export async function fetchTemplates() {
@@ -282,7 +263,7 @@ export async function copyListing(
   if (!data) return { ok: false, reason: 'No template configured' };
   const tpl = data as any;
   const format: ListingFormat = tpl.format === 'html' ? 'html' : 'text';
-  const rendered = renderTemplate(tpl.body || '', bike, components);
+  const rendered = renderTemplate(tpl.body || '', bike, components, format);
 
   if (format === 'html') {
     // Put the raw HTML source on both text/html (for rich editors) and text/plain

@@ -124,6 +124,7 @@ export const SPEC_SECTIONS: SectionDef[] = [
       { key: 'wheel_size', label: 'Wheel Size', placeholder: '700c, 29", 27.5"' },
       { key: 'rim_material', label: 'Rim Material' },
       { key: 'internal_width_mm', label: 'Internal Width (mm)', type: 'number' },
+      { key: 'rim_depth_mm', label: 'Rim Depth (mm)', type: 'number' },
       { key: 'hub', label: 'Hub' },
       { key: 'spoke_count', label: 'Spoke Count', type: 'number' },
       { key: 'tubeless_ready', label: 'Tubeless Ready', type: 'checkbox' },
@@ -155,6 +156,7 @@ export const SPEC_SECTIONS: SectionDef[] = [
       { slot: 'shifters', label: 'Shifters', categorySlug: 'shifters' },
       { slot: 'bottom_bracket', label: 'Bottom Bracket', categorySlug: 'bottom_bracket' },
       { slot: 'power_meter', label: 'Power Meter', categorySlug: 'power_meter' },
+      { slot: 'groupset_battery', label: 'Di2 / AXS Battery', categorySlug: 'shifters' },
 
     ],
     fields: [

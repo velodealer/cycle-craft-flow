@@ -1,6 +1,7 @@
 // Renders the dealer's saved listing format (Settings -> Listing Formats) server-side.
 // Mirrors src/lib/listingTemplate.ts so eBay listings look the same as the copy button.
 import { fetchBikeComponents, isPartsFetchError } from './bike-components.ts';
+import { partName, partDetail, partTokens as sharedPartTokens, substituteHidingEmpty } from './part-tokens.ts';
 export { PartsFetchError, isPartsFetchError } from './bike-components.ts';
 
 export interface TemplateRow {
@@ -55,29 +56,9 @@ export function specTokens(bike: any): Record<string, string> {
   return out;
 }
 
-const partName = (c: any) => [c.brand, c.model || c.name].filter(Boolean).join(' ');
 
-const partDetail = (c: any) =>
-  [
-    c.description || '',
-    c.mpn ? `MPN: ${c.mpn}` : '',
-    c.weight_g ? `${c.weight_g} g` : '',
-    flatValue(c.attributes),
-    c.notes || '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-export function partTokens(components: any[] = []): Record<string, string> {
-  const out: Record<string, string> = {};
-  components.forEach((c) => {
-    if (!c?.slot) return;
-    const slot = String(c.slot).replace(/\W+/g, '_');
-    out[`part_${slot}`] = partName(c);
-    out[`part_${slot}_detail`] = partDetail(c);
-  });
-  return out;
-}
+/** Every fitted part as {part_<slot>}, _detail, _brand, _model, _mpn, _spec, _extra tokens. */
+export const partTokens = sharedPartTokens;
 
 export function buildValues(bike: any, components: any[] = []): Record<string, string> {
   const compLines = components
@@ -146,9 +127,10 @@ export function buildValues(bike: any, components: any[] = []): Record<string, s
   };
 }
 
-export function renderTemplate(body: string, bike: any, components: any[] = []): string {
+/** Fills placeholders; rows (and then groups) whose placeholders are all empty are left out. */
+export function renderTemplate(body: string, bike: any, components: any[] = [], format: 'html' | 'text' = 'html'): string {
   const values = buildValues(bike, components);
-  return body.replace(/\{(\w+)\}/g, (_m, key) => (key in values ? values[key] : ''));
+  return substituteHidingEmpty(body, values, format);
 }
 
 const escapeHtml = (value: unknown) =>
@@ -217,7 +199,7 @@ export function renderListingHtml(
   components: any[] = [],
 ): string | null {
   if (!tpl) return null;
-  const rendered = renderTemplate(tpl.body || '', bike, components).trim();
+  const rendered = renderTemplate(tpl.body || '', bike, components, tpl.format === 'html' ? 'html' : 'text').trim();
   if (!rendered) return null;
   const html = tpl.format === 'html' ? rendered : textToHtml(rendered);
   const clean = sanitiseForEbay(html);
