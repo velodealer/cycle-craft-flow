@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     if (action === 'search') {
       const query = String(body?.query ?? '').trim().slice(0, 300);
       if (query.length < 2) return json({ items: [], total: 0 });
-      const limit = Math.min(Math.max(Number(body?.limit ?? 20) || 20, 1), 50);
+      const limit = Math.min(Math.max(Number(body?.limit ?? 20) || 20, 1), 200);
       const cursor = typeof body?.cursor === 'string' && body.cursor ? body.cursor : '';
 
       const run = async (q: string) => {
