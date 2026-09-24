@@ -112,20 +112,26 @@ Deno.serve(async (req) => {
     if (action === 'search') {
       const query = String(body?.query ?? '').trim().slice(0, 300);
       if (query.length < 2) return json({ items: [], total: 0 });
-      const limit = Math.min(Math.max(Number(body?.limit ?? 20) || 20, 1), 50);
+      // This API key is not permitted to use cursor paging — sending a `cursor`
+      // parameter makes 99spokes reject the request. "Show more" instead asks
+      // for a larger page of the same query (this key honours limits up to 200).
+      const limit = Math.min(Math.max(Number(body?.limit ?? 20) || 20, 1), 200);
 
       const run = async (q: string) => {
         const params = new URLSearchParams({ q, queryMode: 'prefix', limit: String(limit), include: SEARCH_INCLUDE });
         const data = await spokes(`/bikes?${params.toString()}`);
-        return (data?.items ?? []) as any[];
+        return {
+          items: (data?.items ?? []) as any[],
+          total: Number(data?.total ?? 0) || 0,
+        };
       };
 
       // Pasted 99spokes link: search by maker/year/slug and pick the exact bike.
       const link = parseSpokesUrl(query);
       if (link) {
         const words = link.slug.replace(/-/g, ' ');
-        let items = await run(`${link.maker} ${words}`).catch(() => []);
-        if (!items.length) items = await run(`${link.maker} ${words.split(' ').slice(0, 2).join(' ')}`);
+        let items = await run(`${link.maker} ${words}`).then((p) => p.items).catch(() => []);
+        if (!items.length) items = await run(`${link.maker} ${words.split(' ').slice(0, 2).join(' ')}`).then((p) => p.items);
         const exact = items.filter((b) => sameLink(b.url, link) || (String(b.year) === link.year && slugOf(b.url) === link.slug));
         const chosen = exact.length ? exact : items.filter((b) => !link.year || String(b.year) === link.year);
         return json({ items: chosen.map(toItem), total: chosen.length, relaxed: !exact.length, droppedTerms: [] });
@@ -139,8 +145,11 @@ Deno.serve(async (req) => {
 
       let items: any[] = [];
       let used = query;
+      let total = 0;
       for (const q of [...new Set(attempts)]) {
-        items = await run(q);
+        const page = await run(q);
+        items = page.items;
+        total = page.total;
         used = q;
         if (items.length) break;
       }
@@ -149,7 +158,7 @@ Deno.serve(async (req) => {
       const ignored = relaxed
         ? query.split(/\s+/).filter((w) => !usedWords.has(w.toLowerCase()))
         : [];
-      return json({ items: items.map(toItem), total: items.length, relaxed, usedQuery: used, droppedTerms: ignored });
+      return json({ items: items.map(toItem), total, relaxed, usedQuery: used, droppedTerms: ignored });
     }
 
 
