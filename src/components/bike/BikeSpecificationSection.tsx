@@ -134,9 +134,21 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
       setBikeComponents((m) => { const n = { ...m }; delete n[slot.slot]; return n; });
       return;
     }
+    // Swapping to a different component: clear the per-bike override fields left by the
+    // previous part so the new component's own library details show through.
+    const isSwap = bikeComponents[slot.slot] !== componentId;
     const { error } = await supabase
       .from('bike_components')
-      .upsert({ bike_id: bike.id, slot: slot.slot, component_id: componentId, position: slot.position || null }, { onConflict: 'bike_id,slot' });
+      .upsert(
+        {
+          bike_id: bike.id,
+          slot: slot.slot,
+          component_id: componentId,
+          position: slot.position || null,
+          ...(isSwap ? { brand: null, model: null, mpn: null, attributes: null, spec_overrides: null, notes: null } : {}),
+        },
+        { onConflict: 'bike_id,slot' },
+      );
     if (error) { toast({ title: 'Could not link component', description: error.message, variant: 'destructive' }); return; }
     setBikeComponents((m) => ({ ...m, [slot.slot]: componentId }));
   };
