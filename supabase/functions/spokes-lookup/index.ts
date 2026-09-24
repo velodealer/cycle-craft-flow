@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
         return json({ items: chosen.map(toItem), total: chosen.length, relaxed: !exact.length, droppedTerms: [] });
       }
 
-      const { cleaned, dropped } = normaliseQuery(query);
+      const { cleaned } = normaliseQuery(query);
       const attempts = [query];
       if (cleaned && cleaned.toLowerCase() !== query.toLowerCase()) attempts.push(cleaned);
       const tokens = (cleaned || query).split(/\s+/).filter(Boolean);
@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
       const ignored = relaxed
         ? query.split(/\s+/).filter((w) => !usedWords.has(w.toLowerCase()))
         : [];
-      return json({ items: items.map(toItem), total: items.length, relaxed, usedQuery: used, droppedTerms: relaxed ? ignored : dropped.length ? [] : [] });
+      return json({ items: items.map(toItem), total: items.length, relaxed, usedQuery: used, droppedTerms: ignored });
     }
 
 

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import {
-  searchSpokes,
+  searchSpokesDetailed,
   searchLocalCatalog,
   getSpokesBike,
   getLocalCatalogBike,
@@ -32,6 +32,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [raw, setRaw] = useState<any>(null);
   const [size, setSize] = useState<string>('');
+  const [relaxedNote, setRelaxedNote] = useState<string | null>(null);
 
   const mapped = useMemo(() => (raw ? mapSpokesBike(raw, size || null) : null), [raw, size]);
 
@@ -52,13 +53,19 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
     try {
       const [local, remote] = await Promise.all([
         searchLocalCatalog(term),
-        searchSpokes(term).catch((e) => {
+        searchSpokesDetailed(term).catch((e) => {
           toast({ title: '99spokes search failed', description: e.message, variant: 'destructive' });
-          return [] as SpokesSearchItem[];
+          return { items: [] as SpokesSearchItem[], relaxed: false, droppedTerms: [] as string[] };
         }),
       ]);
+      const remoteRes = remote;
+      setRelaxedNote(
+        remoteRes.relaxed && remoteRes.items.length
+          ? `No exact match — showing closest bikes${remoteRes.droppedTerms.length ? ` (ignored: ${remoteRes.droppedTerms.join(', ')})` : ''}. Pick the right year and spec.`
+          : null,
+      );
       const localIds = new Set(local.map((l) => l.id));
-      setResults([...local, ...remote.filter((r) => !localIds.has(r.id))]);
+      setResults([...local, ...remoteRes.items.filter((r) => !localIds.has(r.id))]);
     } finally {
       setSearching(false);
     }
@@ -95,7 +102,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
                 void runSearch(query);
               }
             }}
-            placeholder="Search 99spokes, e.g. Specialized Tarmac SL7"
+            placeholder="Search 99spokes or paste a 99spokes link"
             className="pl-9"
           />
         </div>
@@ -106,6 +113,10 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
 
       {searched && !searching && results.length === 0 && (
         <p className="text-sm text-muted-foreground">No matching bikes found.</p>
+      )}
+
+      {relaxedNote && !selected && results.length > 0 && (
+        <p className="text-xs text-muted-foreground">{relaxedNote}</p>
       )}
 
       {results.length > 0 && !selected && (
