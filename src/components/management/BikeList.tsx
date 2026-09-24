@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import LocationSelect from '@/components/bike/LocationSelect';
@@ -64,6 +64,17 @@ interface BikeListProps {
 
 export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   const PAGE_SIZE = 25;
+  const bikeHref = (id: string) => `/bikes/${id}`;
+  const openInNewTab = (bike: Bike) => {
+    window.open(bikeHref(bike.id), '_blank', 'noopener');
+  };
+  // Plain click navigates in-app; Cmd/Ctrl/Shift/Alt clicks and middle-click fall
+  // through to the browser so the link can be opened in a new tab natively.
+  const handleTitleClick = (e: React.MouseEvent, bike: Bike) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onEdit(bike);
+  };
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -284,10 +295,21 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                      <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-20 w-20" />
                    </button>
                   <div className="min-w-0 flex-1 space-y-2">
-                     <button type="button" className="block text-left font-semibold leading-tight break-words hover:underline" onClick={() => onEdit(bike)}>
+                   <div className="flex min-w-0 items-start gap-1">
+                     <a href={bikeHref(bike.id)} onClick={(e) => handleTitleClick(e, bike)} className="block text-left font-semibold leading-tight break-words hover:underline">
                       {bike.make} {bike.model}
                       {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
+                     </a>
+                     <button
+                       type="button"
+                       aria-label={`Open ${bike.make} ${bike.model} in a new tab`}
+                       title="Open in new tab"
+                       className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                       onClick={() => openInNewTab(bike)}
+                     >
+                       <ExternalLink className="h-3.5 w-3.5" />
                      </button>
+                   </div>
                     <div className="id-text">{bikeRef(bike as any)}</div>
                     <div className="flex flex-wrap gap-2">
                       {getStatusBadge(bike.status)}
@@ -356,9 +378,20 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                           <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12" />
                         </button>
                         <div className="min-w-0">
-                        <button type="button" className="block text-left font-medium break-words hover:underline" onClick={() => onEdit(bike)}>
-                          {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
-                        </button>
+                        <div className="flex min-w-0 items-center gap-1">
+                          <a href={bikeHref(bike.id)} onClick={(e) => handleTitleClick(e, bike)} className="block text-left font-medium break-words hover:underline">
+                            {bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}
+                          </a>
+                          <button
+                            type="button"
+                            aria-label={`Open ${bike.make} ${bike.model} in a new tab`}
+                            title="Open in new tab"
+                            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() => openInNewTab(bike)}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <div className="id-text">{bikeRef(bike as any)}</div>
                         <div className="mt-1">{getSourceBadge(bike.source)}</div>
                         </div>
@@ -391,7 +424,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                 <Checkbox checked={labelSel.selected.has(bike.id)} onCheckedChange={() => labelSel.toggle(bike.id)} />
                 <div className="flex min-w-0 gap-3">
                   <button type="button" className="shrink-0" onClick={() => onEdit(bike)}><BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-14 w-14" /></button>
-                  <div className="min-w-0"><button type="button" className="text-left font-semibold hover:underline" onClick={() => onEdit(bike)}>{bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}</button><div className="id-text">{bikeRef(bike as any)}</div><div className="mt-1 flex flex-wrap gap-2">{getStatusBadge(bike.status)}{getSourceBadge(bike.source)}</div></div>
+                  <div className="min-w-0"><div className="flex min-w-0 items-center gap-1"><a href={bikeHref(bike.id)} onClick={(e) => handleTitleClick(e, bike)} className="text-left font-semibold hover:underline">{bike.year ? `${bike.year} ` : ''}{bike.make} {bike.model}</a><button type="button" aria-label={`Open ${bike.make} ${bike.model} in a new tab`} title="Open in new tab" className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => openInNewTab(bike)}><ExternalLink className="h-3.5 w-3.5" /></button></div><div className="id-text">{bikeRef(bike as any)}</div><div className="mt-1 flex flex-wrap gap-2">{getStatusBadge(bike.status)}{getSourceBadge(bike.source)}</div></div>
                 </div>
                 <LocationSelect bikeId={bike.id} value={bike.storage_bay_id} onChange={(bayId) => handleLocationChange(bike.id, bayId)} size="sm" />
               </div>
