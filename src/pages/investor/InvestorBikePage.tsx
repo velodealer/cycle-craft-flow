@@ -25,19 +25,26 @@ export default function InvestorBikePage() {
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    const [b, j, p, c, f] = await Promise.all([
-      supabase.from('bikes').select('*').eq('id', id).maybeSingle(),
-      supabase.from('jobs').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
-      supabase.from('parts').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
-      supabase.from('bike_collections').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
-      supabase.from('fulfilment_events').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
-    ]);
-    setBike(b.data);
-    setJobs(j.data || []);
-    setParts(p.data || []);
-    setCollections(c.data || []);
-    setFulfilment(f.data || []);
-    setLoading(false);
+    try {
+      const [b, j, p, c, f] = await Promise.all([
+        supabase.from('bikes').select('*').eq('id', id).maybeSingle(),
+        supabase.from('jobs').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
+        supabase.from('parts').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
+        supabase.from('bike_collections').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
+        supabase.from('fulfilment_events').select('*').eq('bike_id', id).order('created_at', { ascending: true }),
+      ]);
+      if (b.error) console.error('Investor bike load failed', b.error);
+      setBike(b.data);
+      setJobs(j.data || []);
+      setParts(p.data || []);
+      setCollections(c.data || []);
+      setFulfilment(f.data || []);
+    } catch (e) {
+      console.error('Investor bike load failed', e);
+      setBike(null);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
