@@ -295,10 +295,21 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
                      <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-20 w-20" />
                    </button>
                   <div className="min-w-0 flex-1 space-y-2">
-                     <button type="button" className="block text-left font-semibold leading-tight break-words hover:underline" onClick={() => onEdit(bike)}>
+                   <div className="flex min-w-0 items-start gap-1">
+                     <a href={bikeHref(bike.id)} onClick={(e) => handleTitleClick(e, bike)} className="block text-left font-semibold leading-tight break-words hover:underline">
                       {bike.make} {bike.model}
                       {bike.year ? <span className="text-muted-foreground"> · {bike.year}</span> : null}
+                     </a>
+                     <button
+                       type="button"
+                       aria-label={`Open ${bike.make} ${bike.model} in a new tab`}
+                       title="Open in new tab"
+                       className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                       onClick={() => openInNewTab(bike)}
+                     >
+                       <ExternalLink className="h-3.5 w-3.5" />
                      </button>
+                   </div>
                     <div className="id-text">{bikeRef(bike as any)}</div>
                     <div className="flex flex-wrap gap-2">
                       {getStatusBadge(bike.status)}
