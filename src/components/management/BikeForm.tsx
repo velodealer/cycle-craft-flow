@@ -31,7 +31,7 @@ import BikeCatalogLookup from '@/components/management/BikeCatalogLookup';
 import { Progress } from '@/components/ui/progress';
 import { BIKE_TYPES } from '@/lib/bikeSpec';
 import { FRAME_MATERIALS, readinessScore } from '@/lib/listingReadiness';
-import { saveCatalogBike, spokesCatalogColumns, upsertComponentsForBike, type MappedBike } from '@/lib/spokes';
+import { saveCatalogBike, spokesCatalogColumns, upsertComponentsForBike, describeLinkResult, type MappedBike } from '@/lib/spokes';
 
 
 
@@ -291,10 +291,12 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       if (spokesFill && bikeId) {
         try {
           await saveCatalogBike(spokesFill.raw, spokesFill.mapped);
-          const linked = await upsertComponentsForBike(bikeId, spokesFill.mapped.components);
-          if (linked > 0) {
-            toast({ title: `${linked} components added to the bike` });
-          }
+          const link = await upsertComponentsForBike(bikeId, spokesFill.mapped.components);
+          toast({
+            title: link.failed.length ? 'Some parts were not added' : `${link.linked} parts added to the bike`,
+            description: describeLinkResult(link),
+            variant: link.failed.length ? 'destructive' : undefined,
+          });
         } catch (e: any) {
           toast({ title: 'Spec saved, components not linked', description: e.message, variant: 'destructive' });
         }
