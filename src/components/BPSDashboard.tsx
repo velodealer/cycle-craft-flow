@@ -21,10 +21,11 @@ export default function BPSDashboard() {
     { title: 'Inspection', count: s('inspection'), today: today('inspection'), to: '/inspection' },
     {
       title: 'Owner approval',
-      count: s('pending_approval'),
+      count: data?.awaitingApproval ?? 0,
       today: 0,
       to: '/repairs',
-      warn: s('pending_approval') > 0,
+      warn: (data?.awaitingApproval ?? 0) > 0,
+      hint: data?.stuckApproval ? `${data.stuckApproval} stuck, nothing to approve` : undefined,
     },
     { title: 'Repair', count: s('repair'), today: today('repair'), to: '/jobs' },
     { title: 'Ready', count: s('ready'), today: today('ready'), to: '/listings?status=ready' },
