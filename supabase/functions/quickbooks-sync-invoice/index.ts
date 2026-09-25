@@ -155,11 +155,15 @@ Deno.serve(async (req) => {
           : isMargin
           ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
           : 'Standard VAT sale.',
-        ...(deliveryCharge > 0 ? [`Delivery charged to the customer: ${deliveryCharge.toFixed(2)} (standard rated).`] : []),
-        ...(partExValue > 0
-          ? [`Part exchange allowance of ${partExValue.toFixed(2)} settled via the part-ex bike's stock-in journal (AR credit); cash balance due ${balanceDue.toFixed(2)}. VAT is on the full sale value.`]
-          : []),
-        `Bike reference: ${bikeReference || '—'}`,
+        ...(isPartSale
+          ? ['Part sale.']
+          : [
+              ...(deliveryCharge > 0 ? [`Delivery charged to the customer: ${deliveryCharge.toFixed(2)} (standard rated).`] : []),
+              ...(Number(invoice.part_exchange_value || 0) > 0
+                ? [`Part exchange allowance of ${Number(invoice.part_exchange_value).toFixed(2)} settled via the part-ex bike's stock-in journal (AR credit); cash balance due ${Number(invoice.gross || invoice.total || 0).toFixed(2)}. VAT is on the full sale value.`]
+                : []),
+              `Bike reference: ${bikeReference || '—'}`,
+            ]),
         `Stock in journal: ${stockInDoc || '—'}`,
         `Stock out journal: ${stockOutDoc || '—'}`,
       ].join(' | '),
@@ -208,6 +212,12 @@ Deno.serve(async (req) => {
         DetailType: 'JournalEntryLineDetail',
         JournalEntryLineDetail: { PostingType: 'Credit', AccountRef: { value: accounts.stock } },
       });
+    }
+
+    // Part sale stock-out: credits the parts stock account when mapped,
+    // otherwise the main stock account.
+    if (isPartSale) {
+      lines.push(...buildPartStockOutLines(Math.abs(Number(part?.cost_price || 0)), accounts, description));
     }
 
     if (marginVat > 0) {
