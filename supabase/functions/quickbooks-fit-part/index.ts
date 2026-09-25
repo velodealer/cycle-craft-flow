@@ -21,27 +21,38 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     partId = typeof body.part_id === 'string' && UUID_RE.test(body.part_id) ? body.part_id : undefined;
     if (!partId) return json({ error: 'part_id is required' }, 400);
+    const reverse = body.reverse === true;
 
     const { data: part, error } = await supabase.from('parts')
-      .select('id, business_id, bike_id, description, brand, cost_price, fit_qb_posting_id, bikes:bike_id(reference)')
+      .select('id, business_id, bike_id, description, brand, cost_price, fit_qb_posting_id, stock_status, stripped_from_bike_id, bikes:bike_id(reference)')
       .eq('id', partId).maybeSingle();
     if (error) throw new Error(error.message);
-    if (!part || part.business_id !== profile.business_id || !part.bike_id) return json({ error: 'Fitted part not found' }, 404);
-    if (part.fit_qb_posting_id) return json({ ok: true, skipped: 'Already posted' });
+    if (!part || part.business_id !== profile.business_id) return json({ error: 'Part not found' }, 404);
+    if (reverse) {
+      if (part.bike_id || part.stock_status !== 'in_stock') return json({ error: 'Part is not back in stock' }, 409);
+      if (!part.fit_qb_posting_id) return json({ ok: true, skipped: 'Fit was never posted — nothing to reverse' });
+    } else {
+      if (!part.bike_id) return json({ error: 'Fitted part not found' }, 404);
+      if (part.fit_qb_posting_id) return json({ ok: true, skipped: 'Already posted' });
+    }
 
     const { data: integ } = await supabase.from('integrations').select('is_active').eq('name', 'quickbooks').maybeSingle();
     if (!integ?.is_active) return json({ ok: true, skipped: 'QuickBooks is not connected' });
 
     const { accessToken, realmId, settings } = await getQboAuth(supabase);
-    const ref = (part as any).bikes?.reference || part.bike_id.slice(0, 8);
+    const ref = (part as any).bikes?.reference || (part.bike_id ?? '').slice(0, 8) || 'STOCK';
     const description = `${[part.brand, part.description].filter(Boolean).join(' ')} → ${ref}`;
-    const lines = buildFitPartLines(Number(part.cost_price || 0), settings.accounts ?? {}, description);
+    const fitLines = buildFitPartLines(Number(part.cost_price || 0), settings.accounts ?? {}, description);
+    const lines = reverse
+      ? fitLines.map((l: any) => ({ ...l, Description: String(l.Description ?? '').replace('Part fitted to bike', 'Part returned to stock'),
+          JournalEntryLineDetail: { ...l.JournalEntryLineDetail, PostingType: l.JournalEntryLineDetail?.PostingType === 'Debit' ? 'Credit' : 'Debit' } }))
+      : fitLines;
     if (lines.length === 0) return json({ ok: true, skipped: 'No parts stock account mapped — value already in stock' });
 
     const res = await qboFetch(accessToken, realmId, '/journalentry?minorversion=75', {
       method: 'POST',
       body: JSON.stringify({
-        DocNumber: `FIT-${ref}`.slice(0, 21),
+        DocNumber: `${reverse ? 'UNFIT' : 'FIT'}-${ref}`.slice(0, 21),
         TxnDate: new Date().toISOString().slice(0, 10),
         PrivateNote: description.slice(0, 2000),
         Line: lines,
@@ -50,7 +61,7 @@ Deno.serve(async (req) => {
     const journalId = res?.JournalEntry?.Id;
     if (!journalId) throw new Error('QuickBooks did not return the journal entry');
     const { error: recErr } = await supabase.from('parts').update({
-      fit_qb_posting_id: journalId, fit_qb_sync_status: 'synced', fit_qb_sync_error: null,
+      fit_qb_posting_id: reverse ? null : journalId, fit_qb_sync_status: reverse ? 'reversed' : 'synced', fit_qb_sync_error: null,
     }).eq('id', partId);
     if (recErr) return json({ error: `Posted to QuickBooks but not recorded: ${recErr.message}. Do not re-run.`, posted: true }, 500);
     return json({ ok: true, qb_journal_id: journalId });
