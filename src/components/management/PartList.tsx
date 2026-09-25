@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit } from 'lucide-react';
+import { Search, Plus, Edit, Banknote } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
 import { useStorageBays } from '@/hooks/useStorageBays';
+import RecordPartSaleDialog, { type SellablePart } from './RecordPartSaleDialog';
 
 
 interface Part {
@@ -38,7 +39,20 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
+  const [sellingPart, setSellingPart] = useState<SellablePart | null>(null);
+  const [sellOpen, setSellOpen] = useState(false);
   const { bays } = useStorageBays();
+
+  const openSell = (part: Part) => {
+    setSellingPart({
+      id: part.id,
+      description: part.description,
+      brand: part.brand,
+      cost_price: part.cost_price,
+      sale_price: part.sale_price,
+    });
+    setSellOpen(true);
+  };
 
   const loadParts = async () => {
     try {
