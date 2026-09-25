@@ -28,10 +28,11 @@ Deno.serve(async (req) => {
     if (!bikeId) return json({ error: 'bike_id is required' }, 400);
 
     const { data: bike, error } = await supabase.from('bikes')
-      .select('id, reference, purchase_price, status')
+      .select('id, reference, purchase_price, status, break_qb_posting_id')
       .eq('id', bikeId).maybeSingle();
     if (error) throw new Error(error.message);
     if (!bike) return json({ error: 'Bike not found' }, 404);
+    if (bike.break_qb_posting_id) return json({ ok: true, skipped: 'Already posted', qb_journal_id: bike.break_qb_posting_id });
 
     const { data: integ } = await supabase.from('integrations').select('is_active').eq('name', 'quickbooks').maybeSingle();
     if (!integ?.is_active) return json({ ok: true, skipped: 'QuickBooks is not connected' });
@@ -47,10 +48,12 @@ Deno.serve(async (req) => {
       .filter((i) => i.amount > 0);
     if (keptItems.length === 0) return json({ ok: true, skipped: 'No kept parts to reclassify' });
 
-    // Basis is the purchase price posted to the accounts at intake.
+    // Basis is the purchase price posted to the accounts at intake. A bike that
+    // only had some parts removed (not split) keeps its remaining value — no write-off.
+    const isSplit = bike.status === 'split_for_parts';
     const purchase = r2(Number(bike.purchase_price || 0));
     const keptTotal = r2(keptItems.reduce((s, i) => s + i.amount, 0));
-    const writtenOff = r2(Math.max(0, purchase - keptTotal));
+    const writtenOff = isSplit ? r2(Math.max(0, purchase - keptTotal)) : 0;
 
     const { accessToken, realmId, settings } = await getQboAuth(supabase);
     const capabilities = await ensureCapabilities(supabase, settings);
