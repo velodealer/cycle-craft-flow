@@ -372,6 +372,9 @@ export type Database = {
           storage_bay_id: string | null
           updated_at: string
           weight_kg: number | null
+          xero_purchase_journal_id: string | null
+          xero_purchase_sync_error: string | null
+          xero_purchase_sync_status: string | null
           year: number | null
         }
         Insert: {
@@ -434,6 +437,9 @@ export type Database = {
           storage_bay_id?: string | null
           updated_at?: string
           weight_kg?: number | null
+          xero_purchase_journal_id?: string | null
+          xero_purchase_sync_error?: string | null
+          xero_purchase_sync_status?: string | null
           year?: number | null
         }
         Update: {
@@ -496,6 +502,9 @@ export type Database = {
           storage_bay_id?: string | null
           updated_at?: string
           weight_kg?: number | null
+          xero_purchase_journal_id?: string | null
+          xero_purchase_sync_error?: string | null
+          xero_purchase_sync_status?: string | null
           year?: number | null
         }
         Relationships: [
@@ -1706,6 +1715,10 @@ export type Database = {
           type: Database["public"]["Enums"]["invoice_type"]
           updated_at: string
           vat_rate: number
+          xero_invoice_id: string | null
+          xero_journal_id: string | null
+          xero_sync_error: string | null
+          xero_sync_status: string | null
         }
         Insert: {
           bike_id?: string | null
@@ -1735,6 +1748,10 @@ export type Database = {
           type: Database["public"]["Enums"]["invoice_type"]
           updated_at?: string
           vat_rate?: number
+          xero_invoice_id?: string | null
+          xero_journal_id?: string | null
+          xero_sync_error?: string | null
+          xero_sync_status?: string | null
         }
         Update: {
           bike_id?: string | null
@@ -1764,6 +1781,10 @@ export type Database = {
           type?: Database["public"]["Enums"]["invoice_type"]
           updated_at?: string
           vat_rate?: number
+          xero_invoice_id?: string | null
+          xero_journal_id?: string | null
+          xero_sync_error?: string | null
+          xero_sync_status?: string | null
         }
         Relationships: [
           {
@@ -3101,6 +3122,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      xero_oauth_states: {
+        Row: {
+          business_id: string
+          created_at: string
+          origin: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          origin?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          origin?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
