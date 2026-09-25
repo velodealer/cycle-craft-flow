@@ -16,7 +16,7 @@ const backToApp = (origin: string, params: Record<string, string>) => {
   return new Response(null, { status: 302, headers: { Location: `${origin}/settings?${qs}` } });
 };
 
-const ACCOUNT_KEYS: (keyof XeroAccounts)[] = ['stock', 'cogs', 'sales', 'vat', 'purchase_funding'];
+const ACCOUNT_KEYS: (keyof XeroAccounts)[] = ['stock', 'parts_stock', 'cogs', 'sales', 'vat', 'purchase_funding'];
 const code = (v: unknown) => (typeof v === 'string' && /^[A-Za-z0-9._-]{1,20}$/.test(v.trim()) ? v.trim() : undefined);
 
 async function listTenants(accessToken: string) {
