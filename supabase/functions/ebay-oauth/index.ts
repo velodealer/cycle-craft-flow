@@ -24,6 +24,7 @@ import {
   type EbayEnvironment,
   type EbaySettings,
 } from '../_shared/ebay.ts';
+import { allowedOrigin, classifyCallback, DEFAULT_APP_ORIGIN } from '../_shared/ebay-oauth-origin.ts';
 import { ensureLocation, heldLocation } from '../_shared/ebay-listing.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -32,30 +33,12 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const FALLBACK_APP_ORIGIN = 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
-
-function safeOrigin(state: string | null): string {
-  if (!state) return FALLBACK_APP_ORIGIN;
-  try {
-    const origin = decodeURIComponent(state).split('|')[0];
-    const u = new URL(origin);
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
-  } catch { /* ignore */ }
-  return FALLBACK_APP_ORIGIN;
-}
+const FALLBACK_APP_ORIGIN = DEFAULT_APP_ORIGIN;
 
 const backToApp = (origin: string, params: Record<string, string>) => {
   const qs = new URLSearchParams({ tab: 'integrations', ...params });
-  return new Response(null, { status: 302, headers: { Location: `${origin}/settings?${qs}` } });
+  return new Response(null, { status: 302, headers: { Location: `${allowedOrigin(origin)}/settings?${qs}` } });
 };
-
-function envFromState(state: string | null): EbayEnvironment {
-  try {
-    return decodeURIComponent(state ?? '').split('|')[2] === 'production' ? 'production' : 'sandbox';
-  } catch {
-    return 'sandbox';
-  }
-}
 
 // ---- Business policies (Sell Account API v1) ----
 type PolicyKind = 'fulfillment' | 'payment' | 'returns';
@@ -201,11 +184,18 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
 
   // ---- OAuth callback from eBay ----
-  if (req.method === 'GET' && (url.searchParams.get('code') || url.searchParams.get('error'))) {
-    const rawState = url.searchParams.get('state');
-    const stateKey = rawState ? decodeURIComponent(rawState) : '';
-    let origin = safeOrigin(rawState);
-    let environment = envFromState(rawState);
+  const callbackKind = req.method === 'GET' ? classifyCallback(url.searchParams) : 'none';
+  if (callbackKind !== 'none') {
+    const stateKey = url.searchParams.get('state') ?? '';
+    let origin = FALLBACK_APP_ORIGIN;
+    if (stateKey) {
+      const { data: row } = await supabase.from('ebay_oauth_states').select('origin').eq('state', stateKey).maybeSingle();
+      if (row?.origin) origin = allowedOrigin(row.origin);
+    }
+    if (callbackKind === 'declined') {
+      if (stateKey) await supabase.from('ebay_oauth_states').delete().eq('state', stateKey);
+      return backToApp(origin, { ebay: 'cancelled' });
+    }
     try {
       const error = url.searchParams.get('error');
       if (error) throw new Error(url.searchParams.get('error_description') || error);
@@ -226,8 +216,8 @@ Deno.serve(async (req) => {
         throw new Error('This eBay connection link has expired — please try connecting again.');
       }
       const businessId = record.business_id;
-      environment = record.environment === 'production' ? 'production' : 'sandbox';
-      if (record.origin) origin = record.origin;
+      const environment: EbayEnvironment = record.environment === 'production' ? 'production' : 'sandbox';
+      if (record.origin) origin = allowedOrigin(record.origin);
 
       const tokens = await exchangeCode(environment, url.searchParams.get('code')!);
       await saveSettings(supabase, businessId, {
@@ -239,12 +229,16 @@ Deno.serve(async (req) => {
         marketplace_id: 'EBAY_GB',
         currency: 'GBP',
         granted_scopes: EBAY_SCOPES,
-      });
+        refresh_token_expires_at: tokens.refresh_token_expires_in
+          ? new Date(Date.now() + tokens.refresh_token_expires_in * 1000).toISOString()
+          : undefined,
+        needs_reauth: false,
+      }, true, environment);
 
       try {
-        const conn = await requireConnection(supabase, businessId);
+        const conn = await requireConnection(supabase, businessId, environment);
         const me = await ebayFetch<any>(conn, '/commerce/identity/v1/user/');
-        if (me?.username) await saveSettings(supabase, businessId, { seller_name: me.username });
+        if (me?.username) await saveSettings(supabase, businessId, { seller_name: me.username }, true, environment);
       } catch (e) {
         console.error('Could not read eBay account name:', (e as Error).message);
       }
@@ -300,7 +294,8 @@ Deno.serve(async (req) => {
         payment_policy_id: s.payment_policy_id ?? '',
         return_policy_id: s.return_policy_id ?? '',
         callback_url: redirectUri(),
-        needs_reconnect: Boolean(row?.is_active && s.refresh_token) && !hasCurrentScopes(s),
+        needs_reconnect: Boolean(row?.is_active && s.refresh_token) && (!hasCurrentScopes(s) || Boolean(s.needs_reauth)),
+        refresh_token_expires_at: s.refresh_token_expires_at ?? null,
         category_by_type: s.category_by_type ?? {},
         best_offer_enabled: s.best_offer_enabled ?? false,
         best_offer_accept_pct: manager ? (s.best_offer_accept_pct ?? 95) : null,
@@ -327,10 +322,8 @@ Deno.serve(async (req) => {
           ? 'Live eBay sign-in is not set up yet (missing live RuName).'
           : 'EBAY_RU_NAME is not configured');
       }
-      const origin = typeof body.origin === 'string' && /^https?:\/\//.test(body.origin)
-        ? body.origin.replace(/\/+$/, '')
-        : FALLBACK_APP_ORIGIN;
-      const state = `${origin}|${crypto.randomUUID()}|${environment}`;
+      const origin = allowedOrigin(body.origin);
+      const state = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, '');
 
       // Remember which dealership is connecting so the callback lands on the right account.
       await supabase.from('ebay_oauth_states').delete().eq('business_id', businessId);
@@ -348,7 +341,7 @@ Deno.serve(async (req) => {
         redirect_uri: ruName,
         response_type: 'code',
         scope: EBAY_SCOPES,
-        state: encodeURIComponent(state),
+        state,
         prompt: 'login',
       });
       return json({ url: authUrl });

@@ -98,6 +98,7 @@ export default function EbayIntegration() {
     const result = params.get('ebay');
     if (!result) return;
     if (result === 'connected') toast.success('eBay connected');
+    if (result === 'cancelled') toast.info('eBay sign-in was cancelled — nothing was changed.');
     if (result === 'error') toast.error(`eBay could not be connected: ${params.get('message') ?? ''}`);
     params.delete('ebay');
     params.delete('message');
@@ -134,7 +135,11 @@ export default function EbayIntegration() {
     if (!window.confirm(`Disconnect the ${status?.environment === 'production' ? 'live' : 'test'} eBay account? The other mode stays connected.`)) return;
     try {
       await disconnectEbay(status?.environment);
-      toast.success('eBay disconnected');
+      toast.success('eBay disconnected from VeloDealer', {
+        description: 'To fully remove access, also revoke VeloDealer on eBay (My eBay → Account → Third-party app permissions).',
+        action: { label: 'Open eBay', onClick: () => window.open('https://accountsettings.ebay.co.uk/uas', '_blank', 'noopener') },
+        duration: 12000,
+      });
       load();
     } catch (e) {
       toast.error((e as Error).message);
@@ -328,6 +333,25 @@ export default function EbayIntegration() {
                 {status.environment === 'production' ? 'Live marketplace' : 'Sandbox (test) marketplace'}
               </div>
             </div>
+
+            {status.needs_reconnect && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  eBay needs you to sign in again before listings can sync. Press Reconnect below.
+                </AlertDescription>
+              </Alert>
+            )}
+            {!status.needs_reconnect && status.refresh_token_expires_at &&
+              Date.parse(status.refresh_token_expires_at) - Date.now() < 30 * 86_400_000 && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Reconnect eBay before {new Date(status.refresh_token_expires_at).toLocaleDateString('en-GB')} to keep listings syncing.
+                </AlertDescription>
+              </Alert>
+            )}
+
 
             <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
               <div>

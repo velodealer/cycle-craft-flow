@@ -21,6 +21,7 @@ export interface EbayStatus {
   return_policy_id: string;
   callback_url: string;
   needs_reconnect?: boolean;
+  refresh_token_expires_at?: string | null;
   category_by_type?: Record<string, string>;
   best_offer_enabled?: boolean;
   best_offer_accept_pct?: number | null;
