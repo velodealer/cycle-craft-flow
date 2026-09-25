@@ -16,3 +16,7 @@
 - [ ] 2.6: clear bike_components.notes that merely duplicate components.description
 - [ ] bikes.mpn from 99spokes model code
 - [ ] Then: eBay Taxonomy getItemAspectsForCategory for Brand/MPN + full aspect set
+
+## 99spokes result comparison (2026-09-25)
+- [x] Keep distinct catalogue records and show their differing brakes, cassette and colour availability
+- [x] Remove repeated family names from search-result headings
