@@ -132,11 +132,62 @@ export async function loadIntegration(supabase: Client, businessId: string) {
   return data;
 }
 
-export async function loadSettings(supabase: Client, businessId: string): Promise<EbaySettings> {
-  const row = await loadIntegration(supabase, businessId);
-  return ((row?.settings ?? {}) as EbaySettings) || {};
+/** Fields that belong to one eBay account/mode (test or live) rather than the dealership. */
+const SLOT_FIELDS = [
+  'refresh_token', 'access_token', 'access_token_expires_at', 'seller_name', 'connected_at',
+  'granted_scopes', 'fulfillment_policy_id', 'payment_policy_id', 'return_policy_id',
+  'merchant_location_key', 'campaign_id', 'last_order_sync_at',
+] as const;
+type Slot = Partial<Pick<EbaySettings, typeof SLOT_FIELDS[number]>>;
+type StoredSettings = EbaySettings & { tokens?: Partial<Record<EbayEnvironment, Slot>> };
+
+function pickSlot(s: Record<string, unknown>): Slot {
+  const out: Record<string, unknown> = {};
+  for (const k of SLOT_FIELDS) if (k in s) out[k] = s[k];
+  return out as Slot;
+}
+function withoutSlot(s: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...s };
+  for (const k of SLOT_FIELDS) delete out[k];
+  delete out.tokens;
+  return out;
 }
 
+/** Normalises stored settings into per-mode token slots (legacy flat tokens → their mode's slot). */
+function normalise(raw: StoredSettings): { env: EbayEnvironment; tokens: Partial<Record<EbayEnvironment, Slot>>; shared: Record<string, unknown> } {
+  const env: EbayEnvironment = raw.environment === 'production' ? 'production' : 'sandbox';
+  const tokens = { ...(raw.tokens ?? {}) };
+  const legacy = pickSlot(raw as Record<string, unknown>);
+  if (Object.keys(legacy).length && !tokens[env]) tokens[env] = legacy;
+  return { env, tokens, shared: withoutSlot(raw as Record<string, unknown>) };
+}
+
+function view(env: EbayEnvironment, tokens: Partial<Record<EbayEnvironment, Slot>>, shared: Record<string, unknown>): EbaySettings {
+  return { ...shared, ...(tokens[env] ?? {}), environment: env, tokens } as EbaySettings;
+}
+
+/** Settings for the dealership's active mode, with that mode's tokens on top. */
+export async function loadSettings(supabase: Client, businessId: string): Promise<EbaySettings> {
+  const row = await loadIntegration(supabase, businessId);
+  const { env, tokens, shared } = normalise(((row?.settings ?? {}) as StoredSettings) || {});
+  return view(env, tokens, shared);
+}
+
+/** Connection status of each mode. */
+export function modeStatus(settings: EbaySettings) {
+  const tokens = ((settings as StoredSettings).tokens ?? {});
+  const one = (e: EbayEnvironment) => ({
+    connected: Boolean(tokens[e]?.refresh_token),
+    seller_name: tokens[e]?.seller_name ?? null,
+    connected_at: tokens[e]?.connected_at ?? null,
+  });
+  return { sandbox: one('sandbox'), production: one('production') };
+}
+
+/**
+ * Saves settings. Account fields go into the slot of `patch.environment` (or the active mode);
+ * dealership-wide fields are shared. Passing `environment` alone switches the active mode.
+ */
 export async function saveSettings(
   supabase: Client,
   businessId: string,
@@ -144,11 +195,17 @@ export async function saveSettings(
   isActive = true,
 ): Promise<EbaySettings> {
   const existing = await loadIntegration(supabase, businessId);
-  const merged = { ...((existing?.settings as EbaySettings) ?? {}), ...settings };
+  const cur = normalise(((existing?.settings as StoredSettings) ?? {}) as StoredSettings);
+  const env: EbayEnvironment = settings.environment === 'production'
+    ? 'production'
+    : settings.environment === 'sandbox' ? 'sandbox' : cur.env;
+  const tokens = { ...cur.tokens, [env]: { ...(cur.tokens[env] ?? {}), ...pickSlot(settings as Record<string, unknown>) } };
+  const shared = { ...cur.shared, ...withoutSlot(settings as Record<string, unknown>), environment: env };
+  const stored = { ...shared, tokens };
   if (existing) {
     const { error } = await supabase
       .from('integrations')
-      .update({ settings: merged, is_active: isActive, updated_at: new Date().toISOString() })
+      .update({ settings: stored, is_active: isActive, updated_at: new Date().toISOString() })
       .eq('id', (existing as { id: string }).id);
     if (error) throw new Error(error.message);
   } else {
@@ -157,11 +214,37 @@ export async function saveSettings(
       display_name: 'eBay',
       is_active: isActive,
       business_id: businessId,
-      settings: merged,
+      settings: stored,
     });
     if (error) throw new Error(error.message);
   }
-  return merged;
+  return view(env, tokens, shared);
+}
+
+/** Removes one mode's account tokens; the other mode and dealership settings stay. */
+export async function clearMode(supabase: Client, businessId: string, mode: EbayEnvironment) {
+  const existing = await loadIntegration(supabase, businessId);
+  if (!existing) return;
+  const cur = normalise(((existing.settings as StoredSettings) ?? {}) as StoredSettings);
+  const tokens = { ...cur.tokens };
+  delete tokens[mode];
+  const anyLeft = Object.values(tokens).some((t) => t?.refresh_token);
+  const { error } = await supabase
+    .from('integrations')
+    .update({ settings: { ...cur.shared, environment: cur.env, tokens }, is_active: anyLeft, updated_at: new Date().toISOString() })
+    .eq('id', (existing as { id: string }).id);
+  if (error) throw new Error(error.message);
+}
+
+/** App keyset for each mode. */
+export function ebayCredentials(env: EbayEnvironment) {
+  const prod = env === 'production';
+  const id = Deno.env.get(prod ? 'EBAY_PROD_CLIENT_ID' : 'EBAY_CLIENT_ID');
+  const secret = Deno.env.get(prod ? 'EBAY_PROD_CLIENT_SECRET' : 'EBAY_CLIENT_SECRET');
+  const ruName = Deno.env.get(prod ? 'EBAY_PROD_RU_NAME' : 'EBAY_RU_NAME');
+  const label = prod ? 'live' : 'test';
+  if (!id || !secret) throw new Error(`eBay ${label} app keys are not configured`);
+  return { id, secret, ruName, basic: btoa(`${id}:${secret}`) };
 }
 
 /** Swaps an authorisation code for refresh + access tokens. */
