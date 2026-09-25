@@ -17,8 +17,8 @@ async function sha256Hex(input: string) {
 const keyCache = new Map<string, string>();
 
 async function appToken(env: EbayEnvironment) {
-  const id = Deno.env.get('EBAY_CLIENT_ID');
-  const secret = Deno.env.get('EBAY_CLIENT_SECRET');
+  const id = (env === 'production' ? Deno.env.get('EBAY_PROD_CLIENT_ID') : undefined) ?? Deno.env.get('EBAY_CLIENT_ID');
+  const secret = (env === 'production' ? Deno.env.get('EBAY_PROD_CLIENT_SECRET') : undefined) ?? Deno.env.get('EBAY_CLIENT_SECRET');
   if (!id || !secret) throw new Error('eBay app credentials missing');
   const res = await fetch(`${apiBase(env)}/identity/v1/oauth2/token`, {
     method: 'POST',
@@ -32,14 +32,14 @@ async function appToken(env: EbayEnvironment) {
 async function publicKey(kid: string): Promise<string> {
   const cached = keyCache.get(kid);
   if (cached) return cached;
-  let lastErr = '';
+  const errs: string[] = [];
   for (const env of ['production', 'sandbox'] as EbayEnvironment[]) {
     try {
       const token = await appToken(env);
       const res = await fetch(`${apiBase(env)}/commerce/notification/v1/public_key/${encodeURIComponent(kid)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) { lastErr = `${env} ${res.status}: ${await res.text()}`; continue; }
+      if (!res.ok) { errs.push(`${env} ${res.status}: ${await res.text()}`); continue; }
       let pem = (await res.json()).key as string;
       if (!pem.includes('\n')) {
         pem = pem.replace('-----BEGIN PUBLIC KEY-----', '-----BEGIN PUBLIC KEY-----\n')
@@ -47,23 +47,31 @@ async function publicKey(kid: string): Promise<string> {
       }
       keyCache.set(kid, pem);
       return pem;
-    } catch (e) { lastErr = (e as Error).message; }
+    } catch (e) { errs.push(`${env}: ${(e as Error).message}`); }
   }
-  throw new Error(`public key lookup failed: ${lastErr}`);
+  throw new Error(`public key lookup failed: ${errs.join(' | ')}`);
 }
 
-async function verifySignature(header: string | null, rawBody: string): Promise<boolean> {
-  if (!header) return false;
+type SigResult = 'valid' | 'invalid' | 'unverifiable';
+
+async function verifySignature(header: string | null, rawBody: string): Promise<SigResult> {
+  if (!header) return 'invalid';
+  let decoded: { kid?: string; signature?: string };
+  try { decoded = JSON.parse(atob(header)); } catch { return 'invalid'; }
+  if (!decoded.kid || !decoded.signature) return 'invalid';
+  let pem: string;
+  try { pem = await publicKey(decoded.kid); } catch (e) {
+    console.error('eBay signature unverifiable (our side):', (e as Error).message);
+    return 'unverifiable';
+  }
   try {
-    const decoded = JSON.parse(atob(header));
-    const pem = await publicKey(decoded.kid);
     const v = createVerify('sha1');
     v.update(rawBody);
     v.end();
-    return v.verify(pem, decoded.signature, 'base64');
+    return v.verify(pem, decoded.signature, 'base64') ? 'valid' : 'invalid';
   } catch (e) {
-    console.error('eBay signature check failed:', (e as Error).message);
-    return false;
+    console.error('eBay signature check error:', (e as Error).message);
+    return 'invalid';
   }
 }
 
@@ -85,8 +93,13 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('ok', { headers: corsHeaders });
 
   const raw = await req.text();
-  if (!(await verifySignature(req.headers.get('x-ebay-signature'), raw))) {
+  const sig = await verifySignature(req.headers.get('x-ebay-signature'), raw);
+  if (sig === 'invalid') {
     return new Response('invalid signature', { status: 412, headers: corsHeaders });
+  }
+  if (sig === 'unverifiable') {
+    console.warn('Accepting eBay notification without verification (logged only, not actioned):', raw.slice(0, 500));
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
