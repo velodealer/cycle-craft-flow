@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit } from 'lucide-react';
+import { Search, Plus, Edit, Banknote } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
 import { useStorageBays } from '@/hooks/useStorageBays';
+import RecordPartSaleDialog, { type SellablePart } from './RecordPartSaleDialog';
 
 
 interface Part {
@@ -38,7 +39,20 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
+  const [sellingPart, setSellingPart] = useState<SellablePart | null>(null);
+  const [sellOpen, setSellOpen] = useState(false);
   const { bays } = useStorageBays();
+
+  const openSell = (part: Part) => {
+    setSellingPart({
+      id: part.id,
+      description: part.description,
+      brand: part.brand,
+      cost_price: part.cost_price,
+      sale_price: part.sale_price,
+    });
+    setSellOpen(true);
+  };
 
   const loadParts = async () => {
     try {
@@ -223,6 +237,12 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                 />
                 <ListCardRow label="Added" value={new Date(part.created_at).toLocaleDateString()} />
                 <ListCardActions>
+                  {part.stock_status === 'in_stock' && (
+                    <Button variant="outline" className="w-full" onClick={() => openSell(part)}>
+                      <Banknote className="h-4 w-4 mr-2" />
+                      Record sale
+                    </Button>
+                  )}
                   <Button variant="outline" className="w-full" onClick={() => onEdit(part)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit part
@@ -284,13 +304,16 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                       {new Date(part.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEdit(part)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        {part.stock_status === 'in_stock' && (
+                          <Button variant="outline" size="sm" onClick={() => openSell(part)}>
+                            <Banknote className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => onEdit(part)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -299,6 +322,12 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
           </Table>
         </div>
       </CardContent>
+      <RecordPartSaleDialog
+        part={sellingPart}
+        open={sellOpen}
+        onOpenChange={setSellOpen}
+        onDone={loadParts}
+      />
     </Card>
   );
 }

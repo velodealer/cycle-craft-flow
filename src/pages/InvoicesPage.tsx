@@ -51,6 +51,7 @@ interface InvoiceRow {
   bikes: { id: string; make: string; model: string; reference: string | null } | null;
   part_exchange_bikes: { id: string; make: string; model: string; reference: string | null } | null;
   external_owners: { name: string } | null;
+  parts: { id: string; brand: string | null; description: string } | null;
 }
 
 const currency = (value: number) =>
@@ -82,7 +83,7 @@ export default function InvoicesPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from('invoices')
-      .select('*, bikes:bike_id(id, make, model, reference), part_exchange_bikes:part_exchange_bike_id(id, make, model, reference), external_owners:external_customer_id(name)')
+      .select('*, bikes:bike_id(id, make, model, reference), part_exchange_bikes:part_exchange_bike_id(id, make, model, reference), external_owners:external_customer_id(name), parts:part_id(id, brand, description)')
       .order('created_at', { ascending: false });
     if (error) toast.error(error.message);
     setInvoices((data as unknown as InvoiceRow[]) ?? []);
@@ -95,7 +96,7 @@ export default function InvoicesPage() {
     const term = search.trim().toLowerCase();
     if (!term) return invoices;
     return invoices.filter((inv) =>
-      [inv.invoice_number, inv.external_owners?.name, inv.bikes?.make, inv.bikes?.model, inv.bikes?.reference]
+      [inv.invoice_number, inv.external_owners?.name, inv.bikes?.make, inv.bikes?.model, inv.bikes?.reference, inv.parts?.description, inv.parts?.brand]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term)),
     );
@@ -200,7 +201,9 @@ export default function InvoicesPage() {
                       <SyncBadge status={inv.sync_status} />
                     </div>
                     <p className="mt-2 text-sm">
-                      {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)}
+                      {inv.type === 'part_sale'
+                        ? `Part · ${[inv.parts?.brand, inv.parts?.description].filter(Boolean).join(' — ') || '—'}`
+                        : inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)}
                       {vatRegistered ? ` · VAT ${inv.vat_rate}%` : ''}
                     </p>
                     {Number(inv.part_exchange_value || 0) > 0 && (
@@ -233,7 +236,7 @@ export default function InvoicesPage() {
                           {inv.xero_invoice_id ? 'Re-sync Xero' : 'Sync Xero'}
                         </Button>
                       )}
-                      {isAdmin && (
+                      {isAdmin && inv.type !== 'part_sale' && (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -273,7 +276,9 @@ export default function InvoicesPage() {
                         <TableCell>{inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-GB') : '—'}</TableCell>
                         <TableCell>{inv.external_owners?.name ?? '—'}</TableCell>
                         <TableCell>
-                          {inv.bikes ? (
+                          {inv.type === 'part_sale' ? (
+                            <span>Part · {[inv.parts?.brand, inv.parts?.description].filter(Boolean).join(' — ') || '—'}</span>
+                          ) : inv.bikes ? (
                             <Link className="hover:underline" to={`/bikes/${inv.bikes.id}`}>
                               {inv.bikes.make} {inv.bikes.model}
                             </Link>
@@ -322,7 +327,7 @@ export default function InvoicesPage() {
                                 {inv.xero_invoice_id ? 'Re-sync Xero' : 'Sync Xero'}
                               </Button>
                             )}
-                            {isAdmin && (
+                            {isAdmin && inv.type !== 'part_sale' && (
                               <Button
                                 size="sm"
                                 variant="ghost"

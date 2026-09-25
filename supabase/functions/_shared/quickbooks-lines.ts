@@ -65,3 +65,59 @@ export function buildSaleInvoiceLines(input: SaleLineInput): Record<string, unkn
   return lines;
 }
 
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+const qboJl = (posting: 'Debit' | 'Credit', account: string, amount: number, description: string) => ({
+  Amount: Number(r2(amount).toFixed(2)),
+  DetailType: 'JournalEntryLineDetail',
+  ...(description ? { Description: description.slice(0, 4000) } : {}),
+  JournalEntryLineDetail: { PostingType: posting, AccountRef: { value: account } },
+});
+
+export interface BreakKeptItem { label: string; amount: number }
+
+/**
+ * Bike broken for parts: each kept part moves from bike stock to parts stock
+ * (only when a parts stock account is mapped — otherwise the value stays in
+ * the main stock account), and the scrapped remainder is written off to COGS.
+ * One balanced pair per kept item, so the stock ledger shows the bike
+ * replaced by its parts.
+ */
+export function buildBreakJournalLines(
+  keptItems: BreakKeptItem[],
+  writtenOff: number,
+  accounts: QboAccounts,
+  ref: string,
+): Record<string, unknown>[] {
+  const lines: Record<string, unknown>[] = [];
+  const kept = keptItems.filter((i) => r2(i.amount) > 0);
+  if (kept.length > 0 && accounts.parts_stock) {
+    if (!accounts.stock) throw new Error('QuickBooks account mapping is incomplete (Stock account is required)');
+    for (const item of kept) {
+      const label = item.label.slice(0, 400);
+      lines.push(qboJl('Debit', accounts.parts_stock, item.amount, `Parts stock — ${label}`));
+      lines.push(qboJl('Credit', accounts.stock, item.amount, `Bike ${ref} removed from stock — ${label}`));
+    }
+  }
+  const off = r2(writtenOff);
+  if (off > 0) {
+    if (!accounts.cogs || !accounts.stock) throw new Error('QuickBooks account mapping is incomplete (Stock and COGS accounts are required)');
+    lines.push(qboJl('Debit', accounts.cogs, off, `Written off — bike ${ref} broken for parts`));
+    lines.push(qboJl('Credit', accounts.stock, off, `Bike ${ref} scrapped remainder`));
+  }
+  return lines;
+}
+
+/** Stock-out for a part sale: Dr COGS / Cr parts stock (or main stock when unmapped). */
+export function buildPartStockOutLines(cost: number, accounts: QboAccounts, description: string): Record<string, unknown>[] {
+  const c = r2(cost);
+  if (c <= 0) return [];
+  if (!accounts.cogs) throw new Error('QuickBooks account mapping is incomplete (COGS account is required)');
+  const stockAccount = accounts.parts_stock || accounts.stock;
+  if (!stockAccount) throw new Error('QuickBooks account mapping is incomplete (Stock account is required)');
+  return [
+    qboJl('Debit', accounts.cogs, c, `Cost of goods sold — ${description}`),
+    qboJl('Credit', stockAccount, c, `Stock released — ${description}`),
+  ];
+}
+

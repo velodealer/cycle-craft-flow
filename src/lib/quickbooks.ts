@@ -3,6 +3,8 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 
 export interface QboAccountMap {
   stock?: string;
+  /** Optional: kept parts move here when a bike is broken. Falls back to stock. */
+  parts_stock?: string;
   cogs?: string;
   sales?: string;
   vat?: string;
@@ -100,6 +102,10 @@ export const stockOutDocNumber = (bikeReference?: string | null) =>
 export const syncBikePurchase = (bikeId: string) =>
   invoke<{ ok: true; journal_id?: string; skipped?: string }>('quickbooks-sync-purchase', { bike_id: bikeId });
 
+/** Posts a bike break's stock reclassification to QuickBooks. */
+export const syncBreakToQuickBooks = (bikeId: string) =>
+  invoke<{ ok: true; skipped?: string; qb_journal_id?: string }>('quickbooks-break-bike', { bike_id: bikeId });
+
 export const syncInvoice = (invoiceId: string) =>
   invoke<{ ok: true; quickbooks_invoice_id?: string; margin_vat?: number }>('quickbooks-sync-invoice', {
     invoice_id: invoiceId,
@@ -112,6 +118,17 @@ export async function tryPostPurchase(bikeId: string) {
     return { ok: true as const };
   } catch (e) {
     console.warn('QuickBooks purchase posting failed', e);
+    return { ok: false as const, error: (e as Error).message };
+  }
+}
+
+/** Fire-and-forget break posting: never blocks or breaks the calling UI flow. */
+export async function tryPostBreakToQuickBooks(bikeId: string) {
+  try {
+    const res = await syncBreakToQuickBooks(bikeId);
+    return { ok: true as const, skipped: res.skipped };
+  } catch (e) {
+    console.warn('QuickBooks break posting failed', e);
     return { ok: false as const, error: (e as Error).message };
   }
 }

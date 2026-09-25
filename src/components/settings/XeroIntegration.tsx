@@ -16,13 +16,14 @@ import {
 
 const ACCOUNT_FIELDS: { key: keyof XeroAccountMap; label: string; hint: string }[] = [
   { key: 'stock', label: 'Stock / Inventory (asset)', hint: 'Debited at intake with the purchase price, credited on sale.' },
+  { key: 'parts_stock', label: 'Parts stock (asset, optional)', hint: 'Kept parts move here when a bike is broken for parts. Leave empty to keep their value in the main Stock account.' },
   { key: 'purchase_funding', label: 'Purchase funding account', hint: 'Credited at intake — usually a bank or clearing account.' },
   { key: 'cogs', label: 'Cost of goods sold', hint: 'Debited on sale with the bike purchase price.' },
   { key: 'sales', label: 'Sales income', hint: 'Income account used on the customer invoice.' },
   { key: 'vat', label: 'Margin VAT liability', hint: 'Credited with margin scheme VAT (1/6 of the margin). Pick a liability account you can post journals to.' },
 ];
 const LABELS: Record<string, string> = {
-  stock: 'Stock', purchase_funding: 'Purchase funding', cogs: 'Cost of goods sold', sales: 'Sales', vat: 'Margin VAT',
+  stock: 'Stock', parts_stock: 'Parts stock', purchase_funding: 'Purchase funding', cogs: 'Cost of goods sold', sales: 'Sales', vat: 'Margin VAT',
   standard_sales: 'Standard sale VAT rate', margin_sales: 'Margin sale VAT rate',
 };
 

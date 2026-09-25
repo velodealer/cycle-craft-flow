@@ -12,6 +12,8 @@ const API_BASE = 'https://api.xero.com/api.xro/2.0';
 /** Account CODES in the dealer's Xero chart of accounts. */
 export interface XeroAccounts {
   stock?: string;
+  /** Optional: kept parts are moved here when a bike is broken. Falls back to stock. */
+  parts_stock?: string;
   cogs?: string;
   sales?: string;
   vat?: string;

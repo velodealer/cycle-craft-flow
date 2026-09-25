@@ -6,6 +6,8 @@ export const QBO_INTEGRATION_NAME = 'quickbooks';
 
 export interface QboAccounts {
   stock?: string;
+  /** Optional: kept parts are moved here when a bike is broken. Falls back to stock. */
+  parts_stock?: string;
   cogs?: string;
   sales?: string;
   vat?: string;
