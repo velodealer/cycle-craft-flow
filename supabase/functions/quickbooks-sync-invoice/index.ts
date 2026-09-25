@@ -15,7 +15,7 @@ import {
 } from '../_shared/quickbooks.ts';
 import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
-import { buildSaleInvoiceLines } from '../_shared/quickbooks-lines.ts';
+import { buildSaleInvoiceLines, buildPartStockOutLines } from '../_shared/quickbooks-lines.ts';
 
 
 
@@ -44,15 +44,15 @@ Deno.serve(async (req) => {
 
     const { data: invoice, error: invError } = await supabase
       .from('invoices')
-      .select('*, bikes:bike_id(*), external_owners:external_customer_id(*)')
+      .select('*, bikes:bike_id(*), external_owners:external_customer_id(*), parts:part_id(*)')
       .eq('id', invoiceId)
       .maybeSingle();
     if (invError) throw new Error(invError.message);
     if (!invoice) return json({ error: 'Invoice not found' }, 404);
 
     const bike: any = invoice.bikes;
-    const customer: any = invoice.external_owners;
-    if (!customer?.name) throw new Error('Invoice has no customer to send to QuickBooks');
+    const part: any = invoice.parts;
+    let customer: any = invoice.external_owners;
 
     const { accessToken, realmId, settings } = await getQboAuth(supabase);
     const accounts = ((settings as QboSettings).accounts ?? {});
@@ -79,20 +79,48 @@ Deno.serve(async (req) => {
       if (vatSetting && vatSetting.value === false) vatRegistered = false;
     }
 
-    const isMargin = vatRegistered && bike?.finance_scheme === 'margin_scheme';
-    const salesTaxCode = vatRegistered ? taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes) : undefined;
-    const balanceDue = Number(invoice.gross || invoice.total || 0);
-    const partExValue = Number(invoice.part_exchange_value || 0);
-    const deliveryCharge = invoice.delivery_charged_to_customer ? Number(invoice.delivery_charge || 0) : 0;
-    // VAT always follows the FULL sale value, part exchange included.
-    const gross = Number(invoice.sale_gross || 0) || Math.max(0, balanceDue + partExValue - deliveryCharge);
-    const purchasePrice = Number(bike?.purchase_price || 0);
-    const marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
+    const isPartSale = (invoice as any).type === 'part_sale';
 
-    const description = `${[bike?.make, bike?.model].filter(Boolean).join(' ')} (${bike?.reference || ''})`.trim();
-    const bikeReference = bike?.reference || bike?.id || '';
-    const stockInDoc = bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
-    const stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
+    let isMargin: boolean;
+    let gross: number;
+    let description: string;
+    let bikeReference: string;
+    let stockInDoc: string | null;
+    let stockOutDoc: string | null;
+    let marginVat: number;
+    let deliveryCharge = 0;
+
+    if (isPartSale) {
+      // Part sales follow the same VAT treatment as bike sales; the part's cost
+      // price is the margin purchase basis.
+      const customerName = customer?.name || (invoice as any).customer_name || 'Part sales';
+      customer = { ...customer, name: customerName };
+      gross = Number(invoice.sale_gross || invoice.gross || invoice.total || 0);
+      description = `${[part?.brand, part?.description].filter(Boolean).join(' — ') || 'Part'}`.slice(0, 200);
+      bikeReference = (invoice as any).invoice_number || invoiceId;
+      stockInDoc = null;
+      stockOutDoc = `PSTK-OUT-${bikeReference}`.slice(0, 21);
+      const cost = Math.abs(Number(part?.cost_price || 0));
+      isMargin = vatRegistered && (invoice as any).finance_scheme === 'margin_scheme';
+      marginVat = isMargin ? Math.max(0, gross - cost) * 20 / 120 : 0;
+    } else {
+      if (!bike) throw new Error('Invoice has no bike to send to QuickBooks');
+      if (!customer?.name) throw new Error('Invoice has no customer to send to QuickBooks');
+      isMargin = vatRegistered && bike.finance_scheme === 'margin_scheme';
+      const balanceDue = Number(invoice.gross || invoice.total || 0);
+      const partExValue = Number(invoice.part_exchange_value || 0);
+      deliveryCharge = invoice.delivery_charged_to_customer ? Number(invoice.delivery_charge || 0) : 0;
+      // VAT always follows the FULL sale value, part exchange included.
+      gross = Number(invoice.sale_gross || 0) || Math.max(0, balanceDue + partExValue - deliveryCharge);
+      const purchasePrice = Number(bike.purchase_price || 0);
+      marginVat = isMargin ? Math.max(0, gross - purchasePrice) * 20 / 120 : 0;
+      description = `${[bike.make, bike.model].filter(Boolean).join(' ')} (${bike.reference || ''})`.trim();
+      bikeReference = bike.reference || bike.id || '';
+      stockInDoc = bikeReference ? `STK-IN-${bikeReference}`.slice(0, 21) : null;
+      stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
+    }
+
+    const salesTaxCode = vatRegistered ? taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes) : undefined;
     const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
     const customerRef = await findOrCreateCustomer(fetcher, customer);
     const itemRef = await findOrCreateItem(fetcher, accounts.sales);
