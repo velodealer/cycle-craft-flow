@@ -84,7 +84,6 @@ Deno.serve(async (req) => {
       isMargin = vatRegistered && bike.finance_scheme === 'margin_scheme';
       const balanceDue = Number(inv.gross || inv.total || 0);
       const partEx = Number(inv.part_exchange_value || 0);
-      const delivery = inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0;
       // VAT always follows the FULL sale value, part exchange included.
       gross = Number(inv.sale_gross || 0) || Math.max(0, balanceDue + partEx - delivery);
       const purchase = round2(Number(bike.purchase_price || 0));
@@ -98,7 +97,6 @@ Deno.serve(async (req) => {
     }
 
     const contactId = await findOrCreateContact(call, customer);
-    const delivery = inv.type === 'part_sale' ? 0 : (inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0);
     const xInvoice: Record<string, unknown> = {
       Type: 'ACCREC',
       Contact: { ContactID: contactId },
