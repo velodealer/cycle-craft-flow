@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { MapPin } from 'lucide-react';
+import { useStorageBays } from '@/hooks/useStorageBays';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { functionErrorMessage } from '@/services/inspectabike';
@@ -24,7 +26,7 @@ interface JobRow {
   estimated_cost: number | null;
   actual_cost: number | null;
   bike_id: string;
-  bikes: { id: string; make: string; model: string; reference: string | null } | null;
+  bikes: { id: string; make: string; model: string; reference: string | null; storage_bay_id: string | null } | null;
 }
 
 const FILTERS = [
@@ -49,12 +51,19 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('open');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const { bays } = useStorageBays();
+
+  const bayName = (id: string | null) => {
+    if (!id) return null;
+    const bay = bays.find((b) => b.id === id);
+    return bay ? (bay.zone ? `${bay.zone} · ${bay.name}` : bay.name) : null;
+  };
 
   const load = async () => {
     const { data, error } = await supabase
       .from('jobs')
       .select(
-        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, reference)',
+        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, reference, storage_bay_id)',
       )
       .eq('type', 'workshop')
       .order('created_at', { ascending: false });
@@ -170,7 +179,7 @@ export default function JobsPage() {
           />
         ) : (
           groups.map((list) => (
-            <div key={list[0].bike_id} className="border-b border-border last:border-b-0">
+            <div key={list[0].bike_id} className="mb-4 overflow-hidden rounded-lg border border-border last:mb-0">
               <div className="flex items-start justify-between gap-3 bg-secondary/40 px-4 py-3">
                 {list[0].bikes ? (
                   <a href={`/bikes/${list[0].bike_id}`} onClick={(e) => { e.preventDefault(); navigate(`/bikes/${list[0].bike_id}`); }} className="min-w-0 break-words font-medium hover:underline">
@@ -178,7 +187,13 @@ export default function JobsPage() {
                     <span className="id-text block text-xs">{bikeRef(list[0].bikes)}</span>
                   </a>
                 ) : <span className="text-muted-foreground">Bike removed</span>}
-                <span className="shrink-0 text-xs text-muted-foreground">{list.length} job{list.length === 1 ? '' : 's'}</span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="text-xs text-muted-foreground">{list.length} job{list.length === 1 ? '' : 's'}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3" aria-hidden />
+                    {list[0].bikes ? (bayName(list[0].bikes.storage_bay_id) ?? 'No location') : '—'}
+                  </span>
+                </div>
               </div>
               {list.map((job) => (
             <div key={job.id} className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
