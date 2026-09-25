@@ -13,7 +13,6 @@ import { PageHeader, EmptyState, Panel } from '@/components/velo/PageShell';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertTriangle, Check, PoundSterling, Undo2, Wrench, X } from 'lucide-react';
 
@@ -50,7 +49,7 @@ export default function RepairsPage() {
   const canDecide = !!profile && ['admin', 'owner'].includes(profile.role);
   const isMechanic = profile?.role === 'mechanic';
 
-  const [filter, setFilter] = useState<Filter>(isMechanic ? 'torepair' : 'pending');
+  const [filter, setFilter] = useState<Filter>(isMechanic ? 'torepair' : 'all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [faults, setFaults] = useState<any[]>([]);
@@ -226,17 +225,7 @@ export default function RepairsPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {!isMechanic && (
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <TabsList className="flex-wrap h-auto">
-              <TabsTrigger value="pending">Awaiting approval</TabsTrigger>
-              <TabsTrigger value="torepair">To repair</TabsTrigger>
-              <TabsTrigger value="open">All open</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
         <Input
           className="sm:max-w-xs"
           placeholder="Filter by bike ID, make or model"
