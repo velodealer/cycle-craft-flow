@@ -23,6 +23,9 @@ export interface SpokesSearchItem {
   url?: string | null;
   groupset?: string | null;
   wheelset?: string | null;
+  brakes?: string | null;
+  cassette?: string | null;
+  colours?: string[] | null;
   /** Present when the result came from our own saved catalogue. */
   local?: boolean;
   localId?: string;
@@ -106,7 +109,7 @@ export async function searchLocalCatalog(query: string, limit = 10): Promise<Spo
   if (q.length < 2) return [];
   const { data, error } = await supabase
     .from('catalog_bikes')
-    .select('id, source_id, brand, model, family, year, category, subcategory, is_ebike, thumbnail_url, url, components')
+    .select('id, source_id, brand, model, family, year, category, subcategory, is_ebike, thumbnail_url, url, components, bike_fields')
     .or(`brand.ilike.%${q}%,model.ilike.%${q}%,family.ilike.%${q}%`)
     .order('use_count', { ascending: false })
     .limit(limit);
@@ -132,6 +135,9 @@ export async function searchLocalCatalog(query: string, limit = 10): Promise<Spo
       url: r.url,
       groupset: compLabel('rear_derailleur') ?? compLabel('shifters'),
       wheelset: compLabel('wheels'),
+      brakes: compLabel('brakes'),
+      cassette: compLabel('cassette'),
+      colours: r.bike_fields?.colour ? [String(r.bike_fields.colour)] : [],
     };
   });
 }

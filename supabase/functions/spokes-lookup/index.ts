@@ -7,12 +7,18 @@ const API_KEY = Deno.env.get('NINETYNINE_SPOKES_API_KEY');
 // the complete manufacturer record rather than a hand-picked subset.
 const DETAIL_INCLUDE = '*';
 
-const SEARCH_INCLUDE = ['thumbnailUrl', 'suspension', 'components', 'sizes', 'prices'].join(',');
+const SEARCH_INCLUDE = ['thumbnailUrl', 'suspension', 'components', 'sizes', 'prices', 'colors'].join(',');
 
 function partLabel(part: any): string | null {
   if (!part) return null;
   const label = [part.maker, part.model].filter(Boolean).join(' ').trim();
   return label || part.display || part.description || null;
+}
+
+function partDetail(part: any): string | null {
+  if (!part) return null;
+  const detail = String(part.description ?? part.display ?? '').trim();
+  return detail || partLabel(part);
 }
 
 const detailCache = new Map<string, { at: number; data: unknown }>();
@@ -26,6 +32,9 @@ function toItem(b: any) {
     thumbnailUrl: b.thumbnailUrl ?? null, url: b.url ?? null,
     groupset: partLabel(c.rearDerailleur) ?? partLabel(c.shifters),
     wheelset: partLabel(c.rims),
+    brakes: partDetail(c.brakes),
+    cassette: partDetail(c.cassette),
+    colours: Array.isArray(b.colors) ? b.colors.map((colour: any) => String(colour?.name ?? colour ?? '').trim()).filter(Boolean) : [],
   };
 }
 
