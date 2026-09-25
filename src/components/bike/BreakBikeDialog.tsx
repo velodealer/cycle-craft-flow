@@ -11,6 +11,8 @@ import { SPEC_SECTIONS } from '@/lib/bikeSpec';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
+import { tryPostBreakToQuickBooks } from '@/lib/quickbooks';
+import { tryPostBreakToXero } from '@/lib/xero';
 import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 interface Props {
@@ -366,6 +368,23 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
       void syncShopifyQuietly(bike.id, 'sold_out');
       void syncSquarespaceQuietly(bike.id, 'sold_out');
       void syncEbayQuietly(bike.id, 'end');
+      // Accounting reclassification runs after the local break, independently
+      // per system — a posting failure never undoes the break.
+      void (async () => {
+        const [qb, xe] = await Promise.all([
+          tryPostBreakToQuickBooks(bike.id),
+          tryPostBreakToXero(bike.id),
+        ]);
+        for (const [name, res] of [['QuickBooks', qb], ['Xero', xe]] as const) {
+          if (!res.ok) {
+            toast({
+              title: `${name} posting needs attention`,
+              description: `The break is saved, but ${name} was not updated: ${res.error}. Retry from Settings → Integrations later.`,
+              variant: 'destructive',
+            });
+          }
+        }
+      })();
       logActivity(bike.id, {
         kind: 'status_change',
         action: 'split_for_parts',
