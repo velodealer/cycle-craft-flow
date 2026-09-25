@@ -717,7 +717,7 @@ async function ensureCampaign(supabase: Client, conn: Connection, businessId: st
     id = await find();
   }
   if (!id) throw new Error('eBay did not return the promotion campaign.');
-  await saveSettings(supabase, businessId, { campaign_id: id });
+  await saveSettings(supabase, businessId, { campaign_id: id }, true, conn.environment);
   return id;
 }
 

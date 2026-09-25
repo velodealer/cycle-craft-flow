@@ -106,7 +106,7 @@ async function syncBusiness(supabase: Client, businessId: string) {
       );
     }
   }
-  await saveSettings(supabase, businessId, { last_order_sync_at: startedAt });
+  await saveSettings(supabase, businessId, { last_order_sync_at: startedAt }, true, conn.environment);
   return { businessId, processed };
 }
 
