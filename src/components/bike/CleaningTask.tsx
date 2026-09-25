@@ -12,6 +12,8 @@ import { Sparkles, CheckCircle } from 'lucide-react';
 interface CleaningTaskProps {
   bike: any;
   onUpdate: () => void;
+  /** Called after a save that completes all checklist items (e.g. to close a dialog). */
+  onComplete?: () => void;
 }
 
 const CLEANING_CHECKLIST = [
@@ -20,7 +22,7 @@ const CLEANING_CHECKLIST = [
   { key: 'polish_detail', label: 'Polish/Detail' }
 ];
 
-export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
+export default function CleaningTask({ bike, onUpdate, onComplete }: CleaningTaskProps) {
   const { profile } = useAuth();
   const [cleaningJob, setCleaningJob] = useState<any>(null);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
@@ -155,11 +157,12 @@ export default function CleaningTask({ bike, onUpdate }: CleaningTaskProps) {
       }
 
       toast({
-        title: 'Success', 
+        title: 'Success',
         description: allComplete ? 'Cleaning completed - bike moved to inspection' : 'Cleaning task updated'
       });
-      
+
       onUpdate();
+      if (allComplete) onComplete?.();
     } catch (error) {
       console.error('Error updating cleaning job:', error);
       toast({

@@ -251,7 +251,7 @@ export default function CleaningPage() {
                   </div>
                 </div>
               </div>
-              <CleaningTask bike={selectedBike} onUpdate={loadCleaningBikes} />
+              <CleaningTask bike={selectedBike} onUpdate={loadCleaningBikes} onComplete={handleClose} />
             </div>
           )}
         </DialogContent>
