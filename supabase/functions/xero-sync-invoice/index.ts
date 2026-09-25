@@ -92,7 +92,6 @@ Deno.serve(async (req) => {
       mVat = isMargin ? marginVat(gross, purchase) : 0;
       description = `${[bike.make, bike.model].filter(Boolean).join(' ')} (${bike.reference || ''})`.trim();
       ref = bike.reference || bike.id || '';
-      const delivery = inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0;
       journalLines = saleJournalLines(purchase, mVat, accounts, description || 'bike');
       narration = `Stock out / sale of ${description || 'bike'} | Invoice ${inv.invoice_number} | ${stockInRef(ref) ?? ''} | ${stockOutRef(ref) ?? ''}`.slice(0, 4000);
       xeroReference = `${ref} · ${stockOutRef(ref) ?? ''}`.slice(0, 255);
