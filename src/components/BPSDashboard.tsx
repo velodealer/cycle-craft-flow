@@ -27,7 +27,7 @@ export default function BPSDashboard() {
       warn: (data?.awaitingApproval ?? 0) > 0,
       hint: data?.stuckApproval ? `${data.stuckApproval} stuck, nothing to approve` : undefined,
     },
-    { title: 'Repair jobs', count: data?.jobsWorkshop ?? 0, today: 0, to: '/jobs', hint: `${data?.repairBikes ?? 0} bikes · ${s('repair')} in repair stage` },
+    { title: 'Repair', count: data?.repairBikes ?? 0, today: 0, to: '/jobs', hint: `${data?.jobsWorkshop ?? 0} repair jobs` },
     { title: 'Ready', count: s('ready'), today: today('ready'), to: '/listings?status=ready' },
     { title: 'Listed', count: s('listed'), today: 0, to: '/listings?status=listed', hint: `${s('in_stock')} in stock` },
     {
