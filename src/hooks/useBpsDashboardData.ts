@@ -10,6 +10,7 @@ export type BpsDashboardData = {
   stuckApproval: number;
   soldLast7: number;
   jobsOpen: number;
+  repairBikes: number;
   jobsWorkshop: number;
   jobsDetailing: number;
   pipeline: { intakeToCleaning: number; cleaningToInspection: number; inspectionToApproval: number };
@@ -43,7 +44,7 @@ export function useBpsDashboardData() {
 
       const [bikesRes, jobsRes, eventsRes, invoicesRes, faultsRes] = await Promise.all([
         supabase.from('bikes').select('id, status, sold_at, updated_at, sale_price, intake_date, created_at'),
-        supabase.from('jobs').select('id, type, status'),
+        supabase.from('jobs').select('id, type, status, bike_id'),
         supabase.from('fulfilment_events').select('stage, timestamp').gte('timestamp', since30),
         supabase.from('invoices').select('type, gross, total, paid_at, status').eq('status', 'paid').gte('paid_at', monthStart),
         supabase.from('inspection_faults').select('bike_id').eq('status', 'reported'),
@@ -71,7 +72,7 @@ export function useBpsDashboardData() {
       const soldMonth = soldBikes.filter((b) => soldDate(b) && soldDate(b) >= monthStart);
       const soldLast7 = soldBikes.filter((b) => soldDate(b) && soldDate(b) >= since7).length;
 
-      const openJobs = jobs.filter((j) => !['completed', 'cancelled'].includes(j.status));
+      const openJobs = jobs.filter((j) => !['complete', 'completed', 'cancelled'].includes(j.status));
 
       const stageCount = (stage: string) =>
         events.filter((e) => e.stage === stage).length;
@@ -90,6 +91,7 @@ export function useBpsDashboardData() {
         stuckApproval: bikes.filter((b) => b.status === 'pending_approval' && !faultBikes.has(b.id)).length,
         soldLast7,
         jobsOpen: openJobs.length,
+        repairBikes: new Set(openJobs.filter((j) => j.type === 'workshop').map((j) => j.bike_id)).size,
         jobsWorkshop: openJobs.filter((j) => j.type === 'workshop').length,
         jobsDetailing: openJobs.filter((j) => j.type === 'detailing').length,
         pipeline: {
