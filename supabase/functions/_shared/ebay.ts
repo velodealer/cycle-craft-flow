@@ -92,12 +92,6 @@ export function itemBase(env: EbayEnvironment) {
   return env === 'production' ? 'https://www.ebay.co.uk/itm/' : 'https://www.sandbox.ebay.co.uk/itm/';
 }
 
-function basicAuth() {
-  const id = Deno.env.get('EBAY_CLIENT_ID');
-  const secret = Deno.env.get('EBAY_CLIENT_SECRET');
-  if (!id || !secret) throw new Error('EBAY_CLIENT_ID / EBAY_CLIENT_SECRET are not configured');
-  return btoa(`${id}:${secret}`);
-}
 
 /** The dealership a signed-in user belongs to. */
 export async function businessIdForUser(supabase: Client, userId: string): Promise<string> {
@@ -249,12 +243,13 @@ export function ebayCredentials(env: EbayEnvironment) {
 
 /** Swaps an authorisation code for refresh + access tokens. */
 export async function exchangeCode(env: EbayEnvironment, code: string) {
-  const ruName = Deno.env.get('EBAY_RU_NAME');
-  if (!ruName) throw new Error('EBAY_RU_NAME is not configured');
+  const creds = ebayCredentials(env);
+  const ruName = creds.ruName;
+  if (!ruName) throw new Error(`eBay ${env === 'production' ? 'live' : 'test'} RuName is not configured`);
   const res = await fetch(`${apiBase(env)}/identity/v1/oauth2/token`, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${basicAuth()}`,
+      Authorization: `Basic ${creds.basic}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
@@ -277,7 +272,7 @@ async function refreshAccessToken(env: EbayEnvironment, refreshToken: string) {
   const res = await fetch(`${apiBase(env)}/identity/v1/oauth2/token`, {
     method: 'POST',
     headers: {
-      Authorization: `Basic ${basicAuth()}`,
+      Authorization: `Basic ${ebayCredentials(env).basic}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
@@ -308,7 +303,7 @@ export async function requireConnection(supabase: Client, businessId: string): P
   const settings = await loadSettings(supabase, businessId);
   const env: EbayEnvironment = settings.environment === 'production' ? 'production' : 'sandbox';
   if (!settings.refresh_token) {
-    throw new Error('eBay is not connected — connect your seller account in Settings → Integrations.');
+    throw new Error(`eBay ${env === 'production' ? 'live' : 'test'} mode is not connected — connect it (or switch mode) in Settings → Integrations.`);
   }
 
   const expires = settings.access_token_expires_at ? Date.parse(settings.access_token_expires_at) : 0;

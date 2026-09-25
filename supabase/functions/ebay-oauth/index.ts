@@ -17,6 +17,10 @@ import {
   redirectUri,
   EBAY_SCOPES,
   hasCurrentScopes,
+  ebayCredentials,
+  loadSettings,
+  modeStatus,
+  clearMode,
   type EbayEnvironment,
   type EbaySettings,
 } from '../_shared/ebay.ts';
@@ -275,11 +279,12 @@ Deno.serve(async (req) => {
 
     if (action === 'status') {
       const row = await loadIntegration(supabase, businessId);
-      const s = ((row?.settings ?? {}) as EbaySettings) || {};
+      const s = await loadSettings(supabase, businessId);
       const { data: biz } = await supabase.from('businesses').select('name').eq('id', businessId).maybeSingle();
       return json({
         connected: Boolean(row?.is_active && s.refresh_token),
         environment: s.environment ?? 'sandbox',
+        modes: modeStatus(s),
         seller_name: s.seller_name ?? null,
         connected_at: s.connected_at ?? null,
         auto_list: s.auto_list ?? true,
@@ -313,11 +318,15 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'auth_url') {
-      const clientId = Deno.env.get('EBAY_CLIENT_ID');
-      const ruName = Deno.env.get('EBAY_RU_NAME');
-      if (!clientId) throw new Error('EBAY_CLIENT_ID is not configured');
-      if (!ruName) throw new Error('EBAY_RU_NAME is not configured');
       const environment: EbayEnvironment = body.environment === 'production' ? 'production' : 'sandbox';
+      const creds = ebayCredentials(environment);
+      const clientId = creds.id;
+      const ruName = creds.ruName;
+      if (!ruName) {
+        throw new Error(environment === 'production'
+          ? 'Live eBay sign-in is not set up yet (missing live RuName).'
+          : 'EBAY_RU_NAME is not configured');
+      }
       const origin = typeof body.origin === 'string' && /^https?:\/\//.test(body.origin)
         ? body.origin.replace(/\/+$/, '')
         : FALLBACK_APP_ORIGIN;
@@ -523,17 +532,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === 'disconnect') {
-      const row = await loadIntegration(supabase, businessId);
-      await supabase.from('ebay_oauth_states').delete().eq('business_id', businessId);
-      if (row) {
-        const { error } = await supabase
-          .from('integrations')
-          .update({ settings: {}, is_active: false, updated_at: new Date().toISOString() })
-          .eq('id', (row as { id: string }).id);
-        if (error) throw new Error(error.message);
+    if (action === 'switch_mode') {
+      if (body.environment !== 'production' && body.environment !== 'sandbox') {
+        return json({ error: 'Choose test or live.' }, 400);
       }
-      console.log(`eBay disconnected by ${userId}`);
+      const current = await loadSettings(supabase, businessId);
+      const modes = modeStatus(current);
+      await saveSettings(supabase, businessId, { environment: body.environment }, modes.sandbox.connected || modes.production.connected);
+      console.log(`eBay mode switched to ${body.environment} by ${userId}`);
+      return json({ ok: true, environment: body.environment, connected: modes[body.environment as EbayEnvironment].connected });
+    }
+
+    if (action === 'disconnect') {
+      const current = await loadSettings(supabase, businessId);
+      const mode: EbayEnvironment = body.environment === 'production' || body.environment === 'sandbox'
+        ? body.environment
+        : (current.environment ?? 'sandbox');
+      await supabase.from('ebay_oauth_states').delete().eq('business_id', businessId);
+      await clearMode(supabase, businessId, mode);
+      console.log(`eBay ${mode} disconnected by ${userId}`);
       return json({ ok: true });
     }
 
