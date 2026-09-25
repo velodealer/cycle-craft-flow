@@ -1,5 +1,11 @@
 # Roadmap — eBay Phases 2–7
 
+## Workshop approval and jobs separation (2026-09-25)
+- [x] Keep bikes on Repairs until every inspection repair has an approval decision
+- [x] Move decided bikes with approved work into Jobs and keep declined repairs out
+- [x] Share the bike-card structure across Repairs and Jobs
+- [x] Align page access and dashboard repair counts
+
 - [x] Migration (listing columns, ebay_orders, title_format)
 - [x] Phase 2 smart titles
 - [x] Phase 3 item specifics
