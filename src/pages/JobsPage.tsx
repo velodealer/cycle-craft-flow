@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { MapPin } from 'lucide-react';
+import { useStorageBays } from '@/hooks/useStorageBays';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { functionErrorMessage } from '@/services/inspectabike';
