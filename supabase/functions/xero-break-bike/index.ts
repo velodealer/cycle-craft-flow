@@ -1,7 +1,7 @@
 // Posts a bike break to Xero: reclass journal moving kept parts from bike stock
 // to parts stock (when mapped) and writing the scrapped remainder off to COGS.
 // The kept values are read from the parts the break created — never from the client.
-import { corsHeaders } from 'npm:@supabase/supab-js@2/cors';
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
   serviceClient, requireUser, profileFor, getXeroAuth, xeroFetch, logXeroError, stockInRef,
 } from '../_shared/xero.ts';
