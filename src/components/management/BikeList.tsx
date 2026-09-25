@@ -234,7 +234,10 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
               <SelectItem value="repair">Repair</SelectItem>
               <SelectItem value="ready">Ready for Sale</SelectItem>
               <SelectItem value="listed">Listed</SelectItem>
+              <SelectItem value="in_stock">In stock</SelectItem>
               <SelectItem value="sold">Sold</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="split_for_parts">Split for parts</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
