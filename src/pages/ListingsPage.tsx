@@ -101,7 +101,7 @@ export default function ListingsPage() {
           ids.length
             ? supabase
                 .from('ebay_listings')
-                .select('bike_id, listing_url, status, last_synced_at, last_error')
+                .select('bike_id, listing_url, status, last_synced_at, last_error, environment')
                 .in('bike_id', ids)
             : Promise.resolve({ data: [], error: null } as any),
           ids.length
@@ -123,7 +123,11 @@ export default function ListingsPage() {
         if (cancelled) return;
 
         const ebayById = new Map<string, PlatformRow>();
-        ((ebayRows.data as any[]) || []).forEach((r) =>
+        const ebayMode = ebaySt?.environment ?? 'sandbox';
+        ((ebayRows.data as any[]) || [])
+          // Only listings on the eBay site currently in use (test or live) count here.
+          .filter((r) => (r.environment ?? 'sandbox') === ebayMode)
+          .forEach((r) =>
           ebayById.set(r.bike_id, {
             bike_id: r.bike_id,
             url: r.listing_url ?? null,
@@ -338,7 +342,7 @@ export default function ListingsPage() {
     const busyP = isBusy(bike.id, platform);
     const label = labelOf(platform);
     const tag = platform === 'ebay' && ebaySandbox
-      ? <span className="ml-1 text-[10px] uppercase text-muted-foreground">sandbox</span>
+      ? <span className="ml-1 text-[10px] uppercase text-warning">test</span>
       : null;
     if (live && row?.url) {
       return (

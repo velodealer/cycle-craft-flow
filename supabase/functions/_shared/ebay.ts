@@ -161,10 +161,10 @@ function view(env: EbayEnvironment, tokens: Partial<Record<EbayEnvironment, Slot
 }
 
 /** Settings for the dealership's active mode, with that mode's tokens on top. */
-export async function loadSettings(supabase: Client, businessId: string): Promise<EbaySettings> {
+export async function loadSettings(supabase: Client, businessId: string, mode?: EbayEnvironment): Promise<EbaySettings> {
   const row = await loadIntegration(supabase, businessId);
   const { env, tokens, shared } = normalise(((row?.settings ?? {}) as StoredSettings) || {});
-  return view(env, tokens, shared);
+  return view(mode ?? env, tokens, shared);
 }
 
 /** Connection status of each mode. */
@@ -187,14 +187,16 @@ export async function saveSettings(
   businessId: string,
   settings: EbaySettings,
   isActive = true,
+  slotMode?: EbayEnvironment,
 ): Promise<EbaySettings> {
   const existing = await loadIntegration(supabase, businessId);
   const cur = normalise(((existing?.settings as StoredSettings) ?? {}) as StoredSettings);
-  const env: EbayEnvironment = settings.environment === 'production'
+  const active: EbayEnvironment = settings.environment === 'production'
     ? 'production'
     : settings.environment === 'sandbox' ? 'sandbox' : cur.env;
+  const env: EbayEnvironment = slotMode ?? active;
   const tokens = { ...cur.tokens, [env]: { ...(cur.tokens[env] ?? {}), ...pickSlot(settings as Record<string, unknown>) } };
-  const shared = { ...cur.shared, ...withoutSlot(settings as Record<string, unknown>), environment: env };
+  const shared = { ...cur.shared, ...withoutSlot(settings as Record<string, unknown>), environment: active };
   const stored = { ...shared, tokens };
   if (existing) {
     const { error } = await supabase
@@ -299,8 +301,8 @@ export interface Connection {
 }
 
 /** Returns a valid access token for one dealership, refreshing and storing it when needed. */
-export async function requireConnection(supabase: Client, businessId: string): Promise<Connection> {
-  const settings = await loadSettings(supabase, businessId);
+export async function requireConnection(supabase: Client, businessId: string, mode?: EbayEnvironment): Promise<Connection> {
+  const settings = await loadSettings(supabase, businessId, mode);
   const env: EbayEnvironment = settings.environment === 'production' ? 'production' : 'sandbox';
   if (!settings.refresh_token) {
     throw new Error(`eBay ${env === 'production' ? 'live' : 'test'} mode is not connected — connect it (or switch mode) in Settings → Integrations.`);
@@ -312,10 +314,11 @@ export async function requireConnection(supabase: Client, businessId: string): P
   }
 
   const fresh = await refreshAccessToken(env, settings.refresh_token);
-  const merged = await saveSettings(supabase, businessId, {
+  await saveSettings(supabase, businessId, {
     access_token: fresh.access_token,
     access_token_expires_at: new Date(Date.now() + fresh.expires_in * 1000).toISOString(),
-  });
+  }, true, env);
+  const merged = await loadSettings(supabase, businessId, env);
   return { environment: env, accessToken: fresh.access_token, settings: merged };
 }
 

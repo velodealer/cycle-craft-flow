@@ -4,6 +4,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 export interface EbayStatus {
   connected: boolean;
   environment: 'sandbox' | 'production';
+  modes?: Record<'sandbox' | 'production', { connected: boolean; seller_name: string | null; connected_at: string | null }>;
   seller_name: string | null;
   connected_at: string | null;
   auto_list: boolean;
@@ -154,7 +155,11 @@ export const getEbayAuthUrl = (environment: 'sandbox' | 'production') =>
     origin: window.location.origin,
   });
 
-export const disconnectEbay = () => invoke<{ ok: true }>('ebay-oauth', { action: 'disconnect' });
+export const disconnectEbay = (environment?: 'sandbox' | 'production') =>
+  invoke<{ ok: true }>('ebay-oauth', { action: 'disconnect', environment });
+
+export const switchEbayMode = (environment: 'sandbox' | 'production') =>
+  invoke<{ ok: true; environment: 'sandbox' | 'production'; connected: boolean }>('ebay-oauth', { action: 'switch_mode', environment });
 
 export const getEbayPolicies = () => invoke<EbayPolicies>('ebay-oauth', { action: 'policies' });
 

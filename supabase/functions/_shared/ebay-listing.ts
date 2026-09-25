@@ -551,7 +551,9 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   const warnings: string[] = [];
   const add = (key: string, level: CheckLevel, label: string, detail?: string) => checklist.push({ key, level, label, detail });
 
-  const existing = await loadEbayListing(supabase, bike.id);
+  const loaded = await loadEbayListing(supabase, bike.id);
+  // A listing made on the other eBay site (test vs live) can't be updated here — start fresh.
+  const existing = loaded && (listingMode(loaded) ?? 'sandbox') !== conn.environment ? null : loaded;
   const ex = (existing ?? {}) as any;
 
   // Description from the dealer's listing format.
@@ -715,7 +717,7 @@ async function ensureCampaign(supabase: Client, conn: Connection, businessId: st
     id = await find();
   }
   if (!id) throw new Error('eBay did not return the promotion campaign.');
-  await saveSettings(supabase, businessId, { campaign_id: id });
+  await saveSettings(supabase, businessId, { campaign_id: id }, true, conn.environment);
   return id;
 }
 
@@ -862,12 +864,17 @@ export async function pushBikeToEbay(
 }
 
 /** Ends the eBay listing (sold elsewhere or manual pull). */
+function listingMode(listing: unknown): 'sandbox' | 'production' | undefined {
+  const e = (listing as { environment?: string } | null)?.environment;
+  return e === 'production' || e === 'sandbox' ? e : undefined;
+}
+
 export async function endEbayListing(supabase: Client, bikeId: string): Promise<boolean> {
   const listing = await loadEbayListing(supabase, bikeId);
   const offerId = (listing as any)?.offer_id as string | undefined;
   if (!offerId) return false;
 
-  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId), listingMode(listing));
   await removeAd(conn, listing);
   try {
     await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}/withdraw`, {
@@ -897,7 +904,7 @@ export async function deleteEbayListing(supabase: Client, bikeId: string): Promi
   const offerId = (listing as any).offer_id as string | undefined;
   const sku = (listing as any).sku as string | undefined;
 
-  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId), listingMode(listing));
   await removeAd(conn, listing);
   if (offerId) {
     try {

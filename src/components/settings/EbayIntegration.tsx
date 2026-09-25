@@ -13,6 +13,7 @@ import {
   getEbayStatus,
   getEbayAuthUrl,
   disconnectEbay,
+  switchEbayMode,
   saveEbaySettings,
   getEbayHeldLocation,
   getEbayPolicies,
@@ -116,9 +117,23 @@ export default function EbayIntegration() {
     }
   };
 
-  const handleDisconnect = async () => {
+  const handleSwitchMode = async (mode: 'sandbox' | 'production') => {
+    if (mode === status?.environment) return;
+    if (mode === 'production' && !window.confirm('Switch this dealership to LIVE eBay? New listings will go on the real eBay site. Existing test listings stay on the test site.')) return;
     try {
-      await disconnectEbay();
+      const r = await switchEbayMode(mode);
+      toast.success(`eBay switched to ${mode === 'production' ? 'live' : 'test'}${r.connected ? '' : ' — connect your account below'}`);
+      setLoading(true);
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!window.confirm(`Disconnect the ${status?.environment === 'production' ? 'live' : 'test'} eBay account? The other mode stays connected.`)) return;
+    try {
+      await disconnectEbay(status?.environment);
       toast.success('eBay disconnected');
       load();
     } catch (e) {
@@ -252,10 +267,15 @@ export default function EbayIntegration() {
             <Tag className="h-5 w-5 text-muted-foreground" />
             <CardTitle>eBay</CardTitle>
           </div>
-          {!loading && (
-            <Badge variant={status?.connected ? 'default' : 'secondary'}>
-              {status?.connected ? `Connected (${status.environment === 'production' ? 'live' : 'sandbox'})` : 'Not connected'}
-            </Badge>
+          {!loading && status && (
+            <div className="flex items-center gap-2">
+              <Badge className={status.environment === 'production' ? 'bg-success text-success-foreground hover:bg-success' : 'bg-warning text-warning-foreground hover:bg-warning'}>
+                eBay: {status.environment === 'production' ? 'Live' : 'Test'}
+              </Badge>
+              <Badge variant={status.connected ? 'default' : 'secondary'}>
+                {status.connected ? 'Connected' : 'Not connected'}
+              </Badge>
+            </div>
           )}
         </div>
         <CardDescription>
@@ -263,6 +283,34 @@ export default function EbayIntegration() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!loading && status?.can_manage && (
+          <div className="rounded-lg border p-3 space-y-2">
+            <div className="text-sm font-medium">eBay site</div>
+            <div className="grid grid-cols-2 gap-2">
+              {(['sandbox', 'production'] as const).map((m) => {
+                const info = status.modes?.[m];
+                const active = status.environment === m;
+                return (
+                  <Button
+                    key={m}
+                    type="button"
+                    variant={active ? 'default' : 'outline'}
+                    className="h-auto flex-col items-start py-2 text-left"
+                    onClick={() => handleSwitchMode(m)}
+                  >
+                    <span>{m === 'production' ? 'Live eBay' : 'Test (sandbox)'}</span>
+                    <span className="text-xs font-normal opacity-80">
+                      {info?.connected ? `Connected${info.seller_name ? ` · ${info.seller_name}` : ''}` : 'Not connected'}
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Each site has its own eBay sign-in. Switching doesn't disconnect the other one.
+            </p>
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading…
@@ -430,19 +478,9 @@ export default function EbayIntegration() {
           </>
         ) : (
           <>
-            <div className="space-y-1.5">
-              <Label>Marketplace</Label>
-              <Select value={environment} onValueChange={(v) => setEnvironment(v as 'sandbox' | 'production')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sandbox">Sandbox (testing)</SelectItem>
-                  <SelectItem value="production">Live eBay</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <Button onClick={handleConnect} disabled={connecting}>
               {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
-              Connect eBay
+              Connect {environment === 'production' ? 'live' : 'test'} eBay
             </Button>
             <p className="text-xs text-muted-foreground">
               Disconnecting here removes the link from VeloDealer. eBay remembers that you allowed this app,
