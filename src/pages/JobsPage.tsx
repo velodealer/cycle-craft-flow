@@ -54,7 +54,7 @@ export default function JobsPage() {
     const { data, error } = await supabase
       .from('jobs')
       .select(
-        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, reference)',
+        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, reference, storage_bay_id)',
       )
       .eq('type', 'workshop')
       .order('created_at', { ascending: false });
