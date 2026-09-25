@@ -46,8 +46,14 @@ type GroupRow = {
 };
 type Row = ComponentRow | PartRow | GroupRow;
 
-const DRIVETRAIN_SLOTS = ['shifters', 'front_derailleur', 'rear_derailleur', 'cassette', 'chain', 'crank', 'brakes'];
+const DRIVETRAIN_SLOTS = ['shifters', 'front_derailleur', 'rear_derailleur', 'cassette', 'chain', 'crank', 'brakes', 'disc_rotors'];
 const COCKPIT_SLOTS = ['handlebars', 'stem'];
+// Always part of the frame row.
+const FRAME_SLOTS = ['frame', 'fork', 'headset', 'bottom_bracket'];
+// Optionally part of the frame row.
+const FRAME_OPTIONAL_SLOTS = ['seatpost', 'saddle'];
+const WHEEL_SLOTS = ['wheelset', 'front_hub', 'rear_hub', 'spokes'];
+const TYRE_SLOTS = ['front_tyre', 'rear_tyre'];
 
 const slotLabelMap: Record<string, string> = (() => {
   const m: Record<string, string> = {};
@@ -66,6 +72,8 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
   const [saving, setSaving] = useState(false);
   const [groupDrivetrain, setGroupDrivetrain] = useState(false);
   const [groupCockpit, setGroupCockpit] = useState(false);
+  const [groupSeatSaddle, setGroupSeatSaddle] = useState(false);
+  const [groupWheels, setGroupWheels] = useState(false);
 
   const load = useCallback(async () => {
     let comps: Awaited<ReturnType<typeof fetchBikeComponents>>;
@@ -116,6 +124,7 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     initial['group:drivetrain'] = { checked: false, value: '' };
     initial['group:cockpit'] = { checked: false, value: '' };
     initial['group:frame'] = { checked: false, value: '' };
+    initial['group:wheels'] = { checked: false, value: '' };
     setKeep(initial);
   }, [bike]);
 
@@ -133,6 +142,16 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
   );
   const hasDrivetrain = drivetrainComps.length > 0;
   const hasCockpit = cockpitComps.length > 0;
+  const frameComps = useMemo(
+    () => compRows.filter((c) => FRAME_SLOTS.includes(c.slot) || (groupSeatSaddle && FRAME_OPTIONAL_SLOTS.includes(c.slot))),
+    [compRows, groupSeatSaddle],
+  );
+  const hasSeatSaddle = compRows.some((c) => FRAME_OPTIONAL_SLOTS.includes(c.slot));
+  const wheelComps = useMemo(
+    () => compRows.filter((c) => WHEEL_SLOTS.includes(c.slot) || TYRE_SLOTS.includes(c.slot)),
+    [compRows],
+  );
+  const hasWheels = wheelComps.length > 0;
 
   useEffect(() => {
     if (!hasDrivetrain && groupDrivetrain) setGroupDrivetrain(false);
@@ -173,15 +192,16 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
-    // Frame always first
+    // Frame always first — absorbs fork, headset, bottom bracket (and optionally seatpost/saddle)
+    const frameSlotLabels = frameComps.map((c) => c.label);
     out.push({
       kind: 'group',
       id: 'frame',
       label: frameLabel,
-      description: 'Frame, headset, seatpost, etc.',
+      description: frameSlotLabels.length ? frameSlotLabels.join(', ') : 'Frame',
       brand: bike?.make || null,
-      componentIds: [],
-      slotLabels: [],
+      componentIds: frameComps.map((c) => c.id),
+      slotLabels: frameSlotLabels,
     });
     if (groupCockpit && hasCockpit) {
       const slotLabels = cockpitComps.map((c) => c.label);
@@ -207,14 +227,29 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
         slotLabels,
       });
     }
+    if (groupWheels && hasWheels) {
+      const slotLabels = wheelComps.map((c) => c.label);
+      const ws = wheelComps.find((c) => c.slot === 'wheelset');
+      out.push({
+        kind: 'group',
+        id: 'wheels',
+        label: `Wheels — ${ws?.description || mostCommonBrand(wheelComps) || 'Wheelset'}`,
+        description: slotLabels.join(', '),
+        brand: ws?.brand || wheelComps[0]?.brand || null,
+        componentIds: wheelComps.map((c) => c.id),
+        slotLabels,
+      });
+    }
+    const frameIds = new Set(frameComps.map((c) => c.id));
     for (const c of compRows) {
       const inDrivetrain = groupDrivetrain && DRIVETRAIN_SLOTS.includes(c.slot);
       const inCockpit = groupCockpit && COCKPIT_SLOTS.includes(c.slot);
-      if (!inDrivetrain && !inCockpit) out.push(c);
+      const inWheels = groupWheels && (WHEEL_SLOTS.includes(c.slot) || TYRE_SLOTS.includes(c.slot));
+      if (!inDrivetrain && !inCockpit && !inWheels && !frameIds.has(c.id)) out.push(c);
     }
     out.push(...partRows);
     return out;
-  }, [groupDrivetrain, groupCockpit, hasDrivetrain, hasCockpit, drivetrainComps, cockpitComps, compRows, partRows, groupsetName, cockpitName, bike, frameLabel]);
+  }, [groupDrivetrain, groupCockpit, groupWheels, hasDrivetrain, hasCockpit, hasWheels, drivetrainComps, cockpitComps, wheelComps, frameComps, compRows, partRows, groupsetName, cockpitName, bike, frameLabel]);
 
   const total = useMemo(
     () => rows.reduce((s, r) => {
@@ -284,9 +319,12 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           // group rows: frame / cockpit / drivetrain
           const isFrame = r.id === 'frame';
           const isCockpit = r.id === 'cockpit';
+          const isWheels = r.id === 'wheels';
           const slotList = r.slotLabels.join(', ');
           const inventoryDesc = isFrame
-            ? frameInventoryDesc
+            ? `${frameInventoryDesc}${slotList ? ` (${slotList})` : ''}`
+            : isWheels
+              ? `${r.label.replace(' — ', ': ')}${slotList ? ` (${slotList})` : ''}`
             : isCockpit
               ? `Cockpit: ${cockpitName}${slotList ? ` (${slotList})` : ''}`
               : `Drivetrain: ${groupsetName}${slotList ? ` (${slotList})` : ''}`;
@@ -375,6 +413,28 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
               />
               <Label htmlFor="group-cockpit" className={!hasCockpit ? 'text-muted-foreground' : ''}>
                 Group bar & stem as a single row
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="group-seat"
+                checked={groupSeatSaddle}
+                disabled={!hasSeatSaddle}
+                onCheckedChange={(c) => setGroupSeatSaddle(!!c)}
+              />
+              <Label htmlFor="group-seat" className={!hasSeatSaddle ? 'text-muted-foreground' : ''}>
+                Include seatpost & saddle with frame
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="group-wheels"
+                checked={groupWheels}
+                disabled={!hasWheels}
+                onCheckedChange={(c) => setGroupWheels(!!c)}
+              />
+              <Label htmlFor="group-wheels" className={!hasWheels ? 'text-muted-foreground' : ''}>
+                Group wheels & tyres as a single row
               </Label>
             </div>
           </div>
