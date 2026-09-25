@@ -1,34 +1,52 @@
 import { assertEquals, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { buildSaleInvoiceLines, purchaseFundingAccount } from './quickbooks-lines.ts';
+import { buildBreakJournalLines, buildPartStockOutLines } from './quickbooks-lines.ts';
 
-Deno.test('purchase funding uses the normal funding account for bought bikes', () => {
-  assertEquals(
-    purchaseFundingAccount('purchase', { purchase_funding: '10' }),
-    '10',
-  );
+const accounts = { stock: '82', cogs: '81', sales: '80', vat: '83', purchase_funding: '50', parts_stock: '84' };
+const noPartsStock = { stock: '82', cogs: '81', sales: '80', vat: '83', purchase_funding: '50' };
+
+const kept = [
+  { label: 'Drivetrain: Shimano Ultegra', amount: 450 },
+  { label: 'Wheels: Aeolus Comp', amount: 280 },
+  { label: 'Frame: Trek Émonda (54)', amount: 120 },
+];
+
+const net = (lines: Record<string, unknown>[]) => {
+  const amountOf = (l: Record<string, unknown>) => Number(l.Amount);
+  const sign = (l: Record<string, unknown>) => ((l as any).JournalEntryLineDetail.PostingType === 'Debit' ? 1 : -1);
+  return Math.round(lines.reduce((s, l) => s + sign(l) * amountOf(l), 0) * 100) / 100;
+};
+
+Deno.test('break journal: one balanced pair per kept item when parts stock is mapped', () => {
+  const lines = buildBreakJournalLines(kept, 0, accounts, 'BPS-TRE-027T');
+  assertEquals(lines.length, 6);
+  assertEquals((lines[0] as any).JournalEntryLineDetail.AccountRef.value, '84');
+  assertEquals((lines[1] as any).JournalEntryLineDetail.PostingType, 'Credit');
+  assertEquals(net(lines), 0);
 });
 
-Deno.test('purchase funding fails clearly when the funding account is unmapped', () => {
-  assertThrows(
-    () => purchaseFundingAccount('purchase', {}),
-    Error,
-    'purchase funding',
-  );
+Deno.test('break journal: no reclass when parts stock is unmapped — value stays in stock', () => {
+  assertEquals(buildBreakJournalLines(kept, 0, noPartsStock, 'BPS-TRE-027T').length, 0);
 });
 
-Deno.test('part exchanges return null — funded by an AR credit, not a clearing account', () => {
-  assertEquals(purchaseFundingAccount('part_exchange', { purchase_funding: '10' }), null);
+Deno.test('break journal: scrapped remainder is written off to COGS', () => {
+  const lines = buildBreakJournalLines(kept, 130.004, accounts, 'BPS-TRE-027T');
+  assertEquals(lines.length, 8);
+  assertEquals(net(lines), 0);
+  const noParts = buildBreakJournalLines(kept, 130, noPartsStock, 'BPS-TRE-027T');
+  assertEquals(noParts.length, 2);
+  assertEquals(net(noParts), 0);
 });
 
-Deno.test('sale lines carry the full price only (part exchange settles via AR journal)', () => {
-  const lines = buildSaleInvoiceLines({
-    saleGross: 4000,
-    description: 'Specialized Roubaix',
-    saleItemRef: '1',
-    saleTaxCode: 'STD',
-  });
+Deno.test('break journal: throws when write-off needs missing COGS/stock', () => {
+  assertThrows(() => buildBreakJournalLines(kept, 130, { parts_stock: '84' }, 'X'));
+});
 
-  assertEquals(lines.length, 1);
-  assertEquals((lines[0] as any).Amount, 4000);
-  assertEquals((lines[0] as any).SalesItemLineDetail.TaxCodeRef.value, 'STD');
+Deno.test('part sale stock-out: credits parts stock when mapped, main stock otherwise', () => {
+  const withParts = buildPartStockOutLines(150, accounts, 'Ultegra crank');
+  assertEquals((withParts[1] as any).JournalEntryLineDetail.AccountRef.value, '84');
+  assertEquals(net(withParts), 0);
+  const withoutParts = buildPartStockOutLines(150, noPartsStock, 'Ultegra crank');
+  assertEquals((withoutParts[1] as any).JournalEntryLineDetail.AccountRef.value, '82');
+  assertEquals(net(withoutParts), 0);
+  assertEquals(buildPartStockOutLines(0, accounts, 'x').length, 0);
 });
