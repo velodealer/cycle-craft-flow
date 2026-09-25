@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { stockOutDocNumber, syncInvoice, reverseSale } from '@/lib/quickbooks';
+import { trySyncXeroInvoice, getXeroStatus } from '@/lib/xero';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +43,9 @@ interface InvoiceRow {
   sync_error: string | null;
   quickbooks_invoice_id: string | null;
   quickbooks_journal_id: string | null;
+  xero_invoice_id?: string | null;
+  xero_sync_status?: string | null;
+  xero_sync_error?: string | null;
 
   bike_id: string | null;
   bikes: { id: string; make: string; model: string; reference: string | null } | null;
@@ -67,6 +71,11 @@ export default function InvoicesPage() {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<InvoiceRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [xeroConnected, setXeroConnected] = useState(false);
+
+  useEffect(() => {
+    getXeroStatus().then((s) => setXeroConnected(s.connected && !!s.tenant_id)).catch(() => setXeroConnected(false));
+  }, []);
 
 
   const load = useCallback(async () => {
@@ -109,6 +118,16 @@ export default function InvoicesPage() {
       setSyncingId(null);
       load();
     }
+  };
+
+  const handleXeroSync = async (id: string) => {
+    setSyncingId(`xero-${id}`);
+    const r = await trySyncXeroInvoice(id);
+    if (!r.ok) toast.error(r.error);
+    else if (r.skipped) toast.info(r.skipped);
+    else toast.success('Invoice synced to Xero');
+    setSyncingId(null);
+    load();
   };
 
   const handleDelete = async () => {
@@ -193,6 +212,12 @@ export default function InvoicesPage() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       QB invoice {inv.quickbooks_invoice_id ? `#${inv.quickbooks_invoice_id}` : '—'} · Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
                     </p>
+                    {xeroConnected && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Xero invoice {inv.xero_invoice_id ? 'synced' : '—'}
+                        {inv.xero_sync_error && <span className="text-destructive" title={inv.xero_sync_error}> · failed</span>}
+                      </p>
+                    )}
 
                     <div className="mt-3 flex gap-2">
                       {inv.bike_id && (
@@ -202,6 +227,12 @@ export default function InvoicesPage() {
                         {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
                       </Button>
+                      {xeroConnected && (
+                        <Button size="sm" variant="outline" onClick={() => handleXeroSync(inv.id)} disabled={syncingId === `xero-${inv.id}`}>
+                          {syncingId === `xero-${inv.id}` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {inv.xero_invoice_id ? 'Re-sync Xero' : 'Sync Xero'}
+                        </Button>
+                      )}
                       {isAdmin && (
                         <Button
                           size="sm"
@@ -271,6 +302,12 @@ export default function InvoicesPage() {
                             {' · '}Stock out {stockOutDocNumber(inv.bikes?.reference) ?? '—'}
                           </p>
                           {inv.sync_error && <p className="mt-1 max-w-[240px] truncate text-xs text-destructive" title={inv.sync_error}>{inv.sync_error}</p>}
+                          {xeroConnected && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Xero invoice {inv.xero_invoice_id ? 'synced' : '—'}
+                              {inv.xero_sync_error && <span className="text-destructive" title={inv.xero_sync_error}> · failed</span>}
+                            </p>
+                          )}
 
                         </TableCell>
                         <TableCell className="text-right">
@@ -279,6 +316,12 @@ export default function InvoicesPage() {
                               {syncingId === inv.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                               {inv.quickbooks_invoice_id ? 'Re-sync' : 'Sync'}
                             </Button>
+                            {xeroConnected && (
+                              <Button size="sm" variant="outline" onClick={() => handleXeroSync(inv.id)} disabled={syncingId === `xero-${inv.id}`}>
+                                {syncingId === `xero-${inv.id}` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {inv.xero_invoice_id ? 'Re-sync Xero' : 'Sync Xero'}
+                              </Button>
+                            )}
                             {isAdmin && (
                               <Button
                                 size="sm"

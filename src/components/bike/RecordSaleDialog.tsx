@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logActivity, money } from '@/lib/activity';
 import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
+import { trySyncXeroInvoice, tryPostXeroPurchase } from '@/lib/xero';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
@@ -359,6 +360,17 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         toast.success('Invoice synced to QuickBooks');
       } catch (e) {
         toast.warning(`Saved, but QuickBooks sync failed: ${(e as Error).message}`);
+      }
+
+      // Xero posts independently; a failure never blocks the sale or QuickBooks.
+      {
+        const xr = await trySyncXeroInvoice(invoice.id);
+        if (!xr.ok) toast.warning(`Saved, but Xero sync failed: ${xr.error}`);
+        else if (!xr.skipped) toast.success('Invoice synced to Xero');
+        if (partExBikeId) {
+          const xp = await tryPostXeroPurchase(partExBikeId);
+          if (!xp.ok) toast.warning(`Part exchange bike created, but its Xero stock posting failed: ${xp.error}`);
+        }
       }
 
       if (partExBikeId) {

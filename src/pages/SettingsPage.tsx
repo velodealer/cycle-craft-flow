@@ -6,6 +6,7 @@ import ShopifyIntegration from '@/components/settings/ShopifyIntegration';
 import SquarespaceIntegration from '@/components/settings/SquarespaceIntegration';
 import EbayIntegration from '@/components/settings/EbayIntegration';
 import QuickBooksIntegration from '@/components/settings/QuickBooksIntegration';
+import XeroIntegration from '@/components/settings/XeroIntegration';
 import ListingFormats from '@/components/settings/ListingFormats';
 import StorageBays from '@/components/settings/StorageBays';
 import InspectABikeIntegration from '@/components/settings/InspectABikeIntegration';
@@ -87,6 +88,7 @@ export default function SettingsPage() {
             <SquarespaceIntegration />
             <EbayIntegration />
             <QuickBooksIntegration />
+            <XeroIntegration />
             <InspectABikeIntegration />
           </div>
         </TabsContent>

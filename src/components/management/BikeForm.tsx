@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PhotoUpload from '@/components/PhotoUpload';
 import { tryPostPurchase } from '@/lib/quickbooks';
+import { tryPostXeroPurchase } from '@/lib/xero';
 import OwnerForm from '@/components/management/OwnerForm';
 import AddInvestorDialog from '@/components/management/AddInvestorDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -282,6 +283,10 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
         });
         toast({ title: 'Bike created successfully' });
 
+        // Post the purchase to Xero stock too (skipped when Xero isn't connected).
+        void tryPostXeroPurchase(bikeId).then((r) => {
+          if (!r.ok) toast({ title: 'Xero purchase not posted', description: r.error, variant: 'destructive' });
+        });
         // Post the purchase to QuickBooks stock (purchase price only).
         const posted = await tryPostPurchase(bikeId);
         if (!posted.ok) {

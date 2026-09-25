@@ -66,3 +66,6 @@ verify_jwt = false
 
 [functions.squarespace-sync-bike]
 verify_jwt = false
+
+[functions.xero-oauth]
+verify_jwt = false

@@ -4,6 +4,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser } from '../_shared/quickbooks.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { getXeroAuth, xeroFetch } from '../_shared/xero.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
     if (pxBikeIds.length) {
       const { data, error: pxErr } = await supabase
         .from('bikes')
-        .select('id, make, model, reference, quickbooks_purchase_journal_id')
+        .select('id, make, model, reference, quickbooks_purchase_journal_id, xero_purchase_journal_id')
         .in('id', pxBikeIds);
       // Without these rows their QuickBooks journals would be skipped — stop before touching the ledger.
       if (pxErr) throw new Error(`Could not load part-exchange bikes: ${pxErr.message}`);
@@ -117,6 +118,33 @@ Deno.serve(async (req) => {
       }
       for (const px of pxBikes) {
         if (px.quickbooks_purchase_journal_id) await deleteJournal(fetcher, px.quickbooks_purchase_journal_id);
+      }
+    }
+
+    // ---- Xero next: void the invoice, journals and part-exchange credit notes.
+    const needsXero =
+      invoices.some((i) => i.xero_invoice_id || i.xero_journal_id) ||
+      pxBikes.some((b) => b.xero_purchase_journal_id);
+    if (needsXero) {
+      const businessId = invoices[0]?.business_id;
+      if (!businessId) throw new Error('Could not work out which dealership this sale belongs to');
+      const auth = await getXeroAuth(supabase, businessId);
+      const voidDoc = async (kind: 'Invoices' | 'ManualJournals' | 'CreditNotes', idField: string, id: string) => {
+        try {
+          await xeroFetch(auth, `/${kind}`, { method: 'POST', body: JSON.stringify({ [kind]: [{ [idField]: id, Status: 'VOIDED' }] }) });
+        } catch (e) {
+          if ((e as { status?: number }).status === 404 || /already.*void/i.test((e as Error).message)) return;
+          throw new Error(`Xero could not void ${kind.replace(/s$/, '').toLowerCase()} ${id}: ${(e as Error).message}`);
+        }
+      };
+      for (const px of pxBikes) {
+        const j = px.xero_purchase_journal_id as string | null;
+        if (j?.startsWith('CN:')) await voidDoc('CreditNotes', 'CreditNoteID', j.slice(3));
+        else if (j) await voidDoc('ManualJournals', 'ManualJournalID', j);
+      }
+      for (const inv of invoices) {
+        if (inv.xero_journal_id) await voidDoc('ManualJournals', 'ManualJournalID', inv.xero_journal_id);
+        if (inv.xero_invoice_id) await voidDoc('Invoices', 'InvoiceID', inv.xero_invoice_id);
       }
     }
 
