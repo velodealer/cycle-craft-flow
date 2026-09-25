@@ -201,7 +201,9 @@ export default function InvoicesPage() {
                       <SyncBadge status={inv.sync_status} />
                     </div>
                     <p className="mt-2 text-sm">
-                      {inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)}
+                      {inv.type === 'part_sale'
+                        ? `Part · ${[inv.parts?.brand, inv.parts?.description].filter(Boolean).join(' — ') || '—'}`
+                        : inv.bikes ? `${inv.bikes.make} ${inv.bikes.model}` : '—'} · {currency(inv.gross)}
                       {vatRegistered ? ` · VAT ${inv.vat_rate}%` : ''}
                     </p>
                     {Number(inv.part_exchange_value || 0) > 0 && (
@@ -234,7 +236,7 @@ export default function InvoicesPage() {
                           {inv.xero_invoice_id ? 'Re-sync Xero' : 'Sync Xero'}
                         </Button>
                       )}
-                      {isAdmin && (
+                      {isAdmin && inv.type !== 'part_sale' && (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -274,7 +276,9 @@ export default function InvoicesPage() {
                         <TableCell>{inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-GB') : '—'}</TableCell>
                         <TableCell>{inv.external_owners?.name ?? '—'}</TableCell>
                         <TableCell>
-                          {inv.bikes ? (
+                          {inv.type === 'part_sale' ? (
+                            <span>Part · {[inv.parts?.brand, inv.parts?.description].filter(Boolean).join(' — ') || '—'}</span>
+                          ) : inv.bikes ? (
                             <Link className="hover:underline" to={`/bikes/${inv.bikes.id}`}>
                               {inv.bikes.make} {inv.bikes.model}
                             </Link>
@@ -323,7 +327,7 @@ export default function InvoicesPage() {
                                 {inv.xero_invoice_id ? 'Re-sync Xero' : 'Sync Xero'}
                               </Button>
                             )}
-                            {isAdmin && (
+                            {isAdmin && inv.type !== 'part_sale' && (
                               <Button
                                 size="sm"
                                 variant="ghost"
