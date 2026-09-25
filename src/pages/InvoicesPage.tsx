@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { stockOutDocNumber, syncInvoice, reverseSale } from '@/lib/quickbooks';
-import { trySyncXeroInvoice } from '@/lib/xero';
+import { trySyncXeroInvoice, getXeroStatus } from '@/lib/xero';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -71,6 +71,11 @@ export default function InvoicesPage() {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<InvoiceRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [xeroConnected, setXeroConnected] = useState(false);
+
+  useEffect(() => {
+    getXeroStatus().then((s) => setXeroConnected(s.connected && !!s.tenant_id)).catch(() => setXeroConnected(false));
+  }, []);
 
 
   const load = useCallback(async () => {
