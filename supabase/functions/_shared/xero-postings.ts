@@ -67,3 +67,57 @@ export function saleJournalLines(purchase: number, mVat: number, a: XeroAccounts
 }
 
 export const journalBalance = (lines: { LineAmount: number }[]) => r2(lines.reduce((s, l) => s + l.LineAmount, 0));
+
+export interface BreakKeptItem { label: string; amount: number }
+
+/**
+ * Bike broken for parts: each kept part moves from bike stock to parts stock
+ * (only when a parts stock account is mapped — otherwise the value stays in
+ * the main stock account), and the scrapped remainder is written off to COGS.
+ * One balanced pair per kept item, so the stock ledger shows the bike
+ * replaced by its parts.
+ */
+export function breakJournalLines(keptItems: BreakKeptItem[], writtenOff: number, a: XeroAccounts, ref: string) {
+  const lines: ReturnType<typeof jl>[] = [];
+  const kept = keptItems.filter((i) => r2(i.amount) > 0);
+  if (kept.length > 0 && a.parts_stock) {
+    if (!a.stock) throw new Error('Xero account mapping is incomplete (Stock account is required)');
+    for (const item of kept) {
+      const label = item.label.slice(0, 200);
+      lines.push(jl(a.parts_stock, item.amount, `Parts stock — ${label}`));
+      lines.push(jl(a.stock, -item.amount, `Bike ${ref} removed from stock — ${label}`));
+    }
+  }
+  const off = r2(writtenOff);
+  if (off > 0) {
+    if (!a.cogs || !a.stock) throw new Error('Xero account mapping is incomplete (Stock and cost of sales accounts are required)');
+    lines.push(jl(a.cogs, off, `Written off — bike ${ref} broken for parts`));
+    lines.push(jl(a.stock, -off, `Bike ${ref} scrapped remainder`));
+  }
+  return lines;
+}
+
+/** Stock-out for a part sale: Dr COGS / Cr parts stock (or main stock when unmapped). */
+export function partSaleStockOutLines(cost: number, a: XeroAccounts, description: string) {
+  const c = r2(cost);
+  if (c <= 0) return [] as ReturnType<typeof jl>[];
+  if (!a.cogs) throw new Error('Xero account mapping is incomplete (Cost of sales account is required)');
+  const stockAccount = a.parts_stock || a.stock;
+  if (!stockAccount) throw new Error('Xero account mapping is incomplete (Stock account is required)');
+  return [
+    jl(a.cogs, c, `Cost of goods sold — ${description}`),
+    jl(stockAccount, -c, `Stock released — ${description}`),
+  ];
+}
+
+/** Part-sale journal: part stock-out plus margin VAT Dr sales / Cr VAT. */
+export function partSaleJournalLines(cost: number, mVat: number, a: XeroAccounts, description: string) {
+  const lines = partSaleStockOutLines(cost, a, description);
+  const v = r2(mVat);
+  if (v > 0) {
+    if (!a.vat || !a.sales) throw new Error('A VAT account must be mapped in Xero settings for margin scheme sales');
+    lines.push(jl(a.sales, v, `Margin scheme VAT (sales adjustment) — ${description}`));
+    lines.push(jl(a.vat, -v, `Margin scheme VAT — ${description}`));
+  }
+  return lines;
+}
