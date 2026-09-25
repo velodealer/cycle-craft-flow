@@ -15,6 +15,7 @@ import ComponentAttributes from '@/components/components/ComponentAttributes';
 import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 import StripComponentDialog from './StripComponentDialog';
+import RemoveSlotPartDialog from './RemoveSlotPartDialog';
 import AddPartFromInventoryDialog, { type FitSlot } from './AddPartFromInventoryDialog';
 import { PackageMinus, PackagePlus, Sparkles } from 'lucide-react';
 import SpokesApplyDialog from './SpokesApplyDialog';
@@ -39,6 +40,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [componentDetails, setComponentDetails] = useState<Record<string, any>>({}); // slot -> component row
 
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
+  const [removing, setRemoving] = useState<{ slot: string; label: string; componentId: string } | null>(null);
   const [fitting, setFitting] = useState<FitSlot | null>(null);
   const [spokesOpen, setSpokesOpen] = useState(false);
 
@@ -132,8 +134,8 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const onSlotChange = async (slot: SlotDef, componentId: string | null) => {
     if (!bike?.id) return;
     if (!componentId) {
-      await supabase.from('bike_components').delete().eq('bike_id', bike.id).eq('slot', slot.slot);
-      setBikeComponents((m) => { const n = { ...m }; delete n[slot.slot]; return n; });
+      const current = bikeComponents[slot.slot];
+      if (current) setRemoving({ slot: slot.slot, label: slot.label, componentId: current });
       return;
     }
     // Swapping to a different component: clear the per-bike override fields left by the
@@ -417,6 +419,17 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
           bikeId={bike.id}
           slot={fitting}
           onSaved={() => { reloadComponents(); onUpdate(); }}
+        />
+      )}
+      {removing && (
+        <RemoveSlotPartDialog
+          open={!!removing}
+          onOpenChange={(v) => !v && setRemoving(null)}
+          bikeId={bike.id}
+          slot={removing.slot}
+          slotLabel={removing.label}
+          componentId={removing.componentId}
+          onDone={() => { reloadComponents(); onUpdate(); }}
         />
       )}
       {stripping && (

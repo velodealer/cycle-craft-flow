@@ -189,3 +189,17 @@ export async function tryPostFitPartToQuickBooks(partId: string): Promise<{ ok: 
     return { ok: false, error: (e as Error).message };
   }
 }
+
+/** Reverses a fit when the part goes back to stock (Dr parts stock / Cr stock at its stock value). */
+export async function tryPostUnfitPartToQuickBooks(partId: string): Promise<{ ok: boolean; error?: string; skipped?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('quickbooks-fit-part', { body: { part_id: partId, reverse: true } });
+    if (error) {
+      const details = error instanceof FunctionsHttpError ? await error.context.text() : error.message;
+      return { ok: false, error: details };
+    }
+    return { ok: true, skipped: data?.skipped };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
