@@ -35,6 +35,7 @@ const FILTERS = [
 ];
 
 const isDone = (status: string) => status === 'complete' || status === 'completed';
+const isClosed = (status: string) => isDone(status) || status === 'cancelled';
 
 const statusLabel = (status: string) =>
   isDone(status) ? 'Done' : status === 'in_progress' ? 'In progress' : 'Pending';
@@ -71,7 +72,7 @@ export default function JobsPage() {
 
   const visible = useMemo(() => {
     if (filter === 'all') return jobs;
-    if (filter === 'open') return jobs.filter((j) => !isDone(j.status));
+    if (filter === 'open') return jobs.filter((j) => !isClosed(j.status));
     if (filter === 'complete') return jobs.filter((j) => isDone(j.status));
     return jobs.filter((j) => j.status === filter);
   }, [jobs, filter]);
@@ -154,7 +155,7 @@ export default function JobsPage() {
         }
       />
 
-      <Panel title="Jobs" hint={`${visible.length} jobs · ${groups.length} bikes`} bodyClassName="p-0">
+      <Panel title="Repair jobs" hint={`${visible.length} jobs · ${groups.length} bikes`} bodyClassName="p-0">
         {loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((i) => (
@@ -170,56 +171,42 @@ export default function JobsPage() {
         ) : (
           groups.map((list) => (
             <div key={list[0].bike_id} className="border-b border-border last:border-b-0">
-              <div className="flex flex-wrap items-center justify-between gap-2 bg-secondary/40 px-4 py-2">
+              <div className="flex items-start justify-between gap-3 bg-secondary/40 px-4 py-3">
                 {list[0].bikes ? (
-                  <a href={`/bikes/${list[0].bike_id}`} onClick={(e) => { e.preventDefault(); navigate(`/bikes/${list[0].bike_id}`); }} className="min-w-0 font-medium hover:underline">
+                  <a href={`/bikes/${list[0].bike_id}`} onClick={(e) => { e.preventDefault(); navigate(`/bikes/${list[0].bike_id}`); }} className="min-w-0 break-words font-medium hover:underline">
                     {list[0].bikes.make} {list[0].bikes.model}
-                    <span className="id-text ml-2">{bikeRef(list[0].bikes)}</span>
+                    <span className="id-text block text-xs">{bikeRef(list[0].bikes)}</span>
                   </a>
                 ) : <span className="text-muted-foreground">Bike removed</span>}
-                <span className="text-xs text-muted-foreground">{list.length} job{list.length === 1 ? '' : 's'}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{list.length} job{list.length === 1 ? '' : 's'}</span>
               </div>
               {list.map((job) => (
-            <QueueRow key={job.id} density="bench" className="flex-wrap justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-foreground">{job.title}</span>
+            <div key={job.id} className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="break-words font-medium text-foreground">{job.title}</p>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <Badge variant={isDone(job.status) ? 'success' : job.status === 'in_progress' ? 'warning' : 'outline'}>
                     {statusLabel(job.status)}
                   </Badge>
+                  {job.started_at && <span>Started {formatDate(job.started_at)}</span>}
+                  {job.completed_at && <span>Done {formatDate(job.completed_at)}</span>}
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  <span>Started {formatDate(job.started_at)}</span>
-                  {job.completed_at ? <span className="ml-3">Done {formatDate(job.completed_at)}</span> : null}
-                </p>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2">
-                {job.bikes && (
-                  <Button variant="ghost" size="bench" onClick={() => navigate(`/bikes/${job.bike_id}`)}>
-                    Open bike
-                  </Button>
-                )}
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                 {!isDone(job.status) && !job.started_at && (
-                  <Button
-                    size="bench"
-                    variant="outline"
-                    disabled={busyId === job.id}
-                    onClick={() => update(job, { status: 'in_progress', started_at: new Date().toISOString() })}
-                  >
+                  <Button size="bench" variant="outline" disabled={busyId === job.id}
+                    onClick={() => update(job, { status: 'in_progress', started_at: new Date().toISOString() })}>
                     Start
                   </Button>
                 )}
                 {!isDone(job.status) && (
-                  <Button
-                    size="bench"
-                    disabled={busyId === job.id}
-                    onClick={() => update(job, { status: 'complete', completed_at: new Date().toISOString() })}
-                  >
+                  <Button size="bench" disabled={busyId === job.id} className={job.started_at ? 'col-span-2' : ''}
+                    onClick={() => update(job, { status: 'complete', completed_at: new Date().toISOString() })}>
                     Done
                   </Button>
                 )}
               </div>
-            </QueueRow>
+            </div>
               ))}
             </div>
           ))
