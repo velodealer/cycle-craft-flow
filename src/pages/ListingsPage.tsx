@@ -70,7 +70,7 @@ export default function ListingsPage() {
   const [shopifyStatus, setShopifyStatus] = useState<ShopifyStatus | null>(null);
   const [sqsStatus, setSqsStatus] = useState<SquarespaceStatus | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(() => { const s = new URLSearchParams(window.location.search).get('status'); return s === 'ready' || s === 'listed' ? s : 'all'; });
   const [listingIds, setListingIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [bulk, setBulk] = useState<{ kind: 'list' | 'sync'; done: number; total: number } | null>(null);

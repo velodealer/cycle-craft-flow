@@ -16,24 +16,25 @@ export default function BPSDashboard() {
   const today = (stage: string) => data?.enteredToday[stage] ?? 0;
 
   const cards = [
-    { title: 'In intake', count: s('pending_intake') + s('intake'), today: today('intake'), to: '/bikes?status=intake' },
+    { title: 'In intake', count: s('pending_intake') + s('intake'), today: today('intake'), to: '/intake' },
     { title: 'Cleaning', count: s('cleaning'), today: today('cleaning'), to: '/cleaning' },
     { title: 'Inspection', count: s('inspection'), today: today('inspection'), to: '/inspection' },
     {
       title: 'Owner approval',
-      count: s('pending_approval'),
+      count: data?.awaitingApproval ?? 0,
       today: 0,
       to: '/repairs',
-      warn: s('pending_approval') > 0,
+      warn: (data?.awaitingApproval ?? 0) > 0,
+      hint: data?.stuckApproval ? `${data.stuckApproval} stuck, nothing to approve` : undefined,
     },
-    { title: 'Repair', count: s('repair'), today: today('repair'), to: '/repairs' },
-    { title: 'Ready', count: s('ready'), today: today('ready'), to: '/bikes?status=ready' },
-    { title: 'Listed', count: s('listed'), today: 0, to: '/bikes?status=listed', hint: `${s('in_stock')} in stock` },
+    { title: 'Repair', count: s('repair'), today: today('repair'), to: '/jobs' },
+    { title: 'Ready', count: s('ready'), today: today('ready'), to: '/listings?status=ready' },
+    { title: 'Listed', count: s('listed'), today: 0, to: '/listings?status=listed', hint: `${s('in_stock')} in stock` },
     {
       title: 'Sold',
       count: data?.soldThisMonth ?? 0,
       today: 0,
-      to: '/bikes?status=sold',
+      to: '/invoices',
       hint: `${data?.soldLast7 ?? 0} in last 7 days`,
     },
     {

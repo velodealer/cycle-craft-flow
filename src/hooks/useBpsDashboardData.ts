@@ -6,6 +6,8 @@ export type BpsDashboardData = {
   enteredToday: Record<string, number>;
   totalInSystem: number;
   soldThisMonth: number;
+  awaitingApproval: number;
+  stuckApproval: number;
   soldLast7: number;
   jobsOpen: number;
   jobsWorkshop: number;
@@ -39,14 +41,15 @@ export function useBpsDashboardData() {
       const since30 = daysAgo(30).toISOString();
       const since7 = daysAgo(7).toISOString();
 
-      const [bikesRes, jobsRes, eventsRes, invoicesRes] = await Promise.all([
+      const [bikesRes, jobsRes, eventsRes, invoicesRes, faultsRes] = await Promise.all([
         supabase.from('bikes').select('id, status, sold_at, updated_at, sale_price, intake_date, created_at'),
         supabase.from('jobs').select('id, type, status'),
         supabase.from('fulfilment_events').select('stage, timestamp').gte('timestamp', since30),
         supabase.from('invoices').select('type, gross, total, paid_at, status').eq('status', 'paid').gte('paid_at', monthStart),
+        supabase.from('inspection_faults').select('bike_id').eq('status', 'reported'),
       ]);
 
-      const firstError = bikesRes.error || jobsRes.error || eventsRes.error || invoicesRes.error;
+      const firstError = bikesRes.error || jobsRes.error || eventsRes.error || invoicesRes.error || faultsRes.error;
       if (firstError) throw firstError;
 
       const bikes = (bikesRes.data || []) as any[];
@@ -54,6 +57,7 @@ export function useBpsDashboardData() {
       const events = (eventsRes.data || []) as any[];
       const invoices = (invoicesRes.data || []) as any[];
 
+      const faultBikes = new Set(((faultsRes.data || []) as any[]).map((f) => f.bike_id).filter(Boolean));
       const statusCounts: Record<string, number> = {};
       for (const b of bikes) statusCounts[b.status] = (statusCounts[b.status] || 0) + 1;
 
@@ -82,6 +86,8 @@ export function useBpsDashboardData() {
         enteredToday,
         totalInSystem: bikes.filter((b) => ACTIVE_STATUSES.includes(b.status)).length,
         soldThisMonth: soldMonth.length,
+        awaitingApproval: faultBikes.size,
+        stuckApproval: bikes.filter((b) => b.status === 'pending_approval' && !faultBikes.has(b.id)).length,
         soldLast7,
         jobsOpen: openJobs.length,
         jobsWorkshop: openJobs.filter((j) => j.type === 'workshop').length,
