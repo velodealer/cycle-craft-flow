@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     // Basis is the purchase price posted to the accounts at intake.
     const purchase = r2(Number(bike.purchase_price || 0));
     const keptTotal = r2(keptItems.reduce((s, i) => s + i.amount, 0));
-    const writtenOff = r2(Math.max(0, purchase - keptTotal));
+    const writtenOff = bike.status === 'split_for_parts' ? r2(Math.max(0, purchase - keptTotal)) : 0;
 
     const auth = await getXeroAuth(supabase, businessId);
     const call = (p: string, init?: RequestInit) => xeroFetch(auth, p, init);
