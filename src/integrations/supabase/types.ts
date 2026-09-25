@@ -318,6 +318,12 @@ export type Database = {
           asking_price: number | null
           barcode: string | null
           bike_type: string | null
+          break_qb_posting_id: string | null
+          break_qb_sync_error: string | null
+          break_qb_sync_status: string | null
+          break_xero_posting_id: string | null
+          break_xero_sync_error: string | null
+          break_xero_sync_status: string | null
           business_id: string
           catalog_data: Json | null
           catalog_size: string | null
@@ -383,6 +389,12 @@ export type Database = {
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
+          break_qb_posting_id?: string | null
+          break_qb_sync_error?: string | null
+          break_qb_sync_status?: string | null
+          break_xero_posting_id?: string | null
+          break_xero_sync_error?: string | null
+          break_xero_sync_status?: string | null
           business_id?: string
           catalog_data?: Json | null
           catalog_size?: string | null
@@ -448,6 +460,12 @@ export type Database = {
           asking_price?: number | null
           barcode?: string | null
           bike_type?: string | null
+          break_qb_posting_id?: string | null
+          break_qb_sync_error?: string | null
+          break_qb_sync_status?: string | null
+          break_xero_posting_id?: string | null
+          break_xero_sync_error?: string | null
+          break_xero_sync_status?: string | null
           business_id?: string
           catalog_data?: Json | null
           catalog_size?: string | null
@@ -1731,10 +1749,12 @@ export type Database = {
           business_id: string
           created_at: string
           customer_id: string | null
+          customer_name: string | null
           delivery_charge: number
           delivery_charged_to_customer: boolean
           due_date: string | null
           external_customer_id: string | null
+          finance_scheme: Database["public"]["Enums"]["finance_scheme"] | null
           gross: number
           id: string
           invoice_number: string
@@ -1744,6 +1764,7 @@ export type Database = {
           paid_at: string | null
           part_exchange_bike_id: string | null
           part_exchange_value: number | null
+          part_id: string | null
           quickbooks_invoice_id: string | null
           quickbooks_journal_id: string | null
           sale_gross: number | null
@@ -1764,10 +1785,12 @@ export type Database = {
           business_id?: string
           created_at?: string
           customer_id?: string | null
+          customer_name?: string | null
           delivery_charge?: number
           delivery_charged_to_customer?: boolean
           due_date?: string | null
           external_customer_id?: string | null
+          finance_scheme?: Database["public"]["Enums"]["finance_scheme"] | null
           gross: number
           id?: string
           invoice_number: string
@@ -1777,6 +1800,7 @@ export type Database = {
           paid_at?: string | null
           part_exchange_bike_id?: string | null
           part_exchange_value?: number | null
+          part_id?: string | null
           quickbooks_invoice_id?: string | null
           quickbooks_journal_id?: string | null
           sale_gross?: number | null
@@ -1797,10 +1821,12 @@ export type Database = {
           business_id?: string
           created_at?: string
           customer_id?: string | null
+          customer_name?: string | null
           delivery_charge?: number
           delivery_charged_to_customer?: boolean
           due_date?: string | null
           external_customer_id?: string | null
+          finance_scheme?: Database["public"]["Enums"]["finance_scheme"] | null
           gross?: number
           id?: string
           invoice_number?: string
@@ -1810,6 +1836,7 @@ export type Database = {
           paid_at?: string | null
           part_exchange_bike_id?: string | null
           part_exchange_value?: number | null
+          part_id?: string | null
           quickbooks_invoice_id?: string | null
           quickbooks_journal_id?: string | null
           sale_gross?: number | null
@@ -1866,6 +1893,13 @@ export type Database = {
             columns: ["part_exchange_bike_id"]
             isOneToOne: false
             referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
             referencedColumns: ["id"]
           },
         ]
@@ -3276,7 +3310,7 @@ export type Database = {
         | "repair"
         | "ready"
       invoice_status: "draft" | "issued" | "paid" | "overdue" | "cancelled"
-      invoice_type: "sale" | "service" | "detailing"
+      invoice_type: "sale" | "service" | "detailing" | "part_sale"
       job_type: "workshop" | "detailing"
       part_type:
         | "secondhand_bought"
@@ -3442,7 +3476,7 @@ export const Constants = {
       finance_scheme: ["vat_qualifying", "margin_scheme", "commercial_vat"],
       fulfilment_stage: ["intake", "cleaning", "inspection", "repair", "ready"],
       invoice_status: ["draft", "issued", "paid", "overdue", "cancelled"],
-      invoice_type: ["sale", "service", "detailing"],
+      invoice_type: ["sale", "service", "detailing", "part_sale"],
       job_type: ["workshop", "detailing"],
       part_type: [
         "secondhand_bought",
