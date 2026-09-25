@@ -1686,6 +1686,45 @@ export type Database = {
           },
         ]
       }
+      integrations_backup_20260925: {
+        Row: {
+          api_key: string | null
+          business_id: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          is_active: boolean | null
+          name: string | null
+          settings: Json | null
+          updated_at: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           bike_id: string | null
@@ -3193,6 +3232,7 @@ export type Database = {
         Returns: string
       }
       get_current_user_role: { Args: never; Returns: string }
+      get_integration_settings: { Args: { _name: string }; Returns: Json }
       has_any_role: {
         Args: { roles: Database["public"]["Enums"]["user_role"][] }
         Returns: boolean
