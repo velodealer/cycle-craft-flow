@@ -82,7 +82,7 @@ export default function InvoicesPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from('invoices')
-      .select('*, bikes:bike_id(id, make, model, reference), part_exchange_bikes:part_exchange_bike_id(id, make, model, reference), external_owners:external_customer_id(name)')
+      .select('*, bikes:bike_id(id, make, model, reference), part_exchange_bikes:part_exchange_bike_id(id, make, model, reference), external_owners:external_customer_id(name), parts:part_id(id, brand, description)')
       .order('created_at', { ascending: false });
     if (error) toast.error(error.message);
     setInvoices((data as unknown as InvoiceRow[]) ?? []);
@@ -95,7 +95,7 @@ export default function InvoicesPage() {
     const term = search.trim().toLowerCase();
     if (!term) return invoices;
     return invoices.filter((inv) =>
-      [inv.invoice_number, inv.external_owners?.name, inv.bikes?.make, inv.bikes?.model, inv.bikes?.reference]
+      [inv.invoice_number, inv.external_owners?.name, inv.bikes?.make, inv.bikes?.model, inv.bikes?.reference, inv.parts?.description, inv.parts?.brand]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(term)),
     );
