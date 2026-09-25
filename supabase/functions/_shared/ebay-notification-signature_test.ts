@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertRejects, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { assert, assertEquals, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { normalizeEbayPublicKey, verifyEbayBody } from './ebay-notification-signature.ts';
 
