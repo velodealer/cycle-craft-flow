@@ -59,7 +59,6 @@ export default function CycleCourierIntegration() {
       ]);
       setIntegration(data);
       setStatus(statusData);
-      if (data?.webhook_secret) setWebhookSecret(data.webhook_secret);
 
     } catch (error) {
       console.error('Error loading integration:', error);

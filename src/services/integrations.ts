@@ -1,32 +1,33 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
 
 export interface Integration {
   id: string;
   name: string;
   display_name: string;
-  webhook_secret: string | null;
+  has_webhook_secret: boolean;
   is_active: boolean;
-  settings: Json;
   created_at: string;
   updated_at: string;
 }
 
 
+// Browsers never read saved secrets; only these columns are readable.
+const COLS = 'id, name, display_name, is_active, created_at, updated_at';
+
 // Get Cycle Courier Co integration
 export const getCycleCourierIntegration = async (): Promise<Integration | null> => {
-  const { data, error } = await supabase
+  const { data: row, error } = await supabase
     .from('integrations')
-    .select('*')
+    .select(COLS)
     .eq('name', 'cycle_courier_co')
     .maybeSingle();
-
   if (error) {
     console.error('Error fetching integration:', error);
     throw error;
   }
-
-  return data;
+  if (!row) return null;
+  const { data: info } = await supabase.rpc('get_integration_settings' as any, { _name: 'cycle_courier_co' });
+  return { ...row, has_webhook_secret: Boolean((info as any)?.has_webhook_secret) } as Integration;
 };
 
 // Save Cycle Courier Co webhook secret. The shop address is held on the
@@ -44,7 +45,7 @@ export const saveCycleCourierSettings = async (
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingIntegration.id)
-      .select()
+      .select(COLS)
       .single();
 
     if (error) {
@@ -52,7 +53,7 @@ export const saveCycleCourierSettings = async (
       throw error;
     }
 
-    return data;
+    return { ...data, has_webhook_secret: true } as Integration;
   }
 
   const { data, error } = await supabase
@@ -63,7 +64,7 @@ export const saveCycleCourierSettings = async (
       webhook_secret: webhookSecret,
       is_active: true,
     })
-    .select()
+    .select(COLS)
     .single();
 
   if (error) {
@@ -71,7 +72,7 @@ export const saveCycleCourierSettings = async (
     throw error;
   }
 
-  return data;
+  return { ...data, has_webhook_secret: true } as Integration;
 };
 
 
