@@ -24,3 +24,17 @@ What the backfill does:
 - `BikeList.tsx`: add `SelectItem`s for `split_for_parts`, `in_stock`, `delivered`.
 - Backfill: invoke existing `quickbooks-break-bike` for the two split bikes as the dealership's user. Add an optional "partial strip" mode (kept parts only, no write-off) used when the bike isn't `split_for_parts`, and skip when `break_qb_posting_id` is already set (idempotency).
 - Xero is not included (not requested).
+
+## 3. Fit a part from stock onto a bike (reverse of removing a part)
+Today there's a basic "Add part from inventory" button in the bike's Costs section. It adds the cost but doesn't put the part into the bike's spec. The new flow:
+- Each spec row (frame, wheels, groupset, etc.) gets a **Fit from stock** button next to the existing remove button.
+- Pick an in-stock part (search by name, brand, part number). Its cost is prefilled and can be edited.
+- On save the part leaves parts stock, its cost is added to the bike's costs (so it shows in the bike's cost/profit), and the spec row shows that part's brand, model and part number.
+- If the row already has a part, you choose: **send the old part back to stock** (same as removing it today) or **discard it**.
+- The existing Costs-section button uses the same flow, so the two stay consistent.
+- QuickBooks/Xero: when a Parts stock account is mapped, the part's value moves from Parts stock back to Stock (onto the bike). If not mapped, nothing is posted, because the value is already in Stock. A failed posting never blocks the fit.
+
+### Technical details
+- New `FitPartFromStockDialog` (slot-aware), used from `BikeSpecificationSection` and `BikeCostsSection` (replaces `AddPartFromInventoryDialog`).
+- Save: update part `bike_id`, `stock_status='sold'`, `cost_price`; upsert `bike_components` for the slot (find-or-create per-dealership component from part brand/description/part_number, clear old overrides); optional strip of the previous component via the existing strip logic; bike activity entry.
+- New `quickbooks-fit-part` / `xero-fit-part` functions: Dr stock / Cr parts_stock for the part cost (server reads the cost), idempotent via posting ID on the part row (small additive migration: `fit_qb_posting_id`, `fit_xero_posting_id` + sync status/error on `parts`).
