@@ -231,7 +231,7 @@ export default function CycleCourierIntegration() {
               type={showWebhookSecret ? 'text' : 'password'}
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="Enter webhook secret from Cycle Courier Co"
+              placeholder={integration?.has_webhook_secret ? 'Saved — enter a new one to replace it' : 'Enter webhook secret from Cycle Courier Co'}
             />
             <Button
               type="button"
