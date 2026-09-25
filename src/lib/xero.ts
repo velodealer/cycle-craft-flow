@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
-export interface XeroAccountMap { stock?: string; cogs?: string; sales?: string; vat?: string; purchase_funding?: string }
+export interface XeroAccountMap { stock?: string; parts_stock?: string; cogs?: string; sales?: string; vat?: string; purchase_funding?: string }
 export interface XeroTaxMap { standard_sales?: string; margin_sales?: string }
 export interface XeroStatus {
   configured: boolean;
@@ -59,6 +59,15 @@ export async function trySyncXeroInvoice(invoiceId: string): Promise<SyncResult>
 export async function tryPostXeroPurchase(bikeId: string): Promise<SyncResult> {
   try {
     return await invoke<{ ok: true; skipped?: string }>('xero-sync-purchase', { bike_id: bikeId });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** Posts a bike break's stock reclassification to Xero. Never throws. */
+export async function tryPostBreakToXero(bikeId: string): Promise<SyncResult> {
+  try {
+    return await invoke<{ ok: true; skipped?: string }>('xero-break-bike', { bike_id: bikeId });
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
