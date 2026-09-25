@@ -67,8 +67,8 @@ const navGroups: NavGroup[] = [
       { title: "Intake", url: "/intake", icon: ClipboardCheck, roles: ['admin', 'mechanic', 'detailer'] },
       { title: "Cleaning", url: "/cleaning", icon: Sparkles, roles: ['admin', 'detailer'] },
       { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
-      { title: "Repairs", url: "/repairs", icon: Wrench, roles: ['admin', 'owner', 'mechanic'] },
-      { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic', 'detailer'] },
+      { title: "Repairs", url: "/repairs", icon: Wrench, roles: ['admin', 'owner'] },
+      { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic'] },
     ],
   },
   {
