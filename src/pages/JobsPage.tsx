@@ -51,6 +51,13 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('open');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const { bays } = useStorageBays();
+
+  const bayName = (id: string | null) => {
+    if (!id) return null;
+    const bay = bays.find((b) => b.id === id);
+    return bay ? (bay.zone ? `${bay.zone} · ${bay.name}` : bay.name) : null;
+  };
 
   const load = async () => {
     const { data, error } = await supabase
