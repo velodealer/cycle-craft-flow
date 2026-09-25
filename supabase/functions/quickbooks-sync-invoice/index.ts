@@ -189,11 +189,11 @@ Deno.serve(async (req) => {
     const note = [
       `Stock out / sale of ${description || 'bike'}`,
       `Invoice: ${invoice.invoice_number}`,
-      `Bike reference: ${bikeReference || '—'}`,
+      isPartSale ? 'Part sale' : `Bike reference: ${bikeReference || '—'}`,
       `Stock in journal: ${stockInDoc || '—'}`,
       `Doc number: ${stockOutDoc || '—'}`,
     ].join(' | ');
-
+    const purchasePrice = isPartSale ? 0 : Number(bike?.purchase_price || 0);
 
     if (purchasePrice > 0) {
       lines.push({
