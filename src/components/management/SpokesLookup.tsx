@@ -16,6 +16,12 @@ import {
   type MappedBike,
   type SpokesSearchResult,
 } from '@/lib/spokes';
+import {
+  colourSummary,
+  differingDetails,
+  similarSpokesKey,
+  spokesResultTitle,
+} from '@/lib/spokes-result-comparison';
 
 interface SpokesLookupProps {
   /** Fired when the user confirms a bike (raw record + mapped values). */
@@ -50,6 +56,14 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
     && (totalCount === null || remoteCount < totalCount);
 
   const mapped = useMemo(() => (raw ? mapSpokesBike(raw, size || null) : null), [raw, size]);
+  const comparisonGroups = useMemo(() => {
+    const groups = new Map<string, SpokesSearchItem[]>();
+    for (const result of results) {
+      const key = similarSpokesKey(result);
+      groups.set(key, [...(groups.get(key) ?? []), result]);
+    }
+    return groups;
+  }, [results]);
 
   useEffect(() => {
     if (initialQuery && initialQuery.trim().length >= 2) {
@@ -167,40 +181,50 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
 
       {results.length > 0 && !selected && (
         <div className="max-h-[280px] overflow-y-auto rounded-md border divide-y">
-          {results.map((r) => (
-            <button
-              key={`${r.local ? 'l' : 'r'}-${r.id}`}
-              type="button"
-              onClick={() => void pick(r)}
-              className="w-full flex items-center gap-3 p-2 text-left hover:bg-muted/60"
-            >
-              {r.thumbnailUrl ? (
-                <img src={r.thumbnailUrl} alt={`${r.maker} ${r.model}`} className="h-10 w-14 object-contain" loading="lazy" />
-              ) : (
-                <div className="h-10 w-14 flex items-center justify-center text-muted-foreground">
-                  <BikeIcon className="h-4 w-4" />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium break-words">
-                  {r.year ? `${r.year} ` : ''}{r.maker} {[r.family, r.model].filter(Boolean).join(' ')}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {[r.category, r.subcategory].filter(Boolean).join(' · ')}
-                </div>
-                {(r.groupset || r.wheelset) && (
-                  <div className="text-xs text-muted-foreground break-words">
-                    {[r.groupset, r.wheelset].filter(Boolean).join(' · ')}
+          {results.map((r) => {
+            const comparison = differingDetails(comparisonGroups.get(similarSpokesKey(r)) ?? [r]);
+            const hasComparison = comparison.brakes || comparison.cassette || comparison.showColour;
+            return (
+              <button
+                key={`${r.local ? 'l' : 'r'}-${r.id}`}
+                type="button"
+                onClick={() => void pick(r)}
+                className="w-full flex items-start gap-3 p-3 text-left hover:bg-muted/60"
+              >
+                {r.thumbnailUrl ? (
+                  <img src={r.thumbnailUrl} alt={`${r.maker} ${r.model}`} className="mt-0.5 h-12 w-16 shrink-0 object-contain" loading="lazy" />
+                ) : (
+                  <div className="mt-0.5 h-12 w-16 shrink-0 flex items-center justify-center text-muted-foreground">
+                    <BikeIcon className="h-4 w-4" />
                   </div>
                 )}
-              </div>
-              {r.local && (
-                <Badge variant="secondary" className="gap-1 shrink-0">
-                  <Bookmark className="h-3 w-3" /> Saved
-                </Badge>
-              )}
-            </button>
-          ))}
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="text-sm font-medium break-words">{spokesResultTitle(r)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {[r.category, r.subcategory].filter(Boolean).join(' · ')}
+                  </div>
+                  {(r.groupset || r.wheelset) && (
+                    <div className="text-xs text-muted-foreground break-words">
+                      {[r.groupset, r.wheelset].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
+                  {hasComparison && (
+                    <div className="mt-2 space-y-1 border-l-2 border-primary/50 pl-2 text-xs">
+                      <div className="font-medium text-foreground">How this one differs</div>
+                      {comparison.brakes && <div><span className="text-muted-foreground">Brakes: </span>{r.brakes || 'Not supplied'}</div>}
+                      {comparison.cassette && <div><span className="text-muted-foreground">Cassette: </span>{r.cassette || 'Not supplied'}</div>}
+                      {comparison.showColour && <div><span className="text-muted-foreground">Colour: </span>{colourSummary(r.colours)}</div>}
+                    </div>
+                  )}
+                </div>
+                {r.local && (
+                  <Badge variant="secondary" className="gap-1 shrink-0">
+                    <Bookmark className="h-3 w-3" /> Saved
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -221,8 +245,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="font-medium">
-                {selected.year ? `${selected.year} ` : ''}{selected.maker}{' '}
-                {[selected.family, selected.model].filter(Boolean).join(' ')}
+                {spokesResultTitle(selected)}
               </div>
               <div className="text-xs text-muted-foreground">
                 {[selected.category, selected.subcategory].filter(Boolean).join(' · ')}

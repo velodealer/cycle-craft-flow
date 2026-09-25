@@ -15,6 +15,12 @@ function partLabel(part: any): string | null {
   return label || part.display || part.description || null;
 }
 
+function partDetail(part: any): string | null {
+  if (!part) return null;
+  const detail = String(part.description ?? part.display ?? '').trim();
+  return detail || partLabel(part);
+}
+
 const detailCache = new Map<string, { at: number; data: unknown }>();
 const CACHE_MS = 10 * 60 * 1000;
 
@@ -26,8 +32,8 @@ function toItem(b: any) {
     thumbnailUrl: b.thumbnailUrl ?? null, url: b.url ?? null,
     groupset: partLabel(c.rearDerailleur) ?? partLabel(c.shifters),
     wheelset: partLabel(c.rims),
-    brakes: partLabel(c.brakes),
-    cassette: partLabel(c.cassette),
+    brakes: partDetail(c.brakes),
+    cassette: partDetail(c.cassette),
     colours: Array.isArray(b.colors) ? b.colors.map((colour: any) => String(colour?.name ?? colour ?? '').trim()).filter(Boolean) : [],
   };
 }
