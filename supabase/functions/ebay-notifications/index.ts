@@ -2,8 +2,8 @@
 // GET  ?challenge_code=... → hash response required by eBay before it accepts the endpoint
 // POST                     → marketplace account deletion notifications (signature verified)
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-import { createVerify } from 'node:crypto';
 import { apiBase, type EbayEnvironment } from '../_shared/ebay.ts';
+import { normalizeEbayPublicKey, verifyEbayBody } from '../_shared/ebay-notification-signature.ts';
 
 // Must match, character for character, the endpoint typed into the eBay developer portal.
 const endpointUrl = () =>
@@ -40,11 +40,8 @@ async function publicKey(kid: string): Promise<string> {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { errs.push(`${env} ${res.status}: ${await res.text()}`); continue; }
-      let pem = (await res.json()).key as string;
-      if (!pem.includes('\n')) {
-        pem = pem.replace('-----BEGIN PUBLIC KEY-----', '-----BEGIN PUBLIC KEY-----\n')
-          .replace('-----END PUBLIC KEY-----', '\n-----END PUBLIC KEY-----');
-      }
+      const payload = await res.json();
+      const pem = normalizeEbayPublicKey(payload?.key);
       keyCache.set(kid, pem);
       return pem;
     } catch (e) { errs.push(`${env}: ${(e as Error).message}`); }
@@ -65,10 +62,7 @@ async function verifySignature(header: string | null, rawBody: string): Promise<
     return 'unverifiable';
   }
   try {
-    const v = createVerify('sha1');
-    v.update(rawBody);
-    v.end();
-    return v.verify(pem, decoded.signature, 'base64') ? 'valid' : 'invalid';
+    return verifyEbayBody(rawBody, decoded.signature, pem) ? 'valid' : 'invalid';
   } catch (e) {
     console.error('eBay signature check error:', (e as Error).message);
     return 'invalid';
