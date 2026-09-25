@@ -51,6 +51,7 @@ interface InvoiceRow {
   bikes: { id: string; make: string; model: string; reference: string | null } | null;
   part_exchange_bikes: { id: string; make: string; model: string; reference: string | null } | null;
   external_owners: { name: string } | null;
+  parts: { id: string; brand: string | null; description: string } | null;
 }
 
 const currency = (value: number) =>
