@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useVatRegistered } from '@/hooks/useVatRegistered';
-import { syncInvoice, tryPostBreakToQuickBooks } from '@/lib/quickbooks';
+import { syncInvoice } from '@/lib/quickbooks';
 import { trySyncXeroInvoice } from '@/lib/xero';
 import { toast } from 'sonner';
 
@@ -40,14 +40,14 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
       setPrice(part.sale_price ? String(part.sale_price) : '');
       setCustomerName('');
       setSaleDate(new Date().toISOString().slice(0, 10));
-etScheme: setScheme('vat_qualifying');
+      setScheme('vat_qualifying');
     }
   }, [part, open]);
 
   const gross = Number(price) || 0;
   const cost = Math.abs(Number(part?.cost_price ?? 0));
   const marginVat = vatRegistered && scheme === 'margin_scheme' ? Math.max(0, gross - cost) * 20 / 120 : 0;
-  const net = !vatRegistered || marginVat > 0 ? gross - marginVat : gross / 1.2;
+  const net = !vatRegistered ? gross : gross - marginVat;
   const vatRate = vatRegistered ? 20 : 0;
 
   const submit = async () => {
@@ -56,7 +56,7 @@ etScheme: setScheme('vat_qualifying');
     setSubmitting(true);
     try {
       const { data: numberData, error: numberError } = await supabase.rpc('next_invoice_number');
-      if (numberNumberError) throw numberError;
+      if (numberError) throw numberError;
 
       const issuedAt = new Date(`${saleDate}T12:00:00Z`).toISOString();
       const { data: invoice, error: invoiceError } = await supabase
