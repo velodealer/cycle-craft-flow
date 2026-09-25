@@ -73,6 +73,7 @@ export function useBpsDashboardData() {
       const soldLast7 = soldBikes.filter((b) => soldDate(b) && soldDate(b) >= since7).length;
 
       const openJobs = jobs.filter((j) => !['complete', 'completed', 'cancelled'].includes(j.status));
+      const eligibleWorkshopJobs = openJobs.filter((j) => j.type === 'workshop' && !faultBikes.has(j.bike_id));
 
       const stageCount = (stage: string) =>
         events.filter((e) => e.stage === stage).length;
@@ -91,8 +92,8 @@ export function useBpsDashboardData() {
         stuckApproval: bikes.filter((b) => b.status === 'pending_approval' && !faultBikes.has(b.id)).length,
         soldLast7,
         jobsOpen: openJobs.length,
-        repairBikes: new Set(openJobs.filter((j) => j.type === 'workshop').map((j) => j.bike_id)).size,
-        jobsWorkshop: openJobs.filter((j) => j.type === 'workshop').length,
+        repairBikes: new Set(eligibleWorkshopJobs.map((j) => j.bike_id)).size,
+        jobsWorkshop: eligibleWorkshopJobs.length,
         jobsDetailing: openJobs.filter((j) => j.type === 'detailing').length,
         pipeline: {
           intakeToCleaning: stageCount('cleaning'),

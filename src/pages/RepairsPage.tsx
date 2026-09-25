@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { bikeRef } from '@/lib/bikeReference';
-import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import BikeCostBreakdown from '@/components/bike/BikeCostBreakdown';
+import WorkshopBikeCard from '@/components/velo/WorkshopBikeCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { PageHeader, EmptyState, Panel } from '@/components/velo/PageShell';
-import { StageFlap } from '@/components/velo/StageFlap';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, Check, PoundSterling, Undo2, Wrench, X } from 'lucide-react';
+import { AlertTriangle, Check, PoundSterling, Undo2, X } from 'lucide-react';
+import { useStorageBays } from '@/hooks/useStorageBays';
 
 const fmt = (n: number | null | undefined) => `£${Number(n ?? 0).toFixed(2)}`;
 
@@ -34,22 +32,10 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   repaired: 'default',
 };
 
-type Filter = 'pending' | 'torepair' | 'open' | 'all';
-
-const FILTER_STATUSES: Record<Filter, string[] | null> = {
-  pending: ['reported'],
-  torepair: ['approved', 'awaiting_part'],
-  open: ['reported', 'approved', 'awaiting_part'],
-  all: null,
-};
-
 export default function RepairsPage() {
-  const navigate = useNavigate();
   const { profile } = useAuth();
   const canDecide = !!profile && ['admin', 'owner'].includes(profile.role);
-  const isMechanic = profile?.role === 'mechanic';
-
-  const [filter, setFilter] = useState<Filter>(isMechanic ? 'torepair' : 'all');
+  const { bays } = useStorageBays();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [faults, setFaults] = useState<any[]>([]);
@@ -62,10 +48,7 @@ export default function RepairsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    let query = supabase.from('inspection_faults').select('*').order('created_at');
-    const statuses = FILTER_STATUSES[filter];
-    if (statuses) query = query.in('status', statuses);
-    const { data: faultRows } = await query;
+    const { data: faultRows } = await supabase.from('inspection_faults').select('*').order('created_at');
     const rows = faultRows || [];
     setFaults(rows);
 
@@ -82,11 +65,9 @@ export default function RepairsPage() {
       setBikes({});
     }
     setLoading(false);
-  }, [filter]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => { if (isMechanic) setFilter('torepair'); }, [isMechanic]);
 
   const groups = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -100,6 +81,7 @@ export default function RepairsPage() {
       .map(([bikeId, list]) => ({ bike: bikes[bikeId], bikeId, faults: list }))
       .filter((g) => {
         if (!g.bike) return false;
+        if (!g.faults.some((fault) => fault.status === 'reported')) return false;
         if (!term) return true;
         const hay = [bikeRef(g.bike), g.bike.make, g.bike.model, g.bike.colour, g.bike.size]
           .filter(Boolean).join(' ').toLowerCase();
@@ -129,51 +111,6 @@ export default function RepairsPage() {
       setBusy(null);
     }
   };
-
-  const completeOne = async (fault: any) => {
-    const { data, error } = await supabase.functions.invoke('inspectabike-complete-repair', {
-      body: { fault_row_id: fault.id },
-    });
-    if (error) throw error;
-    if ((data as any)?.error) throw new Error((data as any).error);
-  };
-
-  const markRepaired = async (fault: any) => {
-    setBusy(fault.id);
-    try {
-      await completeOne(fault);
-      toast({ title: 'Repair marked as done', description: 'InspectABike has been updated too.' });
-      await load();
-    } catch (e: any) {
-      toast({
-        title: 'Could not record this repair',
-        description: e.message || 'Nothing was changed. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const markAllRepaired = async (bikeId: string, list: any[]) => {
-    const outstanding = list.filter((f) => ['approved', 'awaiting_part'].includes(f.status));
-    if (!outstanding.length) return;
-    if (!window.confirm(`Mark all ${outstanding.length} repairs on this bike as done?`)) return;
-    setBusy(`bike:${bikeId}`);
-    let done = 0;
-    let failed = 0;
-    for (const f of outstanding) {
-      try { await completeOne(f); done++; } catch { failed++; }
-    }
-    setBusy(null);
-    await load();
-    toast({
-      title: failed ? `${done} of ${outstanding.length} recorded` : 'All repairs marked as done',
-      description: failed ? `${failed} could not be recorded and are unchanged.` : 'InspectABike has been updated too.',
-      variant: failed ? 'destructive' : undefined,
-    });
-  };
-
 
   const undo = async (fault: any) => {
     setBusy(fault.id);
@@ -213,16 +150,22 @@ export default function RepairsPage() {
     setCostTotals({ parts, jobs, stripped: strippedValue });
   };
 
+  const bayName = (id: string | null | undefined) => {
+    if (!id) return null;
+    const bay = bays.find((item) => item.id === id);
+    return bay ? (bay.zone ? `${bay.zone} · ${bay.name}` : bay.name) : null;
+  };
+
+  if (profile && !canDecide) {
+    return <Panel><EmptyState fact="You do not have access to repair approvals." /></Panel>;
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader
-        title={isMechanic ? 'Repairs' : 'Repairs approval'}
+        title="Repairs approval"
         density="bench"
-        description={
-          isMechanic
-            ? 'Approved repairs to carry out, grouped by bike.'
-            : 'Inspection faults grouped by bike, with parts and labour costs.'
-        }
+        description="Inspection repairs awaiting an owner or admin decision, grouped by bike."
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
@@ -256,58 +199,16 @@ export default function RepairsPage() {
               .filter((f) => ['approved', 'awaiting_part', 'repaired'].includes(f.status))
               .reduce((s, f) => s + Number(f.parts_cost || 0) + Number(f.labour_cost || 0), 0);
             const pendingCount = list.filter((f) => f.status === 'reported').length;
-            const toRepairCount = list.filter((f) => ['approved', 'awaiting_part'].includes(f.status)).length;
 
             return (
-              <Card key={bikeId}>
-                <CardHeader className="pb-3">
-                  <div className="flex flex-wrap items-start gap-3">
-                    <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} />
-                    <div className="min-w-0 flex-1">
-                      <button
-                        className="text-left font-semibold hover:underline break-words"
-                        onClick={() => navigate(`/bikes/${bikeId}`)}
-                      >
-                        {bike.make} {bike.model} {bike.year || ''}
-                      </button>
-                      <p className="id-text text-xs text-muted-foreground">{bikeRef(bike)}</p>
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        <StageFlap stage={bike.status} size="sm" />
-                        {bike.size && <Badge variant="outline">{bike.size}</Badge>}
-                        {bike.colour && <Badge variant="outline">{bike.colour}</Badge>}
-                        {pendingCount > 0 && (
-                          <Badge variant="destructive">
-                            <AlertTriangle className="h-3 w-3 mr-1" />{pendingCount} awaiting approval
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {!isMechanic && (
-                        <Button size={isMechanic ? 'bench' : 'sm'} variant="outline" onClick={() => openCosting(bike)}>
-                          <PoundSterling className="h-4 w-4 mr-1" />View costing
-                        </Button>
-                      )}
-                      {toRepairCount > 0 && (
-                        <Button
-                          size={isMechanic ? 'bench' : 'sm'}
-                          disabled={busy === `bike:${bikeId}`}
-                          onClick={() => markAllRepaired(bikeId, list)}
-                        >
-                          <Wrench className="h-4 w-4 mr-1" />Mark all repaired ({toRepairCount})
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  {!isMechanic && (
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm pt-2">
-                      <span>Awaiting approval: <strong>{fmt(pendingTotal)}</strong></span>
-                      <span>Approved work: <strong>{fmt(approvedTotal)}</strong></span>
-                    </div>
-                  )}
-                </CardHeader>
-
-                <CardContent className="space-y-3">
+              <WorkshopBikeCard
+                key={bikeId}
+                bike={bike}
+                location={bayName(bike.storage_bay_id)}
+                badges={<Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" />{pendingCount} awaiting approval</Badge>}
+                actions={<Button size="sm" variant="outline" onClick={() => openCosting(bike)}><PoundSterling className="mr-1 h-4 w-4" />View costing</Button>}
+                summary={<div className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-sm"><span>Awaiting approval: <strong>{fmt(pendingTotal)}</strong></span><span>Approved work: <strong>{fmt(approvedTotal)}</strong></span></div>}
+              >
                   {list.map((f) => (
                     <div key={f.id} className="rounded-[4px] border border-border p-3 space-y-2">
                       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -324,13 +225,11 @@ export default function RepairsPage() {
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{f.description}</p>
                       )}
 
-                      {!isMechanic && (
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                          <span>Parts: <strong>{fmt(f.parts_cost)}</strong></span>
-                          <span>Labour: <strong>{fmt(f.labour_cost)}</strong></span>
-                          <span>Total: <strong>{fmt(Number(f.parts_cost || 0) + Number(f.labour_cost || 0))}</strong></span>
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        <span>Parts: <strong>{fmt(f.parts_cost)}</strong></span>
+                        <span>Labour: <strong>{fmt(f.labour_cost)}</strong></span>
+                        <span>Total: <strong>{fmt(Number(f.parts_cost || 0) + Number(f.labour_cost || 0))}</strong></span>
+                      </div>
 
                       {f.decision_note && (
                         <p className="text-xs text-muted-foreground">Note: {f.decision_note}</p>
@@ -361,11 +260,6 @@ export default function RepairsPage() {
                       )}
 
                       <div className="flex flex-wrap gap-2">
-                        {['approved', 'awaiting_part'].includes(f.status) && (
-                          <Button size="sm" disabled={busy === f.id} onClick={() => markRepaired(f)}>
-                            <Wrench className="h-4 w-4 mr-1" />Mark repaired
-                          </Button>
-                        )}
                         {canDecide && ['approved', 'declined', 'awaiting_part'].includes(f.status) && (
                           <Button size="sm" variant="ghost" disabled={busy === f.id} onClick={() => undo(f)}>
                             <Undo2 className="h-4 w-4 mr-1" />Undo decision
@@ -374,8 +268,7 @@ export default function RepairsPage() {
                       </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+              </WorkshopBikeCard>
             );
           })}
         </div>

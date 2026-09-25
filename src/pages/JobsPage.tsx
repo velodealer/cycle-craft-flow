@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapPin } from 'lucide-react';
 import { useStorageBays } from '@/hooks/useStorageBays';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { functionErrorMessage } from '@/services/inspectabike';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EmptyState, PageHeader, Panel, QueueRow } from '@/components/velo/PageShell';
-import { bikeRef } from '@/lib/bikeReference';
+import { EmptyState, PageHeader, Panel } from '@/components/velo/PageShell';
+import WorkshopBikeCard from '@/components/velo/WorkshopBikeCard';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { logActivity, money } from '@/lib/activity';
 
@@ -26,7 +25,7 @@ interface JobRow {
   estimated_cost: number | null;
   actual_cost: number | null;
   bike_id: string;
-  bikes: { id: string; make: string; model: string; reference: string | null; storage_bay_id: string | null } | null;
+  bikes: { id: string; make: string; model: string; year: number | null; size: string | null; colour: string | null; status: string; photos: string[] | null; reference: string | null; storage_bay_id: string | null } | null;
 }
 
 const FILTERS = [
@@ -46,7 +45,7 @@ const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—';
 
 export default function JobsPage() {
-  const navigate = useNavigate();
+  const { profile } = useAuth();
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('open');
@@ -63,14 +62,31 @@ export default function JobsPage() {
     const { data, error } = await supabase
       .from('jobs')
       .select(
-        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, reference, storage_bay_id)',
+        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, year, size, colour, status, photos, reference, storage_bay_id)',
       )
       .eq('type', 'workshop')
       .order('created_at', { ascending: false });
     if (error) {
       toast.error('Could not load jobs.');
     } else {
-      setJobs((data as unknown as JobRow[]) ?? []);
+      const rows = (data as unknown as JobRow[]) ?? [];
+      const bikeIds = Array.from(new Set(rows.map((job) => job.bike_id).filter(Boolean)));
+      let blockedBikeIds = new Set<string>();
+      if (bikeIds.length) {
+        const { data: pendingFaults, error: faultError } = await supabase
+          .from('inspection_faults')
+          .select('bike_id')
+          .in('bike_id', bikeIds)
+          .eq('status', 'reported');
+        if (faultError) {
+          toast.error('Could not check repair approvals.');
+          setJobs([]);
+          setLoading(false);
+          return;
+        }
+        blockedBikeIds = new Set((pendingFaults || []).map((fault) => fault.bike_id));
+      }
+      setJobs(rows.filter((job) => !blockedBikeIds.has(job.bike_id)));
     }
     setLoading(false);
   };
@@ -145,6 +161,10 @@ export default function JobsPage() {
     await load();
   };
 
+  if (profile && !['admin', 'mechanic'].includes(profile.role)) {
+    return <Panel><EmptyState fact="You do not have access to repair jobs." /></Panel>;
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -164,7 +184,8 @@ export default function JobsPage() {
         }
       />
 
-      <Panel title="Repair jobs" hint={`${visible.length} jobs · ${groups.length} bikes`} bodyClassName="p-0">
+      <p className="text-sm text-muted-foreground">{visible.length} jobs · {groups.length} bikes</p>
+      <div>
         {loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((i) => (
@@ -172,31 +193,23 @@ export default function JobsPage() {
             ))}
           </div>
         ) : visible.length === 0 ? (
-          <EmptyState
-            fact="No jobs here."
-            fix="Jobs are created from a bike record when work starts on it."
-            action={<Button onClick={() => navigate('/bikes')}>Go to bikes</Button>}
-          />
+          <Panel bodyClassName="p-0">
+            <EmptyState
+              fact="No jobs here."
+              fix="Approved repair work appears here once every repair on the bike has a decision."
+            />
+          </Panel>
         ) : (
-          groups.map((list) => (
-            <div key={list[0].bike_id} className="mb-4 overflow-hidden rounded-lg border border-border last:mb-0">
-              <div className="flex items-start justify-between gap-3 bg-secondary/40 px-4 py-3">
-                {list[0].bikes ? (
-                  <a href={`/bikes/${list[0].bike_id}`} onClick={(e) => { e.preventDefault(); navigate(`/bikes/${list[0].bike_id}`); }} className="min-w-0 break-words font-medium hover:underline">
-                    {list[0].bikes.make} {list[0].bikes.model}
-                    <span className="id-text block text-xs">{bikeRef(list[0].bikes)}</span>
-                  </a>
-                ) : <span className="text-muted-foreground">Bike removed</span>}
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <span className="text-xs text-muted-foreground">{list.length} job{list.length === 1 ? '' : 's'}</span>
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" aria-hidden />
-                    {list[0].bikes ? (bayName(list[0].bikes.storage_bay_id) ?? 'No location') : '—'}
-                  </span>
-                </div>
-              </div>
+          <div className="space-y-4">
+          {groups.map((list) => list[0].bikes ? (
+            <WorkshopBikeCard
+              key={list[0].bike_id}
+              bike={list[0].bikes}
+              location={bayName(list[0].bikes.storage_bay_id)}
+              badges={<Badge variant="secondary">{list.length} job{list.length === 1 ? '' : 's'}</Badge>}
+            >
               {list.map((job) => (
-            <div key={job.id} className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div key={job.id} className="flex flex-col gap-3 rounded-[4px] border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="break-words font-medium text-foreground">{job.title}</p>
                 <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -223,10 +236,11 @@ export default function JobsPage() {
               </div>
             </div>
               ))}
-            </div>
-          ))
+            </WorkshopBikeCard>
+          ) : null)}
+          </div>
         )}
-      </Panel>
+      </div>
     </div>
   );
 }
