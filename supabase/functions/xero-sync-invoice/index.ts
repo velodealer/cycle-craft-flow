@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
     let journalLines: ReturnType<typeof saleJournalLines>;
     let narration: string;
     let xeroReference: string;
+    let delivery = 0;
     let customer: { name: string; email?: string | null } | null = inv.external_owners;
 
     if (inv.type === 'part_sale') {
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
       isMargin = vatRegistered && bike.finance_scheme === 'margin_scheme';
       const balanceDue = Number(inv.gross || inv.total || 0);
       const partEx = Number(inv.part_exchange_value || 0);
+      delivery = inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0;
       // VAT always follows the FULL sale value, part exchange included.
       gross = Number(inv.sale_gross || 0) || Math.max(0, balanceDue + partEx - delivery);
       const purchase = round2(Number(bike.purchase_price || 0));
