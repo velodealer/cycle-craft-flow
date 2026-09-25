@@ -862,12 +862,17 @@ export async function pushBikeToEbay(
 }
 
 /** Ends the eBay listing (sold elsewhere or manual pull). */
+function listingMode(listing: unknown): 'sandbox' | 'production' | undefined {
+  const e = (listing as { environment?: string } | null)?.environment;
+  return e === 'production' || e === 'sandbox' ? e : undefined;
+}
+
 export async function endEbayListing(supabase: Client, bikeId: string): Promise<boolean> {
   const listing = await loadEbayListing(supabase, bikeId);
   const offerId = (listing as any)?.offer_id as string | undefined;
   if (!offerId) return false;
 
-  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId), listingMode(listing));
   await removeAd(conn, listing);
   try {
     await ebayFetch(conn, `/sell/inventory/v1/offer/${offerId}/withdraw`, {
@@ -897,7 +902,7 @@ export async function deleteEbayListing(supabase: Client, bikeId: string): Promi
   const offerId = (listing as any).offer_id as string | undefined;
   const sku = (listing as any).sku as string | undefined;
 
-  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId));
+  const conn = await requireConnection(supabase, await businessIdForBike(supabase, bikeId), listingMode(listing));
   await removeAd(conn, listing);
   if (offerId) {
     try {
