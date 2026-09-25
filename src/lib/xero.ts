@@ -44,7 +44,7 @@ export const saveXeroTaxRates = (taxTypes: XeroTaxMap) => x<{ ok: true }>('save_
 export const checkXeroHealth = () => x<{ health: XeroStatus['health'] }>('health');
 export const disconnectXero = () => x<{ ok: true }>('disconnect');
 
-type SyncResult = { ok: true; skipped?: string } | { ok: false; error: string };
+type SyncResult = { ok: boolean; skipped?: string; error?: string };
 
 /** Posts a sale to Xero. Never throws; skipped when the dealership hasn't connected Xero. */
 export async function trySyncXeroInvoice(invoiceId: string): Promise<SyncResult> {
