@@ -78,8 +78,13 @@ export default function JobsPage() {
           .select('bike_id')
           .in('bike_id', bikeIds)
           .eq('status', 'reported');
-        if (faultError) toast.error('Could not check repair approvals.');
-        else blockedBikeIds = new Set((pendingFaults || []).map((fault) => fault.bike_id));
+        if (faultError) {
+          toast.error('Could not check repair approvals.');
+          setJobs([]);
+          setLoading(false);
+          return;
+        }
+        blockedBikeIds = new Set((pendingFaults || []).map((fault) => fault.bike_id));
       }
       setJobs(rows.filter((job) => !blockedBikeIds.has(job.bike_id)));
     }
@@ -179,7 +184,8 @@ export default function JobsPage() {
         }
       />
 
-      <Panel title="Repair jobs" hint={`${visible.length} jobs · ${groups.length} bikes`} bodyClassName="border-0 bg-transparent p-0">
+      <p className="text-sm text-muted-foreground">{visible.length} jobs · {groups.length} bikes</p>
+      <div>
         {loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((i) => (
@@ -187,11 +193,12 @@ export default function JobsPage() {
             ))}
           </div>
         ) : visible.length === 0 ? (
-          <EmptyState
-            fact="No jobs here."
-            fix="Jobs are created from a bike record when work starts on it."
-            action={null}
-          />
+          <Panel bodyClassName="p-0">
+            <EmptyState
+              fact="No jobs here."
+              fix="Approved repair work appears here once every repair on the bike has a decision."
+            />
+          </Panel>
         ) : (
           <div className="space-y-4">
           {groups.map((list) => list[0].bikes ? (
@@ -233,7 +240,7 @@ export default function JobsPage() {
           ) : null)}
           </div>
         )}
-      </Panel>
+      </div>
     </div>
   );
 }
