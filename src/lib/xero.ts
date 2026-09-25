@@ -72,3 +72,11 @@ export async function tryPostBreakToXero(bikeId: string): Promise<SyncResult> {
     return { ok: false, error: (e as Error).message };
   }
 }
+
+export async function tryPostFitPartToXero(partId: string): Promise<SyncResult> {
+  try {
+    return await invoke<{ ok: true; skipped?: string }>('xero-fit-part', { part_id: partId });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
