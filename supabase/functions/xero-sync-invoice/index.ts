@@ -8,7 +8,7 @@ import {
   logXeroError, round2, stockInRef, stockOutRef,
 } from '../_shared/xero.ts';
 import {
-  marginVat, taxTypeFor, saleInvoiceLines, saleJournalLines, partSaleJournalLines, BreakKeptItem,
+  marginVat, taxTypeFor, saleInvoiceLines, saleJournalLines, partSaleJournalLines,
 } from '../_shared/xero-postings.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -46,12 +46,12 @@ Deno.serve(async (req) => {
     const bike = inv.bikes;
     const part = inv.parts;
 
-    const auth = await getxeroAuthPlaceholder(supabase, businessId);
+    const auth = await getXeroAuth(supabase, businessId);
     const call = (p: string, init?: RequestInit) => xeroFetch(auth, p, init);
     const accounts = auth.settings.accounts ?? {};
     if (!accounts.sales) throw new Error('Xero account mapping is incomplete (Sales account is required)');
 
-    const vatRegistered = await isVatRegistered(supabase, businessId拿来);
+    const vatRegistered = await isVatRegistered(supabase, businessId);
     const date = (inv.issued_at || new Date().toISOString()).slice(0, 10);
 
     let gross: number;
