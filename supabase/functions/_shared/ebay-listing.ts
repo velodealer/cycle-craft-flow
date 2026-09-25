@@ -551,7 +551,9 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   const warnings: string[] = [];
   const add = (key: string, level: CheckLevel, label: string, detail?: string) => checklist.push({ key, level, label, detail });
 
-  const existing = await loadEbayListing(supabase, bike.id);
+  const loaded = await loadEbayListing(supabase, bike.id);
+  // A listing made on the other eBay site (test vs live) can't be updated here — start fresh.
+  const existing = loaded && (listingMode(loaded) ?? 'sandbox') !== conn.environment ? null : loaded;
   const ex = (existing ?? {}) as any;
 
   // Description from the dealer's listing format.
