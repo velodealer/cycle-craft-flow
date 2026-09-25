@@ -24,7 +24,7 @@ interface JobRow {
   estimated_cost: number | null;
   actual_cost: number | null;
   bike_id: string;
-  bikes: { id: string; make: string; model: string; reference: string | null } | null;
+  bikes: { id: string; make: string; model: string; reference: string | null; storage_bay_id: string | null } | null;
 }
 
 const FILTERS = [
