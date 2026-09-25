@@ -1,11 +1,15 @@
 // Posts a sale to Xero: ACCREC invoice at full sale value (VAT inclusive) and a stock-out
-// manual journal (Dr COGS / Cr stock at purchase price, plus margin VAT Dr sales / Cr VAT).
+// manual journal (Dr COGS / Cr stock at cost, plus margin VAT Dr sales / Cr VAT).
+// Part sales use the same VAT treatment as bike sales; the stock-out credits the
+// parts stock account when mapped, otherwise the main stock account.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
   serviceClient, requireUser, profileFor, getXeroAuth, xeroFetch, findOrCreateContact, isVatRegistered,
   logXeroError, round2, stockInRef, stockOutRef,
 } from '../_shared/xero.ts';
-import { marginVat, taxTypeFor, saleInvoiceLines, saleJournalLines } from '../_shared/xero-postings.ts';
+import {
+  marginVat, taxTypeFor, saleInvoiceLines, saleJournalLines, partSaleJournalLines, BreakKeptItem,
+} from '../_shared/xero-postings.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -29,7 +33,7 @@ Deno.serve(async (req) => {
     if (!invoiceId) return json({ error: 'invoice_id is required' }, 400);
 
     const { data: invoice, error } = await supabase.from('invoices')
-      .select('*, bikes:bike_id(*), external_owners:external_customer_id(*)').eq('id', invoiceId).maybeSingle();
+      .select('*, bikes:bike_id(*), external_owners:external_customer_id(*), parts:part_id(*)').eq('id', invoiceId).maybeSingle();
     if (error) throw new Error(error.message);
     const inv = invoice as any;
     if (!inv || inv.business_id !== businessId) return json({ error: 'Invoice not found' }, 404);
@@ -40,33 +44,66 @@ Deno.serve(async (req) => {
     if (!integ?.is_active) return json({ ok: true, skipped: 'Xero is not connected' });
 
     const bike = inv.bikes;
-    const customer = inv.external_owners;
-    if (!customer?.name) throw new Error('Invoice has no customer to send to Xero');
+    const part = inv.parts;
 
-    const auth = await getXeroAuth(supabase, businessId);
+    const auth = await getxeroAuthPlaceholder(supabase, businessId);
     const call = (p: string, init?: RequestInit) => xeroFetch(auth, p, init);
     const accounts = auth.settings.accounts ?? {};
     if (!accounts.sales) throw new Error('Xero account mapping is incomplete (Sales account is required)');
 
-    const vatRegistered = await isVatRegistered(supabase, businessId);
-    const isMargin = vatRegistered && bike?.finance_scheme === 'margin_scheme';
-    const balanceDue = Number(inv.gross || inv.total || 0);
-    const partEx = Number(inv.part_exchange_value || 0);
-    const delivery = inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0;
-    // VAT always follows the FULL sale value, part exchange included.
-    const gross = Number(inv.sale_gross || 0) || Math.max(0, balanceDue + partEx - delivery);
-    const purchase = round2(Number(bike?.purchase_price || 0));
-    const mVat = isMargin ? marginVat(gross, purchase) : 0;
-    const description = `${[bike?.make, bike?.model].filter(Boolean).join(' ')} (${bike?.reference || ''})`.trim();
-    const ref = bike?.reference || bike?.id || '';
+    const vatRegistered = await isVatRegistered(supabase, businessId拿来);
     const date = (inv.issued_at || new Date().toISOString()).slice(0, 10);
 
+    let gross: number;
+    let description: string;
+    let ref: string;
+    let isMargin: boolean;
+    let mVat: number;
+    let journalLines: ReturnType<typeof saleJournalLines>;
+    let narration: string;
+    let xeroReference: string;
+    let customer: { name: string; email?: string | null } | null = inv.external_owners;
+
+    if (inv.type === 'part_sale') {
+      // Part sales follow the same VAT treatment as bike sales; the part's cost
+      // price is the margin purchase basis.
+      gross = round2(Number(inv.sale_gross || inv.gross || inv.total || 0));
+      description = `${[part?.brand, part?.description].filter(Boolean).join(' — ') || 'Part'}`.slice(0, 200);
+      ref = inv.invoice_number;
+      const cost = round2(Math.abs(Number(part?.cost_price || 0)));
+      isMargin = vatRegistered && inv.finance_scheme === 'margin_scheme';
+      mVat = isMargin ? marginVat(gross, cost) : 0;
+      journalLines = partSaleJournalLines(cost, mVat, accounts, description || 'part');
+      narration = `Stock out / part sale | Invoice ${inv.invoice_number}`.slice(0, 4000);
+      xeroReference = ref;
+      if (!customer?.name) customer = { name: inv.customer_name || 'Part sales' };
+    } else {
+      if (!bike) throw new Error('Invoice has no bike to send to Xero');
+      customer = inv.external_owners;
+      if (!customer?.name) throw new Error('Invoice has no customer to send to Xero');
+      isMargin = vatRegistered && bike.finance_scheme === 'margin_scheme';
+      const balanceDue = Number(inv.gross || inv.total || 0);
+      const partEx = Number(inv.part_exchange_value || 0);
+      const delivery = inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0;
+      // VAT always follows the FULL sale value, part exchange included.
+      gross = Number(inv.sale_gross || 0) || Math.max(0, balanceDue + partEx - delivery);
+      const purchase = round2(Number(bike.purchase_price || 0));
+      mVat = isMargin ? marginVat(gross, purchase) : 0;
+      description = `${[bike.make, bike.model].filter(Boolean).join(' ')} (${bike.reference || ''})`.trim();
+      ref = bike.reference || bike.id || '';
+      const delivery = inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0;
+      journalLines = saleJournalLines(purchase, mVat, accounts, description || 'bike');
+      narration = `Stock out / sale of ${description || 'bike'} | Invoice ${inv.invoice_number} | ${stockInRef(ref) ?? ''} | ${stockOutRef(ref) ?? ''}`.slice(0, 4000);
+      xeroReference = `${ref} · ${stockOutRef(ref) ?? ''}`.slice(0, 255);
+    }
+
     const contactId = await findOrCreateContact(call, customer);
+    const delivery = inv.type === 'part_sale' ? 0 : (inv.delivery_charged_to_customer ? Number(inv.delivery_charge || 0) : 0);
     const xInvoice: Record<string, unknown> = {
       Type: 'ACCREC',
       Contact: { ContactID: contactId },
       InvoiceNumber: inv.invoice_number,
-      Reference: `${ref} · ${stockOutRef(ref) ?? ''}`.slice(0, 255),
+      Reference: xeroReference,
       Date: date,
       DueDate: date,
       Status: 'AUTHORISED',
@@ -87,13 +124,12 @@ Deno.serve(async (req) => {
     if (!xeroInvoiceId) throw new Error('Xero did not return the invoice');
 
     let journalId: string | null = inv.xero_journal_id ?? null;
-    const lines = saleJournalLines(purchase, mVat, accounts, description || 'bike');
-    if (lines.length) {
+    if (journalLines.length) {
       const mj: Record<string, unknown> = {
-        Narration: `Stock out / sale of ${description || 'bike'} | Invoice ${inv.invoice_number} | ${stockInRef(ref) ?? ''} | ${stockOutRef(ref) ?? ''}`.slice(0, 4000),
+        Narration: narration,
         Date: date,
         Status: 'POSTED',
-        JournalLines: lines,
+        JournalLines: journalLines,
       };
       if (journalId) mj.ManualJournalID = journalId;
       const mjRes = await call('/ManualJournals', { method: 'POST', body: JSON.stringify({ ManualJournals: [mj] }) });
