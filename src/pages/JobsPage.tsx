@@ -55,6 +55,7 @@ export default function JobsPage() {
       .select(
         'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, reference)',
       )
+      .eq('type', 'workshop')
       .order('created_at', { ascending: false });
     if (error) {
       toast.error('Could not load jobs.');
@@ -74,6 +75,12 @@ export default function JobsPage() {
     if (filter === 'complete') return jobs.filter((j) => isDone(j.status));
     return jobs.filter((j) => j.status === filter);
   }, [jobs, filter]);
+
+  const groups = useMemo(() => {
+    const map = new Map<string, JobRow[]>();
+    for (const j of visible) map.set(j.bike_id, [...(map.get(j.bike_id) ?? []), j]);
+    return Array.from(map.values());
+  }, [visible]);
 
   const update = async (job: JobRow, patch: Record<string, unknown>) => {
     setBusyId(job.id);
@@ -133,7 +140,7 @@ export default function JobsPage() {
       <PageHeader
         title="Jobs"
         density="bench"
-        description="Workshop and detailing jobs across every bike on the floor."
+        description="Repair jobs that need doing, grouped by bike."
         actions={
           <Tabs value={filter} onValueChange={setFilter}>
             <TabsList>
@@ -147,7 +154,7 @@ export default function JobsPage() {
         }
       />
 
-      <Panel title="Jobs" hint={`${visible.length} shown`} bodyClassName="p-0">
+      <Panel title="Jobs" hint={`${visible.length} jobs · ${groups.length} bikes`} bodyClassName="p-0">
         {loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((i) => (
@@ -161,7 +168,18 @@ export default function JobsPage() {
             action={<Button onClick={() => navigate('/bikes')}>Go to bikes</Button>}
           />
         ) : (
-          visible.map((job) => (
+          groups.map((list) => (
+            <div key={list[0].bike_id} className="border-b border-border last:border-b-0">
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-secondary/40 px-4 py-2">
+                {list[0].bikes ? (
+                  <a href={`/bikes/${list[0].bike_id}`} onClick={(e) => { e.preventDefault(); navigate(`/bikes/${list[0].bike_id}`); }} className="min-w-0 font-medium hover:underline">
+                    {list[0].bikes.make} {list[0].bikes.model}
+                    <span className="id-text ml-2">{bikeRef(list[0].bikes)}</span>
+                  </a>
+                ) : <span className="text-muted-foreground">Bike removed</span>}
+                <span className="text-xs text-muted-foreground">{list.length} job{list.length === 1 ? '' : 's'}</span>
+              </div>
+              {list.map((job) => (
             <QueueRow key={job.id} density="bench" className="flex-wrap justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -169,12 +187,9 @@ export default function JobsPage() {
                   <Badge variant={isDone(job.status) ? 'success' : job.status === 'in_progress' ? 'warning' : 'outline'}>
                     {statusLabel(job.status)}
                   </Badge>
-                  <Badge variant="secondary">{job.type.replace(/_/g, ' ')}</Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {job.bikes ? `${job.bikes.make} ${job.bikes.model}` : 'Bike removed'}
-                  {job.bikes ? <span className="id-text ml-2">{bikeRef(job.bikes)}</span> : null}
-                  <span className="ml-3">Started {formatDate(job.started_at)}</span>
+                  <span>Started {formatDate(job.started_at)}</span>
                   {job.completed_at ? <span className="ml-3">Done {formatDate(job.completed_at)}</span> : null}
                 </p>
               </div>
@@ -205,6 +220,8 @@ export default function JobsPage() {
                 )}
               </div>
             </QueueRow>
+              ))}
+            </div>
           ))
         )}
       </Panel>
