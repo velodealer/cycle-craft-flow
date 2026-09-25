@@ -15,7 +15,8 @@ import ComponentAttributes from '@/components/components/ComponentAttributes';
 import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 import StripComponentDialog from './StripComponentDialog';
-import { PackageMinus, Sparkles } from 'lucide-react';
+import AddPartFromInventoryDialog, { type FitSlot } from './AddPartFromInventoryDialog';
+import { PackageMinus, PackagePlus, Sparkles } from 'lucide-react';
 import SpokesApplyDialog from './SpokesApplyDialog';
 import SpokesFullSpec from './SpokesFullSpec';
 import { mapSpokesBike, upsertComponentsForBike, describeLinkResult } from '@/lib/spokes';
@@ -38,6 +39,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
   const [componentDetails, setComponentDetails] = useState<Record<string, any>>({}); // slot -> component row
 
   const [stripping, setStripping] = useState<{ slot: string; label: string; componentId: string } | null>(null);
+  const [fitting, setFitting] = useState<FitSlot | null>(null);
   const [spokesOpen, setSpokesOpen] = useState(false);
 
   const reloadComponents = async () => {
@@ -344,6 +346,19 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
                                   onChange={(id) => onSlotChange(slot, id)}
                                 />
                               </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                title="Fit from parts stock"
+                                aria-label={`Fit ${slot.label} from parts stock`}
+                                onClick={() => setFitting({
+                                  slot: slot.slot, label: slot.label, categorySlug: slot.categorySlug, position: slot.position || null,
+                                  currentComponent: linkedId ? { id: linkedId, brand: detail?.brand, model: detail?.model, mpn: detail?.mpn } : null,
+                                })}
+                              >
+                                <PackagePlus className="h-4 w-4" />
+                              </Button>
                               {linkedId && (
                                 <Button
                                   type="button"
@@ -395,6 +410,15 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
 
         {bike?.catalog_data && <SpokesFullSpec bike={bike} />}
       </CardContent>
+      {fitting && (
+        <AddPartFromInventoryDialog
+          open={!!fitting}
+          onOpenChange={(v) => !v && setFitting(null)}
+          bikeId={bike.id}
+          slot={fitting}
+          onSaved={() => { reloadComponents(); onUpdate(); }}
+        />
+      )}
       {stripping && (
         <StripComponentDialog
           open={!!stripping}

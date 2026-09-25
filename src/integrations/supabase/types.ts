@@ -2136,6 +2136,12 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string
+          fit_qb_posting_id: string | null
+          fit_qb_sync_error: string | null
+          fit_qb_sync_status: string | null
+          fit_xero_posting_id: string | null
+          fit_xero_sync_error: string | null
+          fit_xero_sync_status: string | null
           id: string
           part_number: string | null
           quantity: number
@@ -2153,6 +2159,12 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description: string
+          fit_qb_posting_id?: string | null
+          fit_qb_sync_error?: string | null
+          fit_qb_sync_status?: string | null
+          fit_xero_posting_id?: string | null
+          fit_xero_sync_error?: string | null
+          fit_xero_sync_status?: string | null
           id?: string
           part_number?: string | null
           quantity?: number
@@ -2170,6 +2182,12 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string
+          fit_qb_posting_id?: string | null
+          fit_qb_sync_error?: string | null
+          fit_qb_sync_status?: string | null
+          fit_xero_posting_id?: string | null
+          fit_xero_sync_error?: string | null
+          fit_xero_sync_status?: string | null
           id?: string
           part_number?: string | null
           quantity?: number

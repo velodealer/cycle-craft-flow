@@ -121,3 +121,12 @@ export function partSaleJournalLines(cost: number, mVat: number, a: XeroAccounts
   }
   return lines;
 }
+
+/** Part fitted to a bike: Dr stock / Cr parts stock. Empty when parts stock isn't mapped. */
+export function fitPartJournalLines(cost: number, a: XeroAccounts, description: string) {
+  const c = r2(cost);
+  if (c <= 0 || !a.parts_stock) return [] as ReturnType<typeof jl>[];
+  if (!a.stock) throw new Error('Xero account mapping is incomplete (Stock account is required)');
+  const d = `Part fitted to bike — ${description}`.slice(0, 200);
+  return [jl(a.stock, c, d), jl(a.parts_stock, -c, d)];
+}
