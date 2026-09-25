@@ -322,6 +322,12 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
           </Table>
         </div>
       </CardContent>
+      <RecordPartSaleDialog
+        part={sellingPart}
+        open={sellOpen}
+        onOpenChange={setSellOpen}
+        onDone={loadParts}
+      />
     </Card>
   );
 }
