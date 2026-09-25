@@ -1,0 +1,1 @@
+REVOKE ALL ON public.xero_oauth_states FROM anon, authenticated;
