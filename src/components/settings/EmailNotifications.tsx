@@ -72,12 +72,8 @@ export default function EmailNotifications() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('integrations')
-        .select('id, is_active, settings')
-        .eq('name', 'resend')
-        .eq('business_id', profile?.business_id || '')
-        .maybeSingle();
+      const { data: info } = await supabase.rpc('get_integration_settings' as any, { _name: 'resend' });
+      const data = info as { id: string; is_active: boolean; settings: unknown } | null;
 
       if (data) {
         setRowId(data.id);
