@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
         throw new Error('This eBay connection link has expired — please try connecting again.');
       }
       const businessId = record.business_id;
-      environment = record.environment === 'production' ? 'production' : 'sandbox';
+      const environment: EbayEnvironment = record.environment === 'production' ? 'production' : 'sandbox';
       if (record.origin) origin = allowedOrigin(record.origin);
 
       const tokens = await exchangeCode(environment, url.searchParams.get('code')!);
@@ -294,7 +294,8 @@ Deno.serve(async (req) => {
         payment_policy_id: s.payment_policy_id ?? '',
         return_policy_id: s.return_policy_id ?? '',
         callback_url: redirectUri(),
-        needs_reconnect: Boolean(row?.is_active && s.refresh_token) && !hasCurrentScopes(s),
+        needs_reconnect: Boolean(row?.is_active && s.refresh_token) && (!hasCurrentScopes(s) || Boolean(s.needs_reauth)),
+        refresh_token_expires_at: s.refresh_token_expires_at ?? null,
         category_by_type: s.category_by_type ?? {},
         best_offer_enabled: s.best_offer_enabled ?? false,
         best_offer_accept_pct: manager ? (s.best_offer_accept_pct ?? 95) : null,

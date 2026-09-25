@@ -1,3 +1,4 @@
+import { isInvalidGrant } from './ebay-oauth-origin.ts';
 // Shared eBay helpers for edge functions.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -32,6 +33,8 @@ export interface EbaySettings {
   refresh_token?: string;
   access_token?: string;
   access_token_expires_at?: string;
+  refresh_token_expires_at?: string;
+  needs_reauth?: boolean;
   seller_name?: string;
   marketplace_id?: string;
   connected_at?: string;
@@ -128,7 +131,7 @@ export async function loadIntegration(supabase: Client, businessId: string) {
 
 /** Fields that belong to one eBay account/mode (test or live) rather than the dealership. */
 const SLOT_FIELDS = [
-  'refresh_token', 'access_token', 'access_token_expires_at', 'seller_name', 'connected_at',
+  'refresh_token', 'access_token', 'access_token_expires_at', 'refresh_token_expires_at', 'needs_reauth', 'seller_name', 'connected_at',
   'granted_scopes', 'fulfillment_policy_id', 'payment_policy_id', 'return_policy_id',
   'merchant_location_key', 'campaign_id', 'last_order_sync_at',
 ] as const;
@@ -285,6 +288,7 @@ async function refreshAccessToken(env: EbayEnvironment, refreshToken: string) {
   });
   const text = await res.text();
   if (!res.ok) {
+    if (isInvalidGrant(res.status, text)) throw new EbayReauthRequired();
     throw new Error(
       res.status === 400 || res.status === 401
         ? 'eBay sign-in has expired — reconnect eBay in Settings → Integrations.'
@@ -292,6 +296,10 @@ async function refreshAccessToken(env: EbayEnvironment, refreshToken: string) {
     );
   }
   return JSON.parse(text) as { access_token: string; expires_in: number };
+}
+
+export class EbayReauthRequired extends Error {
+  constructor() { super('eBay sign-in has been revoked or has expired — reconnect eBay in Settings → Integrations.'); }
 }
 
 export interface Connection {
@@ -313,7 +321,13 @@ export async function requireConnection(supabase: Client, businessId: string, mo
     return { environment: env, accessToken: settings.access_token, settings };
   }
 
-  const fresh = await refreshAccessToken(env, settings.refresh_token);
+  let fresh;
+  try {
+    fresh = await refreshAccessToken(env, settings.refresh_token);
+  } catch (e) {
+    if (e instanceof EbayReauthRequired) await saveSettings(supabase, businessId, { needs_reauth: true }, true, env);
+    throw e;
+  }
   await saveSettings(supabase, businessId, {
     access_token: fresh.access_token,
     access_token_expires_at: new Date(Date.now() + fresh.expires_in * 1000).toISOString(),
