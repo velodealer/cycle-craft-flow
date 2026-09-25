@@ -31,11 +31,12 @@ import {
 
 const ACCOUNT_FIELDS: { key: keyof QboAccountMap; label: string; hint: string }[] = [
   { key: 'stock', label: 'Stock / Inventory (asset)', hint: 'Debited at intake with the purchase price, credited on sale.' },
+  { key: 'parts_stock', label: 'Parts stock (asset, optional)', hint: 'Kept parts move here when a bike is broken for parts. Leave empty to keep their value in the main Stock account.' },
   { key: 'purchase_funding', label: 'Purchase funding account', hint: 'Credited at intake — usually the bank or accounts payable account.' },
   { key: 'cogs', label: 'Cost of goods sold', hint: 'Debited on sale with the bike purchase price.' },
   { key: 'sales', label: 'Sales income', hint: 'Income account used on the customer invoice.' },
   { key: 'vat', label: 'VAT control / liability', hint: 'Credited with margin scheme VAT (1/6 of the margin).' },
-  
+
 ];
 
 
@@ -56,6 +57,7 @@ export default function QuickBooksIntegration() {
 
   const ACCOUNT_LABELS: Record<string, string> = {
     stock: 'Stock / inventory',
+    parts_stock: 'Parts stock',
     cogs: 'Cost of goods sold',
     sales: 'Sales income',
     vat: 'VAT control',
