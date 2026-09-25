@@ -121,3 +121,14 @@ export function buildPartStockOutLines(cost: number, accounts: QboAccounts, desc
   ];
 }
 
+
+/** Part fitted to a bike: moves its value from parts stock back to stock. Empty when parts stock isn't mapped. */
+export function buildFitPartLines(cost: number, accounts: QboAccounts, description: string): Record<string, unknown>[] {
+  const c = r2(cost);
+  if (c <= 0 || !accounts.parts_stock) return [];
+  if (!accounts.stock) throw new Error('QuickBooks account mapping is incomplete (Stock account is required)');
+  return [
+    qboJl('Debit', accounts.stock, c, `Part fitted to bike — ${description}`.slice(0, 400)),
+    qboJl('Credit', accounts.parts_stock, c, `Part fitted to bike — ${description}`.slice(0, 400)),
+  ];
+}
