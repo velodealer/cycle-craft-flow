@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { colourSummary, differingDetails, similarSpokesKey, spokesModelName } from './spokes-result-comparison.ts';
+import { colourSummary, differingDetails, similarSpokesKey, spokesModelName } from '../../../src/lib/spokes-result-comparison.ts';
 
 Deno.test('removes a repeated family from a 99spokes result name', () => {
   assertEquals(spokesModelName({ family: 'Madone', model: 'Madone SL 6' }), 'Madone SL 6');
