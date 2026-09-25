@@ -80,3 +80,12 @@ export async function tryPostFitPartToXero(partId: string): Promise<SyncResult> 
     return { ok: false, error: (e as Error).message };
   }
 }
+
+/** Reverses a fit when the part goes back to stock (Dr parts stock / Cr stock at its stock value). */
+export async function tryPostUnfitPartToXero(partId: string): Promise<SyncResult> {
+  try {
+    return await invoke<{ ok: true; skipped?: string }>('xero-fit-part', { part_id: partId, reverse: true });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
