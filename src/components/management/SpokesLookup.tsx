@@ -15,6 +15,7 @@ import {
   type SpokesSearchItem,
   type MappedBike,
   type SpokesSearchResult,
+  type MappedComponent,
 } from '@/lib/spokes';
 import {
   colourSummary,
@@ -29,6 +30,25 @@ interface SpokesLookupProps {
   confirmLabel?: string;
   initialQuery?: string;
 }
+
+const PART_GROUPS: Array<{ label: string; slots: string[] }> = [
+  { label: 'Frame', slots: ['frame', 'fork', 'rear_shock', 'headset'] },
+  { label: 'Wheels & tyres', slots: ['wheelset', 'front_hub', 'rear_hub', 'spokes', 'front_tyre', 'rear_tyre'] },
+  { label: 'Drivetrain', slots: ['crank', 'power_meter', 'cassette', 'chain', 'front_derailleur', 'rear_derailleur', 'shifters', 'bottom_bracket', 'groupset_battery'] },
+  { label: 'Brakes', slots: ['brakes', 'brake_levers', 'disc_rotors'] },
+  { label: 'Cockpit & finishing kit', slots: ['handlebars', 'stem', 'grips', 'saddle', 'seatpost', 'pedals'] },
+  { label: 'Electric system', slots: ['ebike_system', 'ebike_battery', 'ebike_display', 'ebike_charger'] },
+  { label: 'Accessories', slots: ['mudguards', 'rack', 'lights', 'bell', 'kickstand', 'lock'] },
+];
+const GROUPED_SLOTS = new Set(PART_GROUPS.flatMap((group) => group.slots));
+
+const partName = (part: MappedComponent) => [part.brand, part.model, part.mpn].filter(Boolean).join(' · ');
+const slotName = (slot: string) => slot.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+const partDetails = (part: MappedComponent) => {
+  const attributes = Object.entries(part.attributes || {})
+    .map(([key, value]) => `${slotName(key)}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`);
+  return [part.description, ...attributes].filter(Boolean);
+};
 
 export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike', initialQuery = '' }: SpokesLookupProps) {
   const [query, setQuery] = useState(initialQuery);
@@ -288,6 +308,31 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
               <p className="text-xs text-muted-foreground">
                 {mapped.components.length} components and {Object.keys(mapped.specValues).length} spec sections found.
               </p>
+
+              <div className="max-h-[320px] space-y-4 overflow-y-auto rounded-md border p-3">
+                {mapped.components.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No component details were supplied by 99Spokes.</p>
+                ) : (
+                  [...PART_GROUPS, { label: 'Other supplied parts', slots: mapped.components.filter((part) => !GROUPED_SLOTS.has(part.slot)).map((part) => part.slot) }].map((group) => {
+                    const parts = mapped.components.filter((part) => group.slots.includes(part.slot));
+                    if (!parts.length) return null;
+                    return (
+                      <section key={group.label} className="space-y-2">
+                        <h4 className="text-xs font-semibold uppercase text-muted-foreground">{group.label}</h4>
+                        {parts.map((part) => (
+                          <div key={part.slot} className="border-l-2 border-border pl-3">
+                            <div className="text-xs font-medium">{slotName(part.slot)}</div>
+                            <div className="text-sm break-words">{partName(part)}</div>
+                            {partDetails(part).map((detail, index) => (
+                              <div key={`${part.slot}-${index}`} className="text-xs text-muted-foreground break-words">{detail}</div>
+                            ))}
+                          </div>
+                        ))}
+                      </section>
+                    );
+                  })
+                )}
+              </div>
 
               <Button
                 type="button"
