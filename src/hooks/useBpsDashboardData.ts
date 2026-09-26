@@ -13,6 +13,7 @@ export type BpsDashboardData = {
   repairBikes: number;
   jobsWorkshop: number;
   jobsDetailing: number;
+  activeSubmissions: number;
   pipeline: { intakeToCleaning: number; cleaningToInspection: number; inspectionToApproval: number };
   revenue: { total: number; avgSalePrice: number; services: number };
   loadedAt: Date;
@@ -42,15 +43,16 @@ export function useBpsDashboardData() {
       const since30 = daysAgo(30).toISOString();
       const since7 = daysAgo(7).toISOString();
 
-      const [bikesRes, jobsRes, eventsRes, invoicesRes, faultsRes] = await Promise.all([
+      const [bikesRes, jobsRes, eventsRes, invoicesRes, faultsRes, submissionsRes] = await Promise.all([
         supabase.from('bikes').select('id, status, sold_at, updated_at, sale_price, intake_date, created_at'),
         supabase.from('jobs').select('id, type, status, bike_id'),
         supabase.from('fulfilment_events').select('stage, timestamp').gte('timestamp', since30),
         supabase.from('invoices').select('type, gross, total, paid_at, status').eq('status', 'paid').gte('paid_at', monthStart),
         supabase.from('inspection_faults').select('bike_id').eq('status', 'reported'),
+        supabase.from('typeform_submissions').select('id', { count: 'exact', head: true }).in('status', ['new', 'reviewed']),
       ]);
 
-      const firstError = bikesRes.error || jobsRes.error || eventsRes.error || invoicesRes.error || faultsRes.error;
+      const firstError = bikesRes.error || jobsRes.error || eventsRes.error || invoicesRes.error || faultsRes.error || submissionsRes.error;
       if (firstError) throw firstError;
 
       const bikes = (bikesRes.data || []) as any[];
@@ -97,6 +99,7 @@ export function useBpsDashboardData() {
         repairBikes: statusCounts.repair || 0,
         jobsWorkshop: eligibleWorkshopJobs.length,
         jobsDetailing: openJobs.filter((j) => j.type === 'detailing').length,
+        activeSubmissions: submissionsRes.count || 0,
         pipeline: {
           intakeToCleaning: stageCount('cleaning'),
           cleaningToInspection: stageCount('inspection'),

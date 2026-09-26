@@ -43,11 +43,18 @@ export default function BPSDashboard() {
       hint: `${data?.soldLast7 ?? 0} in last 7 days`,
     },
     {
-      title: 'Jobs in progress',
+      title: 'Open jobs',
       count: data?.jobsOpen ?? 0,
       today: 0,
       to: '/jobs',
       hint: `${data?.jobsWorkshop ?? 0} workshop · ${data?.jobsDetailing ?? 0} detailing`,
+    },
+    {
+      title: 'Active submissions',
+      count: data?.activeSubmissions ?? 0,
+      today: 0,
+      to: '/submissions',
+      hint: 'New and reviewed',
     },
   ];
 
@@ -81,7 +88,7 @@ export default function BPSDashboard() {
       {/* Stage cards — task tickets, not decoration */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {loading || !data
-          ? [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => <Skeleton key={i} className="h-28" />)
+          ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <Skeleton key={i} className="h-28" />)
           : cards.map((card) => (
               <Link
                 key={card.title}
