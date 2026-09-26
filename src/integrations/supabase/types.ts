@@ -2014,6 +2014,7 @@ export type Database = {
           description: string | null
           estimated_cost: number | null
           id: string
+          inspection_fault_id: string | null
           photos_after: string[] | null
           photos_before: string[] | null
           started_at: string | null
@@ -2033,6 +2034,7 @@ export type Database = {
           description?: string | null
           estimated_cost?: number | null
           id?: string
+          inspection_fault_id?: string | null
           photos_after?: string[] | null
           photos_before?: string[] | null
           started_at?: string | null
@@ -2052,6 +2054,7 @@ export type Database = {
           description?: string | null
           estimated_cost?: number | null
           id?: string
+          inspection_fault_id?: string | null
           photos_after?: string[] | null
           photos_before?: string[] | null
           started_at?: string | null
@@ -2080,6 +2083,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_inspection_fault_id_fkey"
+            columns: ["inspection_fault_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_faults"
             referencedColumns: ["id"]
           },
         ]

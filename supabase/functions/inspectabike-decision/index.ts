@@ -82,40 +82,79 @@ Deno.serve(async (req) => {
 
     if (decision === 'approved') {
       const label = fault.component ? `${fault.component} — ${fault.title}` : fault.title;
+      let createdPartId: string | null = null;
+      let createdJobId: string | null = null;
 
-      if (!fault.part_id && Number(fault.parts_cost) > 0) {
-        const { data: part } = await supabase
-          .from('parts')
-          .insert({
-            type: 'new_fitted',
-            description: `${label} (inspection)`,
-            cost_price: Number(fault.parts_cost),
-            quantity: 1,
-            stock_status: 'in_stock',
-            bike_id: fault.bike_id,
-            business_id: (fault as any).business_id,
-          })
-          .select('id')
-          .single();
-        if (part) update.part_id = part.id;
-      }
+      try {
+        if (!fault.part_id && Number(fault.parts_cost) > 0) {
+          const { data: part, error: partError } = await supabase
+            .from('parts')
+            .insert({
+              type: 'new_fitted',
+              description: `${label} (inspection)`,
+              cost_price: Number(fault.parts_cost),
+              quantity: 1,
+              stock_status: 'in_stock',
+              bike_id: fault.bike_id,
+              business_id: (fault as any).business_id,
+            })
+            .select('id')
+            .single();
+          if (partError || !part) throw new Error(`Could not create the approved part: ${partError?.message || 'no row returned'}`);
+          createdPartId = part.id;
+          update.part_id = part.id;
+        }
 
-      if (!fault.job_id && Number(fault.labour_cost) > 0) {
-        const { data: job } = await supabase
-          .from('jobs')
-          .insert({
-            bike_id: fault.bike_id,
-            type: 'workshop',
-            title: `${label} (inspection)`,
-            description: fault.description,
-            estimated_cost: Number(fault.labour_cost),
-            actual_cost: Number(fault.labour_cost),
-            status: 'pending',
-            business_id: (fault as any).business_id,
-          })
-          .select('id')
-          .single();
-        if (job) update.job_id = job.id;
+        if (fault.job_id) {
+          const { error: linkError } = await supabase
+            .from('jobs')
+            .update({ inspection_fault_id: fault.id })
+            .eq('id', fault.job_id);
+          if (linkError) throw new Error(`Could not link the approved repair job: ${linkError.message}`);
+        } else {
+          const { data: existingJob, error: existingError } = await supabase
+            .from('jobs')
+            .select('id')
+            .eq('inspection_fault_id', fault.id)
+            .maybeSingle();
+          if (existingError) throw new Error(`Could not check the approved repair job: ${existingError.message}`);
+
+          if (existingJob) {
+            update.job_id = existingJob.id;
+          } else {
+            // Every approved repair is actionable work, including parts-only and
+            // zero-cost faults, so every approval must produce a workshop job.
+            const { data: job, error: jobError } = await supabase
+              .from('jobs')
+              .insert({
+                bike_id: fault.bike_id,
+                type: 'workshop',
+                title: `${label} (inspection)`,
+                description: fault.description,
+                estimated_cost: Number(fault.labour_cost || 0),
+                actual_cost: Number(fault.labour_cost || 0),
+                status: 'pending',
+                business_id: (fault as any).business_id,
+                inspection_fault_id: fault.id,
+              })
+              .select('id')
+              .single();
+            if (jobError || !job) throw new Error(`Could not create the approved repair job: ${jobError?.message || 'no row returned'}`);
+            createdJobId = job.id;
+            update.job_id = job.id;
+          }
+        }
+      } catch (localError) {
+        // Avoid leaving unlinked cost rows behind when a later local write fails.
+        if (createdJobId) {
+          const { error } = await supabase.from('jobs').delete().eq('id', createdJobId);
+          if (error) console.error('Failed to roll back repair job:', error.message);
+        }
+        if (createdPartId) {
+          const { error } = await supabase.from('parts').delete().eq('id', createdPartId);
+          if (error) console.error('Failed to roll back repair part:', error.message);
+        }
+        throw localError;
       }
     }
 
