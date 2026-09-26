@@ -217,7 +217,7 @@ export default function ComponentList() {
       </div>
 
       <Dialog open={creating || !!editing} onOpenChange={(o) => { if (!o) { setCreating(false); setEditing(null); } }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-h-[90dvh] max-w-xl overflow-hidden">
           <DialogHeader><DialogTitle>{editing ? 'Edit component' : 'New component'}</DialogTitle></DialogHeader>
           <ComponentForm
             component={editing}

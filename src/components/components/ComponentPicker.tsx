@@ -109,7 +109,7 @@ export default function ComponentPicker({ categorySlug, value, onChange, placeho
       )}
 
       <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-h-[90dvh] max-w-xl overflow-hidden">
           <DialogHeader><DialogTitle>New component</DialogTitle></DialogHeader>
           <ComponentForm
             defaultCategorySlug={categorySlug}
