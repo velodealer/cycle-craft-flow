@@ -16,7 +16,12 @@ export default function BPSDashboard() {
   const today = (stage: string) => data?.enteredToday[stage] ?? 0;
 
   const cards = [
-    { title: 'In intake', count: s('pending_intake') + s('intake'), today: today('intake'), to: '/intake' },
+    {
+      title: 'In intake',
+      count: s('pending_intake') + s('intake') + s('awaiting_collection') + s('collection_in_progress') + s('in_transit'),
+      today: today('intake'),
+      to: '/intake',
+    },
     { title: 'Cleaning', count: s('cleaning'), today: today('cleaning'), to: '/cleaning' },
     { title: 'Inspection', count: s('inspection'), today: today('inspection'), to: '/inspection' },
     {
