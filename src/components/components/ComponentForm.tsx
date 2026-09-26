@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
+import type { Json } from '@/integrations/supabase/types';
 
 
 export interface ComponentCategory {
@@ -24,38 +25,38 @@ export interface ComponentRecord {
   description: string | null;
   weight_g: number | null;
   /** Extra manufacturer details pulled from the catalogue. */
-  attributes?: Record<string, unknown> | null;
+  attributes?: Json;
 }
 
 interface AttributeRow {
   id: number;
   name: string;
   value: string;
-  originalValue?: unknown;
+  originalValue?: Json;
 }
 
 let nextAttributeId = 0;
 
-const makeAttributeRows = (attributes?: Record<string, unknown> | null): AttributeRow[] =>
-  Object.entries(attributes || {}).map(([name, value]) => ({
+const makeAttributeRows = (attributes?: Json): AttributeRow[] =>
+  Object.entries(attributes && typeof attributes === 'object' && !Array.isArray(attributes) ? attributes : {}).map(([name, value]) => ({
     id: nextAttributeId++,
     name,
     value: typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? ''),
     originalValue: value,
   }));
 
-const parseAttributeValue = (row: AttributeRow): unknown => {
+const parseAttributeValue = (row: AttributeRow): Json => {
   const value = row.value.trim();
   const originalDisplay = typeof row.originalValue === 'object' && row.originalValue !== null
     ? JSON.stringify(row.originalValue)
     : String(row.originalValue ?? '');
-  if (value === originalDisplay) return row.originalValue;
+  if (value === originalDisplay) return row.originalValue ?? '';
   if (value === 'true') return true;
   if (value === 'false') return false;
   if (/^-?(?:\d+\.?\d*|\.\d+)$/.test(value)) return Number(value);
   if ((value.startsWith('[') && value.endsWith(']')) || (value.startsWith('{') && value.endsWith('}'))) {
     try {
-      return JSON.parse(value);
+      return JSON.parse(value) as Json;
     } catch {
       return value;
     }
@@ -114,7 +115,7 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
       toast({ title: 'Manufacturer detail names must be unique', variant: 'destructive' });
       return;
     }
-    const attributes = Object.fromEntries(
+    const attributes: { [key: string]: Json } = Object.fromEntries(
       populatedRows.map((row) => [row.name.trim(), parseAttributeValue(row)]),
     );
     setSaving(true);
@@ -148,7 +149,7 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
     <div className="flex max-h-[calc(90dvh-5rem)] min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Category *</Label>
           <Select value={categoryId} onValueChange={setCategoryId}>
             <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
@@ -157,27 +158,27 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
             </SelectContent>
           </Select>
         </div>
-        <div className="col-span-2 sm:col-span-1">
+        <div>
           <Label>Brand *</Label>
           <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Shimano" />
         </div>
-        <div className="col-span-2 sm:col-span-1">
+        <div>
           <Label>Model *</Label>
           <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Ultegra R8170" />
         </div>
-        <div className="col-span-2 sm:col-span-1">
+        <div>
           <Label>Manufacturer Part Number</Label>
           <Input value={mpn} onChange={(e) => setMpn(e.target.value)} placeholder="RD-R8170" />
         </div>
-        <div className="col-span-2 sm:col-span-1">
+        <div>
           <Label>Weight (g)</Label>
           <Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} />
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <Label>Description</Label>
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
         </div>
-        <div className="col-span-2 space-y-3 border-t pt-4">
+        <div className="space-y-3 border-t pt-4 sm:col-span-2">
           <div className="flex items-center justify-between gap-3">
             <div>
               <Label>Manufacturer details</Label>
@@ -197,8 +198,8 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
           ) : (
             <div className="space-y-2">
               {attributeRows.map((row, index) => (
-                <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_2.5rem] gap-2">
-                  <div>
+                <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_2.5rem]">
+                  <div className="sm:col-auto">
                     <Label htmlFor={`attribute-name-${row.id}`} className="sr-only">Detail name {index + 1}</Label>
                     <Input
                       id={`attribute-name-${row.id}`}
@@ -207,7 +208,7 @@ export default function ComponentForm({ component, defaultCategorySlug, onSaved,
                       placeholder="Detail name"
                     />
                   </div>
-                  <div>
+                  <div className="sm:col-auto">
                     <Label htmlFor={`attribute-value-${row.id}`} className="sr-only">Detail value {index + 1}</Label>
                     <Input
                       id={`attribute-value-${row.id}`}
