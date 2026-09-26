@@ -88,11 +88,13 @@ export function useBpsDashboardData() {
         enteredToday,
         totalInSystem: bikes.filter((b) => ACTIVE_STATUSES.includes(b.status)).length,
         soldThisMonth: soldMonth.length,
-        awaitingApproval: faultBikes.size,
+        // Headline cards represent the bike's current stage. Fault/job counts
+        // remain operational detail and must not change the stage totals.
+        awaitingApproval: statusCounts.pending_approval || 0,
         stuckApproval: bikes.filter((b) => b.status === 'pending_approval' && !faultBikes.has(b.id)).length,
         soldLast7,
         jobsOpen: openJobs.length,
-        repairBikes: new Set(eligibleWorkshopJobs.map((j) => j.bike_id)).size,
+        repairBikes: statusCounts.repair || 0,
         jobsWorkshop: eligibleWorkshopJobs.length,
         jobsDetailing: openJobs.filter((j) => j.type === 'detailing').length,
         pipeline: {
