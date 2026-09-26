@@ -40,6 +40,7 @@ const PART_GROUPS: Array<{ label: string; slots: string[] }> = [
   { label: 'Electric system', slots: ['ebike_system', 'ebike_battery', 'ebike_display', 'ebike_charger'] },
   { label: 'Accessories', slots: ['mudguards', 'rack', 'lights', 'bell', 'kickstand', 'lock'] },
 ];
+const GROUPED_SLOTS = new Set(PART_GROUPS.flatMap((group) => group.slots));
 
 const partName = (part: MappedComponent) => [part.brand, part.model, part.mpn].filter(Boolean).join(' · ');
 const slotName = (slot: string) => slot.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -312,7 +313,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
                 {mapped.components.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No component details were supplied by 99Spokes.</p>
                 ) : (
-                  PART_GROUPS.map((group) => {
+                  [...PART_GROUPS, { label: 'Other supplied parts', slots: mapped.components.filter((part) => !GROUPED_SLOTS.has(part.slot)).map((part) => part.slot) }].map((group) => {
                     const parts = mapped.components.filter((part) => group.slots.includes(part.slot));
                     if (!parts.length) return null;
                     return (
