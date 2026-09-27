@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { openWorkshopJobs, type OpenJob } from '@/lib/deferredJobs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -57,6 +59,18 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
   const { profile } = useAuth();
   const [pending, setPending] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [jobs, setJobs] = useState<{ blocking: OpenJob[]; deferred: OpenJob[] } | null>(null);
+  const [overrideReason, setOverrideReason] = useState('');
+  useEffect(() => {
+    setJobs(null); setOverrideReason('');
+    if (!pending) return;
+    openWorkshopJobs(bike.id).then(setJobs).catch(() => setJobs({ blocking: [], deferred: [] }));
+  }, [pending, bike.id]);
+  const listingGate = pending === 'ready' || pending === 'listed';
+  const handoverGate = pending === 'collected' || pending === 'delivered';
+  const blockedListing = listingGate && !!jobs && jobs.blocking.length > 0;
+  const needsOverride = handoverGate && !!jobs && jobs.deferred.length > 0;
+  const gateBlocked = (listingGate || handoverGate) && !jobs || blockedListing || (needsOverride && !overrideReason.trim());
 
   const isReversal = bike.status === 'sold' && pending !== null && pending !== 'sold';
 
@@ -103,7 +117,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
         kind: 'status_change',
         action: 'status',
         summary: `Status changed from ${labelFor(bike.status)} to ${labelFor(pending)}`,
-        detail: { from: bike.status, to: pending },
+        detail: { from: bike.status, to: pending, deferred_override: needsOverride ? { reason: overrideReason.trim(), jobs: jobs?.deferred.map((j) => j.title) } : undefined },
         actorId: profile?.id ?? null,
       });
 
@@ -184,12 +198,28 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {blockedListing && jobs && (
+            <div className="space-y-1 rounded-md border border-border p-3 text-sm">
+              <p className="font-medium text-destructive">{jobs.blocking.length} workshop job{jobs.blocking.length === 1 ? '' : 's'} still open</p>
+              <ul className="list-disc pl-5 text-muted-foreground">{jobs.blocking.map((j) => <li key={j.id}>{j.title}</li>)}</ul>
+              <p className="text-muted-foreground">Finish them or defer small ones on the Jobs page first.</p>
+            </div>
+          )}
+          {needsOverride && jobs && (
+            <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+              <p className="font-medium text-destructive">{jobs.deferred.length} deferred job{jobs.deferred.length === 1 ? '' : 's'} not done yet</p>
+              <ul className="list-disc pl-5 text-muted-foreground">{jobs.deferred.map((j) => <li key={j.id}>{j.title}</li>)}</ul>
+              <Textarea placeholder="Reason for handing over without these jobs (required)" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} />
+            </div>
+          )}
+          <AlertDialogHeader className="hidden">
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className={isReversal ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
               onClick={(e) => { e.preventDefault(); applyChange(); }}
-              disabled={saving}
+              disabled={saving || gateBlocked}
             >
               {saving ? 'Working...' : isReversal ? 'Reverse sale' : 'Change status'}
             </AlertDialogAction>
