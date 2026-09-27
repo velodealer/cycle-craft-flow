@@ -56,6 +56,13 @@ export default function BPSDashboard() {
       to: '/submissions',
       hint: 'New and reviewed',
     },
+    {
+      title: 'Deferred jobs',
+      count: data?.deferredJobs ?? 0,
+      today: 0,
+      to: '/jobs',
+      hint: `${data?.soldAwaitingDeferred ?? 0} sold bike${data?.soldAwaitingDeferred === 1 ? '' : 's'} awaiting deferred work`,
+    },
   ];
 
   const pipeline = data
