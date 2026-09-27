@@ -240,25 +240,12 @@ const CONDITION_ID: Record<string, string> = {
   FOR_PARTS_OR_NOT_WORKING: '7000',
 };
 
-/** Best condition first. We never swap to a condition better than the one chosen. */
-const CONDITION_RANK: Record<string, number> = {
-  NEW: 0,
-  LIKE_NEW: 1,
-  NEW_OTHER: 2,
-  NEW_WITH_DEFECTS: 3,
-  USED_EXCELLENT: 4,
-  USED_VERY_GOOD: 5,
-  USED_GOOD: 6,
-  USED_ACCEPTABLE: 7,
-  FOR_PARTS_OR_NOT_WORKING: 8,
-};
-
 const CONDITION_LABEL: Record<string, string> = {
   NEW: 'New',
   LIKE_NEW: 'Like new',
   NEW_OTHER: 'New (other)',
   NEW_WITH_DEFECTS: 'New with defects',
-  USED_EXCELLENT: 'Used – excellent',
+  USED_EXCELLENT: 'Used',
   USED_VERY_GOOD: 'Used – very good',
   USED_GOOD: 'Used – good',
   USED_ACCEPTABLE: 'Used – acceptable',
@@ -266,18 +253,42 @@ const CONDITION_LABEL: Record<string, string> = {
 };
 export const conditionLabel = (c: string) => CONDITION_LABEL[c] || c;
 
-/** Where to fall back to when a category doesn't accept the chosen condition (never better). */
-const CONDITION_FALLBACK: Record<string, string[]> = {
-  NEW: ['NEW', 'LIKE_NEW', 'NEW_OTHER', 'NEW_WITH_DEFECTS', 'USED_EXCELLENT'],
-  LIKE_NEW: ['LIKE_NEW', 'NEW_OTHER', 'NEW_WITH_DEFECTS', 'USED_EXCELLENT'],
-  NEW_OTHER: ['NEW_OTHER', 'NEW_WITH_DEFECTS', 'USED_EXCELLENT'],
-  NEW_WITH_DEFECTS: ['NEW_WITH_DEFECTS', 'USED_EXCELLENT', 'USED_VERY_GOOD'],
-  USED_EXCELLENT: ['USED_EXCELLENT', 'USED_VERY_GOOD', 'USED_GOOD', 'USED_ACCEPTABLE'],
-  USED_VERY_GOOD: ['USED_VERY_GOOD', 'USED_GOOD', 'USED_ACCEPTABLE'],
-  USED_GOOD: ['USED_GOOD', 'USED_ACCEPTABLE'],
-  USED_ACCEPTABLE: ['USED_ACCEPTABLE', 'FOR_PARTS_OR_NOT_WORKING'],
-  FOR_PARTS_OR_NOT_WORKING: ['FOR_PARTS_OR_NOT_WORKING'],
+/** A swap inside the same class is not a change in meaning. */
+const CONDITION_CLASS: Record<string, 'new' | 'used' | 'parts'> = {
+  NEW: 'new', LIKE_NEW: 'new', NEW_OTHER: 'new', NEW_WITH_DEFECTS: 'new',
+  USED_EXCELLENT: 'used', USED_VERY_GOOD: 'used', USED_GOOD: 'used', USED_ACCEPTABLE: 'used',
+  FOR_PARTS_OR_NOT_WORKING: 'parts',
 };
+
+/**
+ * Our condition -> eBay condition ids to try, in order. 3000 is eBay's general "Used"
+ * (the only used grade in bike categories such as 177831). Never falls to 7000 for a working bike.
+ */
+const CONDITION_MAP: Record<string, string[]> = {
+  NEW: ['1000', '1500'],
+  LIKE_NEW: ['2750', '1500', '3000'],
+  NEW_OTHER: ['1500', '3000'],
+  NEW_WITH_DEFECTS: ['1750', '1500', '3000'],
+  USED_EXCELLENT: ['3000'],
+  USED_VERY_GOOD: ['4000', '3000'],
+  USED_GOOD: ['5000', '3000'],
+  USED_ACCEPTABLE: ['6000', '3000'],
+  FOR_PARTS_OR_NOT_WORKING: ['7000'],
+};
+const ID_TO_ENUM: Record<string, string> = Object.fromEntries(Object.entries(CONDITION_ID).map(([k, v]) => [v, k]));
+
+/** Pure mapping. collapsed = same meaning with less detail (e.g. very good -> Used). Null = no match. */
+export function mapCondition(wanted: string, allowed: Set<string> | null): { condition: string; substituted: boolean; collapsed: boolean } | null {
+  if (!allowed) return { condition: wanted, substituted: false, collapsed: false };
+  for (const id of CONDITION_MAP[wanted] ?? [CONDITION_ID[wanted]]) {
+    if (!id || !allowed.has(id)) continue;
+    const condition = ID_TO_ENUM[id];
+    const same = condition === wanted;
+    const sameClass = CONDITION_CLASS[condition] === CONDITION_CLASS[wanted];
+    return { condition, substituted: !same && !sameClass, collapsed: !same && sameClass };
+  }
+  return null;
+}
 
 /** Condition ids a category accepts (cached). Null when the lookup fails (then we don't second-guess). */
 async function allowedConditionIds(supabase: Client, conn: Connection, categoryId: string): Promise<Set<string> | null> {
@@ -302,45 +313,29 @@ async function allowedConditionIds(supabase: Client, conn: Connection, categoryI
   }
 }
 
-/**
- * Picks a condition the category accepts, as close as possible to the chosen one and never better.
- * Throws when the only accepted conditions would describe the bike as better than it is.
- */
+/** Maps our condition onto the conditions eBay lists for this category. */
 async function resolveCondition(
   supabase: Client,
   conn: Connection,
   categoryId: string,
   wanted: string,
-): Promise<{ condition: string; substituted: boolean }> {
+): Promise<{ condition: string; substituted: boolean; collapsed: boolean }> {
   const allowed = await allowedConditionIds(supabase, conn, categoryId);
-  if (!allowed) return { condition: wanted, substituted: false };
-  const ok = (c: string) => CONDITION_ID[c] && allowed.has(CONDITION_ID[c]);
-  if (ok(wanted)) return { condition: wanted, substituted: false };
-  const wantedRank = CONDITION_RANK[wanted] ?? 99;
-  const candidates = [
-    ...(CONDITION_FALLBACK[wanted] ?? []),
-    ...Object.keys(CONDITION_ID).sort((a, b) => CONDITION_RANK[a] - CONDITION_RANK[b]),
-  ];
-  for (const candidate of candidates) {
-    if ((CONDITION_RANK[candidate] ?? -1) < wantedRank) continue;
-    if (ok(candidate)) {
-      console.log(`eBay category ${categoryId} rejects ${wanted}; using ${candidate}.`);
-      return { condition: candidate, substituted: true };
-    }
-  }
+  const r = mapCondition(wanted, allowed);
+  if (r) return r;
   throw new Error(
-    `This eBay category doesn't accept "${conditionLabel(wanted)}", and the only conditions it allows would describe the bike as better than it is. Pick a different category or condition for this bike.`,
+    `This eBay category has no condition matching "${conditionLabel(wanted)}". Pick a different category or condition for this bike.`,
   );
 }
 
 /** Plain text, at most 1,000 characters, cut at a sentence end. */
-function conditionDescription(notes: string | null | undefined, grade: number | null): string {
+function conditionDescription(notes: string | null | undefined, grade: number | null, grade_label: string | null = null): string {
   const text = String(notes ?? '')
     .replace(/<[^>]*>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  const prefix = grade != null ? `InspectABike grade: ${grade}/5. ` : '';
+  const prefix = (grade_label ? `Condition: ${grade_label}. ` : '') + (grade != null ? `InspectABike grade: ${grade}/5. ` : '');
   const full = `${prefix}${text}`.trim();
   const LIMIT = 1000;
   if (full.length <= LIMIT) return full;
@@ -631,10 +626,12 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   let condition: string | null = null;
   let substituted = false;
   let conditionError: string | null = null;
+  let collapsedFrom: string | null = null;
   try {
     const r = await resolveCondition(supabase, conn, categoryId, wantedCondition);
     condition = r.condition;
     substituted = r.substituted;
+    collapsedFrom = r.collapsed ? wantedCondition : null;
   } catch (e) {
     conditionError = (e as Error).message;
   }
@@ -650,7 +647,7 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
     .not('overall_grade', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (inspErr) throw new Error(`Could not load the inspection grade: ${inspErr.message}`);
   const grade = (inspection as any)?.overall_grade != null ? Number((inspection as any).overall_grade) : null;
-  const condDesc = conditionDescription(bike.condition_notes, grade);
+  const condDesc = conditionDescription(bike.condition_notes, grade, collapsedFrom ? conditionLabel(collapsedFrom) : null);
   if (!String(bike.condition_notes ?? '').trim()) {
     add('condition_notes', 'warn', 'No condition notes', 'Used bikes sell better and get fewer disputes with condition notes.');
     warnings.push('Used bikes sell better and get fewer disputes with condition notes.');
