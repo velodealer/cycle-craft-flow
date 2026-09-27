@@ -261,9 +261,9 @@ export default function JobsPage() {
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                 {canDefer && !isClosed(job.status) && (job.deferred ? (
                   <Button size="bench" variant="ghost" disabled={busyId === job.id} onClick={() => setDeferred(job, false)}>Un-defer</Button>
-                ) : isDeferrable(job, keywords) ? (
+                ) : (
                   <Button size="bench" variant="ghost" disabled={busyId === job.id} onClick={() => { setDeferJob(job); setDeferReason(''); }}>Defer</Button>
-                ) : null)}
+                ))}
                 {!isDone(job.status) && !job.started_at && (
                   <Button size="bench" variant="outline" disabled={busyId === job.id}
                     onClick={() => update(job, { status: 'in_progress', started_at: new Date().toISOString() })}>
