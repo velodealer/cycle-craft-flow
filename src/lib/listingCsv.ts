@@ -18,6 +18,14 @@ export function toCsv(rows: unknown[][]): string {
 
 const txt = (v: unknown) => (v == null ? '' : String(v).trim());
 const title = (b: any) => [b.year, b.make, b.model, b.size ? `Size ${b.size}` : '', b.colour].map(txt).filter(Boolean).join(' ');
+const sv = (b: any, ...keys: string[]) => {
+  const v = b?.spec_values && typeof b.spec_values === 'object' ? b.spec_values : {};
+  for (const k of keys) { const x = v[k]; const t = typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x; if (txt(t)) return txt(t); }
+  return '';
+};
+const specList = (b: any) => Object.entries(b?.spec_values && typeof b.spec_values === 'object' ? b.spec_values : {})
+  .map(([k, x]: [string, any]) => [k.replace(/_/g, ' '), txt(typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x)])
+  .filter(([, v]) => v);
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 function partsHtml(components: any[]): string {
@@ -34,8 +42,9 @@ function partsHtml(components: any[]): string {
 function fallbackHtml(b: any, components: any[]): string {
   const facts: [string, unknown][] = [
     ['Make', b.make], ['Model', b.model], ['Year', b.year], ['Size', b.size], ['Colour', b.colour],
-    ['Frame material', b.frame_material], ['Bike type', b.bike_type], ['Wheel size', b.wheel_size],
-    ['Groupset', b.groupset], ['Brakes', b.brake_type], ['Condition', b.condition], ['Reference', b.reference],
+    ['Frame material', b.frame_material], ['Bike type', b.bike_type], ['Weight (kg)', b.weight_kg],
+    ['Condition', b.condition], ['Accessories', b.has_accessories ? b.accessories_included : ''], ['Reference', b.reference],
+    ...specList(b),
   ];
   const list = facts.filter(([, v]) => txt(v)).map(([k, v]) => `<li><strong>${k}:</strong> ${txt(v)}</li>`).join('');
   const notes = txt(b.condition_notes) ? `<h3>Condition</h3><p>${txt(b.condition_notes)}</p>` : '';
@@ -102,8 +111,8 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       const price = applyChannelMarkup(b.asking_price, markup);
       rows.push(['Add', b.reference || b.id, 177831, title(b).slice(0, 80), ebayCondition(b.condition), txt(b.condition_notes).slice(0, 1000),
         describe(b, parts), 'FixedPrice', 'GTC', price ?? '', 1, effectiveListingImages(b).slice(0, 24).join('|'), 1, '',
-        b.make, b.model, b.bike_type, b.size, b.colour, b.frame_material, b.wheel_size, b.brake_type, b.groupset,
-        b.suspension, b.gears ?? b.number_of_gears, b.year, b.gender || 'Unisex Adults']);
+        b.make, b.model, b.bike_type, b.size, b.colour, b.frame_material, sv(b, 'wheel_size', 'wheels_size'), sv(b, 'brake_type', 'brakes'),
+        sv(b, 'groupset', 'gear_change_mechanism', 'shifters'), sv(b, 'suspension_type', 'suspension'), sv(b, 'number_of_gears', 'gears', 'speeds'), b.year, b.gender || 'Unisex Adults']);
     }
     warnings.push('Before uploading, fill in Location (postcode) and pick your postage, returns and payment policies in eBay Seller Hub.');
   }
