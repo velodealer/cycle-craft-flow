@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { openWorkshopJobs, type OpenJob } from '@/lib/deferredJobs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -39,6 +41,16 @@ export default function AdvanceStageDialog({
   const [photos, setPhotos] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const { profile } = useAuth();
+  const gated = nextStage === 'ready' || nextStage === 'listed';
+  const [jobs, setJobs] = useState<{ blocking: OpenJob[]; deferred: OpenJob[] } | null>(null);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+  const [ackDeferred, setAckDeferred] = useState(false);
+  useEffect(() => {
+    if (!isOpen || !gated) return;
+    setJobs(null); setJobsError(null); setAckDeferred(false);
+    openWorkshopJobs(bike.id).then(setJobs).catch((e) => setJobsError(e.message));
+  }, [isOpen, gated, bike.id]);
+  const blocked = gated && (!jobs || jobs.blocking.length > 0 || (jobs.deferred.length > 0 && !ackDeferred));
 
   const form = useForm<z.infer<typeof advanceStageSchema>>({
     resolver: zodResolver(advanceStageSchema),
@@ -57,6 +69,7 @@ export default function AdvanceStageDialog({
       return;
     }
 
+    if (blocked) return;
     setSubmitting(true);
     try {
       const update: Record<string, any> = { status: nextStage };
@@ -92,7 +105,7 @@ export default function AdvanceStageDialog({
         kind: 'status_change',
         action: 'stage',
         summary: `Moved to ${nextStageLabel}`,
-        detail: { from: bike.status, to: nextStage, note: values.notes?.trim() || undefined },
+        detail: { from: bike.status, to: nextStage, note: values.notes?.trim() || undefined, deferred_jobs: gated && jobs?.deferred.length ? jobs.deferred.map((j) => j.title) : undefined },
         actorId: profile.id,
       });
       if (photos.length > 0) {
@@ -186,11 +199,31 @@ export default function AdvanceStageDialog({
               />
             </div>
 
+            {gated && (
+              <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+                {jobsError ? <p className="text-destructive">{jobsError}</p>
+                  : !jobs ? <p className="text-muted-foreground">Checking workshop jobs…</p>
+                  : jobs.blocking.length > 0 ? (
+                    <>
+                      <p className="font-medium text-destructive">{jobs.blocking.length} workshop job{jobs.blocking.length === 1 ? '' : 's'} still open</p>
+                      <ul className="list-disc pl-5 text-muted-foreground">{jobs.blocking.map((j) => <li key={j.id}>{j.title}</li>)}</ul>
+                      <p className="text-muted-foreground">Finish these, or ask an owner/admin to defer small ones on the Jobs page.</p>
+                    </>
+                  ) : jobs.deferred.length > 0 ? (
+                    <>
+                      <p className="font-medium">{jobs.deferred.length} deferred job{jobs.deferred.length === 1 ? '' : 's'} — to be done before handover</p>
+                      <ul className="list-disc pl-5 text-muted-foreground">{jobs.deferred.map((j) => <li key={j.id}>{j.title}{j.deferred_reason ? ` — ${j.deferred_reason}` : ''}</li>)}</ul>
+                      <label className="flex items-center gap-2"><Checkbox checked={ackDeferred} onCheckedChange={(v) => setAckDeferred(v === true)} /> Listing with {jobs.deferred.length} deferred job{jobs.deferred.length === 1 ? '' : 's'}</label>
+                    </>
+                  ) : <p className="text-muted-foreground">All workshop jobs done.</p>}
+              </div>
+            )}
+
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting || blocked}>
                 {submitting ? 'Updating...' : `Move to ${nextStageLabel}`}
               </Button>
             </div>

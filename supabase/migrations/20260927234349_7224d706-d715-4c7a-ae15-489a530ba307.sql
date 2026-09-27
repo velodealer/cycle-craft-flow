@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.guard_job_deferral() FROM PUBLIC, anon, authenticated;

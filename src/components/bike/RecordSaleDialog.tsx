@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { openWorkshopJobs, type OpenJob } from '@/lib/deferredJobs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +61,12 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
   const [deliveryCharge, setDeliveryCharge] = useState('75');
   const [chargeDelivery, setChargeDelivery] = useState(true);
   const [bookCourier, setBookCourier] = useState(true);
+  const [deferredJobs, setDeferredJobs] = useState<OpenJob[]>([]);
+  const [overrideReason, setOverrideReason] = useState('');
+  useEffect(() => {
+    if (!isOpen || !bike?.id) return;
+    openWorkshopJobs(bike.id).then((r) => setDeferredJobs(r.deferred)).catch(() => setDeferredJobs([]));
+  }, [isOpen, bike?.id]);
   const [delivery, setDelivery] = useState({
     street: '',
     city: '',
@@ -393,6 +400,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
             receiver_postcode: delivery.postcode.trim(),
             receiver_country: delivery.country.trim() || 'UK',
             delivery_instructions: delivery.instructions.trim(),
+            override_reason: overrideReason.trim() || undefined,
           },
         });
         if (bookingError || (booking as any)?.error) {
@@ -593,6 +601,14 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
                   <Switch id="book-courier" checked={bookCourier} onCheckedChange={setBookCourier} />
                 </div>
 
+                {bookCourier && deferredJobs.length > 0 && (
+                  <div className="space-y-2 rounded-md border border-border p-3 text-sm sm:col-span-2">
+                    <p className="font-medium text-destructive">{deferredJobs.length} deferred job{deferredJobs.length === 1 ? '' : 's'} not done yet</p>
+                    <ul className="list-disc pl-5 text-muted-foreground">{deferredJobs.map((j) => <li key={j.id}>{j.title}</li>)}</ul>
+                    <p className="text-xs text-muted-foreground">The courier won't be booked until these are done. An owner/admin can book anyway by giving a reason.</p>
+                    <Textarea placeholder="Reason to book delivery anyway (optional, owner/admin)" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} />
+                  </div>
+                )}
                 {bookCourier && (
                   <>
                     <div className="space-y-1.5 sm:col-span-2">

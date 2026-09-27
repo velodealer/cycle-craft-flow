@@ -14,6 +14,8 @@ export type BpsDashboardData = {
   jobsWorkshop: number;
   jobsDetailing: number;
   activeSubmissions: number;
+  deferredJobs: number;
+  soldAwaitingDeferred: number;
   pipeline: { intakeToCleaning: number; cleaningToInspection: number; inspectionToApproval: number };
   revenue: { total: number; avgSalePrice: number; services: number };
   loadedAt: Date;
@@ -45,7 +47,7 @@ export function useBpsDashboardData() {
 
       const [bikesRes, jobsRes, eventsRes, invoicesRes, faultsRes, submissionsRes] = await Promise.all([
         supabase.from('bikes').select('id, status, sold_at, updated_at, sale_price, intake_date, created_at'),
-        supabase.from('jobs').select('id, type, status, bike_id'),
+        supabase.from('jobs').select('id, type, status, bike_id, deferred'),
         supabase.from('fulfilment_events').select('stage, timestamp').gte('timestamp', since30),
         supabase.from('invoices').select('type, gross, total, paid_at, status').eq('status', 'paid').gte('paid_at', monthStart),
         supabase.from('inspection_faults').select('bike_id').eq('status', 'reported'),
@@ -100,6 +102,8 @@ export function useBpsDashboardData() {
         jobsWorkshop: eligibleWorkshopJobs.length,
         jobsDetailing: openJobs.filter((j) => j.type === 'detailing').length,
         activeSubmissions: submissionsRes.count || 0,
+        deferredJobs: openJobs.filter((j) => j.deferred).length,
+        soldAwaitingDeferred: new Set(openJobs.filter((j) => j.deferred && bikes.find((b) => b.id === j.bike_id)?.status === 'sold').map((j) => j.bike_id)).size,
         pipeline: {
           intakeToCleaning: stageCount('cleaning'),
           cleaningToInspection: stageCount('inspection'),
