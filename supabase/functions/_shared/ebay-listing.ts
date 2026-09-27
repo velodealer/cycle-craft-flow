@@ -754,8 +754,8 @@ export async function pushBikeToEbay(
     aspects: p.aspectResult.aspects,
     brand: p.brand,
   };
-  const mpn = String(bike.mpn ?? '').trim();
-  if (mpn) product.mpn = mpn.slice(0, 65);
+  // MPN is intentionally not sent: eBay's BrandMPN pairing rule rejects listings
+  // when the pair is incomplete, and MPN is only recommended for our category.
 
   const inventoryBody: Record<string, unknown> = {
     availability: { shipToLocationAvailability: { quantity: 1 } },

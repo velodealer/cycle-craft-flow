@@ -99,7 +99,7 @@ function candidates(bike: any, brand: string): Array<[RegExp, string | string[]]
     [/^features?$/, features(bike)],
     [/^tyre width|^tire width/, tyreWidth],
     [/^(fork )?travel|^suspension travel/, specValue(bike, 'fork.travel_mm') ? `${specValue(bike, 'fork.travel_mm')} mm` : ''],
-    [/^mpn$/, bike?.mpn ?? ''],
+    // MPN deliberately omitted: eBay's BrandMPN pairing rule fails listings without it.
     [/^motor (power|wattage)|^power/, e && specValue(bike, 'ebike.motor_power_w') ? `${specValue(bike, 'ebike.motor_power_w')} W` : ''],
     [/^battery (capacity|power)/, e && specValue(bike, 'ebike.battery_wh') ? `${specValue(bike, 'ebike.battery_wh')} Wh` : ''],
     [/^(max(imum)? )?range/, e && specValue(bike, 'ebike.range_km') ? `${specValue(bike, 'ebike.range_km')} km` : ''],
