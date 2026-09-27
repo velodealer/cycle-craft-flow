@@ -510,7 +510,7 @@ export default function BikeDetailView({
                 </Button>
               </CardHeader>
               <CardContent>
-                <BikePhotoGallery photos={effectiveListingImages(bike)} alt={`${bike.make} ${bike.model} listing`} />
+                <BikePhotoGallery photos={effectiveListingImages(bike)} alt={`${bike.make} ${bike.model} listing`} framed={false} />
                 <p className="mt-3 text-xs text-muted-foreground">eBay receives up to 24 images. Shopify receives the first 10.</p>
               </CardContent>
             </Card>

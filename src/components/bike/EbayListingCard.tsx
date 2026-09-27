@@ -77,6 +77,7 @@ export default function EbayListingCard({ bikeId }: Props) {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [allPhotos, setAllPhotos] = useState<string[]>([]);
+  const [hasListingPhotos, setHasListingPhotos] = useState(false);
 
   const [orders, setOrders] = useState<EbayOrder[]>([]);
   const [fixOpen, setFixOpen] = useState(false);
@@ -114,7 +115,11 @@ export default function EbayListingCard({ bikeId }: Props) {
         setGallery(row?.gallery_photo_index ?? 0);
         setAdRate(row?.ad_rate != null ? String(row.ad_rate) : '');
         const { data: b } = await supabase.from('bikes').select('photos, listing_photos').eq('id', bikeId).maybeSingle();
-        setAllPhotos(effectiveListingImages((b as any) ?? {}));
+        const bikeImages = (b as any) ?? {};
+        const dedicated = Array.isArray(bikeImages.listing_photos) && bikeImages.listing_photos.length > 0;
+        setHasListingPhotos(dedicated);
+        setAllPhotos(effectiveListingImages(bikeImages));
+        if (dedicated) setGallery(0);
         setOrders(await getBikeEbayOrders(bikeId));
         void runPreview();
       }
@@ -132,7 +137,7 @@ export default function EbayListingCard({ bikeId }: Props) {
     category_id: categoryId.trim() || null,
     title_override: titleOverride.trim() || null,
     best_offer_enabled: bestOffer,
-    gallery_photo_index: gallery,
+    gallery_photo_index: hasListingPhotos ? 0 : gallery,
     ...(canManage ? { ad_rate: adRate.trim() ? Number(adRate) : null } : {}),
   });
 
@@ -264,11 +269,12 @@ export default function EbayListingCard({ bikeId }: Props) {
         {allPhotos.length > 0 && (
           <div className="space-y-1.5">
             <Label>Main photo <span className="font-normal text-muted-foreground">({Math.min(allPhotos.length, 24)} of 24 sent)</span></Label>
+            {hasListingPhotos && <p className="text-xs text-muted-foreground">The first image in Listing images is used as the main photo.</p>}
             <div className="flex flex-wrap gap-2">
               {allPhotos.slice(0, 24).map((url, i) => {
                 const size = preview?.photos.find((p) => p.url === url)?.longest;
                 return (
-                  <button key={url + i} type="button" onClick={() => setGallery(i)}
+                  <button key={url + i} type="button" onClick={() => { if (!hasListingPhotos) setGallery(i); }} disabled={hasListingPhotos}
                     className={`relative h-14 w-14 overflow-hidden rounded border-2 ${gallery === i ? 'border-primary' : 'border-transparent'}`}
                     aria-label={`Use photo ${i + 1} as main photo`}>
                     <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
