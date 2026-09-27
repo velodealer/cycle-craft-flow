@@ -1109,7 +1109,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
 
           {(() => {
             const w = form.watch();
-            const score = readinessScore({ ...w, photos });
+            const score = readinessScore({ ...w, photos, listing_photos: listingPhotos });
             return (
               <Card>
                 <CardHeader>
