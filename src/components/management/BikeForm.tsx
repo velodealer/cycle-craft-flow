@@ -123,6 +123,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const { vatRegistered } = useVatRegistered();
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [listingPhotos, setListingPhotos] = useState<string[]>(bike?.listing_photos || []);
+  const [uploadPath] = useState(() => `bike-${bike?.id || `new-${crypto.randomUUID()}`}`);
   const [submitting, setSubmitting] = useState(false);
   const { bays: storageBays } = useStorageBays();
   const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
@@ -1075,7 +1076,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 <FormLabel>Photos</FormLabel>
                 <PhotoUpload
                   bucket="bike-photos"
-                  path={`bike-${bike?.id || 'new'}`}
+                  path={uploadPath}
                   photos={photos}
                   onChange={setPhotos}
                   maxPhotos={10}
@@ -1093,7 +1094,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 </div>
                 <PhotoUpload
                   bucket="bike-photos"
-                  path={`bike-${bike?.id || 'new'}/listings`}
+                  path={`${uploadPath}/listings`}
                   photos={listingPhotos}
                   onChange={setListingPhotos}
                   maxPhotos={24}

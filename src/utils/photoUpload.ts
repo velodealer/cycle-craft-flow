@@ -7,7 +7,7 @@ export const uploadPhoto = async (
 ): Promise<string | null> => {
   try {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${path}/${Date.now()}.${fileExt}`;
+    const fileName = `${path}/${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from(bucket)

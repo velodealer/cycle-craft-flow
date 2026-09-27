@@ -656,7 +656,9 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   // Photos: up to 24, gallery photo first
   let photos = effectiveListingImages(bike);
   const gi = Number.isInteger(ex.gallery_photo_index) ? ex.gallery_photo_index : 0;
-  if (gi > 0 && gi < photos.length) photos = [photos[gi], ...photos.filter((_, i) => i !== gi)];
+  if (!(bike.listing_photos?.length) && gi > 0 && gi < photos.length) {
+    photos = [photos[gi], ...photos.filter((_, i) => i !== gi)];
+  }
   const images = photos.slice(0, 24);
   const sizes = await photoSizes(supabase, images);
   const tiny = images.filter((u) => sizes[u] != null && sizes[u]! < 500);
