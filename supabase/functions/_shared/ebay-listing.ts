@@ -135,6 +135,25 @@ export function inventorySummary(bike: BikeRow): string {
   return (boundary > 500 ? cut.slice(0, boundary + 1) : cut.replace(/\s+\S*$/, '')).trim() + '…';
 }
 
+/**
+ * Builds the Inventory API product without catalogue identifiers. Brand belongs
+ * in item specifics (`aspects.Brand`); sending product.brand without product.mpn
+ * makes eBay validate an incomplete BrandMPN catalogue pair.
+ */
+export function ebayInventoryProduct(
+  bike: BikeRow,
+  title: string,
+  images: string[],
+  aspects: Record<string, string[]>,
+): Record<string, unknown> {
+  return {
+    title,
+    description: inventorySummary(bike),
+    imageUrls: images,
+    aspects,
+  };
+}
+
 const CATEGORY_TREE_ID: Record<string, string> = {
   EBAY_GB: '3',
   EBAY_US: '0',
@@ -749,15 +768,7 @@ export async function pushBikeToEbay(
   const warnings = [...p.warnings];
   const locationKey = await ensureLocation(supabase, conn, businessId);
 
-  const product: Record<string, unknown> = {
-    title: p.title,
-    description: inventorySummary(bike),
-    imageUrls: p.images,
-    aspects: p.aspectResult.aspects,
-    brand: p.brand,
-  };
-  // MPN is intentionally not sent: eBay's BrandMPN pairing rule rejects listings
-  // when the pair is incomplete, and MPN is only recommended for our category.
+  const product = ebayInventoryProduct(bike, p.title, p.images, p.aspectResult.aspects);
 
   const inventoryBody: Record<string, unknown> = {
     availability: { shipToLocationAvailability: { quantity: 1 } },
