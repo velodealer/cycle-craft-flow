@@ -23,8 +23,8 @@ const sv = (b: any, ...keys: string[]) => {
   for (const k of keys) { const x = v[k]; const t = typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x; if (txt(t)) return txt(t); }
   return '';
 };
-const specList = (b: any) => Object.entries(b?.spec_values && typeof b.spec_values === 'object' ? b.spec_values : {})
-  .map(([k, x]: [string, any]) => [k.replace(/_/g, ' '), txt(typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x)])
+const specList = (b: any): [string, unknown][] => Object.entries(b?.spec_values && typeof b.spec_values === 'object' ? b.spec_values : {})
+  .map(([k, x]: [string, any]): [string, string] => [k.replace(/_/g, ' '), txt(typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x)])
   .filter(([, v]) => v);
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
