@@ -27,6 +27,7 @@ import {
 } from '@/services/ebay';
 import { EBAY_TITLE_MAX } from '@/lib/ebayTitle';
 import FixListingProblemsDialog from './FixListingProblemsDialog';
+import { effectiveListingImages } from '@/lib/listingImages';
 
 interface Props {
   bikeId: string;
@@ -112,8 +113,8 @@ export default function EbayListingCard({ bikeId }: Props) {
         setBestOffer(row?.best_offer_enabled ?? null);
         setGallery(row?.gallery_photo_index ?? 0);
         setAdRate(row?.ad_rate != null ? String(row.ad_rate) : '');
-        const { data: b } = await supabase.from('bikes').select('photos').eq('id', bikeId).maybeSingle();
-        setAllPhotos(((b as any)?.photos ?? []).filter((u: unknown) => typeof u === 'string'));
+        const { data: b } = await supabase.from('bikes').select('photos, listing_photos').eq('id', bikeId).maybeSingle();
+        setAllPhotos(effectiveListingImages((b as any) ?? {}));
         setOrders(await getBikeEbayOrders(bikeId));
         void runPreview();
       }

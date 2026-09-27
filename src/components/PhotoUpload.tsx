@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Star, X, Upload } from 'lucide-react';
 import { uploadPhoto, deletePhoto } from '@/utils/photoUpload';
 
 interface PhotoUploadProps {
@@ -10,6 +10,9 @@ interface PhotoUploadProps {
   photos: string[];
   onChange: (photos: string[]) => void;
   maxPhotos?: number;
+  uploadLabel?: string;
+  emptyLabel?: string;
+  allowReorder?: boolean;
 }
 
 export default function PhotoUpload({
@@ -17,7 +20,10 @@ export default function PhotoUpload({
   path,
   photos,
   onChange,
-  maxPhotos = 5
+  maxPhotos = 5,
+  uploadLabel = 'Upload photos',
+  emptyLabel,
+  allowReorder = false,
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
@@ -53,6 +59,14 @@ export default function PhotoUpload({
     }
   };
 
+  const move = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= photos.length) return;
+    const next = [...photos];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    onChange(next);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -74,7 +88,7 @@ export default function PhotoUpload({
           >
             <span className="cursor-pointer">
               <Upload className="h-4 w-4 mr-2" />
-              {uploading ? 'Uploading...' : 'Upload Photos'}
+              {uploading ? 'Uploading...' : uploadLabel}
             </span>
           </Button>
         </label>
@@ -83,24 +97,46 @@ export default function PhotoUpload({
         </span>
       </div>
 
+      {photos.length === 0 && emptyLabel && (
+        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+      )}
+
       {photos.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {photos.map((photo, index) => (
-            <div key={index} className="relative group">
+            <div key={`${photo}-${index}`} className="group space-y-2">
+              <div className="relative">
               <img
                 src={photo}
                 alt={`Photo ${index + 1}`}
                 className="w-full h-32 object-cover rounded-lg border"
               />
+              {index === 0 && (
+                <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
+                  <Star className="h-3 w-3" aria-hidden="true" /> Main
+                </span>
+              )}
               <Button
                 type="button"
                 variant="destructive"
-                size="sm"
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                size="icon"
+                className="absolute right-2 top-2 h-8 w-8"
                 onClick={() => handleRemove(photo)}
+                aria-label={`Remove photo ${index + 1}`}
               >
                 <X className="h-4 w-4" />
               </Button>
+              </div>
+              {allowReorder && photos.length > 1 && (
+                <div className="flex justify-end gap-1">
+                  <Button type="button" size="icon" variant="outline" className="h-8 w-8" disabled={index === 0} onClick={() => move(index, -1)} aria-label={`Move photo ${index + 1} earlier`}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="icon" variant="outline" className="h-8 w-8" disabled={index === photos.length - 1} onClick={() => move(index, 1)} aria-label={`Move photo ${index + 1} later`}>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>

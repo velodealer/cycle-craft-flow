@@ -1,5 +1,6 @@
 // What a bike needs before it can go on eBay, Shopify or Squarespace.
 import { BIKE_TYPES } from '@/lib/bikeSpec';
+import { effectiveListingImages } from '@/lib/listingImages';
 
 export type ReadinessInput = 'select' | 'text' | 'textarea' | 'number' | 'photos';
 
@@ -39,7 +40,7 @@ export const READINESS_FIELDS: ReadinessField[] = [
 const blank = (v: unknown) => v === null || v === undefined || String(v).trim() === '';
 
 export function isFieldMissing(bike: Record<string, any>, key: string): boolean {
-  if (key === 'photos') return (bike.photos?.length ?? 0) < MIN_LISTING_PHOTOS;
+  if (key === 'photos') return effectiveListingImages(bike).length < MIN_LISTING_PHOTOS;
   if (key === 'asking_price') return !(Number(bike.asking_price) > 0);
   return blank(bike[key]);
 }

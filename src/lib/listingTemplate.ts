@@ -189,7 +189,7 @@ export function buildValues(bike: any, components: any[] = []): Record<string, s
     sale_price: money(bike.sale_price),
     sku: bike.sku ?? '',
     reference: bike.reference ?? '',
-    photos: Array.isArray(bike.photos) ? bike.photos.join('\n') : '',
+    photos: (Array.isArray(bike.listing_photos) && bike.listing_photos.length > 0 ? bike.listing_photos : bike.photos ?? []).join('\n'),
     components: compLines,
   };
 }

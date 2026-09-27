@@ -3,6 +3,7 @@ import { ebayFetch, requireConnection, businessIdForBike, itemBase, saveSettings
 import { buildEbayTitle, finalEbayTitle } from './ebay-title.ts';
 import { buildAspects, type AspectResult } from './ebay-aspects.ts';
 import { loadListingTemplate, renderListingHtml, loadBikeComponents } from './listing-template.ts';
+import { effectiveListingImages } from './listing-images.ts';
 
 export interface BikeRow {
   id: string;
@@ -22,6 +23,7 @@ export interface BikeRow {
   mpn?: string | null;
   accessories_included?: string | null;
   photos?: string[] | null;
+  listing_photos?: string[] | null;
   frame_number?: string | null;
   gender?: string | null;
   is_electric?: boolean | null;
@@ -652,7 +654,7 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   }
 
   // Photos: up to 24, gallery photo first
-  let photos = (bike.photos ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u));
+  let photos = effectiveListingImages(bike);
   const gi = Number.isInteger(ex.gallery_photo_index) ? ex.gallery_photo_index : 0;
   if (gi > 0 && gi < photos.length) photos = [photos[gi], ...photos.filter((_, i) => i !== gi)];
   const images = photos.slice(0, 24);
