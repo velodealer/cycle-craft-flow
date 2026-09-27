@@ -42,10 +42,10 @@ const LABELS: Record<string, string> = {
 
 const CONDITIONS = [
   { value: 'NEW', label: 'New' },
-  { value: 'USED_EXCELLENT', label: 'Used — excellent' },
-  { value: 'USED_VERY_GOOD', label: 'Used — very good' },
-  { value: 'USED_GOOD', label: 'Used — good' },
-  { value: 'USED_ACCEPTABLE', label: 'Used — acceptable' },
+  { value: 'USED_EXCELLENT', label: 'Used — excellent (eBay "Used")' },
+  { value: 'USED_VERY_GOOD', label: 'Used — very good (eBay bikes: "Used")' },
+  { value: 'USED_GOOD', label: 'Used — good (eBay bikes: "Used")' },
+  { value: 'USED_ACCEPTABLE', label: 'Used — acceptable (eBay bikes: "Used")' },
   { value: 'FOR_PARTS_OR_NOT_WORKING', label: 'For parts or not working' },
 ];
 const conditionName = (value: string) => CONDITIONS.find((c) => c.value === value)?.label ?? value;
