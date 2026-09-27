@@ -1,3 +1,4 @@
+import { channelPrice } from './channel-price-loader.ts';
 // Builds Squarespace products from VeloDealer bikes and keeps squarespace_listings in step.
 import { accessToken, sqsFetch, businessIdForBike, type Client } from './squarespace.ts';
 import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMap, renderFieldValue, isPublishBlockingError } from './listing-template.ts';
@@ -83,7 +84,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
   if (!bike.asking_price) throw new Error('Add an asking price before listing on Squarespace.');
   const existing = await listingRow(supabase, bikeId);
   const currency = settings.currency || 'GBP';
-  const price = { currency, value: Number(bike.asking_price).toFixed(2) };
+  const price = { currency, value: Number(await channelPrice(supabase, businessId, 'squarespace', bike.asking_price)).toFixed(2) };
   const desc = await description(supabase, bike, businessId);
   const photos = (bike.photos ?? []).filter((u: unknown) => typeof u === 'string' && /^https?:\/\//.test(u as string));
 
