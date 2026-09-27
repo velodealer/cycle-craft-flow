@@ -353,6 +353,7 @@ export type Database = {
           investor_id: string | null
           is_electric: boolean
           listing_description: string | null
+          listing_photos: string[]
           make: string
           model: string
           mpn: string | null
@@ -424,6 +425,7 @@ export type Database = {
           investor_id?: string | null
           is_electric?: boolean
           listing_description?: string | null
+          listing_photos?: string[]
           make: string
           model: string
           mpn?: string | null
@@ -495,6 +497,7 @@ export type Database = {
           investor_id?: string | null
           is_electric?: boolean
           listing_description?: string | null
+          listing_photos?: string[]
           make?: string
           model?: string
           mpn?: string | null
