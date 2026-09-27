@@ -2014,6 +2014,10 @@ export type Database = {
           checklist: Json | null
           completed_at: string | null
           created_at: string
+          deferred: boolean
+          deferred_at: string | null
+          deferred_by: string | null
+          deferred_reason: string | null
           description: string | null
           estimated_cost: number | null
           id: string
@@ -2034,6 +2038,10 @@ export type Database = {
           checklist?: Json | null
           completed_at?: string | null
           created_at?: string
+          deferred?: boolean
+          deferred_at?: string | null
+          deferred_by?: string | null
+          deferred_reason?: string | null
           description?: string | null
           estimated_cost?: number | null
           id?: string
@@ -2054,6 +2062,10 @@ export type Database = {
           checklist?: Json | null
           completed_at?: string | null
           created_at?: string
+          deferred?: boolean
+          deferred_at?: string | null
+          deferred_by?: string | null
+          deferred_reason?: string | null
           description?: string | null
           estimated_cost?: number | null
           id?: string
