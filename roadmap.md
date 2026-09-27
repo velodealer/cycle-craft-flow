@@ -34,3 +34,9 @@
 ## 99spokes result comparison (2026-09-25)
 - [x] Keep distinct catalogue records and show their differing brakes, cassette and colour availability
 - [x] Remove repeated family names from search-result headings
+
+## eBay BrandMPN publish error (2026-09-28)
+- [x] Keep Brand as the required item specific and remove product.brand plus every MPN field
+- [x] Add and pass a regression test for the Inventory API product payload
+- [x] Deploy the corrected eBay listing function
+- [ ] Blocked on signed-in user: retry BPS-TRE-027T and confirm eBay publishes it
