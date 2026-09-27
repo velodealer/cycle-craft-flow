@@ -11,6 +11,9 @@ import WorkshopBikeCard from '@/components/velo/WorkshopBikeCard';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { logActivity, money } from '@/lib/activity';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { isDeferrable, loadSafetyKeywords, DEFAULT_SAFETY_KEYWORDS } from '@/lib/deferredJobs';
 
 interface JobRow {
   id: string;
@@ -25,12 +28,15 @@ interface JobRow {
   estimated_cost: number | null;
   actual_cost: number | null;
   bike_id: string;
+  deferred: boolean;
+  deferred_reason: string | null;
   bikes: { id: string; make: string; model: string; year: number | null; size: string | null; colour: string | null; status: string; photos: string[] | null; reference: string | null; storage_bay_id: string | null } | null;
 }
 
 const FILTERS = [
   { value: 'open', label: 'Open' },
   { value: 'in_progress', label: 'In progress' },
+  { value: 'deferred', label: 'Deferred' },
   { value: 'complete', label: 'Done' },
   { value: 'all', label: 'All' },
 ];
@@ -51,6 +57,11 @@ export default function JobsPage() {
   const [filter, setFilter] = useState('open');
   const [busyId, setBusyId] = useState<string | null>(null);
   const { bays } = useStorageBays();
+  const canDefer = !!profile && ['admin', 'owner'].includes(profile.role);
+  const [keywords, setKeywords] = useState<string[]>(DEFAULT_SAFETY_KEYWORDS);
+  const [deferJob, setDeferJob] = useState<JobRow | null>(null);
+  const [deferReason, setDeferReason] = useState('');
+  useEffect(() => { loadSafetyKeywords().then(setKeywords).catch(() => {}); }, []);
 
   const bayName = (id: string | null) => {
     if (!id) return null;
@@ -62,7 +73,7 @@ export default function JobsPage() {
     const { data, error } = await supabase
       .from('jobs')
       .select(
-        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, bikes(id, make, model, year, size, colour, status, photos, reference, storage_bay_id)',
+        'id, title, type, status, description, assigned_to, started_at, completed_at, created_at, estimated_cost, actual_cost, bike_id, deferred, deferred_reason, bikes(id, make, model, year, size, colour, status, photos, reference, storage_bay_id)',
       )
       .eq('type', 'workshop')
       .order('created_at', { ascending: false });
@@ -98,6 +109,7 @@ export default function JobsPage() {
   const visible = useMemo(() => {
     if (filter === 'all') return jobs;
     if (filter === 'open') return jobs.filter((j) => !isClosed(j.status));
+    if (filter === 'deferred') return jobs.filter((j) => j.deferred && !isClosed(j.status));
     if (filter === 'complete') return jobs.filter((j) => isDone(j.status));
     return jobs.filter((j) => j.status === filter);
   }, [jobs, filter]);
@@ -105,8 +117,26 @@ export default function JobsPage() {
   const groups = useMemo(() => {
     const map = new Map<string, JobRow[]>();
     for (const j of visible) map.set(j.bike_id, [...(map.get(j.bike_id) ?? []), j]);
-    return Array.from(map.values());
+    // Sold bikes with deferred work first — they must be done before handover.
+    const urgent = (l: JobRow[]) => (l[0].bikes?.status === 'sold' && l.some((j) => j.deferred && !isClosed(j.status)) ? 0 : 1);
+    return Array.from(map.values()).sort((a, b) => urgent(a) - urgent(b));
   }, [visible]);
+
+  const setDeferred = async (job: JobRow, deferred: boolean, reason?: string) => {
+    if (!deferred && job.bikes && ['ready', 'listed'].includes(job.bikes.status)
+      && !window.confirm('This bike is already ready/listed. Un-deferring means this job now needs doing before listing. Continue?')) return;
+    setBusyId(job.id);
+    const { error } = await supabase.from('jobs').update({ deferred, deferred_reason: deferred ? reason : null } as any).eq('id', job.id);
+    setBusyId(null);
+    if (error) { toast.error(`Could not update the job: ${error.message}`); return; }
+    logActivity(job.bike_id, {
+      kind: 'job', action: deferred ? 'deferred' : 'undeferred',
+      summary: deferred ? `Job deferred until before handover: ${job.title} — ${reason}` : `Job no longer deferred: ${job.title}`,
+      detail: { job_id: job.id, reason },
+    });
+    setDeferJob(null); setDeferReason('');
+    await load();
+  };
 
   const update = async (job: JobRow, patch: Record<string, unknown>) => {
     setBusyId(job.id);
@@ -161,7 +191,7 @@ export default function JobsPage() {
     await load();
   };
 
-  if (profile && !['admin', 'mechanic'].includes(profile.role)) {
+  if (profile && !['admin', 'owner', 'mechanic'].includes(profile.role)) {
     return <Panel><EmptyState fact="You do not have access to repair jobs." /></Panel>;
   }
 
@@ -206,7 +236,14 @@ export default function JobsPage() {
               key={list[0].bike_id}
               bike={list[0].bikes}
               location={bayName(list[0].bikes.storage_bay_id)}
-              badges={<Badge variant="secondary">{list.length} job{list.length === 1 ? '' : 's'}</Badge>}
+              badges={<>
+                <Badge variant="secondary">{list.length} job{list.length === 1 ? '' : 's'}</Badge>
+                {list.some((j) => j.deferred && !isClosed(j.status)) && (
+                  list[0].bikes?.status === 'sold'
+                    ? <Badge variant="destructive">Sold – before handover</Badge>
+                    : <Badge variant="outline">{list.filter((j) => j.deferred && !isClosed(j.status)).length} deferred</Badge>
+                )}
+              </>}
             >
               {list.map((job) => (
             <div key={job.id} className="flex flex-col gap-3 rounded-[4px] border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -216,11 +253,17 @@ export default function JobsPage() {
                   <Badge variant={isDone(job.status) ? 'success' : job.status === 'in_progress' ? 'warning' : 'outline'}>
                     {statusLabel(job.status)}
                   </Badge>
+                  {job.deferred && !isDone(job.status) && <Badge variant="outline" title={job.deferred_reason ?? ''}>Deferred – before handover</Badge>}
                   {job.started_at && <span>Started {formatDate(job.started_at)}</span>}
                   {job.completed_at && <span>Done {formatDate(job.completed_at)}</span>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                {canDefer && !isClosed(job.status) && (job.deferred ? (
+                  <Button size="bench" variant="ghost" disabled={busyId === job.id} onClick={() => setDeferred(job, false)}>Un-defer</Button>
+                ) : isDeferrable(job, keywords) ? (
+                  <Button size="bench" variant="ghost" disabled={busyId === job.id} onClick={() => { setDeferJob(job); setDeferReason(''); }}>Defer</Button>
+                ) : null)}
                 {!isDone(job.status) && !job.started_at && (
                   <Button size="bench" variant="outline" disabled={busyId === job.id}
                     onClick={() => update(job, { status: 'in_progress', started_at: new Date().toISOString() })}>
@@ -241,6 +284,20 @@ export default function JobsPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!deferJob} onOpenChange={(o) => !o && setDeferJob(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Defer "{deferJob?.title}"</DialogTitle>
+            <DialogDescription>The bike can be listed without this job. It must be done before the bike is collected or delivered.</DialogDescription>
+          </DialogHeader>
+          <Textarea placeholder="Why can this wait? (required)" value={deferReason} onChange={(e) => setDeferReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeferJob(null)}>Cancel</Button>
+            <Button disabled={!deferReason.trim() || busyId === deferJob?.id} onClick={() => deferJob && setDeferred(deferJob, true, deferReason.trim())}>Defer job</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
