@@ -57,15 +57,40 @@ const ebayCondition = (c: unknown) => {
   return 3000;
 };
 
+const label = (k: string) => k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const partText = (c: any) => {
+  const brand = txt(c.brand ?? c.component?.brand), model = txt(c.model ?? c.component?.model);
+  return (model.toLowerCase().startsWith(brand.toLowerCase()) ? model : [brand, model].filter(Boolean).join(' ')).trim();
+};
+/** Every spec value and fitted part on a bike, as label -> value. */
+function specColumns(b: any, parts: any[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const [k, v] of specList(b)) m.set(label(k), txt(v));
+  for (const c of parts) { const v = partText(c); const slot = label(txt(c.slot)); if (v && slot && !m.has(slot)) m.set(slot, v); }
+  return m;
+}
+const METAFIELD_TYPES = new Set(['single_line_text_field', 'multi_line_text_field', 'number_integer', 'number_decimal', 'boolean']);
+function coerce(type: string, value: string): string {
+  if (type === 'boolean') { const v = value.toLowerCase(); return ['yes', 'true', '1'].includes(v) ? 'TRUE' : ['no', 'false', '0'].includes(v) ? 'FALSE' : ''; }
+  if (type === 'number_integer') { const n = parseInt(value.replace(/[^0-9-]/g, ''), 10); return Number.isFinite(n) ? String(n) : ''; }
+  if (type === 'number_decimal') { const n = parseFloat(value.replace(/[^0-9.-]/g, '')); return Number.isFinite(n) ? String(n) : ''; }
+  if (type === 'single_line_text_field') return value.replace(/\s*\n\s*/g, ' ').slice(0, 255);
+  return value;
+}
+const plain = (h: string) => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/[ \t]+/g, ' ').trim();
+
 export interface CsvResult { csv: string; filename: string; warnings: string[] }
 
 export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], markup: MarkupRule): Promise<CsvResult> {
   if (!bikeIds.length) throw new Error('Choose at least one bike to export.');
-  const [{ data: bikes, error }, { data: tpl }] = await Promise.all([
+  const [{ data: bikes, error }, { data: tplData }] = await Promise.all([
     supabase.from('bikes').select('*').in('id', bikeIds),
-    supabase.from('listing_templates' as any).select('*').eq('platform', channel).maybeSingle(),
+    supabase.from('listing_templates' as any).select('*').eq('platform', channel),
   ]);
   if (error) throw new Error(`Could not load bikes: ${error.message}`);
+  const tplRows = ((tplData as any[]) ?? []);
+  const bizId = (bikes as any[])?.[0]?.business_id;
+  const tpl = tplRows.find((r) => r.business_id === bizId) || tplRows.find((r) => !r.business_id) || null;
   const warnings: string[] = [];
   const list = (bikes as any[]) ?? [];
   const withParts = await Promise.all(list.map(async (b) => ({ b, parts: await fetchBikeComponents(supabase as any, b.id).catch(() => [] as any[]) })));
@@ -85,7 +110,22 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       'Variant SKU', 'Variant Grams', 'Variant Inventory Tracker', 'Variant Inventory Qty', 'Variant Inventory Policy', 'Variant Fulfillment Service',
       'Variant Price', 'Variant Compare At Price', 'Variant Requires Shipping', 'Variant Taxable', 'Image Src', 'Image Position', 'Image Alt Text',
       'SEO Title', 'SEO Description', 'Status']);
-    for (const { b, parts } of withParts) {
+    const baseLen = rows[0].length;
+    // Dealer's metafield mapping (Settings -> Listing Formats), same as the live Shopify sync.
+    const mapped = (Array.isArray((tpl as any)?.field_map) ? (tpl as any).field_map : [])
+      .map((r: any) => { const [ns, ...rest] = String(r?.key ?? '').split('.'); return { ns, key: rest.join('.'), type: METAFIELD_TYPES.has(r?.type) ? r.type : 'single_line_text_field', value: String(r?.value ?? '') }; })
+      .filter((r: any) => r.ns && r.key);
+    const mappedKeys = new Set(mapped.map((r: any) => `${r.ns}.${r.key}`));
+    // Plus every spec / fitted part as a specs.* metafield so nothing is lost.
+    const specs = withParts.map(({ b, parts }) => specColumns(b, parts));
+    const specLabels = [...new Set(specs.flatMap((m) => [...m.keys()]))].filter((l) => !mappedKeys.has(`specs.${slug(l).replace(/-/g, '_')}`));
+    for (const r of mapped) rows[0].push(`${label(r.key)} (product.metafields.${r.ns}.${r.key})`);
+    for (const l of specLabels) rows[0].push(`${l} (product.metafields.specs.${slug(l).replace(/-/g, '_')})`);
+    withParts.forEach((wp, i) => ((wp as any).extra = [
+      ...mapped.map((r: any) => { const raw = plain(renderTemplate(r.value, wp.b, wp.parts)); return raw ? coerce(r.type, raw) : ''; }),
+      ...specLabels.map((l) => specs[i].get(l) ?? ''),
+    ]));
+    for (const { b, parts, extra } of withParts as any[]) {
       const t = title(b);
       const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
       const imgs = effectiveListingImages(b);
@@ -95,7 +135,8 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       rows.push([handle, t, html, b.make, 'Sporting Goods > Outdoor Recreation > Cycling > Bicycles', b.bike_type || 'Bicycle', tags, 'TRUE',
         'Size', txt(b.size) || 'Default Title', b.reference || b.id, b.weight_kg ? Math.round(Number(b.weight_kg) * 1000) : '', 'shopify', 1, 'deny', 'manual',
         price ?? '', '', 'TRUE', 'TRUE', imgs[0] ?? '', imgs[0] ? 1 : '', imgs[0] ? t : '',
-        t.slice(0, 70), html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 320), price ? 'active' : 'draft']);
+        t.slice(0, 70), html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 320), price ? 'active' : 'draft', ...extra]);
+      void baseLen;
       imgs.slice(1).forEach((src, i) => {
         const r = new Array(rows[0].length).fill('');
         r[0] = handle; r[20] = src; r[21] = i + 2; r[22] = t;
@@ -107,12 +148,17 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       '*Description', '*Format', '*Duration', '*StartPrice', '*Quantity', 'PicURL', 'BestOfferEnabled', '*Location',
       'C:Brand', 'C:Model', 'C:Bike Type', 'C:Frame Size', 'C:Colour', 'C:Frame Material', 'C:Wheel Size', 'C:Brake Type', 'C:Gear Change Mechanism',
       'C:Suspension Type', 'C:Number of Gears', 'C:Year', 'C:Department']);
-    for (const { b, parts } of withParts) {
+    const taken = new Set(rows[0].map((h) => String(h).replace(/^C:/, '').toLowerCase()));
+    const specs = withParts.map(({ b, parts }) => specColumns(b, parts));
+    const specLabels = [...new Set(specs.flatMap((m) => [...m.keys()]))].filter((l) => !taken.has(l.toLowerCase()));
+    for (const l of specLabels) rows[0].push(`C:${l}`);
+    for (const [i, { b, parts }] of withParts.entries()) {
       const price = applyChannelMarkup(b.asking_price, markup);
       rows.push(['Add', b.reference || b.id, 177831, title(b).slice(0, 80), ebayCondition(b.condition), txt(b.condition_notes).slice(0, 1000),
         describe(b, parts), 'FixedPrice', 'GTC', price ?? '', 1, effectiveListingImages(b).slice(0, 24).join('|'), 1, '',
         b.make, b.model, b.bike_type, b.size, b.colour, b.frame_material, sv(b, 'wheel_size', 'wheels_size'), sv(b, 'brake_type', 'brakes'),
-        sv(b, 'groupset', 'gear_change_mechanism', 'shifters'), sv(b, 'suspension_type', 'suspension'), sv(b, 'number_of_gears', 'gears', 'speeds'), b.year, b.gender || 'Unisex Adults']);
+        sv(b, 'groupset', 'gear_change_mechanism', 'shifters'), sv(b, 'suspension_type', 'suspension'), sv(b, 'number_of_gears', 'gears', 'speeds'), b.year, b.gender || 'Unisex Adults',
+        ...specLabels.map((l) => (specs[i].get(l) ?? '').slice(0, 65))]);
     }
     warnings.push('Before uploading, fill in Location (postcode) and pick your postage, returns and payment policies in eBay Seller Hub.');
   }
