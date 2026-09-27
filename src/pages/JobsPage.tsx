@@ -261,9 +261,9 @@ export default function JobsPage() {
               <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                 {canDefer && !isClosed(job.status) && (job.deferred ? (
                   <Button size="bench" variant="ghost" disabled={busyId === job.id} onClick={() => setDeferred(job, false)}>Un-defer</Button>
-                ) : isDeferrable(job, keywords) ? (
+                ) : (
                   <Button size="bench" variant="ghost" disabled={busyId === job.id} onClick={() => { setDeferJob(job); setDeferReason(''); }}>Defer</Button>
-                ) : null)}
+                ))}
                 {!isDone(job.status) && !job.started_at && (
                   <Button size="bench" variant="outline" disabled={busyId === job.id}
                     onClick={() => update(job, { status: 'in_progress', started_at: new Date().toISOString() })}>
@@ -291,6 +291,11 @@ export default function JobsPage() {
             <DialogTitle>Defer "{deferJob?.title}"</DialogTitle>
             <DialogDescription>The bike can be listed without this job. It must be done before the bike is collected or delivered.</DialogDescription>
           </DialogHeader>
+          {deferJob && !isDeferrable(deferJob, keywords) && (
+            <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+              This is safety-related work — confirm it is safe to sell before deferring.
+            </p>
+          )}
           <Textarea placeholder="Why can this wait? (required)" value={deferReason} onChange={(e) => setDeferReason(e.target.value)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeferJob(null)}>Cancel</Button>

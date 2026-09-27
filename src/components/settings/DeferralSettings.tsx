@@ -7,7 +7,7 @@ import { Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { DEFAULT_SAFETY_KEYWORDS, deferralKey, normaliseKeywords } from '@/lib/deferredJobs';
 
-/** Owner-editable list of safety words: jobs mentioning them can't be deferred. */
+/** Owner-editable list of safety words: jobs mentioning them show a warning when deferred. */
 export default function DeferralSettings() {
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [text, setText] = useState(DEFAULT_SAFETY_KEYWORDS.join(', '));
@@ -38,7 +38,7 @@ export default function DeferralSettings() {
         <CardTitle className="flex items-center gap-2"><Wrench className="h-5 w-5" /> Deferred jobs</CardTitle>
         <CardDescription>
           Owners and admins can defer small workshop jobs so a bike can be listed. Deferred jobs must be done before collection or delivery.
-          Jobs whose title or description contains any of these safety words can never be deferred.
+          Any job can be deferred. Jobs whose title or description contains one of these safety words show an extra warning first.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
