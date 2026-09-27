@@ -5,3 +5,4 @@
 - Workshop flow is bike-gated: Repairs is the admin/owner decision queue; every approved fault creates one idempotently linked workshop job (including zero-cost work), and Jobs becomes visible to admin/mechanics only after every inspection fault on that bike is decided.
 - Marketplace images use ordered `bikes.listing_photos`; eBay and Shopify fall back to `bikes.photos` only when the listing set is empty, preserving existing listings.
 - eBay payloads never include MPN (product.mpn or item specific): eBay BrandMPN pairing rejects incomplete pairs and MPN is only recommended for category 177831; bikes.mpn stays internal-only.
+- Channel mark-ups and manual CSV toggles live in `app_settings` under key `listing_channels:<business_id>` (app_settings is keyed by `key` only), with identical pricing logic in `src/lib/channelPricing.ts` and `_shared/channel-pricing.ts` so exports and live listings price the same.

@@ -19,6 +19,11 @@ import { listBikeOnEbay, getEbayStatus, type EbayStatus } from '@/services/ebay'
 import { listBikeOnSquarespace, getSquarespaceStatus, type SquarespaceStatus } from '@/services/squarespace';
 import { listBikeOnShopify, getShopifyStatus, type ShopifyStatus, type ShopifyListing } from '@/services/shopify';
 import { effectiveListingImages } from '@/lib/listingImages';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Download } from 'lucide-react';
+import { useListingChannels } from '@/hooks/useListingChannels';
+import { applyChannelMarkup } from '@/lib/channelPricing';
+import { buildListingCsv, downloadCsv, type CsvChannel } from '@/lib/listingCsv';
 
 interface Bike {
   id: string;
@@ -82,6 +87,24 @@ export default function ListingsPage() {
   const [fixOpen, setFixOpen] = useState(false);
   const [fixSaveOnly, setFixSaveOnly] = useState(false);
   const [needsFixing, setNeedsFixing] = useState<string[]>([]);
+  const { settings: channelSettings } = useListingChannels();
+  const [csvSelected, setCsvSelected] = useState<Set<string>>(new Set());
+  const [exporting, setExporting] = useState<CsvChannel | null>(null);
+  const manualAny = channelSettings.manual.ebay || channelSettings.manual.shopify;
+  const toggleCsv = (id: string, on: boolean) => setCsvSelected((prev) => { const n = new Set(prev); if (on) n.add(id); else n.delete(id); return n; });
+  const exportCsv = async (channel: CsvChannel) => {
+    const ids = csvSelected.size ? Array.from(csvSelected) : filteredBikes.map((b) => b.id);
+    const label = channel === 'ebay' ? 'eBay' : 'Shopify';
+    setExporting(channel);
+    try {
+      const res = await buildListingCsv(channel, ids, channelSettings.markups[channel]);
+      downloadCsv(res.csv, res.filename);
+      toast({ title: `${label} CSV downloaded (${ids.length} bike${ids.length === 1 ? '' : 's'})`,
+        description: res.warnings.length ? res.warnings.slice(0, 6).join(' · ') + (res.warnings.length > 6 ? ` · +${res.warnings.length - 6} more` : '') : `Upload it in ${channel === 'ebay' ? 'eBay Seller Hub → Reports → Uploads' : 'Shopify Admin → Products → Import'}.` });
+    } catch (e: any) {
+      toast({ title: `Could not export ${label} CSV`, description: e?.message || 'Unknown error', variant: 'destructive' });
+    } finally { setExporting(null); }
+  };
   const openFix = (ids: string[]) => { if (!ids.length) return; setFixSaveOnly(false); setFixQueue(ids); setFixIndex(0); setFixOpen(true); };
 
   useEffect(() => {
@@ -486,6 +509,25 @@ export default function ListingsPage() {
       </div>
 
 
+      {manualAny && (
+        <div className="mb-4 flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center">
+          <p className="flex-1 text-sm text-muted-foreground">
+            Manual listing: {csvSelected.size ? `${csvSelected.size} ticked bike${csvSelected.size === 1 ? '' : 's'}` : `all ${filteredBikes.length} bikes shown`} will be exported.
+            {csvSelected.size > 0 && <button type="button" className="ml-2 underline" onClick={() => setCsvSelected(new Set())}>Clear ticks</button>}
+          </p>
+          {channelSettings.manual.ebay && (
+            <Button variant="outline" disabled={!!exporting || filteredBikes.length === 0} onClick={() => exportCsv('ebay')}>
+              <Download className="h-4 w-4 mr-2" />{exporting === 'ebay' ? 'Exporting…' : 'Export eBay CSV'}
+            </Button>
+          )}
+          {channelSettings.manual.shopify && (
+            <Button variant="outline" disabled={!!exporting || filteredBikes.length === 0} onClick={() => exportCsv('shopify')}>
+              <Download className="h-4 w-4 mr-2" />{exporting === 'shopify' ? 'Exporting…' : 'Export Shopify CSV'}
+            </Button>
+          )}
+        </div>
+      )}
+
       {needsFixing.length > 0 && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded border border-destructive/50 bg-destructive/10 p-3 text-sm">
           <span>{needsFixing.length} bike{needsFixing.length === 1 ? '' : 's'} need fixing before eBay will take them.</span>
@@ -535,9 +577,9 @@ export default function ListingsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {!anyConnected && (
+          {!anyConnected && !manualAny && (
             <p className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-              No selling site (eBay, Shopify or Squarespace) is connected. Connect a platform under Settings → Integrations to list bikes.
+              No selling site (eBay, Shopify or Squarespace) is connected. Connect a platform under Settings → Integrations, or turn on manual CSV listing under Settings → Listing Formats.
             </p>
           )}
           {ebayNeedsReconnect && (
@@ -586,7 +628,19 @@ export default function ListingsPage() {
                         </button>
                       ) : null;
                     })()}
-                    <ListCardRow label="Asking" value={bike.asking_price ? `£${bike.asking_price.toFixed(2)}` : '-'} />
+                    <ListCardRow label="Asking" value={(() => {
+                      if (!bike.asking_price) return '-';
+                      const extra = (['ebay', 'shopify', 'squarespace'] as const)
+                        .filter((c) => channelSettings.markups[c].pct > 0)
+                        .map((c) => `${labelOf(c)} £${applyChannelMarkup(bike.asking_price, channelSettings.markups[c])!.toFixed(2)}`);
+                      return [`£${bike.asking_price.toFixed(2)}`, ...extra].join(' · ');
+                    })()} />
+                    {manualAny && (
+                      <label className="flex items-center gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={csvSelected.has(bike.id)} onCheckedChange={(v) => toggleCsv(bike.id, v === true)} />
+                        Add to CSV
+                      </label>
+                    )}
 
                     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                       {!allListed && (

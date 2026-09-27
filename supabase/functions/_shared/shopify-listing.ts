@@ -1,3 +1,4 @@
+import { channelPrice } from './channel-price-loader.ts';
 // Builds Shopify products from VeloDealer bikes and keeps the shopify_listings table in step.
 import {
   shopifyGraphql,
@@ -232,6 +233,9 @@ export async function pushBikeToShopify(
   const existingProductId = (listing as any)?.product_id as string | undefined;
 
   const images = effectiveListingImages(bike).slice(0, 10);
+  const { data: bizRow, error: bizErr } = await supabase.from('bikes').select('business_id').eq('id', bike.id).maybeSingle();
+  if (bizErr || !(bizRow as any)?.business_id) throw new Error('Bike not found');
+  const price = await channelPrice(supabase, (bizRow as any).business_id, 'shopify', bike.asking_price);
 
   const { metafields, warnings } = await buildMetafields(supabase, settings, bike.id);
 
@@ -244,7 +248,7 @@ export async function pushBikeToShopify(
     status: 'ACTIVE',
     variants: [
       {
-        price: bike.asking_price != null ? String(bike.asking_price) : '0',
+        price: price != null ? String(price) : '0',
         sku: bike.reference || bike.id,
         inventoryItem: { tracked: true },
         inventoryPolicy: 'DENY',

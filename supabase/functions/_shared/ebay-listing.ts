@@ -1,3 +1,4 @@
+import { channelPrice } from './channel-price-loader.ts';
 // Builds eBay listings from VeloDealer bikes and keeps the ebay_listings table in step.
 import { ebayFetch, requireConnection, businessIdForBike, itemBase, saveSettings, hasScope, type Client, type Connection } from './ebay.ts';
 import { buildEbayTitle, finalEbayTitle } from './ebay-title.ts';
@@ -739,6 +740,7 @@ export async function pushBikeToEbay(
   supabase: Client,
   bike: BikeRow,
 ): Promise<{ offerId: string; listingId: string | null; url: string | null; warnings: string[]; substitution: { from: string; to: string } | null }> {
+  bike = { ...bike, asking_price: await channelPrice(supabase, await businessIdForBike(supabase, bike.id), 'ebay', bike.asking_price) };
   const p = await prepareListing(supabase, bike);
   const blockers = p.checklist.filter((c) => c.level === 'block');
   if (blockers.length) throw new Error(blockers.map((b) => b.label).join('. ') + '.');
