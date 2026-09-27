@@ -6,3 +6,4 @@
 - Marketplace images use ordered `bikes.listing_photos`; eBay and Shopify fall back to `bikes.photos` only when the listing set is empty, preserving existing listings.
 - eBay payloads never include MPN (product.mpn or item specific): eBay BrandMPN pairing rejects incomplete pairs and MPN is only recommended for category 177831; bikes.mpn stays internal-only.
 - Channel mark-ups and manual CSV toggles live in `app_settings` under key `listing_channels:<business_id>` (app_settings is keyed by `key` only), with identical pricing logic in `src/lib/channelPricing.ts` and `_shared/channel-pricing.ts` so exports and live listings price the same.
+- Deferred workshop jobs (`jobs.deferred`, owner/admin only via DB trigger, reason required) never block Ready/Listed but always block handover: create-delivery-order returns 409 unless an owner/admin gives an override reason, logged in bike_activity.

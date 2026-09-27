@@ -15,6 +15,7 @@ import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
 import VatSettings from '@/components/settings/VatSettings';
 import ListingChannelSettings from '@/components/settings/ListingChannelSettings';
+import DeferralSettings from '@/components/settings/DeferralSettings';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -96,6 +97,7 @@ export default function SettingsPage() {
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="listings">
           <ListingChannelSettings />
+          <DeferralSettings />
           <ListingFormats />
         </TabsContent>
 
