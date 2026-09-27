@@ -57,6 +57,28 @@ Deno.serve(async (req) => {
     if (bikeError) throw new Error(bikeError.message);
     if (!bike) return json({ error: 'Bike not found' }, 404);
 
+    // Deferred workshop jobs must be done before handover, unless an owner/admin overrides with a reason.
+    const { data: deferredJobs, error: jobsErr } = await supabase
+      .from('jobs').select('id, title').eq('bike_id', bikeId).eq('type', 'workshop').eq('deferred', true)
+      .not('status', 'in', '(complete,completed,cancelled)');
+    if (jobsErr) throw new Error(`Could not check deferred jobs: ${jobsErr.message}`);
+    if (deferredJobs?.length) {
+      const overrideReason = String(body.override_reason ?? '').trim();
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', userData.user.id).maybeSingle();
+      const canOverride = ['admin', 'owner'].includes((prof as any)?.role);
+      if (!overrideReason || !canOverride) {
+        return json({
+          error: `Finish ${deferredJobs.length} deferred job(s) before booking delivery: ${deferredJobs.map((j: any) => j.title).join(', ')}`,
+          deferred_jobs: deferredJobs,
+        }, 409);
+      }
+      await supabase.from('bike_activity').insert({
+        bike_id: bikeId, business_id: (bike as any).business_id, kind: 'job', action: 'deferred_override',
+        summary: `Delivery booked with ${deferredJobs.length} deferred job(s) outstanding`,
+        detail: { reason: overrideReason, jobs: deferredJobs.map((j: any) => j.title) }, actor_id: userData.user.id,
+      });
+    }
+
     // Record the delivery locally regardless — the courier call may fail.
     // The collection side is the dealer's own shop: Cycle Courier fills it in
     // from the address saved on their account, so we send no shop address.
