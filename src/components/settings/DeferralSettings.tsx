@@ -7,7 +7,7 @@ import { Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { DEFAULT_SAFETY_KEYWORDS, deferralKey, normaliseKeywords } from '@/lib/deferredJobs';
 
-/** Owner-editable list of safety words: jobs mentioning them can't be deferred. */
+/** Owner-editable list of safety words: jobs mentioning them show a warning when deferred. */
 export default function DeferralSettings() {
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [text, setText] = useState(DEFAULT_SAFETY_KEYWORDS.join(', '));
