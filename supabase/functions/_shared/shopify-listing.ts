@@ -255,9 +255,8 @@ export async function pushBikeToShopify(
   if (existingProductId) {
     input.id = existingProductId;
   }
-  if (images.length) {
-    input.files = images.map((src) => ({ originalSource: src, contentType: 'IMAGE' }));
-  }
+  // productSet synchronises this complete ordered list on both create and update.
+  input.files = images.map((src) => ({ originalSource: src, contentType: 'IMAGE' }));
 
   let data = await shopifyGraphql(settings, PRODUCT_SET, { input });
   let errors = data?.productSet?.userErrors ?? [];
