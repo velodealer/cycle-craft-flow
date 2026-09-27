@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, XCircle, AlertTriangle, CheckCircle2, Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { effectiveListingImages } from '@/lib/listingImages';
 import PhotoUpload from '@/components/PhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { logActivity } from '@/lib/activity';
@@ -66,11 +67,11 @@ export default function FixListingProblemsDialog({ bikeId, open, onOpenChange, o
     setPreviewError(null);
     try {
       const [{ data: b }, listing] = await Promise.all([
-        supabase.from('bikes').select('id, reference, make, model, bike_type, size, colour, frame_material, condition, condition_notes, asking_price, photos, mpn, spec_values').eq('id', bikeId).maybeSingle(),
+        supabase.from('bikes').select('id, reference, make, model, bike_type, size, colour, frame_material, condition, condition_notes, asking_price, photos, listing_photos, mpn, spec_values').eq('id', bikeId).maybeSingle(),
         getBikeEbayListing(bikeId).catch(() => null),
       ]);
       setBike(b as any);
-      setPhotos(((b as any)?.photos as string[]) ?? []);
+      setPhotos(effectiveListingImages((b as any) ?? {}));
       setLastError(listing?.last_error ?? null);
       setListingOpts({ condition: listing?.condition ?? null, category_id: listing?.category_id ?? null, title_override: listing?.title_override ?? null });
       setTitle(listing?.title_override ?? '');
@@ -122,7 +123,8 @@ export default function FixListingProblemsDialog({ bikeId, open, onOpenChange, o
         update[k] = k === 'asking_price' ? Number(v) : v.trim();
       }
       if (update.asking_price !== undefined && !(update.asking_price > 0)) throw new Error('Asking price must be more than £0');
-      if (JSON.stringify(photos) !== JSON.stringify(bike.photos ?? [])) update.photos = photos;
+      const photoField = bike.listing_photos?.length ? 'listing_photos' : 'photos';
+      if (JSON.stringify(photos) !== JSON.stringify(bike[photoField] ?? [])) update[photoField] = photos;
       const filledAspects = Object.fromEntries(Object.entries(aspectValues).filter(([, v]) => v.trim()));
       if (Object.keys(filledAspects).length) {
         const spec = (bike.spec_values && typeof bike.spec_values === 'object') ? bike.spec_values : {};

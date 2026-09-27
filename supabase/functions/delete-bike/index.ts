@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     const { data: bike, error: bikeErr } = await admin
       .from('bikes')
-      .select('id, reference, make, model, photos')
+      .select('id, reference, make, model, photos, listing_photos')
       .eq('id', bikeId)
       .maybeSingle();
     if (bikeErr) return json({ error: bikeErr.message }, 500);
@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
 
     const photoUrls: string[] = [
       ...((bike.photos as string[] | null) ?? []),
+      ...((bike.listing_photos as string[] | null) ?? []),
       ...jobs.flatMap((j: any) => [...(j.photos_before ?? []), ...(j.photos_after ?? [])]),
     ].filter(Boolean);
 

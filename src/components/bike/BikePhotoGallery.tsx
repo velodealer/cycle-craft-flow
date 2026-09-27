@@ -6,16 +6,16 @@ import { cn } from '@/lib/utils';
 interface BikePhotoGalleryProps {
   photos?: string[] | null;
   alt: string;
+  framed?: boolean;
 }
 
 /** Main photo with a thumbnail strip; falls back to an icon when no photos exist. */
-export default function BikePhotoGallery({ photos, alt }: BikePhotoGalleryProps) {
+export default function BikePhotoGallery({ photos, alt, framed = true }: BikePhotoGalleryProps) {
   const [active, setActive] = useState(0);
   const list = photos ?? [];
 
-  return (
-    <Card>
-      <CardContent className="p-4 space-y-3">
+  const content = (
+    <div className="space-y-3">
         <div className="w-full overflow-hidden rounded-lg border bg-muted flex items-center justify-center aspect-[4/3]">
           {list.length > 0 ? (
             <img
@@ -55,7 +55,9 @@ export default function BikePhotoGallery({ photos, alt }: BikePhotoGalleryProps)
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
+
+  if (!framed) return content;
+  return <Card><CardContent className="space-y-3 p-4">{content}</CardContent></Card>;
 }

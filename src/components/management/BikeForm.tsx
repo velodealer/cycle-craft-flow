@@ -122,6 +122,8 @@ interface BikeFormProps {
 export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const { vatRegistered } = useVatRegistered();
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
+  const [listingPhotos, setListingPhotos] = useState<string[]>(bike?.listing_photos || []);
+  const [uploadPath] = useState(() => `bike-${bike?.id || `new-${crypto.randomUUID()}`}`);
   const [submitting, setSubmitting] = useState(false);
   const { bays: storageBays } = useStorageBays();
   const [owners, setOwners] = useState<Array<{ id: string; name: string; email: string | null; phone: string | null; address: string | null }>>([]);
@@ -242,6 +244,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
             : {}),
         storage_bay_id: bikeFields.storage_bay_id || null,
         photos,
+        listing_photos: listingPhotos,
       };
 
 
@@ -1073,18 +1076,40 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                 <FormLabel>Photos</FormLabel>
                 <PhotoUpload
                   bucket="bike-photos"
-                  path={`bike-${bike?.id || 'new'}`}
+                  path={uploadPath}
                   photos={photos}
                   onChange={setPhotos}
                   maxPhotos={10}
                 />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <div>
+                  <FormLabel>Listing images</FormLabel>
+                  <FormDescription>
+                    Uploaded separately for Shopify and eBay. The first image is the main listing image.
+                  </FormDescription>
+                </div>
+                <PhotoUpload
+                  bucket="bike-photos"
+                  path={`${uploadPath}/listings`}
+                  photos={listingPhotos}
+                  onChange={setListingPhotos}
+                  maxPhotos={24}
+                  uploadLabel="Upload listing images"
+                  emptyLabel="No separate listing images yet. Existing bike photos will be used until you add some."
+                  allowReorder
+                />
+                <p className="text-xs text-muted-foreground">eBay uses up to 24 images. Shopify uses the first 10.</p>
               </div>
             </CardContent>
           </Card>
 
           {(() => {
             const w = form.watch();
-            const score = readinessScore({ ...w, photos });
+            const score = readinessScore({ ...w, photos, listing_photos: listingPhotos });
             return (
               <Card>
                 <CardHeader>

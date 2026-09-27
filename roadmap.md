@@ -1,5 +1,12 @@
 # Roadmap — eBay Phases 2–7
 
+## Dedicated listing images (2026-09-26)
+- [x] Add an ordered listing-image set to each bike
+- [x] Add separate listing uploads with removal and ordering controls
+- [x] Use listing images for eBay and Shopify with bike-photo fallback
+- [x] Keep eBay preview/checks and Listings thumbnails aligned with the published set
+- [ ] Blocked on external auth: verify upload, ordering and marketplace sync in a signed-in preview
+
 ## Workshop approval and jobs separation (2026-09-25)
 - [x] Keep bikes on Repairs until every inspection repair has an approval decision
 - [x] Move decided bikes with approved work into Jobs and keep declined repairs out

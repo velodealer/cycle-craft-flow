@@ -6,6 +6,7 @@ import {
   type ShopifySettings,
 } from './shopify.ts';
 import { loadFieldMap, renderFieldValue, loadBikeComponents, isPublishBlockingError } from './listing-template.ts';
+import { effectiveListingImages } from './listing-images.ts';
 
 export interface BikeRow {
   id: string;
@@ -23,6 +24,7 @@ export interface BikeRow {
   condition?: string | null;
   accessories_included?: string | null;
   photos?: string[] | null;
+  listing_photos?: string[] | null;
   frame_number?: string | null;
 }
 
@@ -229,7 +231,7 @@ export async function pushBikeToShopify(
   const listing = await loadShopifyListing(supabase, bike.id);
   const existingProductId = (listing as any)?.product_id as string | undefined;
 
-  const images = (bike.photos ?? []).filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).slice(0, 10);
+  const images = effectiveListingImages(bike).slice(0, 10);
 
   const { metafields, warnings } = await buildMetafields(supabase, settings, bike.id);
 
@@ -252,9 +254,9 @@ export async function pushBikeToShopify(
   if (metafields.length) input.metafields = metafields;
   if (existingProductId) {
     input.id = existingProductId;
-  } else if (images.length) {
-    input.files = images.map((src) => ({ originalSource: src, contentType: 'IMAGE' }));
   }
+  // productSet synchronises this complete ordered list on both create and update.
+  input.files = images.map((src) => ({ originalSource: src, contentType: 'IMAGE' }));
 
   let data = await shopifyGraphql(settings, PRODUCT_SET, { input });
   let errors = data?.productSet?.userErrors ?? [];

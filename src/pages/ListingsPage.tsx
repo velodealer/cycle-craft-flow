@@ -18,6 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import { listBikeOnEbay, getEbayStatus, type EbayStatus } from '@/services/ebay';
 import { listBikeOnSquarespace, getSquarespaceStatus, type SquarespaceStatus } from '@/services/squarespace';
 import { listBikeOnShopify, getShopifyStatus, type ShopifyStatus, type ShopifyListing } from '@/services/shopify';
+import { effectiveListingImages } from '@/lib/listingImages';
 
 interface Bike {
   id: string;
@@ -30,6 +31,7 @@ interface Bike {
   asking_price: number | null;
   sale_price: number | null;
   photos: string[] | null;
+  listing_photos: string[];
   storage_bay_id: string | null;
   frame_number: string | null;
   bike_type?: string | null;
@@ -90,7 +92,7 @@ export default function ListingsPage() {
       try {
         const { data: bikeRows, error } = await supabase
           .from('bikes')
-          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, storage_bay_id, frame_number, serial_number, bike_type, size, colour, frame_material, condition, condition_notes, mpn')
+          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, listing_photos, storage_bay_id, frame_number, serial_number, bike_type, size, colour, frame_material, condition, condition_notes, mpn')
           .in('status', ['ready', 'listed'])
           .order('created_at', { ascending: false });
         if (error) throw error;
@@ -560,7 +562,7 @@ export default function ListingsPage() {
                 return (
                   <ListCard key={bike.id} onClick={() => navigate(`/bikes/${bike.id}`)}>
                     <div className="flex gap-3">
-                      <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-16 w-16 shrink-0" />
+                      <BikeThumbnail photos={effectiveListingImages(bike)} alt={`${bike.make} ${bike.model}`} className="h-16 w-16 shrink-0" />
                       <div className="min-w-0 flex-1 space-y-2">
                         <div className="font-semibold leading-tight break-words">
                           {bike.make} {bike.model}
