@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { ebayInventoryProduct } from './ebay-listing.ts';
+import { ebayInventoryProduct } from '../_shared/ebay-listing.ts';
 
 Deno.test('eBay product keeps Brand as an item specific without catalogue BrandMPN fields', () => {
   const product = ebayInventoryProduct(
