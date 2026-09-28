@@ -1,4 +1,5 @@
-import { channelPrice } from './channel-price-loader.ts';
+import { channelPrice, loadChannelSettings } from './channel-price-loader.ts';
+import { applyTitleAffixes } from './channel-pricing.ts';
 // Builds Shopify products from VeloDealer bikes and keeps the shopify_listings table in step.
 import {
   shopifyGraphql,
@@ -235,12 +236,14 @@ export async function pushBikeToShopify(
   const images = effectiveListingImages(bike).slice(0, 10);
   const { data: bizRow, error: bizErr } = await supabase.from('bikes').select('business_id').eq('id', bike.id).maybeSingle();
   if (bizErr || !(bizRow as any)?.business_id) throw new Error('Bike not found');
-  const price = await channelPrice(supabase, (bizRow as any).business_id, 'shopify', bike.asking_price);
+  const businessId = (bizRow as any).business_id;
+  const price = await channelPrice(supabase, businessId, 'shopify', bike.asking_price);
+  const titleAffix = (await loadChannelSettings(supabase, businessId)).affixes.shopify;
 
   const { metafields, warnings } = await buildMetafields(supabase, settings, bike.id);
 
   const input: Record<string, unknown> = {
-    title: bikeTitle(bike),
+    title: applyTitleAffixes(bikeTitle(bike), titleAffix, 255),
     descriptionHtml: bikeDescriptionHtml(bike),
     productType: settings.product_type || 'Bicycle',
     vendor: settings.vendor || bike.make,
