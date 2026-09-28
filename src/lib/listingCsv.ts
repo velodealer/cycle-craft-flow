@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchBikeComponents } from '../../supabase/functions/_shared/bike-components';
 import { renderTemplate } from '@/lib/listingTemplate';
 import { effectiveListingImages } from '@/lib/listingImages';
-import { applyChannelMarkup, type MarkupRule } from '@/lib/channelPricing';
+import { applyChannelMarkup, applyTitleAffixes, type MarkupRule, type TitleAffix } from '@/lib/channelPricing';
 
 export type CsvChannel = 'ebay' | 'shopify';
 
@@ -81,7 +81,7 @@ const plain = (h: string) => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').
 
 export interface CsvResult { csv: string; filename: string; warnings: string[] }
 
-export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], markup: MarkupRule): Promise<CsvResult> {
+export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], markup: MarkupRule, affix?: TitleAffix): Promise<CsvResult> {
   if (!bikeIds.length) throw new Error('Choose at least one bike to export.');
   const [{ data: bikes, error }, { data: tplData }] = await Promise.all([
     supabase.from('bikes').select('*').in('id', bikeIds),
@@ -126,7 +126,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       ...specLabels.map((l) => specs[i].get(l) ?? ''),
     ]));
     for (const { b, parts, extra } of withParts as any[]) {
-      const t = title(b);
+      const t = applyTitleAffixes(title(b), affix, 255);
       const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
@@ -154,7 +154,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
     for (const l of specLabels) rows[0].push(`C:${l}`);
     for (const [i, { b, parts }] of withParts.entries()) {
       const price = applyChannelMarkup(b.asking_price, markup);
-      rows.push(['Add', b.reference || b.id, 177831, title(b).slice(0, 80), ebayCondition(b.condition), txt(b.condition_notes).slice(0, 1000),
+      rows.push(['Add', b.reference || b.id, 177831, applyTitleAffixes(title(b), affix, 80), ebayCondition(b.condition), txt(b.condition_notes).slice(0, 1000),
         describe(b, parts), 'FixedPrice', 'GTC', price ?? '', 1, effectiveListingImages(b).slice(0, 24).join('|'), 1, '',
         b.make, b.model, b.bike_type, b.size, b.colour, b.frame_material, sv(b, 'wheel_size', 'wheels_size'), sv(b, 'brake_type', 'brakes'),
         sv(b, 'groupset', 'gear_change_mechanism', 'shifters'), sv(b, 'suspension_type', 'suspension'), sv(b, 'number_of_gears', 'gears', 'speeds'), b.year, b.gender || 'Unisex Adults',
