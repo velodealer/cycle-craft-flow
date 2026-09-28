@@ -97,7 +97,7 @@ export default function ListingsPage() {
     const label = channel === 'ebay' ? 'eBay' : 'Shopify';
     setExporting(channel);
     try {
-      const res = await buildListingCsv(channel, ids, channelSettings.markups[channel]);
+      const res = await buildListingCsv(channel, ids, channelSettings.markups[channel], channelSettings.affixes[channel]);
       downloadCsv(res.csv, res.filename);
       toast({ title: `${label} CSV downloaded (${ids.length} bike${ids.length === 1 ? '' : 's'})`,
         description: res.warnings.length ? res.warnings.slice(0, 6).join(' · ') + (res.warnings.length > 6 ? ` · +${res.warnings.length - 6} more` : '') : `Upload it in ${channel === 'ebay' ? 'eBay Seller Hub → Reports → Uploads' : 'Shopify Admin → Products → Import'}.` });

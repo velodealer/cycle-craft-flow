@@ -1,4 +1,5 @@
-import { channelPrice } from './channel-price-loader.ts';
+import { channelPrice, loadChannelSettings } from './channel-price-loader.ts';
+import { applyTitleAffixes } from './channel-pricing.ts';
 // Builds eBay listings from VeloDealer bikes and keeps the ebay_listings table in step.
 import { ebayFetch, requireConnection, businessIdForBike, itemBase, saveSettings, hasScope, type Client, type Connection } from './ebay.ts';
 import { buildEbayTitle, finalEbayTitle } from './ebay-title.ts';
@@ -600,8 +601,9 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
     .slice(0, 800);
 
   // Title
-  const builtTitle = buildEbayTitle(bike, titleFormat);
-  const title = finalEbayTitle(bike, titleFormat, ex.title_override);
+  const titleAffix = (await loadChannelSettings(supabase, businessId)).affixes.ebay;
+  const builtTitle = applyTitleAffixes(buildEbayTitle(bike, titleFormat), titleAffix, 80);
+  const title = applyTitleAffixes(finalEbayTitle(bike, titleFormat, ex.title_override), titleAffix, 80);
   add('title', title.length >= 40 ? 'ok' : 'warn', `Title ${title.length}/80`, title.length < 40 ? 'Short titles are found less often — add groupset, material or size.' : title);
 
   // Basics that stop a listing

@@ -1,4 +1,5 @@
-import { channelPrice } from './channel-price-loader.ts';
+import { channelPrice, loadChannelSettings } from './channel-price-loader.ts';
+import { applyTitleAffixes } from './channel-pricing.ts';
 // Builds Squarespace products from VeloDealer bikes and keeps squarespace_listings in step.
 import { accessToken, sqsFetch, businessIdForBike, type Client } from './squarespace.ts';
 import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMap, renderFieldValue, isPublishBlockingError } from './listing-template.ts';
@@ -86,6 +87,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
   const currency = settings.currency || 'GBP';
   const price = { currency, value: Number(await channelPrice(supabase, businessId, 'squarespace', bike.asking_price)).toFixed(2) };
   const desc = await description(supabase, bike, businessId);
+  const name = applyTitleAffixes(title(bike), (await loadChannelSettings(supabase, businessId)).affixes.squarespace, 200);
   const photos = (bike.photos ?? []).filter((u: unknown) => typeof u === 'string' && /^https?:\/\//.test(u as string));
 
   // Dealer field mapping: tags, categories, SEO and URL slug.

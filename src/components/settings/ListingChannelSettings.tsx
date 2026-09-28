@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Tags } from 'lucide-react';
 import { useListingChannels } from '@/hooks/useListingChannels';
-import { applyChannelMarkup, type Channel, type ListingChannelSettings as S, type Rounding } from '@/lib/channelPricing';
+import { applyChannelMarkup, applyTitleAffixes, type Channel, type ListingChannelSettings as S, type Rounding } from '@/lib/channelPricing';
 
 const CHANNELS: { id: Channel; label: string }[] = [
   { id: 'ebay', label: 'eBay' },
@@ -74,6 +74,32 @@ export default function ListingChannelSettings() {
                   </SelectContent>
                 </Select>
                 <span className="col-span-3 text-xs text-muted-foreground sm:col-span-1">£2,000 → £{applyChannelMarkup(2000, r)?.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-medium">Listing title prefix &amp; suffix</p>
+          <p className="text-xs text-muted-foreground">Added around each bike's title when listing or exporting — e.g. a prefix of "BPS Certified" or a suffix of "Free UK Delivery". eBay titles are capped at 80 characters; if it gets too long, the middle of the title is shortened so your prefix and suffix always stay.</p>
+          {CHANNELS.map(({ id, label }) => {
+            const a = draft.affixes[id];
+            const set = (patch: Partial<typeof a>) => setDraft({ ...draft, affixes: { ...draft.affixes, [id]: { ...a, ...patch } } });
+            const max = id === 'ebay' ? 80 : 255;
+            return (
+              <div key={id} className="space-y-1">
+                <div className="grid grid-cols-[6rem_1fr_1fr] items-center gap-2 sm:grid-cols-[8rem_1fr_1fr]">
+                  <span className="text-sm">{label}</span>
+                  <Input placeholder="Prefix" maxLength={40} disabled={loading} value={a.prefix}
+                    onChange={(e) => set({ prefix: e.target.value })} aria-label={`${label} title prefix`} />
+                  <Input placeholder="Suffix" maxLength={40} disabled={loading} value={a.suffix}
+                    onChange={(e) => set({ suffix: e.target.value })} aria-label={`${label} title suffix`} />
+                </div>
+                {(a.prefix || a.suffix) && (
+                  <p className="pl-0 text-xs text-muted-foreground sm:pl-32">
+                    Preview: {applyTitleAffixes('Trek Madone SL 6 Disc 56cm 2021', a, max)}{id === 'ebay' ? ` (${applyTitleAffixes('Trek Madone SL 6 Disc 56cm 2021', a, max).length}/80)` : ''}
+                  </p>
+                )}
               </div>
             );
           })}
