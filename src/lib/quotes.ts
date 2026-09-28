@@ -53,9 +53,9 @@ export const lineNet = (r: QuoteRow) => {
   return r.parentId ? -raw : raw;
 };
 
-/** VAT on a single line for the given scheme. Child rows produce negative VAT under standard. */
+/** VAT contained in a single VAT-inclusive line (1/6). Child rows produce negative VAT under standard. */
 export const lineVat = (r: QuoteRow, scheme: VatScheme) =>
-  scheme === "standard" ? lineNet(r) * VAT_RATE : 0;
+  scheme === "standard" ? lineNet(r) / 6 : 0;
 
 export const computeVat = (
   rows: QuoteRow[],
@@ -71,6 +71,7 @@ export const computeVat = (
     lineVatTotal,
     marginVat,
     totalVat: lineVatTotal + marginVat,
+    netCost: totalCost - lineVatTotal,
   };
 };
 
