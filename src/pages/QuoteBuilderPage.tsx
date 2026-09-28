@@ -295,13 +295,13 @@ export default function QuoteBuilderPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="standard">Standard VAT (20% per line)</SelectItem>
+                <SelectItem value="standard">Standard VAT (prices inc. 20%)</SelectItem>
                 <SelectItem value="margin">Margin scheme (1/6 of profit)</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
               {vatScheme === "standard"
-                ? "20% VAT is added on top of each component's cost."
+                ? "Prices include 20% VAT; VAT is shown per line."
                 : "No VAT on individual parts. VAT is 1/6 of (sale − cost)."}
             </p>
           </div>
@@ -455,7 +455,7 @@ export default function QuoteBuilderPage() {
             <div className="text-right space-y-0.5 min-w-[220px]">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Net cost</span>
-                <span className="tabular-nums font-medium">{gbp(totalCost)}</span>
+                <span className="tabular-nums font-medium">{gbp(vat.netCost)}</span>
               </div>
               {vatRegistered && (
                 <div className="flex justify-between text-sm">
@@ -472,7 +472,7 @@ export default function QuoteBuilderPage() {
                   Gross cost
                 </span>
                 <span className="tabular-nums text-xl font-bold">
-                  {gbp(totalCost + vat.lineVatTotal)}
+                  {gbp(totalCost)}
                 </span>
               </div>
             </div>
