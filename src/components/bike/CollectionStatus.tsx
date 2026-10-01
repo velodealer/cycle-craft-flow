@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Truck, RefreshCw, MapPin, Phone, Mail, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import LinkCourierOrderDialog from '@/components/logistics/LinkCourierOrderDialog';
 
 interface CollectionStatusProps {
   bikeId: string;
@@ -90,7 +91,18 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
 
 
   if (loading) return null;
-  if (!collection) return null;
+  if (!collection) {
+    return (
+      <div className="flex justify-end">
+        <LinkCourierOrderDialog
+          bikeId={bikeId}
+          direction={direction}
+          triggerLabel={isOutbound ? 'Link existing delivery' : 'Link existing collection'}
+          onLinked={() => { loadCollection(); onUpdate?.(); }}
+        />
+      </div>
+    );
+  }
 
   const getStatusBadge = () => {
     const statusMap: Record<string, { variant: 'default' | 'secondary' | 'destructive', label: string }> = {
