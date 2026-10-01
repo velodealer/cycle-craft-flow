@@ -36,7 +36,6 @@ export const STOCK_STATUSES = [
   'awaiting_collection',
   'collection_in_progress',
   'in_transit',
-  'collected',
 ];
 
 export const AGE_BUCKETS = [
