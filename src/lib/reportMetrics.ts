@@ -97,7 +97,7 @@ export function buildBikeRows(data: ReportsData): BikeRow[] {
     const totalCost = purchaseCost + logisticsCost + partsCost + labourCost;
 
     const invoice = paidInvoiceByBike.get(b.id);
-    const isSold = b.status === 'sold';
+    const isSold = ['sold', 'collected', 'delivered'].includes(b.status);
     const saleDate = b.sold_at || invoice?.paid_at || (isSold ? b.updated_at : null) || null;
     const revenue = Number(invoice?.gross ?? invoice?.total ?? b.sale_price ?? 0);
     const margin = isSold ? revenue - totalCost : 0;

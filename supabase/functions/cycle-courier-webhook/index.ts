@@ -208,7 +208,7 @@ serve(async (req) => {
         
         await supabase
           .from('bikes')
-          .update({ status: isOutbound ? 'collected' : 'pending_intake' })
+          .update({ status: isOutbound ? 'in_transit' : 'pending_intake' })
           .eq('id', collection.bike_id);
         break;
       
@@ -257,7 +257,7 @@ serve(async (req) => {
             bikeStatus = 'collection_in_progress';
             break;
           case 'collected':
-            bikeStatus = isOutbound ? 'collected' : 'in_transit';
+            bikeStatus = 'in_transit';
             break;
           case 'driver_to_delivery':
             bikeStatus = 'in_transit';
