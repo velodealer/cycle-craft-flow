@@ -22,6 +22,7 @@ import { effectiveListingImages } from '@/lib/listingImages';
 import BikeActivity from './BikeActivity';
 import { logActivity, priceChangeSummaries } from '@/lib/activity';
 import AdminStatusSelect from './AdminStatusSelect';
+import HandoverButton from './HandoverButton';
 import ShopifyListingCard from './ShopifyListingCard';
 import SquarespaceListingCard from './SquarespaceListingCard';
 import EbayListingCard from './EbayListingCard';
@@ -391,7 +392,8 @@ export default function BikeDetailView({
           {isAdmin && <AdminStatusSelect bike={bike} onUpdate={onUpdate} />}
 
           {/* Status Progress */}
-          <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} />
+          <StatusProgressBar currentStatus={bike.status} bikeId={bike.id} deliveryMethod={bike.delivery_method} />
+          {!isMechanic && <HandoverButton bike={bike} onUpdate={onUpdate} />}
 
           <Separator />
         </>

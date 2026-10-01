@@ -237,6 +237,7 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
               <SelectItem value="in_stock">In stock</SelectItem>
               <SelectItem value="sold">Sold</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="collected">Collected</SelectItem>
               <SelectItem value="split_for_parts">Split for parts</SelectItem>
             </SelectContent>
           </Select>
