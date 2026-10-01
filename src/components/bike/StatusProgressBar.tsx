@@ -6,6 +6,7 @@ interface StatusProgressBarProps {
   currentStatus: string;
   className?: string;
   bikeId?: string;
+  deliveryMethod?: string | null;
 }
 
 interface Stage {
@@ -15,7 +16,9 @@ interface Stage {
   aliases?: string[];
 }
 
-export default function StatusProgressBar({ currentStatus, className, bikeId }: StatusProgressBarProps) {
+const AFTER_SALE = ['sold', 'collected', 'delivered'];
+
+export default function StatusProgressBar({ currentStatus, className, bikeId, deliveryMethod }: StatusProgressBarProps) {
   const [hasCollection, setHasCollection] = useState(false);
   const [loading, setLoading] = useState(!!bikeId);
 
@@ -27,20 +30,22 @@ export default function StatusProgressBar({ currentStatus, className, bikeId }: 
 
   const loadCollectionStatus = async () => {
     if (!bikeId) return;
-    
     const { data, error } = await supabase
       .from('bike_collections')
       .select('id')
       .eq('bike_id', bikeId)
+      .eq('direction', 'inbound')
+      .limit(1)
       .maybeSingle();
-    
-    if (!error && data) {
-      setHasCollection(true);
-    }
+    if (!error && data) setHasCollection(true);
     setLoading(false);
   };
 
-  // Standard workflow stages
+  const afterSale = AFTER_SALE.includes(currentStatus);
+  const handoverKey = afterSale && currentStatus !== 'sold'
+    ? currentStatus
+    : deliveryMethod === 'delivery' ? 'delivered' : 'collected';
+
   const standardStages: Stage[] = [
     { key: 'intake', label: 'Intake' },
     { key: 'cleaning', label: 'Cleaning' },
@@ -49,24 +54,24 @@ export default function StatusProgressBar({ currentStatus, className, bikeId }: 
     { key: 'repair', label: 'Repair' },
     { key: 'ready', label: 'Ready for Sale' },
     { key: 'listed', label: 'Listed' },
-    { key: 'sold', label: 'Sold' }
+    { key: 'sold', label: 'Sold' },
+    ...(afterSale ? [{ key: `handover_${handoverKey}`, label: handoverKey === 'delivered' ? 'Delivered' : 'Collected', aliases: [handoverKey] }] : []),
   ];
 
-  // Collection stages (prepended if collection exists)
+  // Inbound collection stages (pre-intake), only before the bike is sold
   const collectionStages: Stage[] = [
     { key: 'awaiting_collection', label: 'Awaiting Collection', isCollection: true, aliases: ['collection_in_progress'] },
-    { key: 'collected', label: 'Collected', isCollection: true, aliases: ['in_transit'] },
+    { key: 'collected', label: 'Collected', isCollection: true, aliases: afterSale ? [] : ['in_transit'] },
     { key: 'delivered', label: 'Delivered', isCollection: true, aliases: ['pending_intake'] }
-  ];
+  ].map((s) => afterSale ? { ...s, key: `in_${s.key}` } : s);
 
-  // Build final stages array
-  const stages = hasCollection 
-    ? [...collectionStages, ...standardStages]
-    : standardStages;
+  const stages = hasCollection ? [...collectionStages, ...standardStages] : standardStages;
 
   const currentIndex = stages.findIndex(
     stage => stage.key === currentStatus || stage.aliases?.includes(currentStatus)
   );
+
+
 
 
   if (loading) {
