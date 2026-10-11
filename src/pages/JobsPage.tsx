@@ -292,6 +292,12 @@ export default function JobsPage() {
                 Defer all ({deferrableJobs.length})
               </Button>
             )}
+            {canDefer && (
+              <Button variant="outline" size="sm" disabled={readyBusy}
+                onClick={() => { setReadyOpen(true); setReadyBikes([]); findReadyBikes(); }}>
+                Move deferred bikes to Ready
+              </Button>
+            )}
             <Tabs value={filter} onValueChange={setFilter}>
               <TabsList>
                 {FILTERS.map((f) => (
