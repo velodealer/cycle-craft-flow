@@ -751,9 +751,20 @@ export default function BikeDetailView({
             </Card>
           )}
 
-          {/* Show collection status if bike has collection */}
-          {!inspectionMode && <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />}
-          {!inspectionMode && <CollectionStatus bikeId={bike.id} direction="outbound" onUpdate={onUpdate} />}
+          {!inspectionMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Truck className="h-5 w-5" />
+                  Logistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y">
+                <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} embedded />
+                <CollectionStatus bikeId={bike.id} direction="outbound" onUpdate={onUpdate} embedded />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Intake */}
           {!inspectionMode && <IntakeTask bike={bike} onUpdate={onUpdate} />}

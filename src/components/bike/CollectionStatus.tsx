@@ -12,9 +12,10 @@ interface CollectionStatusProps {
   /** 'inbound' = collection from the seller, 'outbound' = delivery to the buyer. */
   direction?: 'inbound' | 'outbound';
   onUpdate?: () => void;
+  embedded?: boolean;
 }
 
-export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: CollectionStatusProps) {
+export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate, embedded = false }: CollectionStatusProps) {
   const [collection, setCollection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
@@ -92,14 +93,26 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
 
   if (loading) return null;
   if (!collection) {
-    return (
-      <div className="flex justify-end">
+    const emptyState = (
+      <div className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-medium">{isOutbound ? 'Delivery' : 'Collection'}</p>
+          <p className="text-sm text-muted-foreground">No {isOutbound ? 'delivery' : 'collection'} linked</p>
+        </div>
         <LinkCourierOrderDialog
           bikeId={bikeId}
           direction={direction}
           triggerLabel={isOutbound ? 'Link existing delivery' : 'Link existing collection'}
           onLinked={() => { loadCollection(); onUpdate?.(); }}
         />
+      </div>
+    );
+
+    if (embedded) return emptyState;
+
+    return (
+      <div className="flex justify-end">
+        {emptyState}
       </div>
     );
   }
@@ -128,6 +141,95 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
 
   const canRetry = collection.status === 'failed' || collection.error_message;
 
+  const details = (
+    <div className="space-y-4 py-4 first:pt-0 last:pb-0">
+      {embedded && (
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-medium">{isOutbound ? 'Delivery' : 'Collection'}</p>
+          {getStatusBadge()}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        {!embedded && getStatusBadge()}
+        {canRetry && (
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={handleRetry}
+            disabled={retrying}
+          >
+            <RefreshCw className={`h-3 w-3 mr-1 ${retrying ? 'animate-spin' : ''}`} />
+            Retry
+          </Button>
+        )}
+      </div>
+
+      {collection.tracking_number && (
+        <div>
+          <p className="text-sm text-muted-foreground">Tracking Number</p>
+          <p className="font-mono text-sm break-all">{collection.tracking_number}</p>
+        </div>
+      )}
+
+      {collection.scheduled_date && (
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <div>
+            <p className="text-sm text-muted-foreground">Scheduled for</p>
+            <p className="text-sm">{new Date(collection.scheduled_date).toLocaleDateString()}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2 pt-2 border-t">
+        <p className="text-sm font-medium">{isOutbound ? 'Delivery Address' : 'Pickup Details'}</p>
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p>{isOutbound ? collection.receiver_name : collection.sender_name}</p>
+              <p>{isOutbound ? collection.receiver_street : collection.address_street}</p>
+              <p>
+                {isOutbound ? collection.receiver_city : collection.address_city}
+                {', '}
+                {isOutbound ? collection.receiver_postcode : collection.address_postcode}
+              </p>
+            </div>
+          </div>
+          {(isOutbound ? collection.receiver_phone : collection.sender_phone) && (
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              <p>{isOutbound ? collection.receiver_phone : collection.sender_phone}</p>
+            </div>
+          )}
+          {(isOutbound ? collection.receiver_email : collection.sender_email) && (
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <p className="break-all">{isOutbound ? collection.receiver_email : collection.sender_email}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {collection.delivery_instructions && (
+        <div className="pt-2 border-t">
+          <p className="text-sm font-medium">Instructions</p>
+          <p className="text-sm text-muted-foreground">{collection.delivery_instructions}</p>
+        </div>
+      )}
+
+      {collection.error_message && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+          <p className="text-sm font-medium text-destructive mb-1">Error</p>
+          <p className="text-sm text-destructive">{collection.error_message}</p>
+        </div>
+      )}
+    </div>
+  );
+
+  if (embedded) return details;
+
   return (
     <Card>
       <CardHeader>
@@ -137,85 +239,7 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate }: Co
         </CardTitle>
 
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          {getStatusBadge()}
-          {canRetry && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={handleRetry}
-              disabled={retrying}
-            >
-              <RefreshCw className={`h-3 w-3 mr-1 ${retrying ? 'animate-spin' : ''}`} />
-              Retry
-            </Button>
-          )}
-        </div>
-
-        {collection.tracking_number && (
-          <div>
-            <p className="text-sm text-muted-foreground">Tracking Number</p>
-            <p className="font-mono text-sm">{collection.tracking_number}</p>
-          </div>
-        )}
-
-        {collection.scheduled_date && (
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="text-sm text-muted-foreground">Scheduled for</p>
-              <p className="text-sm">{new Date(collection.scheduled_date).toLocaleDateString()}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-2 pt-2 border-t">
-          <p className="text-sm font-medium">{isOutbound ? 'Delivery Address' : 'Pickup Details'}</p>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p>{isOutbound ? collection.receiver_name : collection.sender_name}</p>
-                <p>{isOutbound ? collection.receiver_street : collection.address_street}</p>
-                <p>
-                  {isOutbound ? collection.receiver_city : collection.address_city}
-                  {', '}
-                  {isOutbound ? collection.receiver_postcode : collection.address_postcode}
-                </p>
-              </div>
-            </div>
-            {(isOutbound ? collection.receiver_phone : collection.sender_phone) && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <p>{isOutbound ? collection.receiver_phone : collection.sender_phone}</p>
-              </div>
-            )}
-            {(isOutbound ? collection.receiver_email : collection.sender_email) && (
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <p>{isOutbound ? collection.receiver_email : collection.sender_email}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-
-
-        {collection.delivery_instructions && (
-          <div className="pt-2 border-t">
-            <p className="text-sm font-medium">Instructions</p>
-            <p className="text-sm text-muted-foreground">{collection.delivery_instructions}</p>
-          </div>
-        )}
-
-        {collection.error_message && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-            <p className="text-sm font-medium text-destructive mb-1">Error</p>
-            <p className="text-sm text-destructive">{collection.error_message}</p>
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{details}</CardContent>
     </Card>
   );
 }
