@@ -341,6 +341,29 @@ export default function JobsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={deferAllOpen} onOpenChange={(o) => !o && setDeferAllOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Defer all open jobs ({deferrableJobs.length})</DialogTitle>
+            <DialogDescription>
+              Every open repair job will be deferred. The bikes can be listed without them, but they must be done before each bike is collected or delivered.
+            </DialogDescription>
+          </DialogHeader>
+          {deferrableJobs.some((j) => !isDeferrable(j, keywords)) && (
+            <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+              Some of these jobs look safety-related — confirm they are safe to sell before deferring.
+            </p>
+          )}
+          <Textarea placeholder="Why can these wait? (required)" value={deferAllReason} onChange={(e) => setDeferAllReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeferAllOpen(false)}>Cancel</Button>
+            <Button disabled={!deferAllReason.trim() || deferAllBusy} onClick={() => deferAll(deferAllReason.trim())}>
+              {deferAllBusy ? 'Deferring…' : `Defer ${deferrableJobs.length} job${deferrableJobs.length === 1 ? '' : 's'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
