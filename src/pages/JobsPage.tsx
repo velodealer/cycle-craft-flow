@@ -64,6 +64,9 @@ export default function JobsPage() {
   const [deferAllOpen, setDeferAllOpen] = useState(false);
   const [deferAllReason, setDeferAllReason] = useState('');
   const [deferAllBusy, setDeferAllBusy] = useState(false);
+  const [readyOpen, setReadyOpen] = useState(false);
+  const [readyBusy, setReadyBusy] = useState(false);
+  const [readyBikes, setReadyBikes] = useState<{ id: string; reference: string | null; make: string; model: string; deferredCount: number }[]>([]);
   useEffect(() => { loadSafetyKeywords().then(setKeywords).catch(() => {}); }, []);
 
   const bayName = (id: string | null) => {
@@ -124,6 +127,56 @@ export default function JobsPage() {
     const urgent = (l: JobRow[]) => (l[0].bikes?.status === 'sold' && l.some((j) => j.deferred && !isClosed(j.status)) ? 0 : 1);
     return Array.from(map.values()).sort((a, b) => urgent(a) - urgent(b));
   }, [visible]);
+
+  // Bikes in repair whose only open workshop jobs are deferred — they can go
+  // straight to Ready for Sale while the workshop catches up.
+  const findReadyBikes = async () => {
+    setReadyBusy(true);
+    const { data: bikes, error } = await supabase
+      .from('bikes')
+      .select('id, reference, make, model')
+      .eq('status', 'repair');
+    if (error) { toast.error('Could not check bikes.'); setReadyBusy(false); return; }
+    const ids = ((bikes as any[]) ?? []).map((b) => b.id);
+    if (!ids.length) { setReadyBikes([]); setReadyBusy(false); return; }
+    const { data: jobRows, error: jErr } = await supabase
+      .from('jobs')
+      .select('bike_id, status, deferred')
+      .in('bike_id', ids)
+      .eq('type', 'workshop');
+    if (jErr) { toast.error('Could not check jobs.'); setReadyBusy(false); return; }
+    const open = ((jobRows as any[]) ?? []).filter((j) => !isClosed(j.status));
+    const byBike = new Map<string, { blocking: number; deferred: number }>();
+    for (const j of open) {
+      const cur = byBike.get(j.bike_id) ?? { blocking: 0, deferred: 0 };
+      if (j.deferred) cur.deferred += 1; else cur.blocking += 1;
+      byBike.set(j.bike_id, cur);
+    }
+    setReadyBikes(
+      ((bikes as any[]) ?? [])
+        .filter((b) => { const c = byBike.get(b.id); return c && c.blocking === 0 && c.deferred > 0; })
+        .map((b) => ({ id: b.id, reference: b.reference, make: b.make, model: b.model, deferredCount: byBike.get(b.id)!.deferred })),
+    );
+    setReadyBusy(false);
+  };
+
+  const moveAllToReady = async () => {
+    setReadyBusy(true);
+    const ids = readyBikes.map((b) => b.id);
+    const { error } = await supabase.from('bikes').update({ status: 'ready' } as any).in('id', ids);
+    setReadyBusy(false);
+    if (error) { toast.error(`Could not move the bikes: ${error.message}`); return; }
+    for (const b of readyBikes) {
+      logActivity(b.id, {
+        kind: 'status_change', action: 'ready',
+        summary: `Moved to Ready for Sale with ${b.deferredCount} deferred job${b.deferredCount === 1 ? '' : 's'} (bulk move from Jobs page)`,
+        detail: { from: 'repair', to: 'ready', deferred_jobs: b.deferredCount, bulk: true },
+      });
+    }
+    toast.success(`${ids.length} bike${ids.length === 1 ? '' : 's'} moved to Ready for Sale.`);
+    setReadyOpen(false); setReadyBikes([]);
+    await load();
+  };
 
   const deferrableJobs = useMemo(
     () => jobs.filter((j) => !isClosed(j.status) && !j.deferred),
@@ -237,6 +290,12 @@ export default function JobsPage() {
             {canDefer && deferrableJobs.length > 0 && (
               <Button variant="outline" size="sm" onClick={() => { setDeferAllOpen(true); setDeferAllReason(''); }}>
                 Defer all ({deferrableJobs.length})
+              </Button>
+            )}
+            {canDefer && (
+              <Button variant="outline" size="sm" disabled={readyBusy}
+                onClick={() => { setReadyOpen(true); setReadyBikes([]); findReadyBikes(); }}>
+                Move deferred bikes to Ready
               </Button>
             )}
             <Tabs value={filter} onValueChange={setFilter}>
@@ -360,6 +419,37 @@ export default function JobsPage() {
             <Button variant="outline" onClick={() => setDeferAllOpen(false)}>Cancel</Button>
             <Button disabled={!deferAllReason.trim() || deferAllBusy} onClick={() => deferAll(deferAllReason.trim())}>
               {deferAllBusy ? 'Deferring…' : `Defer ${deferrableJobs.length} job${deferrableJobs.length === 1 ? '' : 's'}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={readyOpen} onOpenChange={(o) => !o && setReadyOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move deferred bikes to Ready for Sale</DialogTitle>
+            <DialogDescription>
+              Bikes in Repair whose only open jobs are deferred can be listed now. The deferred jobs stay open and must be done before each bike is collected or delivered.
+            </DialogDescription>
+          </DialogHeader>
+          {readyBusy && readyBikes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Checking bikes…</p>
+          ) : readyBikes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bikes in Repair have only deferred jobs right now.</p>
+          ) : (
+            <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+              {readyBikes.map((b) => (
+                <li key={b.id} className="flex items-center justify-between gap-2 rounded-[4px] border border-border px-3 py-1.5">
+                  <span className="min-w-0 truncate">{b.reference ? `${b.reference} · ` : ''}{b.make} {b.model}</span>
+                  <Badge variant="outline">{b.deferredCount} deferred</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReadyOpen(false)}>Cancel</Button>
+            <Button disabled={readyBusy || readyBikes.length === 0} onClick={moveAllToReady}>
+              {readyBusy ? 'Working…' : `Move ${readyBikes.length} bike${readyBikes.length === 1 ? '' : 's'} to Ready`}
             </Button>
           </DialogFooter>
         </DialogContent>
