@@ -125,6 +125,34 @@ export default function JobsPage() {
     return Array.from(map.values()).sort((a, b) => urgent(a) - urgent(b));
   }, [visible]);
 
+  const deferrableJobs = useMemo(
+    () => jobs.filter((j) => !isClosed(j.status) && !j.deferred),
+    [jobs],
+  );
+
+  const deferAll = async (reason: string) => {
+    setDeferAllBusy(true);
+    const ids = deferrableJobs.map((j) => j.id);
+    const { error } = await supabase
+      .from('jobs')
+      .update({ deferred: true, deferred_reason: reason } as any)
+      .in('id', ids);
+    setDeferAllBusy(false);
+    if (error) { toast.error(`Could not defer the jobs: ${error.message}`); return; }
+    const byBike = new Map<string, JobRow[]>();
+    for (const j of deferrableJobs) byBike.set(j.bike_id, [...(byBike.get(j.bike_id) ?? []), j]);
+    for (const [bikeId, list] of byBike) {
+      logActivity(bikeId, {
+        kind: 'job', action: 'deferred',
+        summary: `${list.length} job${list.length === 1 ? '' : 's'} deferred until before handover — ${reason}`,
+        detail: { job_ids: list.map((j) => j.id), reason },
+      });
+    }
+    toast.success(`${ids.length} job${ids.length === 1 ? '' : 's'} deferred.`);
+    setDeferAllOpen(false); setDeferAllReason('');
+    await load();
+  };
+
   const setDeferred = async (job: JobRow, deferred: boolean, reason?: string) => {
     if (!deferred && job.bikes && ['ready', 'listed'].includes(job.bikes.status)
       && !window.confirm('This bike is already ready/listed. Un-deferring means this job now needs doing before listing. Continue?')) return;
