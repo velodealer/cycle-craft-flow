@@ -128,23 +128,24 @@ export default function JobsPage() {
     return Array.from(map.values()).sort((a, b) => urgent(a) - urgent(b));
   }, [visible]);
 
+  type ReadyBike = { id: string; reference: string | null; make: string; model: string; deferredCount: number };
+
   // Bikes in repair whose only open workshop jobs are deferred — they can go
   // straight to Ready for Sale while the workshop catches up.
-  const findReadyBikes = async () => {
-    setReadyBusy(true);
+  const queryReadyBikes = async (): Promise<ReadyBike[] | null> => {
     const { data: bikes, error } = await supabase
       .from('bikes')
       .select('id, reference, make, model')
       .eq('status', 'repair');
-    if (error) { toast.error('Could not check bikes.'); setReadyBusy(false); return; }
+    if (error) { toast.error('Could not check bikes.'); return null; }
     const ids = ((bikes as any[]) ?? []).map((b) => b.id);
-    if (!ids.length) { setReadyBikes([]); setReadyBusy(false); return; }
+    if (!ids.length) return [];
     const { data: jobRows, error: jErr } = await supabase
       .from('jobs')
       .select('bike_id, status, deferred')
       .in('bike_id', ids)
       .eq('type', 'workshop');
-    if (jErr) { toast.error('Could not check jobs.'); setReadyBusy(false); return; }
+    if (jErr) { toast.error('Could not check jobs.'); return null; }
     const open = ((jobRows as any[]) ?? []).filter((j) => !isClosed(j.status));
     const byBike = new Map<string, { blocking: number; deferred: number }>();
     for (const j of open) {
@@ -152,28 +153,39 @@ export default function JobsPage() {
       if (j.deferred) cur.deferred += 1; else cur.blocking += 1;
       byBike.set(j.bike_id, cur);
     }
-    setReadyBikes(
-      ((bikes as any[]) ?? [])
-        .filter((b) => { const c = byBike.get(b.id); return c && c.blocking === 0 && c.deferred > 0; })
-        .map((b) => ({ id: b.id, reference: b.reference, make: b.make, model: b.model, deferredCount: byBike.get(b.id)!.deferred })),
-    );
-    setReadyBusy(false);
+    return ((bikes as any[]) ?? [])
+      .filter((b) => { const c = byBike.get(b.id); return c && c.blocking === 0 && c.deferred > 0; })
+      .map((b) => ({ id: b.id, reference: b.reference, make: b.make, model: b.model, deferredCount: byBike.get(b.id)!.deferred }));
   };
 
-  const moveAllToReady = async () => {
-    setReadyBusy(true);
-    const ids = readyBikes.map((b) => b.id);
+  const moveBikesToReady = async (list: ReadyBike[]) => {
+    if (!list.length) return 0;
+    const ids = list.map((b) => b.id);
     const { error } = await supabase.from('bikes').update({ status: 'ready' } as any).in('id', ids);
-    setReadyBusy(false);
-    if (error) { toast.error(`Could not move the bikes: ${error.message}`); return; }
-    for (const b of readyBikes) {
+    if (error) { toast.error(`Could not move the bikes: ${error.message}`); return -1; }
+    for (const b of list) {
       logActivity(b.id, {
         kind: 'status_change', action: 'ready',
         summary: `Moved to Ready for Sale with ${b.deferredCount} deferred job${b.deferredCount === 1 ? '' : 's'} (bulk move from Jobs page)`,
         detail: { from: 'repair', to: 'ready', deferred_jobs: b.deferredCount, bulk: true },
       });
     }
-    toast.success(`${ids.length} bike${ids.length === 1 ? '' : 's'} moved to Ready for Sale.`);
+    return ids.length;
+  };
+
+  const findReadyBikes = async () => {
+    setReadyBusy(true);
+    const list = await queryReadyBikes();
+    if (list) setReadyBikes(list);
+    setReadyBusy(false);
+  };
+
+  const moveAllToReady = async () => {
+    setReadyBusy(true);
+    const moved = await moveBikesToReady(readyBikes);
+    setReadyBusy(false);
+    if (moved < 0) return;
+    toast.success(`${moved} bike${moved === 1 ? '' : 's'} moved to Ready for Sale.`);
     setReadyOpen(false); setReadyBikes([]);
     await load();
   };
@@ -201,7 +213,15 @@ export default function JobsPage() {
         detail: { job_ids: list.map((j) => j.id), reason },
       });
     }
-    toast.success(`${ids.length} job${ids.length === 1 ? '' : 's'} deferred.`);
+    // Automatically advance bikes whose only open jobs are now deferred.
+    const readyList = await queryReadyBikes();
+    let moved = 0;
+    if (readyList && readyList.length) moved = await moveBikesToReady(readyList);
+    toast.success(
+      moved > 0
+        ? `${ids.length} job${ids.length === 1 ? '' : 's'} deferred, and ${moved} bike${moved === 1 ? '' : 's'} moved to Ready for Sale.`
+        : `${ids.length} job${ids.length === 1 ? '' : 's'} deferred.`,
+    );
     setDeferAllOpen(false); setDeferAllReason('');
     await load();
   };
@@ -406,7 +426,7 @@ export default function JobsPage() {
           <DialogHeader>
             <DialogTitle>Defer all open jobs ({deferrableJobs.length})</DialogTitle>
             <DialogDescription>
-              Every open repair job will be deferred. The bikes can be listed without them, but they must be done before each bike is collected or delivered.
+              Every open repair job will be deferred. Bikes whose only open jobs are deferred will automatically move to Ready for Sale. The jobs stay open and must be done before each bike is collected or delivered.
             </DialogDescription>
           </DialogHeader>
           {deferrableJobs.some((j) => !isDeferrable(j, keywords)) && (
