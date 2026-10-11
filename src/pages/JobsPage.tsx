@@ -213,7 +213,15 @@ export default function JobsPage() {
         detail: { job_ids: list.map((j) => j.id), reason },
       });
     }
-    toast.success(`${ids.length} job${ids.length === 1 ? '' : 's'} deferred.`);
+    // Automatically advance bikes whose only open jobs are now deferred.
+    const readyList = await queryReadyBikes();
+    let moved = 0;
+    if (readyList && readyList.length) moved = await moveBikesToReady(readyList);
+    toast.success(
+      moved > 0
+        ? `${ids.length} job${ids.length === 1 ? '' : 's'} deferred, and ${moved} bike${moved === 1 ? '' : 's'} moved to Ready for Sale.`
+        : `${ids.length} job${ids.length === 1 ? '' : 's'} deferred.`,
+    );
     setDeferAllOpen(false); setDeferAllReason('');
     await load();
   };
