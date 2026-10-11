@@ -64,6 +64,9 @@ export default function JobsPage() {
   const [deferAllOpen, setDeferAllOpen] = useState(false);
   const [deferAllReason, setDeferAllReason] = useState('');
   const [deferAllBusy, setDeferAllBusy] = useState(false);
+  const [readyOpen, setReadyOpen] = useState(false);
+  const [readyBusy, setReadyBusy] = useState(false);
+  const [readyBikes, setReadyBikes] = useState<{ id: string; reference: string | null; make: string; model: string; deferredCount: number }[]>([]);
   useEffect(() => { loadSafetyKeywords().then(setKeywords).catch(() => {}); }, []);
 
   const bayName = (id: string | null) => {
