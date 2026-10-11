@@ -62,7 +62,7 @@ serve(async (req) => {
     for (const sec of secrets) { if (safeEqual(await hmacHex(sec), receivedHash)) { valid = true; break; } }
     if (!valid) {
       console.error('Webhook authentication failed: Invalid signature (secrets tried:', secrets.length, ')');
-      await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', error_message: 'Invalid webhook signature' } as any).then(() => {}, () => {});
+      await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', operation: 'webhook', message: 'Invalid webhook signature' } as any).then(() => {}, () => {});
       return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -100,7 +100,7 @@ serve(async (req) => {
     }
     if (!collection) {
       console.error('Collection not found for order:', orderId, 'tracking:', tracking);
-      await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', error_message: `Collection not found (order ${orderId}, tracking ${tracking ?? '-'})` } as any).then(() => {}, () => {});
+      await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', operation: 'webhook', entity_ref: String(orderId), message: `Collection not found (order ${orderId}, tracking ${tracking ?? '-'})` } as any).then(() => {}, () => {});
       return new Response(
         JSON.stringify({ error: 'Collection not found', searched: { order_id: orderId, tracking_number: tracking ?? null } }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
