@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
+import { PasswordFields } from '@/components/PasswordFields';
 
 export default function Auth() {
   const { user, profile, signIn, signUp } = useAuth();
@@ -16,6 +17,8 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetOpen, setResetOpen] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirm, setSignupConfirm] = useState('');
 
   const handleResetPassword = async () => {
     if (!resetEmail) {
