@@ -38,80 +38,32 @@ serve(async (req) => {
     // Get the raw body text (must be raw for signature verification)
     const rawBody = await req.text();
 
-    // Validate webhook secret against stored integration
-    const { data: integration, error: integrationError } = await supabase
-      .from('integrations')
-      .select('webhook_secret, is_active')
-      .eq('name', 'cycle_courier_co')
-      .single();
-
-    if (integrationError || !integration) {
-      console.error('Integration not found:', integrationError);
-      return new Response(
-        JSON.stringify({ error: 'Integration not configured' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    if (!integration.is_active) {
-      console.error('Integration is not active');
-      return new Response(
-        JSON.stringify({ error: 'Integration is not active' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    if (!integration.webhook_secret) {
-      console.error('Webhook secret not configured');
-      return new Response(
-        JSON.stringify({ error: 'Webhook secret not configured' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Compute HMAC SHA-256 signature
+    const receivedHash = (signature.startsWith('sha256=') ? signature.substring(7) : signature).trim().toLowerCase();
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(integration.webhook_secret);
-    const messageData = encoder.encode(rawBody);
-
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-
-    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-    const hashArray = Array.from(new Uint8Array(signatureBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    // Handle both signature formats: with or without 'sha256=' prefix
-    const receivedHash = signature.startsWith('sha256=') 
-      ? signature.substring(7) 
-      : signature;
-
-    // Compare just the hash values
-    if (receivedHash !== hashHex) {
-      console.error('Webhook authentication failed: Invalid signature');
-      console.error('Received hash:', receivedHash);
-      console.error('Expected hash:', hashHex);
-      return new Response(
-        JSON.stringify({ error: 'Invalid webhook signature' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    const hmacHex = async (secret: string) => {
+      const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const buf = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+    const safeEqual = (x: string, y: string) => {
+      if (x.length !== y.length) return false;
+      let r = 0; for (let i = 0; i < x.length; i++) r |= x.charCodeAt(i) ^ y.charCodeAt(i);
+      return r === 0;
+    };
+    // Partner-app secret first (sign-in connections), then legacy per-dealership webhook secrets.
+    const secrets: string[] = [];
+    const partner = Deno.env.get('CYCLE_COURIER_PARTNER_WEBHOOK_SECRET');
+    if (partner) secrets.push(partner);
+    const { data: legacy } = await supabase
+      .from('integrations').select('webhook_secret')
+      .eq('name', 'cycle_courier_co').eq('is_active', true).not('webhook_secret', 'is', null);
+    for (const row of legacy ?? []) if (row.webhook_secret) secrets.push(row.webhook_secret);
+    let valid = false;
+    for (const sec of secrets) { if (safeEqual(await hmacHex(sec), receivedHash)) { valid = true; break; } }
+    if (!valid) {
+      console.error('Webhook authentication failed: Invalid signature (secrets tried:', secrets.length, ')');
+      await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', error_message: 'Invalid webhook signature' } as any).then(() => {}, () => {});
+      return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     console.log('Webhook signature validated successfully');
@@ -133,17 +85,24 @@ serve(async (req) => {
       );
     }
 
-    // Find the collection record by order_id
-    const { data: collection, error: collectionError } = await supabase
-      .from('bike_collections')
-      .select('*')
-      .eq('order_id', orderId)
-      .single();
-
-    if (collectionError || !collection) {
-      console.error('Collection not found for order:', orderId, collectionError);
+    // Match by order ID, then by tracking number (most recent row wins)
+    const tracking = extractTrackingNumber(order);
+    let collection: any = null;
+    {
+      const { data } = await supabase.from('bike_collections').select('*')
+        .eq('order_id', String(orderId)).order('created_at', { ascending: false }).limit(1);
+      collection = data?.[0] ?? null;
+    }
+    if (!collection && tracking) {
+      const { data } = await supabase.from('bike_collections').select('*')
+        .eq('tracking_number', String(tracking)).order('created_at', { ascending: false }).limit(1);
+      collection = data?.[0] ?? null;
+    }
+    if (!collection) {
+      console.error('Collection not found for order:', orderId, 'tracking:', tracking);
+      await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', error_message: `Collection not found (order ${orderId}, tracking ${tracking ?? '-'})` } as any).then(() => {}, () => {});
       return new Response(
-        JSON.stringify({ error: 'Collection not found' }),
+        JSON.stringify({ error: 'Collection not found', searched: { order_id: orderId, tracking_number: tracking ?? null } }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
