@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
+import { PasswordFields } from '@/components/PasswordFields';
 
 export default function Auth() {
   const { user, profile, signIn, signUp } = useAuth();
@@ -16,6 +17,8 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetOpen, setResetOpen] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirm, setSignupConfirm] = useState('');
 
   const handleResetPassword = async () => {
     if (!resetEmail) {
@@ -72,11 +75,19 @@ export default function Auth() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
     const businessName = formData.get('business_name') as string;
 
+    if (signupPassword.length < 6) {
+      toast({ title: 'Password too short', description: 'Use at least 6 characters.', variant: 'destructive' });
+      return;
+    }
+    if (signupPassword !== signupConfirm) {
+      toast({ title: 'Passwords do not match', variant: 'destructive' });
+      return;
+    }
+
     setLoading(true);
-    const { error } = await signUp(email, password, name, businessName || undefined);
+    const { error } = await signUp(email, signupPassword, name, businessName || undefined);
     setLoading(false);
 
     if (error) {
@@ -227,16 +238,15 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    name="password"
-                    type="password"
-                    placeholder="Create a password"
-                    required
-                  />
-                </div>
+                <PasswordFields
+                  password={signupPassword}
+                  confirm={signupConfirm}
+                  onPasswordChange={setSignupPassword}
+                  onConfirmChange={setSignupConfirm}
+                  passwordId="signup-password"
+                  confirmId="signup-confirm"
+                  passwordLabel="Password"
+                />
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
