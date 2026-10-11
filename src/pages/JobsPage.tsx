@@ -61,6 +61,9 @@ export default function JobsPage() {
   const [keywords, setKeywords] = useState<string[]>(DEFAULT_SAFETY_KEYWORDS);
   const [deferJob, setDeferJob] = useState<JobRow | null>(null);
   const [deferReason, setDeferReason] = useState('');
+  const [deferAllOpen, setDeferAllOpen] = useState(false);
+  const [deferAllReason, setDeferAllReason] = useState('');
+  const [deferAllBusy, setDeferAllBusy] = useState(false);
   useEffect(() => { loadSafetyKeywords().then(setKeywords).catch(() => {}); }, []);
 
   const bayName = (id: string | null) => {
