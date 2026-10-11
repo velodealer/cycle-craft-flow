@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.close_detailing_jobs_past_cleaning() FROM PUBLIC, anon, authenticated;
