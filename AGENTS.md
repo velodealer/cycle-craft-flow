@@ -7,3 +7,5 @@
 - eBay payloads keep Brand only in item specifics and never send product.brand, product.mpn, or an MPN item specific: eBay treats product.brand as an incomplete BrandMPN catalogue pair, while MPN is only recommended for category 177831; bikes.mpn stays internal-only.
 - Channel mark-ups, manual CSV toggles and title prefix/suffix live in `app_settings` under key `listing_channels:<business_id>` (app_settings is keyed by `key` only), with identical pricing/affix logic in `src/lib/channelPricing.ts` and `_shared/channel-pricing.ts` so exports and live listings match. `applyTitleAffixes` shortens the title middle (never mid-word) so affixes always survive the length cap (eBay 80, Shopify 255, Squarespace 200).
 - Deferred workshop jobs (`jobs.deferred`, owner/admin only via DB trigger, reason required) never block Ready/Listed but always block handover: create-delivery-order returns 409 unless an owner/admin gives an override reason, logged in bike_activity.
+
+- Detailing jobs auto-close via a `bikes` status trigger once a bike moves past cleaning, so every stage-change path (UI, edge functions, admin override) stays consistent.
