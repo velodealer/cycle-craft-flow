@@ -128,8 +128,6 @@ export default function JobsPage() {
     return Array.from(map.values()).sort((a, b) => urgent(a) - urgent(b));
   }, [visible]);
 
-  // Bikes in repair whose only open workshop jobs are deferred — they can go
-  // straight to Ready for Sale while the workshop catches up.
   type ReadyBike = { id: string; reference: string | null; make: string; model: string; deferredCount: number };
 
   // Bikes in repair whose only open workshop jobs are deferred — they can go
