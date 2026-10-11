@@ -233,15 +233,22 @@ export default function JobsPage() {
         density="bench"
         description="Repair jobs that need doing, grouped by bike."
         actions={
-          <Tabs value={filter} onValueChange={setFilter}>
-            <TabsList>
-              {FILTERS.map((f) => (
-                <TabsTrigger key={f.value} value={f.value}>
-                  {f.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-2">
+            {canDefer && deferrableJobs.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => { setDeferAllOpen(true); setDeferAllReason(''); }}>
+                Defer all ({deferrableJobs.length})
+              </Button>
+            )}
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList>
+                {FILTERS.map((f) => (
+                  <TabsTrigger key={f.value} value={f.value}>
+                    {f.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         }
       />
 
