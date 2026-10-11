@@ -61,6 +61,9 @@ export default function JobsPage() {
   const [keywords, setKeywords] = useState<string[]>(DEFAULT_SAFETY_KEYWORDS);
   const [deferJob, setDeferJob] = useState<JobRow | null>(null);
   const [deferReason, setDeferReason] = useState('');
+  const [deferAllOpen, setDeferAllOpen] = useState(false);
+  const [deferAllReason, setDeferAllReason] = useState('');
+  const [deferAllBusy, setDeferAllBusy] = useState(false);
   useEffect(() => { loadSafetyKeywords().then(setKeywords).catch(() => {}); }, []);
 
   const bayName = (id: string | null) => {
@@ -121,6 +124,34 @@ export default function JobsPage() {
     const urgent = (l: JobRow[]) => (l[0].bikes?.status === 'sold' && l.some((j) => j.deferred && !isClosed(j.status)) ? 0 : 1);
     return Array.from(map.values()).sort((a, b) => urgent(a) - urgent(b));
   }, [visible]);
+
+  const deferrableJobs = useMemo(
+    () => jobs.filter((j) => !isClosed(j.status) && !j.deferred),
+    [jobs],
+  );
+
+  const deferAll = async (reason: string) => {
+    setDeferAllBusy(true);
+    const ids = deferrableJobs.map((j) => j.id);
+    const { error } = await supabase
+      .from('jobs')
+      .update({ deferred: true, deferred_reason: reason } as any)
+      .in('id', ids);
+    setDeferAllBusy(false);
+    if (error) { toast.error(`Could not defer the jobs: ${error.message}`); return; }
+    const byBike = new Map<string, JobRow[]>();
+    for (const j of deferrableJobs) byBike.set(j.bike_id, [...(byBike.get(j.bike_id) ?? []), j]);
+    for (const [bikeId, list] of byBike) {
+      logActivity(bikeId, {
+        kind: 'job', action: 'deferred',
+        summary: `${list.length} job${list.length === 1 ? '' : 's'} deferred until before handover — ${reason}`,
+        detail: { job_ids: list.map((j) => j.id), reason },
+      });
+    }
+    toast.success(`${ids.length} job${ids.length === 1 ? '' : 's'} deferred.`);
+    setDeferAllOpen(false); setDeferAllReason('');
+    await load();
+  };
 
   const setDeferred = async (job: JobRow, deferred: boolean, reason?: string) => {
     if (!deferred && job.bikes && ['ready', 'listed'].includes(job.bikes.status)
@@ -202,15 +233,22 @@ export default function JobsPage() {
         density="bench"
         description="Repair jobs that need doing, grouped by bike."
         actions={
-          <Tabs value={filter} onValueChange={setFilter}>
-            <TabsList>
-              {FILTERS.map((f) => (
-                <TabsTrigger key={f.value} value={f.value}>
-                  {f.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-2">
+            {canDefer && deferrableJobs.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => { setDeferAllOpen(true); setDeferAllReason(''); }}>
+                Defer all ({deferrableJobs.length})
+              </Button>
+            )}
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList>
+                {FILTERS.map((f) => (
+                  <TabsTrigger key={f.value} value={f.value}>
+                    {f.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         }
       />
 
@@ -300,6 +338,29 @@ export default function JobsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeferJob(null)}>Cancel</Button>
             <Button disabled={!deferReason.trim() || busyId === deferJob?.id} onClick={() => deferJob && setDeferred(deferJob, true, deferReason.trim())}>Defer job</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deferAllOpen} onOpenChange={(o) => !o && setDeferAllOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Defer all open jobs ({deferrableJobs.length})</DialogTitle>
+            <DialogDescription>
+              Every open repair job will be deferred. The bikes can be listed without them, but they must be done before each bike is collected or delivered.
+            </DialogDescription>
+          </DialogHeader>
+          {deferrableJobs.some((j) => !isDeferrable(j, keywords)) && (
+            <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+              Some of these jobs look safety-related — confirm they are safe to sell before deferring.
+            </p>
+          )}
+          <Textarea placeholder="Why can these wait? (required)" value={deferAllReason} onChange={(e) => setDeferAllReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeferAllOpen(false)}>Cancel</Button>
+            <Button disabled={!deferAllReason.trim() || deferAllBusy} onClick={() => deferAll(deferAllReason.trim())}>
+              {deferAllBusy ? 'Deferring…' : `Defer ${deferrableJobs.length} job${deferrableJobs.length === 1 ? '' : 's'}`}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
