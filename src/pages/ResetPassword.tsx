@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { PasswordFields } from '@/components/PasswordFields';
 import { useToast } from '@/hooks/use-toast';
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
 
@@ -66,28 +65,16 @@ export default function ResetPassword() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={!ready}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-                disabled={!ready}
-              />
-            </div>
+            <PasswordFields
+              password={password}
+              confirm={confirm}
+              onPasswordChange={setPassword}
+              onConfirmChange={setConfirm}
+              disabled={!ready}
+              passwordId="new-password"
+              confirmId="confirm-password"
+              passwordLabel="New password"
+            />
             <Button type="submit" className="w-full" disabled={!ready || loading}>
               {loading ? 'Updating…' : 'Update password'}
             </Button>
