@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2, Truck } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { MarginTriple } from '@/components/velo/MarginTriple';
@@ -751,9 +751,20 @@ export default function BikeDetailView({
             </Card>
           )}
 
-          {/* Show collection status if bike has collection */}
-          {!inspectionMode && <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} />}
-          {!inspectionMode && <CollectionStatus bikeId={bike.id} direction="outbound" onUpdate={onUpdate} />}
+          {!inspectionMode && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Truck className="h-5 w-5" />
+                  Logistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y">
+                <CollectionStatus bikeId={bike.id} onUpdate={onUpdate} embedded />
+                <CollectionStatus bikeId={bike.id} direction="outbound" onUpdate={onUpdate} embedded />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Intake */}
           {!inspectionMode && <IntakeTask bike={bike} onUpdate={onUpdate} />}
