@@ -426,7 +426,7 @@ export default function JobsPage() {
           <DialogHeader>
             <DialogTitle>Defer all open jobs ({deferrableJobs.length})</DialogTitle>
             <DialogDescription>
-              Every open repair job will be deferred. The bikes can be listed without them, but they must be done before each bike is collected or delivered.
+              Every open repair job will be deferred. Bikes whose only open jobs are deferred will automatically move to Ready for Sale. The jobs stay open and must be done before each bike is collected or delivered.
             </DialogDescription>
           </DialogHeader>
           {deferrableJobs.some((j) => !isDeferrable(j, keywords)) && (
