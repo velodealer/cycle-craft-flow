@@ -423,6 +423,37 @@ export default function JobsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={readyOpen} onOpenChange={(o) => !o && setReadyOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move deferred bikes to Ready for Sale</DialogTitle>
+            <DialogDescription>
+              Bikes in Repair whose only open jobs are deferred can be listed now. The deferred jobs stay open and must be done before each bike is collected or delivered.
+            </DialogDescription>
+          </DialogHeader>
+          {readyBusy && readyBikes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Checking bikes…</p>
+          ) : readyBikes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bikes in Repair have only deferred jobs right now.</p>
+          ) : (
+            <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+              {readyBikes.map((b) => (
+                <li key={b.id} className="flex items-center justify-between gap-2 rounded-[4px] border border-border px-3 py-1.5">
+                  <span className="min-w-0 truncate">{b.reference ? `${b.reference} · ` : ''}{b.make} {b.model}</span>
+                  <Badge variant="outline">{b.deferredCount} deferred</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReadyOpen(false)}>Cancel</Button>
+            <Button disabled={readyBusy || readyBikes.length === 0} onClick={moveAllToReady}>
+              {readyBusy ? 'Working…' : `Move ${readyBikes.length} bike${readyBikes.length === 1 ? '' : 's'} to Ready`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
