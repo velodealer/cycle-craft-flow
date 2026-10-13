@@ -6,8 +6,7 @@ export interface BikeImages {
 const validUrls = (photos?: string[] | null) =>
   (photos ?? []).filter((url): url is string => typeof url === 'string' && /^https?:\/\//.test(url));
 
-/** Dedicated listing images take precedence; existing bike photos remain a safe fallback. */
+/** Only dedicated listing images are sent to marketplaces — intake/workshop photos never are. */
 export function effectiveListingImages(bike: BikeImages): string[] {
-  const listing = validUrls(bike.listing_photos);
-  return listing.length > 0 ? listing : validUrls(bike.photos);
+  return validUrls(bike.listing_photos);
 }

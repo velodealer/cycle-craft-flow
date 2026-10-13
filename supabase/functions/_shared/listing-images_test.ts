@@ -1,7 +1,7 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { effectiveListingImages } from './listing-images.ts';
 
-Deno.test('listing images take precedence and keep their order', () => {
+Deno.test('listing images keep their order', () => {
   assertEquals(
     effectiveListingImages({
       photos: ['https://example.com/workshop.jpg'],
@@ -11,10 +11,14 @@ Deno.test('listing images take precedence and keep their order', () => {
   );
 });
 
-Deno.test('bike photos remain the fallback when no listing images exist', () => {
+Deno.test('intake photos are never used, even when no listing images exist', () => {
   assertEquals(
     effectiveListingImages({ photos: ['https://example.com/bike.jpg'], listing_photos: [] }),
-    ['https://example.com/bike.jpg'],
+    [],
+  );
+  assertEquals(
+    effectiveListingImages({ photos: ['https://example.com/bike.jpg'], listing_photos: null }),
+    [],
   );
 });
 
