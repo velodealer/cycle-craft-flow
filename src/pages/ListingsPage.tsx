@@ -105,6 +105,17 @@ export default function ListingsPage() {
       toast({ title: `Could not export ${label} CSV`, description: e?.message || 'Unknown error', variant: 'destructive' });
     } finally { setExporting(null); }
   };
+  const [manualBusy, setManualBusy] = useState<string | null>(null);
+  const exportShopifyOne = async (bikeId: string) => {
+    setManualBusy(bikeId);
+    try {
+      const res = await buildListingCsv('shopify', [bikeId], channelSettings.markups.shopify, channelSettings.affixes.shopify);
+      downloadCsv(res.csv, res.filename);
+      toast({ title: 'Shopify CSV downloaded', description: res.warnings.length ? res.warnings.join(' · ') : 'Upload it in Shopify Admin → Products → Import.' });
+    } catch (e: any) {
+      toast({ title: 'Could not export Shopify CSV', description: e?.message || 'Unknown error', variant: 'destructive' });
+    } finally { setManualBusy(null); }
+  };
   const openFix = (ids: string[]) => { if (!ids.length) return; setFixSaveOnly(false); setFixQueue(ids); setFixIndex(0); setFixOpen(true); };
 
   useEffect(() => {
@@ -656,7 +667,12 @@ export default function ListingsPage() {
                       )}
                       <div className="flex flex-wrap gap-2">
                         {ebayConnected && renderPlatformButton(bike, 'ebay')}
-                        {shopifyConnected && renderPlatformButton(bike, 'shopify')}
+                        {shopifyConnected ? renderPlatformButton(bike, 'shopify') : (
+                          <Button size="sm" variant="outline" disabled={manualBusy === bike.id} onClick={() => exportShopifyOne(bike.id)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            {manualBusy === bike.id ? 'Preparing…' : 'List on Shopify (manual)'}
+                          </Button>
+                        )}
                         {sqsConnected && renderPlatformButton(bike, 'squarespace')}
                       </div>
                       {liveTargets(bike).length > 0 && (

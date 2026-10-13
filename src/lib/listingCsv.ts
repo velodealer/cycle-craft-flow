@@ -163,7 +163,9 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
     warnings.push('Before uploading, fill in Location (postcode) and pick your postage, returns and payment policies in eBay Seller Hub.');
   }
   const date = new Date().toISOString().slice(0, 10);
-  return { csv: toCsv(rows), filename: `velodealer-${channel}-${date}.csv`, warnings };
+  const single = bikes.length === 1 ? (bikes[0] as any) : null;
+  const ref = single ? String(single.reference || single.id).replace(/[^A-Za-z0-9_-]+/g, '-') : '';
+  return { csv: toCsv(rows), filename: single ? `${channel}-${ref}.csv` : `velodealer-${channel}-${date}.csv`, warnings };
 }
 
 export function downloadCsv(csv: string, filename: string) {
