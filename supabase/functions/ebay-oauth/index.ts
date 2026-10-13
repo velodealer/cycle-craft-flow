@@ -344,6 +344,8 @@ Deno.serve(async (req) => {
         state,
         prompt: 'login',
       });
+      // Diagnostics for eBay-side rejections (client id and RuName appear in the browser URL anyway).
+      console.log(`eBay auth_url: env=${environment} client_id=${clientId} ru_name=${ruName} scopes=${EBAY_SCOPES.split(' ').length}`);
       return json({ url: authUrl });
     }
 
