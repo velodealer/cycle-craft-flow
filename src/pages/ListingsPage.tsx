@@ -22,6 +22,7 @@ import { effectiveListingImages } from '@/lib/listingImages';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Download } from 'lucide-react';
 import { useListingChannels } from '@/hooks/useListingChannels';
+import { useShopifyTemplate } from '@/hooks/useShopifyTemplate';
 import { applyChannelMarkup } from '@/lib/channelPricing';
 import { buildListingCsv, downloadCsv, type CsvChannel } from '@/lib/listingCsv';
 
@@ -88,6 +89,7 @@ export default function ListingsPage() {
   const [fixSaveOnly, setFixSaveOnly] = useState(false);
   const [needsFixing, setNeedsFixing] = useState<string[]>([]);
   const { settings: channelSettings } = useListingChannels();
+  const { template: shopifyTemplate } = useShopifyTemplate();
   const [csvSelected, setCsvSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState<CsvChannel | null>(null);
   const manualAny = channelSettings.manual.ebay || channelSettings.manual.shopify;
@@ -97,7 +99,7 @@ export default function ListingsPage() {
     const label = channel === 'ebay' ? 'eBay' : 'Shopify';
     setExporting(channel);
     try {
-      const res = await buildListingCsv(channel, ids, channelSettings.markups[channel], channelSettings.affixes[channel]);
+      const res = await buildListingCsv(channel, ids, channelSettings.markups[channel], channelSettings.affixes[channel], channel === 'shopify' ? shopifyTemplate : null);
       downloadCsv(res.csv, res.filename);
       toast({ title: `${label} CSV downloaded (${ids.length} bike${ids.length === 1 ? '' : 's'})`,
         description: res.warnings.length ? res.warnings.slice(0, 6).join(' · ') + (res.warnings.length > 6 ? ` · +${res.warnings.length - 6} more` : '') : `Upload it in ${channel === 'ebay' ? 'eBay Seller Hub → Reports → Uploads' : 'Shopify Admin → Products → Import'}.` });
@@ -109,7 +111,7 @@ export default function ListingsPage() {
   const exportShopifyOne = async (bikeId: string) => {
     setManualBusy(bikeId);
     try {
-      const res = await buildListingCsv('shopify', [bikeId], channelSettings.markups.shopify, channelSettings.affixes.shopify);
+      const res = await buildListingCsv('shopify', [bikeId], channelSettings.markups.shopify, channelSettings.affixes.shopify, shopifyTemplate);
       downloadCsv(res.csv, res.filename);
       toast({ title: 'Shopify CSV downloaded', description: res.warnings.length ? res.warnings.join(' · ') : 'Upload it in Shopify Admin → Products → Import.' });
     } catch (e: any) {

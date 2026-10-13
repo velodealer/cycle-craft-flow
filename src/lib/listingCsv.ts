@@ -1,3 +1,4 @@
+import { metafieldOf, resolveSource, type ShopifyCsvTemplate } from '@/lib/shopifyTemplate';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchBikeComponents } from '../../supabase/functions/_shared/bike-components';
 import { renderTemplate } from '@/lib/listingTemplate';
@@ -81,7 +82,7 @@ const plain = (h: string) => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').
 
 export interface CsvResult { csv: string; filename: string; warnings: string[] }
 
-export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], markup: MarkupRule, affix?: TitleAffix): Promise<CsvResult> {
+export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], markup: MarkupRule, affix?: TitleAffix, shopifyTemplate?: ShopifyCsvTemplate | null): Promise<CsvResult> {
   if (!bikeIds.length) throw new Error('Choose at least one bike to export.');
   const [{ data: bikes, error }, { data: tplData }] = await Promise.all([
     supabase.from('bikes').select('*').in('id', bikeIds),
@@ -105,7 +106,38 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
   }
 
   const rows: unknown[][] = [];
-  if (channel === 'shopify') {
+  if (channel === 'shopify' && shopifyTemplate?.headers?.length) {
+    const H = shopifyTemplate.headers;
+    rows.push([...H]);
+    for (const { b, parts } of withParts) {
+      const t = applyTitleAffixes(title(b), affix, 255);
+      const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
+      const imgs = effectiveListingImages(b);
+      const price = applyChannelMarkup(b.asking_price, markup);
+      const html = describe(b, parts);
+      const isNew = /new/i.test(txt(b.condition)) && !/like/i.test(txt(b.condition));
+      const tags = [b.bike_type, b.make, b.frame_material, b.size && `Size ${b.size}`, b.year].map(txt).filter(Boolean).join(', ');
+      const std: Record<string, unknown> = {
+        'handle': handle, 'title': t, 'body (html)': html, 'vendor': b.make, 'product category': 'Sporting Goods > Outdoor Recreation > Cycling > Bicycles',
+        'type': b.bike_type || 'Bicycle', 'tags': tags, 'published': 'TRUE', 'option1 name': 'Size', 'option1 value': txt(b.size) || 'Default Title',
+        'variant sku': b.reference || b.id, 'variant grams': b.weight_kg ? Math.round(Number(b.weight_kg) * 1000) : '', 'variant inventory tracker': 'shopify',
+        'variant inventory qty': 1, 'variant inventory policy': 'deny', 'variant fulfillment service': 'manual', 'variant price': price ?? '',
+        'variant requires shipping': 'TRUE', 'variant taxable': 'TRUE', 'variant weight unit': 'kg', 'image src': imgs[0] ?? '', 'image position': imgs[0] ? 1 : '',
+        'image alt text': imgs[0] ? t : '', 'gift card': 'FALSE', 'seo title': t.slice(0, 70), 'seo description': plain(html).replace(/\s+/g, ' ').slice(0, 320),
+        'google shopping / google product category': 'Sporting Goods > Outdoor Recreation > Cycling > Bicycles', 'google shopping / gender': txt(b.gender) ? (/women|female|lad/i.test(b.gender) ? 'female' : /men|male/i.test(b.gender) ? 'male' : 'unisex') : 'unisex',
+        'google shopping / age group': 'adult', 'google shopping / condition': isNew ? 'new' : 'used', 'google shopping / custom product': 'TRUE',
+        'included / united kingdom': 'TRUE', 'price / united kingdom': price ?? '', 'status': price ? 'active' : 'draft',
+      };
+      rows.push(H.map((h) => {
+        if (metafieldOf(h)) { const v = plain(resolveSource(shopifyTemplate.mapping?.[h] ?? '', b, parts)); return v; }
+        return std[h.toLowerCase()] ?? '';
+      }));
+      imgs.slice(1).forEach((src, i) => rows.push(H.map((h) => {
+        const k = h.toLowerCase();
+        return k === 'handle' ? handle : k === 'image src' ? src : k === 'image position' ? i + 2 : k === 'image alt text' ? t : '';
+      })));
+    }
+  } else if (channel === 'shopify') {
     rows.push(['Handle', 'Title', 'Body (HTML)', 'Vendor', 'Product Category', 'Type', 'Tags', 'Published', 'Option1 Name', 'Option1 Value',
       'Variant SKU', 'Variant Grams', 'Variant Inventory Tracker', 'Variant Inventory Qty', 'Variant Inventory Policy', 'Variant Fulfillment Service',
       'Variant Price', 'Variant Compare At Price', 'Variant Requires Shipping', 'Variant Taxable', 'Image Src', 'Image Position', 'Image Alt Text',

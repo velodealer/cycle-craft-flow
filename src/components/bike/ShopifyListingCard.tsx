@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShoppingBag, ExternalLink, Download } from 'lucide-react';
 import { useListingChannels } from '@/hooks/useListingChannels';
+import { useShopifyTemplate } from '@/hooks/useShopifyTemplate';
 import { buildListingCsv, downloadCsv } from '@/lib/listingCsv';
 import { toast } from 'sonner';
 import {
@@ -31,10 +32,11 @@ export default function ShopifyListingCard({ bikeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const { settings: channelSettings } = useListingChannels();
+  const { template: shopifyTemplate } = useShopifyTemplate();
   const exportManual = async () => {
     setBusy('csv');
     try {
-      const res = await buildListingCsv('shopify', [bikeId], channelSettings.markups.shopify, channelSettings.affixes.shopify);
+      const res = await buildListingCsv('shopify', [bikeId], channelSettings.markups.shopify, channelSettings.affixes.shopify, shopifyTemplate);
       downloadCsv(res.csv, res.filename);
       if (res.warnings.length) toast.warning(res.warnings.join(' · '));
       else toast.success('Shopify CSV downloaded — import it in Shopify Admin → Products → Import.');
