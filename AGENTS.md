@@ -9,3 +9,4 @@
 - Deferred workshop jobs (`jobs.deferred`, owner/admin only via DB trigger, reason required) never block Ready/Listed but always block handover: create-delivery-order returns 409 unless an owner/admin gives an override reason, logged in bike_activity.
 
 - Detailing jobs auto-close via a `bikes` status trigger once a bike moves past cleaning, so every stage-change path (UI, edge functions, admin override) stays consistent.
+- Shopify CSV exports follow the dealer's uploaded header template (app_settings key `shopify_csv_template:<business_id>`, kept separate so saving channel settings never wipes it); standard/SEO/Google columns are always system-filled and only metafield columns are dealer-mapped.
