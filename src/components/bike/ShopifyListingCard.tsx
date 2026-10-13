@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShoppingBag, ExternalLink } from 'lucide-react';
+import { Loader2, ShoppingBag, ExternalLink, Download } from 'lucide-react';
+import { useListingChannels } from '@/hooks/useListingChannels';
+import { buildListingCsv, downloadCsv } from '@/lib/listingCsv';
 import { toast } from 'sonner';
 import {
   getShopifyStatus,
@@ -28,6 +30,20 @@ export default function ShopifyListingCard({ bikeId }: Props) {
   const [listing, setListing] = useState<ShopifyListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const { settings: channelSettings } = useListingChannels();
+  const exportManual = async () => {
+    setBusy('csv');
+    try {
+      const res = await buildListingCsv('shopify', [bikeId], channelSettings.markups.shopify, channelSettings.affixes.shopify);
+      downloadCsv(res.csv, res.filename);
+      if (res.warnings.length) toast.warning(res.warnings.join(' · '));
+      else toast.success('Shopify CSV downloaded — import it in Shopify Admin → Products → Import.');
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -57,7 +73,23 @@ export default function ShopifyListingCard({ bikeId }: Props) {
     }
   };
 
-  if (loading || !connected) return null;
+  if (loading) return null;
+  if (!connected) return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ShoppingBag className="h-4 w-4 text-muted-foreground" /> Shopify
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">Shopify isn't connected — download this file and import it in Shopify admin → Products → Import.</p>
+        <Button variant="outline" size="sm" disabled={busy === 'csv'} onClick={exportManual}>
+          {busy === 'csv' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+          List on Shopify (manual)
+        </Button>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Card>
