@@ -241,10 +241,20 @@ export async function pushBikeToShopify(
   const price = await channelPrice(supabase, businessId, 'shopify', bike.asking_price);
   const titleAffix = (await loadChannelSettings(supabase, businessId)).affixes.shopify;
 
+  // Same smart title as eBay: the dealer's title template, or the bike's custom title.
+  const [{ data: fmtRows, error: fmtErr }, { data: ex }] = await Promise.all([
+    supabase.from('listing_templates').select('title_format, business_id').eq('platform', 'ebay'),
+    supabase.from('ebay_listings').select('title_override').eq('bike_id', bike.id).maybeSingle(),
+  ]);
+  if (fmtErr) throw new Error(`Could not load the listing title format: ${fmtErr.message}`);
+  const fmtRowsList = (fmtRows ?? []) as any[];
+  const titleFormat = (fmtRowsList.find((r) => r.business_id === businessId) ?? fmtRowsList.find((r) => !r.business_id))?.title_format ?? null;
+  const baseTitle = finalEbayTitle(bike, titleFormat, (ex as any)?.title_override);
+
   const { metafields, warnings } = await buildMetafields(supabase, settings, bike.id);
 
   const input: Record<string, unknown> = {
-    title: applyTitleAffixes(bikeTitle(bike), titleAffix, 255),
+    title: applyTitleAffixes(baseTitle, titleAffix, 255),
     descriptionHtml: bikeDescriptionHtml(bike),
     productType: settings.product_type || 'Bicycle',
     vendor: settings.vendor || bike.make,
