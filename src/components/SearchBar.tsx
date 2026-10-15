@@ -110,6 +110,7 @@ export default function SearchBar() {
                   >
                     <BikeThumbnail
                       photos={bike.photos}
+                      listingPhotos={(bike as any).listing_photos}
                       alt={`${bike.make} ${bike.model}`}
                       className="h-12 w-12"
                     />

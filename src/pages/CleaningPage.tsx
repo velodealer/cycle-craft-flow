@@ -128,7 +128,7 @@ export default function CleaningPage() {
                       checked={labelSel.selected.has(bike.id)}
                       onCheckedChange={() => labelSel.toggle(bike.id)}
                     />
-                    <button type="button" className="shrink-0" onClick={() => navigate(`/bikes/${bike.id}`)}><BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-20 w-20" /></button>
+                    <button type="button" className="shrink-0" onClick={() => navigate(`/bikes/${bike.id}`)}><BikeThumbnail photos={bike.photos} listingPhotos={(bike as any).listing_photos} alt={`${bike.make} ${bike.model}`} className="h-20 w-20" /></button>
                     <div className="min-w-0 flex-1 space-y-2">
                       <button type="button" className="block text-left font-semibold leading-tight break-words hover:underline" onClick={() => navigate(`/bikes/${bike.id}`)}>
                         {bike.make} {bike.model}
@@ -191,7 +191,7 @@ export default function CleaningPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex min-w-0 items-center gap-3">
-                          <button type="button" className="shrink-0" onClick={() => navigate(`/bikes/${bike.id}`)}><BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12" /></button>
+                          <button type="button" className="shrink-0" onClick={() => navigate(`/bikes/${bike.id}`)}><BikeThumbnail photos={bike.photos} listingPhotos={(bike as any).listing_photos} alt={`${bike.make} ${bike.model}`} className="h-12 w-12" /></button>
                           <div className="min-w-0">
                           <button type="button" className="block text-left font-medium break-words hover:underline" onClick={() => navigate(`/bikes/${bike.id}`)}>{bike.make} {bike.model}</button>
                           {bike.year && (
@@ -236,6 +236,7 @@ export default function CleaningPage() {
               <div className="flex items-center gap-3">
                 <BikeThumbnail
                   photos={selectedBike.photos}
+                  listingPhotos={(selectedBike as any).listing_photos}
                   alt={`${selectedBike.make} ${selectedBike.model}`}
                   className="h-16 w-16"
                 />

@@ -41,7 +41,7 @@ export default function WorkshopBikeCard({
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-start gap-3">
-          <BikeThumbnail photos={bike.photos} alt={`${bike.make} ${bike.model}`} />
+          <BikeThumbnail photos={bike.photos} listingPhotos={(bike as any).listing_photos} alt={`${bike.make} ${bike.model}`} />
           <div className="min-w-0 flex-1">
             <Link to={`/bikes/${bike.id}`} className="break-words font-semibold hover:underline">
               {bike.make} {bike.model} {bike.year || ''}

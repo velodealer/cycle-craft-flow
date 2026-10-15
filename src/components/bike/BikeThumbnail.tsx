@@ -3,13 +3,14 @@ import { cn } from '@/lib/utils';
 
 interface BikeThumbnailProps {
   photos?: string[] | null;
+  listingPhotos?: string[] | null;
   alt: string;
   className?: string;
 }
 
-/** Shows the main (first) intake photo of a bike, with an icon fallback. */
-export default function BikeThumbnail({ photos, alt, className }: BikeThumbnailProps) {
-  const src = photos && photos.length > 0 ? photos[0] : null;
+/** Shows the main listing image if set, else the first intake photo, else an icon. */
+export default function BikeThumbnail({ photos, listingPhotos, alt, className }: BikeThumbnailProps) {
+  const src = listingPhotos?.[0] || photos?.[0] || null;
 
   return (
     <div

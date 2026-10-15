@@ -38,7 +38,7 @@ export default function IntakePage() {
     setLoading(true);
     const pendingRes = await supabase
       .from('bikes')
-      .select('id, reference, make, model, frame_number, source, status, intake_date, photos, storage_bay_id')
+      .select('id, reference, make, model, frame_number, source, status, intake_date, photos, listing_photos, storage_bay_id')
       .in('status', ['pending_intake', 'intake'])
       .order('intake_date', { ascending: true });
 
@@ -93,6 +93,7 @@ export default function IntakePage() {
                   />
                   <BikeThumbnail
                     photos={bike.photos}
+                    listingPhotos={(bike as any).listing_photos}
                     alt={`${bike.make} ${bike.model}`}
                     className="h-20 w-20 sm:h-16 sm:w-16"
                   />
