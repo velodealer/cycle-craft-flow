@@ -9,6 +9,7 @@ export interface BikeSearchResult {
   year: number | null;
   status: string;
   photos: string[] | null;
+  listing_photos?: string[] | null;
   frame_number: string | null;
   storage_bay_id: string | null;
 }
@@ -54,7 +55,7 @@ export function useBikeSearch(term: string, minLength = 2) {
 
         const { data, error } = await supabase
           .from('bikes')
-          .select('id, reference, make, model, year, status, photos, frame_number, storage_bay_id')
+          .select('id, reference, make, model, year, status, photos, listing_photos, frame_number, storage_bay_id')
           .or(clauses.join(','))
           .order('created_at', { ascending: false })
           .limit(10);
