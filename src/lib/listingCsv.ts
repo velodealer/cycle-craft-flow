@@ -108,7 +108,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
 
   const describe = (b: any, parts: any[]) => {
     const body = (tpl as any)?.body as string | undefined;
-    return body ? renderTemplate(body, b, parts, 'html') : fallbackHtml(b, parts);
+    return body ? renderTemplate(body, b, parts, 'html') : fallbackHtml(b, parts, title(b, titleFormat, titleOverrides));
   };
   for (const { b } of withParts) {
     const miss = [!b.asking_price && 'price', !effectiveListingImages(b).length && 'photos', !txt(b.bike_type) && 'bike type'].filter(Boolean);
@@ -120,7 +120,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
     const H = shopifyTemplate.headers;
     rows.push([...H]);
     for (const { b, parts } of withParts) {
-      const t = applyTitleAffixes(title(b), affix, 255);
+      const t = applyTitleAffixes(title(b, titleFormat, titleOverrides), affix, 255);
       const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
@@ -168,7 +168,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       ...specLabels.map((l) => specs[i].get(l) ?? ''),
     ]));
     for (const { b, parts, extra } of withParts as any[]) {
-      const t = applyTitleAffixes(title(b), affix, 255);
+      const t = applyTitleAffixes(title(b, titleFormat, titleOverrides), affix, 255);
       const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
@@ -196,7 +196,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
     for (const l of specLabels) rows[0].push(`C:${l}`);
     for (const [i, { b, parts }] of withParts.entries()) {
       const price = applyChannelMarkup(b.asking_price, markup);
-      rows.push(['Add', b.reference || b.id, 177831, applyTitleAffixes(title(b), affix, 80), ebayCondition(b.condition), txt(b.condition_notes).slice(0, 1000),
+      rows.push(['Add', b.reference || b.id, 177831, applyTitleAffixes(title(b, titleFormat, titleOverrides), affix, 80), ebayCondition(b.condition), txt(b.condition_notes).slice(0, 1000),
         describe(b, parts), 'FixedPrice', 'GTC', price ?? '', 1, effectiveListingImages(b).slice(0, 24).join('|'), 1, '',
         b.make, b.model, b.bike_type, b.size, b.colour, b.frame_material, sv(b, 'wheel_size', 'wheels_size'), sv(b, 'brake_type', 'brakes'),
         sv(b, 'groupset', 'gear_change_mechanism', 'shifters'), sv(b, 'suspension_type', 'suspension'), sv(b, 'number_of_gears', 'gears', 'speeds'), b.year, b.gender || 'Unisex Adults',
