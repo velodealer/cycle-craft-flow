@@ -4,6 +4,7 @@ import { fetchBikeComponents } from '../../supabase/functions/_shared/bike-compo
 import { renderTemplate } from '@/lib/listingTemplate';
 import { effectiveListingImages } from '@/lib/listingImages';
 import { applyChannelMarkup, applyTitleAffixes, type MarkupRule, type TitleAffix } from '@/lib/channelPricing';
+import { finalEbayTitle } from '@/lib/ebayTitle';
 
 export type CsvChannel = 'ebay' | 'shopify';
 
@@ -18,7 +19,9 @@ export function toCsv(rows: unknown[][]): string {
 }
 
 const txt = (v: unknown) => (v == null ? '' : String(v).trim());
-const title = (b: any) => [b.year, b.make, b.model, b.size ? `Size ${b.size}` : '', b.colour].map(txt).filter(Boolean).join(' ');
+// Same smart title as the live listings: dealer's title template, or the bike's custom title.
+const title = (b: any, fmt: string | null, overrides: Map<string, string>) =>
+  finalEbayTitle(b, fmt, overrides.get(b.id) ?? null);
 const sv = (b: any, ...keys: string[]) => {
   const v = b?.spec_values && typeof b.spec_values === 'object' ? b.spec_values : {};
   for (const k of keys) { const x = v[k]; const t = typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x; if (txt(t)) return txt(t); }
