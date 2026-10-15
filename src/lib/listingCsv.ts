@@ -1,4 +1,4 @@
-import { metafieldOf, resolveSource, type ShopifyCsvTemplate } from '@/lib/shopifyTemplate';
+import { metafieldOf, resolveSource, partText, type ShopifyCsvTemplate } from '@/lib/shopifyTemplate';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchBikeComponents } from '../../supabase/functions/_shared/bike-components';
 import { renderTemplate } from '@/lib/listingTemplate';
