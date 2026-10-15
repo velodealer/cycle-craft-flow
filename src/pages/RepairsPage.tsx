@@ -56,7 +56,7 @@ export default function RepairsPage() {
     if (ids.length) {
       const { data: bikeRows } = await supabase
         .from('bikes')
-        .select('id, reference, make, model, year, size, colour, status, photos, storage_bay_id, purchase_price, purchase_cost, collection_cost, delivery_cost, asking_price, sale_price, finance_scheme, source, profit_share_pct')
+        .select('id, reference, make, model, year, size, colour, status, photos, listing_photos, storage_bay_id, purchase_price, purchase_cost, collection_cost, delivery_cost, asking_price, sale_price, finance_scheme, source, profit_share_pct')
         .in('id', ids);
       const map: Record<string, any> = {};
       (bikeRows || []).forEach((b: any) => { map[b.id] = b; });

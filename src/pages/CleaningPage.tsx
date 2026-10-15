@@ -236,6 +236,7 @@ export default function CleaningPage() {
               <div className="flex items-center gap-3">
                 <BikeThumbnail
                   photos={selectedBike.photos}
+                  listingPhotos={(selectedBike as any).listing_photos}
                   alt={`${selectedBike.make} ${selectedBike.model}`}
                   className="h-16 w-16"
                 />

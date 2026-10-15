@@ -77,7 +77,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
         if (results.some((result) => result.status === 'fulfilled')) {
           const refreshed = await supabase
             .from('bike_collections')
-            .select('*, bikes(make, model, frame_number, photos)')
+            .select('*, bikes(make, model, frame_number, photos, listing_photos)')
             .in('status', statuses)
             .order('created_at', { ascending: false });
           if (!refreshed.error) next = (refreshed.data || []) as Collection[];
@@ -170,6 +170,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
               <div className="flex items-start justify-between gap-3">
                 <BikeThumbnail
                   photos={collection.bikes?.photos}
+                  listingPhotos={(collection.bikes as any)?.listing_photos}
                   alt={collection.bikes ? `${collection.bikes.make} ${collection.bikes.model}` : 'Bike'}
                   className="h-16 w-16"
                 />
@@ -262,6 +263,7 @@ const LogisticsList = ({ status }: LogisticsListProps) => {
                       <div className="flex items-center gap-3">
                         <BikeThumbnail
                           photos={collection.bikes.photos}
+                          listingPhotos={(collection.bikes as any)?.listing_photos}
                           alt={`${collection.bikes.make} ${collection.bikes.model}`}
                           className="h-12 w-12"
                         />
