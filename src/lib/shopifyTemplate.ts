@@ -1,3 +1,6 @@
+import { partName } from '../../supabase/functions/_shared/part-tokens';
+import { specValue } from '@/lib/ebayTitle';
+
 /** Dealer-uploaded Shopify CSV header template: parse, classify, auto-map and resolve values. */
 export interface ShopifyCsvTemplate { headers: string[]; mapping: Record<string, string>; fileName?: string; savedAt?: string }
 
@@ -42,6 +45,16 @@ const SYNONYMS: Record<string, string> = {
   condition: 'field:condition', rrp: 'field:rrp', gender: 'field:gender', 'brand new bike': 'field:is_new', 'parts changed work done': 'field:condition_notes',
   'condition description parts changed work done': 'field:condition_notes', 'handlebar stem': 'part:handlebar', handlebar: 'part:handlebar', saddles: 'part:saddle',
   'shifters and calipers': 'part:shifters', 'brake type': 'spec:brake_type',
+  groupset: 'part:groupset', wheels: 'part:wheelset', wheelset: 'part:wheelset', tyres: 'part:tyres', tires: 'part:tyres',
+  crankset: 'part:crank', crank: 'part:crank',
+};
+
+/** Slots that also cover related slots, plus the spec value used when no part is fitted (same sources as eBay). */
+const SLOT_GROUPS: Record<string, { slots: string[]; spec?: string[] }> = {
+  groupset: { slots: ['groupset'], spec: ['drivetrain.groupset', 'groupset'] },
+  wheelset: { slots: ['wheelset', 'front_wheel', 'rear_wheel', 'wheels'], spec: ['wheels.wheelset', 'wheelset'] },
+  tyres: { slots: ['tyres', 'front_tyre', 'rear_tyre'], spec: ['tyres.front_size', 'tyres.rear_size'] },
+  crank: { slots: ['crank', 'crankset'], spec: ['drivetrain.crankset', 'crankset'] },
 };
 
 /** Best-guess source for a metafield header, given the spec keys and part slots this dealer uses. */
@@ -50,6 +63,7 @@ export function autoMatch(header: string, specKeys: string[], slots: string[]): 
   const cands = [norm(mf.label), norm(mf.key)];
   for (const c of cands) if (SYNONYMS[c]) {
     const v = SYNONYMS[c];
+    if (v.startsWith('part:') && SLOT_GROUPS[v.slice(5)]) return v;
     if (v.startsWith('part:') && !slots.includes(v.slice(5))) { const alt = slots.find((s) => norm(s).includes(norm(v.slice(5)))); if (alt) return `part:${alt}`; continue; }
     return v;
   }
@@ -64,10 +78,18 @@ export function autoMatch(header: string, specKeys: string[], slots: string[]): 
 
 const txt = (v: unknown) => (v === null || v === undefined ? '' : String(v)).trim();
 const specVal = (b: any, k: string) => { const x = b?.spec_values?.[k]; return txt(typeof x === 'object' && x ? (x.value ?? x.label ?? '') : x); };
-const partText = (c: any) => {
-  const brand = txt(c.brand ?? c.component?.brand), model = txt(c.model ?? c.component?.model);
-  return (model.toLowerCase().startsWith(brand.toLowerCase()) && brand ? model : [brand, model].filter(Boolean).join(' ')).trim();
-};
+/** Brand + model + part code, never repeating a word — the same text eBay listings use. */
+export const partText = (c: any) => txt(partName({ ...c, brand: c.brand ?? c.component?.brand, model: c.model ?? c.component?.model, mpn: c.mpn ?? c.component?.mpn }));
+
+/** Fitted part(s) for a slot, falling back to the bike's spec value; never invented. */
+export function slotValue(b: any, parts: any[], slot: string): string {
+  const g = SLOT_GROUPS[slot];
+  const wanted = g ? g.slots : [slot];
+  const names = [...new Set(parts.filter((p) => wanted.includes(txt(p.slot))).map(partText).filter(Boolean))];
+  if (names.length) return names.join(', ');
+  for (const k of g?.spec ?? []) { const v = specValue(b, k); if (v) return v; }
+  return specValue(b, slot);
+}
 
 /** Resolve a mapping source for one bike. */
 export function resolveSource(src: string, b: any, parts: any[]): string {
@@ -75,7 +97,7 @@ export function resolveSource(src: string, b: any, parts: any[]): string {
   const [kind, ...rest] = src.split(':'); const k = rest.join(':');
   if (kind === 'text') return k;
   if (kind === 'spec') return specVal(b, k);
-  if (kind === 'part') return parts.filter((p) => txt(p.slot) === k).map(partText).filter(Boolean).join(', ');
+  if (kind === 'part') return slotValue(b, parts, k);
   if (kind === 'field') {
     if (k === 'is_new') return /new/i.test(txt(b.condition)) && !/like/i.test(txt(b.condition)) ? 'TRUE' : 'FALSE';
     if (k === 'rrp') return txt(b.rrp ?? specVal(b, 'rrp') ?? specVal(b, 'msrp'));

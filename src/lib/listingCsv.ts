@@ -62,10 +62,7 @@ const ebayCondition = (c: unknown) => {
 };
 
 const label = (k: string) => k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-const partText = (c: any) => {
-  const brand = txt(c.brand ?? c.component?.brand), model = txt(c.model ?? c.component?.model);
-  return (model.toLowerCase().startsWith(brand.toLowerCase()) ? model : [brand, model].filter(Boolean).join(' ')).trim();
-};
+
 /** Every spec value and fitted part on a bike, as label -> value. */
 function specColumns(b: any, parts: any[]): Map<string, string> {
   const m = new Map<string, string>();
