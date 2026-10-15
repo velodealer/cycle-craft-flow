@@ -148,11 +148,44 @@ export function ebayInventoryProduct(
   aspects: Record<string, string[]>,
 ): Record<string, unknown> {
   return {
-    title,
-    description: inventorySummary(bike),
+    title: title.slice(0, 80),
+    description: inventorySummary(bike).slice(0, 4000),
     imageUrls: images,
-    aspects,
+    aspects: sanitizeAspects(aspects).aspects,
   };
+}
+
+function shorten(v: string, max: number): string {
+  if (v.length <= max) return v;
+  const cut = v.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut).trim();
+}
+
+/** Keeps item specifics within eBay limits (name 40, value 65, 30 values); eBay returns a 500 otherwise. */
+export function sanitizeAspects(aspects: Record<string, string[]>): { aspects: Record<string, string[]>; notes: string[] } {
+  const out: Record<string, string[]> = {};
+  const notes: string[] = [];
+  for (const [rawName, values] of Object.entries(aspects ?? {})) {
+    const name = String(rawName ?? '').trim();
+    if (!name) continue;
+    if (name.length > 40) { notes.push(`Skipped item specific "${name}" (name too long)`); continue; }
+    const seen = new Set<string>();
+    const clean: string[] = [];
+    for (const raw of values ?? []) {
+      const v = String(raw ?? '').trim();
+      if (!v) continue;
+      const s = shorten(v, 65);
+      if (s !== v) notes.push(`Shortened ${name} to "${s}"`);
+      const k = s.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      clean.push(s);
+    }
+    if (clean.length > 30) { notes.push(`Kept first 30 values of ${name}`); clean.length = 30; }
+    if (clean.length) out[name] = clean;
+  }
+  return { aspects: out, notes };
 }
 
 const CATEGORY_TREE_ID: Record<string, string> = {
@@ -764,7 +797,7 @@ export async function pushBikeToEbay(
   if (blockers.length) throw new Error(blockers.map((b) => b.label).join('. ') + '.');
   const { conn, businessId, sku } = p;
   const s = conn.settings;
-  const warnings = [...p.warnings];
+  const warnings = [...p.warnings, ...sanitizeAspects(p.aspectResult.aspects).notes];
   const locationKey = await ensureLocation(supabase, conn, businessId);
 
   const product = ebayInventoryProduct(bike, p.title, p.images, p.aspectResult.aspects);

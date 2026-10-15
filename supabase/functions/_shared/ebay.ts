@@ -367,7 +367,8 @@ export async function ebayFetch<T = any>(
 ): Promise<T> {
   const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
   const language = MARKETPLACE_LANGUAGE[marketplace] || 'en-GB';
-  const res = await fetch(`${apiBase(conn.environment)}${path}`, {
+  const method = (init.method || 'GET').toUpperCase();
+  const call = () => fetch(`${apiBase(conn.environment)}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${conn.accessToken}`,
@@ -379,8 +380,18 @@ export async function ebayFetch<T = any>(
       ...(init.headers as Record<string, string> | undefined),
     },
   });
+  let res = await call();
+  if (res.status >= 500 && (method === 'GET' || method === 'PUT')) {
+    console.error(`eBay ${res.status} on ${path}, retrying once: ${await res.text()}`);
+    await new Promise((r) => setTimeout(r, 1500));
+    res = await call();
+  }
   const text = await res.text();
   if (!res.ok) {
+    if (res.status >= 500 && text.includes('25001')) {
+      console.error(`eBay request failed [${res.status}] ${path}: ${text}`);
+      throw new Error("eBay had a temporary problem saving this bike. Try again in a few minutes.");
+    }
     console.error(`eBay request failed [${res.status}] ${path}: ${text}`);
     if (isOptInError(text)) throw new Error(POLICY_OPT_IN_MESSAGE);
     throw new Error(`eBay request failed [${res.status}]: ${ebayMessage(text)}`);
