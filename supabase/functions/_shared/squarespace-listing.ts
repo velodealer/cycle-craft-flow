@@ -3,11 +3,19 @@ import { applyTitleAffixes } from './channel-pricing.ts';
 // Builds Squarespace products from VeloDealer bikes and keeps squarespace_listings in step.
 import { accessToken, sqsFetch, businessIdForBike, type Client } from './squarespace.ts';
 import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMap, renderFieldValue, isPublishBlockingError } from './listing-template.ts';
+import { finalEbayTitle } from './ebay-title.ts';
 
 const BIKE_FIELDS = '*';
 
-function title(b: any) {
-  return [b.year, b.make, b.model, b.size ? `(${b.size})` : null].filter(Boolean).join(' ').slice(0, 200);
+/** Same smart title as eBay/Shopify: template format, per-bike custom title, 200-char cap. */
+async function title(supabase: Client, b: any, businessId: string): Promise<string> {
+  const [{ data: fmtRows }, { data: ex }] = await Promise.all([
+    supabase.from('listing_templates').select('title_format, business_id').eq('platform', 'ebay'),
+    supabase.from('ebay_listings').select('title_override').eq('bike_id', b.id).maybeSingle(),
+  ]);
+  const rows = (fmtRows ?? []) as any[];
+  const fmt = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
+  return finalEbayTitle(b, fmt, (ex as any)?.title_override).slice(0, 200);
 }
 
 function slug(b: any) {
@@ -87,7 +95,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
   const currency = settings.currency || 'GBP';
   const price = { currency, value: Number(await channelPrice(supabase, businessId, 'squarespace', bike.asking_price)).toFixed(2) };
   const desc = await description(supabase, bike, businessId);
-  const name = applyTitleAffixes(title(bike), (await loadChannelSettings(supabase, businessId)).affixes.squarespace, 200);
+  const name = applyTitleAffixes(await title(supabase, bike, businessId), (await loadChannelSettings(supabase, businessId)).affixes.squarespace, 200);
   const photos = (bike.photos ?? []).filter((u: unknown) => typeof u === 'string' && /^https?:\/\//.test(u as string));
 
   // Dealer field mapping: tags, categories, SEO and URL slug.
