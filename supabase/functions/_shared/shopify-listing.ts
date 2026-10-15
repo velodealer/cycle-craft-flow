@@ -1,5 +1,6 @@
 import { channelPrice, loadChannelSettings } from './channel-price-loader.ts';
 import { applyTitleAffixes } from './channel-pricing.ts';
+import { finalEbayTitle } from './ebay-title.ts';
 // Builds Shopify products from VeloDealer bikes and keeps the shopify_listings table in step.
 import {
   shopifyGraphql,

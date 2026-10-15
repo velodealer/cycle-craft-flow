@@ -6,8 +6,15 @@ import { loadListingTemplate, renderListingHtml, loadBikeComponents, loadFieldMa
 
 const BIKE_FIELDS = '*';
 
-function title(b: any) {
-  return [b.year, b.make, b.model, b.size ? `(${b.size})` : null].filter(Boolean).join(' ').slice(0, 200);
+/** Same smart title as eBay/Shopify: template format, per-bike custom title, 200-char cap. */
+async function title(supabase: Client, b: any, businessId: string): Promise<string> {
+  const [{ data: fmtRows }, { data: ex }] = await Promise.all([
+    supabase.from('listing_templates').select('title_format, business_id').eq('platform', 'ebay'),
+    supabase.from('ebay_listings').select('title_override').eq('bike_id', b.id).maybeSingle(),
+  ]);
+  const rows = (fmtRows ?? []) as any[];
+  const fmt = (rows.find((r) => r.business_id === businessId) ?? rows.find((r) => !r.business_id))?.title_format ?? null;
+  return finalEbayTitle(b, fmt, (ex as any)?.title_override).slice(0, 200);
 }
 
 function slug(b: any) {
