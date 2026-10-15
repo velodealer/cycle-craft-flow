@@ -797,7 +797,7 @@ export async function pushBikeToEbay(
   if (blockers.length) throw new Error(blockers.map((b) => b.label).join('. ') + '.');
   const { conn, businessId, sku } = p;
   const s = conn.settings;
-  const warnings = [...p.warnings];
+  const warnings = [...p.warnings, ...sanitizeAspects(p.aspectResult.aspects).notes];
   const locationKey = await ensureLocation(supabase, conn, businessId);
 
   const product = ebayInventoryProduct(bike, p.title, p.images, p.aspectResult.aspects);
