@@ -286,18 +286,8 @@ async function refreshAccessToken(env: EbayEnvironment, refreshToken: string) {
       scope: EBAY_SCOPES,
     }),
   });
-  let res = await call();
-  if (res.status >= 500 && (method === 'GET' || method === 'PUT')) {
-    console.error(`eBay ${res.status} on ${path}, retrying once: ${await res.text()}`);
-    await new Promise((r) => setTimeout(r, 1500));
-    res = await call();
-  }
   const text = await res.text();
   if (!res.ok) {
-    if (res.status >= 500 && text.includes('25001')) {
-      console.error(`eBay request failed [${res.status}] ${path}: ${text}`);
-      throw new Error("eBay had a temporary problem saving this bike. Try again in a few minutes.");
-    }
     if (isInvalidGrant(res.status, text)) throw new EbayReauthRequired();
     throw new Error(
       res.status === 400 || res.status === 401
@@ -390,8 +380,18 @@ export async function ebayFetch<T = any>(
       ...(init.headers as Record<string, string> | undefined),
     },
   });
+  let res = await call();
+  if (res.status >= 500 && (method === 'GET' || method === 'PUT')) {
+    console.error(`eBay ${res.status} on ${path}, retrying once: ${await res.text()}`);
+    await new Promise((r) => setTimeout(r, 1500));
+    res = await call();
+  }
   const text = await res.text();
   if (!res.ok) {
+    if (res.status >= 500 && text.includes('25001')) {
+      console.error(`eBay request failed [${res.status}] ${path}: ${text}`);
+      throw new Error("eBay had a temporary problem saving this bike. Try again in a few minutes.");
+    }
     console.error(`eBay request failed [${res.status}] ${path}: ${text}`);
     if (isOptInError(text)) throw new Error(POLICY_OPT_IN_MESSAGE);
     throw new Error(`eBay request failed [${res.status}]: ${ebayMessage(text)}`);
