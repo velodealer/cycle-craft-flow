@@ -43,7 +43,7 @@ function partsHtml(components: any[]): string {
   return rows.length ? `<h3>Specification</h3><ul>${rows.join('')}</ul>` : '';
 }
 
-function fallbackHtml(b: any, components: any[]): string {
+function fallbackHtml(b: any, components: any[], bikeTitle: string): string {
   const facts: [string, unknown][] = [
     ['Make', b.make], ['Model', b.model], ['Year', b.year], ['Size', b.size], ['Colour', b.colour],
     ['Frame material', b.frame_material], ['Bike type', b.bike_type], ['Weight (kg)', b.weight_kg],
@@ -52,7 +52,7 @@ function fallbackHtml(b: any, components: any[]): string {
   ];
   const list = facts.filter(([, v]) => txt(v)).map(([k, v]) => `<li><strong>${k}:</strong> ${txt(v)}</li>`).join('');
   const notes = txt(b.condition_notes) ? `<h3>Condition</h3><p>${txt(b.condition_notes)}</p>` : '';
-  return `<h2>${title(b)}</h2>${txt(b.description) ? `<p>${txt(b.description)}</p>` : ''}<ul>${list}</ul>${partsHtml(components)}${notes}`;
+  return `<h2>${bikeTitle}</h2>${txt(b.description) ? `<p>${txt(b.description)}</p>` : ''}<ul>${list}</ul>${partsHtml(components)}${notes}`;
 }
 
 const ebayCondition = (c: unknown) => {
@@ -87,14 +87,21 @@ export interface CsvResult { csv: string; filename: string; warnings: string[] }
 
 export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], markup: MarkupRule, affix?: TitleAffix, shopifyTemplate?: ShopifyCsvTemplate | null): Promise<CsvResult> {
   if (!bikeIds.length) throw new Error('Choose at least one bike to export.');
-  const [{ data: bikes, error }, { data: tplData }] = await Promise.all([
+  const [{ data: bikes, error }, { data: tplData }, { data: fmtData }, { data: exData }] = await Promise.all([
     supabase.from('bikes').select('*').in('id', bikeIds),
     supabase.from('listing_templates' as any).select('*').eq('platform', channel),
+    supabase.from('listing_templates' as any).select('title_format, business_id').eq('platform', 'ebay'),
+    supabase.from('ebay_listings' as any).select('bike_id, title_override').in('bike_id', bikeIds),
   ]);
   if (error) throw new Error(`Could not load bikes: ${error.message}`);
   const tplRows = ((tplData as any[]) ?? []);
   const bizId = (bikes as any[])?.[0]?.business_id;
   const tpl = tplRows.find((r) => r.business_id === bizId) || tplRows.find((r) => !r.business_id) || null;
+  const fmtRows = ((fmtData as any[]) ?? []);
+  const titleFormat = (fmtRows.find((r) => r.business_id === bizId) ?? fmtRows.find((r) => !r.business_id))?.title_format ?? null;
+  const titleOverrides = new Map<string, string>(
+    ((exData as any[]) ?? []).filter((r) => r.title_override).map((r) => [r.bike_id, r.title_override]),
+  );
   const warnings: string[] = [];
   const list = (bikes as any[]) ?? [];
   const withParts = await Promise.all(list.map(async (b) => ({ b, parts: await fetchBikeComponents(supabase as any, b.id).catch(() => [] as any[]) })));
