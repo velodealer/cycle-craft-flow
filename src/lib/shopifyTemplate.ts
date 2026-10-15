@@ -49,6 +49,8 @@ const SYNONYMS: Record<string, string> = {
   crankset: 'part:crank', crank: 'part:crank',
 };
 
+const SPEC_SECTION_SLOT: Record<string, string> = { wheels: 'wheelset', tyres: 'tyres', drivetrain: 'groupset', groupset: 'groupset' };
+
 /** Slots that also cover related slots, plus the spec value used when no part is fitted (same sources as eBay). */
 const SLOT_GROUPS: Record<string, { slots: string[]; spec?: string[] }> = {
   groupset: { slots: ['groupset'], spec: ['drivetrain.groupset', 'groupset'] },
@@ -96,7 +98,12 @@ export function resolveSource(src: string, b: any, parts: any[]): string {
   if (!src) return '';
   const [kind, ...rest] = src.split(':'); const k = rest.join(':');
   if (kind === 'text') return k;
-  if (kind === 'spec') return specVal(b, k);
+  if (kind === 'spec') {
+    // Whole spec sections (e.g. "wheels") hold no single value: use the matching fitted parts instead.
+    const section = SPEC_SECTION_SLOT[k];
+    if (section) return slotValue(b, parts, section);
+    return specVal(b, k) || specValue(b, k) || (k === 'brake_type' ? specValue(b, 'brakes.type') : '');
+  }
   if (kind === 'part') return slotValue(b, parts, k);
   if (kind === 'field') {
     if (k === 'is_new') return /new/i.test(txt(b.condition)) && !/like/i.test(txt(b.condition)) ? 'TRUE' : 'FALSE';
