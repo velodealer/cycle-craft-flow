@@ -30,6 +30,8 @@ export function metafieldOf(header: string): { label: string; ns: string; key: s
   const m = header.match(MF);
   return m ? { label: header.replace(MF, '').trim(), ns: m[1], key: m[2] } : null;
 }
+/** Shopify's standard category metafields (namespace `shopify`) only accept the store's own list options (metaobjects), never free text. */
+export const isShopifyListField = (header: string) => metafieldOf(header)?.ns === 'shopify';
 
 export const BIKE_FIELDS: { value: string; label: string }[] = [
   ['make', 'Make / brand'], ['model', 'Model'], ['year', 'Year'], ['size', 'Size'], ['colour', 'Colour'],
@@ -41,7 +43,7 @@ export const BIKE_FIELDS: { value: string; label: string }[] = [
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const SYNONYMS: Record<string, string> = {
   brand: 'field:make', make: 'field:make', manufacturer: 'field:make', model: 'field:model', year: 'field:year', size: 'field:size', 'frame size': 'field:size',
-  color: 'field:colour', colour: 'field:colour', 'color pattern': 'field:colour', material: 'field:frame_material', 'frame material': 'field:frame_material',
+  color: 'field:colour', colour: 'field:colour', material: 'field:frame_material', 'frame material': 'field:frame_material',
   condition: 'field:condition', rrp: 'field:rrp', gender: 'field:gender', 'brand new bike': 'field:is_new', 'parts changed work done': 'field:condition_notes',
   'condition description parts changed work done': 'field:condition_notes', 'handlebar stem': 'part:handlebar', handlebar: 'part:handlebar', saddles: 'part:saddle',
   'shifters and calipers': 'part:shifters', 'brake type': 'spec:brake_type',
@@ -61,7 +63,7 @@ const SLOT_GROUPS: Record<string, { slots: string[]; spec?: string[] }> = {
 
 /** Best-guess source for a metafield header, given the spec keys and part slots this dealer uses. */
 export function autoMatch(header: string, specKeys: string[], slots: string[]): string {
-  const mf = metafieldOf(header); if (!mf) return '';
+  const mf = metafieldOf(header); if (!mf || mf.ns === 'shopify') return '';
   const cands = [norm(mf.label), norm(mf.key)];
   for (const c of cands) if (SYNONYMS[c]) {
     const v = SYNONYMS[c];

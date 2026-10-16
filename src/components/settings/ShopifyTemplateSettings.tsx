@@ -8,7 +8,7 @@ import { FileSpreadsheet, Upload, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useShopifyTemplate } from '@/hooks/useShopifyTemplate';
-import { BIKE_FIELDS, autoMatch, metafieldOf, parseHeaderRow, sourceLabel } from '@/lib/shopifyTemplate';
+import { BIKE_FIELDS, autoMatch, isShopifyListField, metafieldOf, parseHeaderRow, sourceLabel } from '@/lib/shopifyTemplate';
 
 const BLANK = '__blank__';
 const TEXT = '__text__';
@@ -107,6 +107,9 @@ export default function ShopifyTemplateSettings() {
                       <p className="truncate text-sm font-medium">{mf.label || mf.key}</p>
                       <p className="truncate text-xs text-muted-foreground">{mf.ns}.{mf.key}</p>
                     </div>
+                    {isShopifyListField(h) ? (
+                      <p className="text-xs text-muted-foreground">Shopify list field — always left blank. Pick its value in Shopify admin.</p>
+                    ) : (
                     <div className="space-y-1">
                       <Select value={isText ? TEXT : v || BLANK} onValueChange={(nv) => setOne(h, nv === BLANK ? '' : nv === TEXT ? 'text:' : nv)}>
                         <SelectTrigger><SelectValue placeholder="Leave blank">{isText ? 'Fixed text' : sourceLabel(v)}</SelectValue></SelectTrigger>
@@ -125,7 +128,9 @@ export default function ShopifyTemplateSettings() {
                         </SelectContent>
                       </Select>
                       {isText && <Input value={v.slice(5)} placeholder="Text for every bike" onChange={(e) => setOne(h, `text:${e.target.value}`)} />}
+                      <p className="text-xs text-muted-foreground">If Shopify says "select a metaobject" for this column, choose Leave blank.</p>
                     </div>
+                    )}
                   </div>
                 );
               })}
