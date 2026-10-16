@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Star, X, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Star, X, Upload, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { uploadPhoto, deletePhoto } from '@/utils/photoUpload';
 
 interface PhotoUploadProps {
@@ -13,6 +14,7 @@ interface PhotoUploadProps {
   uploadLabel?: string;
   emptyLabel?: string;
   allowReorder?: boolean;
+  dropzone?: boolean;
 }
 
 export default function PhotoUpload({
@@ -24,28 +26,36 @@ export default function PhotoUpload({
   uploadLabel = 'Upload photos',
   emptyLabel,
   allowReorder = false,
+  dropzone = false,
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || photos.length >= maxPhotos) return;
-
+  const uploadFiles = async (list: File[]) => {
+    const images = list.filter((f) => f.type.startsWith('image/'));
+    if (!images.length || photos.length >= maxPhotos) return;
+    const room = maxPhotos - photos.length;
+    if (images.length > room) toast.info(`Only ${room} more photo${room === 1 ? '' : 's'} allowed — extra files skipped`);
     setUploading(true);
-    const uploadPromises = Array.from(files).slice(0, maxPhotos - photos.length).map(file =>
-      uploadPhoto(file, bucket, path)
-    );
-
     try {
-      const urls = await Promise.all(uploadPromises);
-      const validUrls = urls.filter(url => url !== null) as string[];
+      const urls = await Promise.all(images.slice(0, room).map((file) => uploadPhoto(file, bucket, path)));
+      const validUrls = urls.filter((url) => url !== null) as string[];
+      if (validUrls.length < Math.min(images.length, room)) toast.error('Some photos failed to upload');
       onChange([...photos, ...validUrls]);
     } catch (error) {
       console.error('Failed to upload photos:', error);
+      toast.error('Upload failed');
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+    await uploadFiles(Array.from(files));
+    event.target.value = '';
   };
 
   const handleRemove = async (photoUrl: string) => {
@@ -67,23 +77,38 @@ export default function PhotoUpload({
     onChange(next);
   };
 
+  const full = photos.length >= maxPhotos;
+
   return (
     <div className="space-y-4">
+      <Input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleUpload}
+        disabled={uploading || full}
+        className="hidden"
+        id={uploadId}
+      />
+      {dropzone ? (
+        <label
+          htmlFor={uploadId}
+          onDragOver={(e) => { e.preventDefault(); if (!full) setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!uploading) void uploadFiles(Array.from(e.dataTransfer.files)); }}
+          className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center text-sm transition-colors ${full || uploading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-primary'} ${dragOver ? 'border-primary bg-primary/5' : 'border-border'}`}
+        >
+          {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6 text-muted-foreground" />}
+          <span className="font-medium">{uploading ? 'Uploading…' : full ? 'Photo limit reached' : 'Drag photos here or click to upload'}</span>
+          <span className="text-xs text-muted-foreground">{photos.length}/{maxPhotos} photos</span>
+        </label>
+      ) : (
       <div className="flex items-center gap-2">
-        <Input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleUpload}
-          disabled={uploading || photos.length >= maxPhotos}
-          className="hidden"
-          id={uploadId}
-        />
         <label htmlFor={uploadId}>
           <Button
             type="button"
             variant="outline"
-            disabled={uploading || photos.length >= maxPhotos}
+            disabled={uploading || full}
             asChild
           >
             <span className="cursor-pointer">
@@ -96,6 +121,7 @@ export default function PhotoUpload({
           {photos.length}/{maxPhotos} photos
         </span>
       </div>
+      )}
 
       {photos.length === 0 && emptyLabel && (
         <p className="text-sm text-muted-foreground">{emptyLabel}</p>
