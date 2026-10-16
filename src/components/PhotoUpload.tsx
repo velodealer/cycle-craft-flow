@@ -30,6 +30,8 @@ export default function PhotoUpload({
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
 
   const uploadFiles = async (list: File[]) => {
