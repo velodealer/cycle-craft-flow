@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Star, X, Upload, Loader2 } from 'lucide-react';
@@ -33,6 +33,9 @@ export default function PhotoUpload({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
+  // Always the latest list, so a finished upload never overwrites changes made meanwhile.
+  const latest = useRef(photos);
+  latest.current = photos;
 
   const uploadFiles = async (list: File[]) => {
     const images = list.filter((f) => f.type.startsWith('image/'));
@@ -44,7 +47,11 @@ export default function PhotoUpload({
       const urls = await Promise.all(images.slice(0, room).map((file) => uploadPhoto(file, bucket, path)));
       const validUrls = urls.filter((url) => url !== null) as string[];
       if (validUrls.length < Math.min(images.length, room)) toast.error('Some photos failed to upload');
-      onChange([...photos, ...validUrls]);
+      if (validUrls.length) {
+        const next = [...latest.current, ...validUrls].slice(0, maxPhotos);
+        latest.current = next;
+        onChange(next);
+      }
     } catch (error) {
       console.error('Failed to upload photos:', error);
       toast.error('Upload failed');

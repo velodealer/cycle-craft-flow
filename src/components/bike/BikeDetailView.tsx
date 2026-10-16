@@ -105,10 +105,10 @@ export default function BikeDetailView({
   const saveListingPhotos = async (next: string[]) => {
     const prev = listingPhotos;
     setListingPhotos(next);
-    const { error } = await supabase.from('bikes').update({ listing_photos: next } as any).eq('id', bike.id);
-    if (error) {
+    const { data, error } = await supabase.from('bikes').update({ listing_photos: next } as any).eq('id', bike.id).select('id');
+    if (error || !data?.length) {
       setListingPhotos(prev);
-      toast({ title: 'Could not save listing images', description: error.message, variant: 'destructive' });
+      toast({ title: 'Could not save listing images', description: error?.message || 'The bike was not updated. Please try again.', variant: 'destructive' });
       return;
     }
     logActivity(bike.id, {
@@ -116,6 +116,7 @@ export default function BikeDetailView({
       summary: `Listing images updated (${prev.length} → ${next.length})`,
       detail: { before: prev.length, after: next.length },
     } as any);
+    onUpdate();
   };
 
   const startEditPrices = () => {
