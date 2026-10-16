@@ -179,7 +179,7 @@ export function buildAspects(bike: any, meta: any[], brand: string): AspectResul
 
   if (!meta.length) {
     // No category data: send the candidates we have, under their usual names.
-    const names = ['Brand', 'Model', 'Bike Type', 'Frame Size', 'Colour', 'Frame Material', 'Wheel Size', 'Number of Gears', 'Brake Type', 'Suspension Type', 'Department', 'Year', 'Handlebar Type', 'Groupset', 'Features'];
+    const names = ['Brand', 'Model', 'Bike Type', 'Frame Size', 'Colour', 'Material', 'Wheel Size', 'Number of Speeds', 'Gear Change Mechanism', 'Shifter Style', 'Brake Type', 'Suspension Type', 'Department', 'Year', 'Handlebar Type', 'Groupset', 'Features'];
     for (const n of names) {
       const hit = cands.find(([re]) => re.test(n.toLowerCase()));
       const val = hit?.[1];
