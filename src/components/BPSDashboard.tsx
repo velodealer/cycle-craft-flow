@@ -8,6 +8,7 @@ import { useBpsDashboardData } from '@/hooks/useBpsDashboardData';
 import { StatBlock } from '@/components/velo/StatBlock';
 import { IntegrationTile } from '@/components/velo/IntegrationTile';
 import { cn } from '@/lib/utils';
+import ShopifyDelistAlert from '@/components/ShopifyDelistAlert';
 
 export default function BPSDashboard() {
   const { data, loading, error, reload } = useBpsDashboardData();
@@ -76,6 +77,7 @@ export default function BPSDashboard() {
 
   return (
     <div className="space-y-8">
+      <ShopifyDelistAlert />
       <div>
         <h1 className="font-display text-[28px] font-bold leading-tight">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground tabular">
