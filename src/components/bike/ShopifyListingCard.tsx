@@ -7,6 +7,9 @@ import { useListingChannels } from '@/hooks/useListingChannels';
 import { useShopifyTemplate } from '@/hooks/useShopifyTemplate';
 import { buildListingCsv, downloadCsv } from '@/lib/listingCsv';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
+import { SHOPIFY_MANUAL_FIELDS, shopifyManualStatus, markShopifyListed, unmarkShopifyListed, markShopifyRemoved, type ShopifyManualState } from '@/lib/shopifyManual';
 import {
   getShopifyStatus,
   getBikeListing,
@@ -47,7 +50,17 @@ export default function ShopifyListingCard({ bikeId }: Props) {
     }
   };
 
+  const [manual, setManual] = useState<ShopifyManualState>({});
+  const loadManual = useCallback(async () => {
+    const { data } = await supabase.from('bikes').select(SHOPIFY_MANUAL_FIELDS).eq('id', bikeId).maybeSingle();
+    setManual((data as any) ?? {});
+  }, [bikeId]);
+  const manualAction = async (fn: () => Promise<void>, msg: string) => {
+    try { await fn(); toast.success(msg); await loadManual(); } catch (e) { toast.error((e as Error).message); }
+  };
+
   const load = useCallback(async () => {
+    void loadManual();
     try {
       const status = await getShopifyStatus();
       setConnected(status.connected);
@@ -57,7 +70,7 @@ export default function ShopifyListingCard({ bikeId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [bikeId]);
+  }, [bikeId, loadManual]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -89,6 +102,23 @@ export default function ShopifyListingCard({ bikeId }: Props) {
           {busy === 'csv' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
           List on Shopify (manual)
         </Button>
+        {(() => {
+          const st = shopifyManualStatus(manual);
+          if (st === 'remove') return (
+            <div className="space-y-2 rounded border border-warning/50 bg-warning/10 p-2 text-sm">
+              <p>This bike has sold — remove it from your Shopify store.</p>
+              <Button size="sm" variant="outline" onClick={() => manualAction(() => markShopifyRemoved(bikeId), 'Marked as removed from Shopify')}>Removed from Shopify</Button>
+            </div>
+          );
+          return (
+            <label className="flex flex-wrap items-center gap-2 text-sm">
+              <Checkbox checked={st === 'listed'} onCheckedChange={(v) => manualAction(() => (v === true ? markShopifyListed([bikeId]) : unmarkShopifyListed(bikeId)), v === true ? 'Ticked as listed on Shopify' : 'Unticked')} />
+              Listed on Shopify
+              {st === 'changed' && <Badge variant="outline" className="border-warning text-warning">Changed — re-export</Badge>}
+              {st === 'listed' && manual.shopify_manual_listed_at && <span className="text-xs text-muted-foreground">since {new Date(manual.shopify_manual_listed_at).toLocaleDateString()}</span>}
+            </label>
+          );
+        })()}
       </CardContent>
     </Card>
   );
