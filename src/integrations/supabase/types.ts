@@ -370,6 +370,10 @@ export type Database = {
           reference: string | null
           sale_price: number | null
           serial_number: string | null
+          shopify_delist_required_at: string | null
+          shopify_manual_listed_at: string | null
+          shopify_manual_listed_by: string | null
+          shopify_manual_stale: boolean
           size: string | null
           sku: string | null
           sold_at: string | null
@@ -442,6 +446,10 @@ export type Database = {
           reference?: string | null
           sale_price?: number | null
           serial_number?: string | null
+          shopify_delist_required_at?: string | null
+          shopify_manual_listed_at?: string | null
+          shopify_manual_listed_by?: string | null
+          shopify_manual_stale?: boolean
           size?: string | null
           sku?: string | null
           sold_at?: string | null
@@ -514,6 +522,10 @@ export type Database = {
           reference?: string | null
           sale_price?: number | null
           serial_number?: string | null
+          shopify_delist_required_at?: string | null
+          shopify_manual_listed_at?: string | null
+          shopify_manual_listed_by?: string | null
+          shopify_manual_stale?: boolean
           size?: string | null
           sku?: string | null
           sold_at?: string | null
