@@ -123,6 +123,8 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
   const { vatRegistered } = useVatRegistered();
   const [photos, setPhotos] = useState<string[]>(bike?.photos || []);
   const [listingPhotos, setListingPhotos] = useState<string[]>(bike?.listing_photos || []);
+  const [photosDirty, setPhotosDirty] = useState(false);
+  const [listingPhotosDirty, setListingPhotosDirty] = useState(false);
   const [uploadPath] = useState(() => `bike-${bike?.id || `new-${crypto.randomUUID()}`}`);
   const [submitting, setSubmitting] = useState(false);
   const { bays: storageBays } = useStorageBays();
@@ -243,8 +245,8 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
             ? { status: 'awaiting_collection' }
             : {}),
         storage_bay_id: bikeFields.storage_bay_id || null,
-        photos,
-        listing_photos: listingPhotos,
+        ...(!bike || photosDirty ? { photos } : {}),
+        ...(!bike || listingPhotosDirty ? { listing_photos: listingPhotos } : {}),
       };
 
 
@@ -1078,7 +1080,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   bucket="bike-photos"
                   path={uploadPath}
                   photos={photos}
-                  onChange={setPhotos}
+                  onChange={(p) => { setPhotos(p); setPhotosDirty(true); }}
                   maxPhotos={10}
                 />
               </div>
@@ -1096,7 +1098,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   bucket="bike-photos"
                   path={`${uploadPath}/listings`}
                   photos={listingPhotos}
-                  onChange={setListingPhotos}
+                  onChange={(p) => { setListingPhotos(p); setListingPhotosDirty(true); }}
                   maxPhotos={24}
                   uploadLabel="Upload listing images"
                   emptyLabel="No separate listing images yet. Existing bike photos will be used until you add some."
