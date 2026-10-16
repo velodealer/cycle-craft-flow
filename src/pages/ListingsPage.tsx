@@ -25,6 +25,7 @@ import { useListingChannels } from '@/hooks/useListingChannels';
 import { useShopifyTemplate } from '@/hooks/useShopifyTemplate';
 import { applyChannelMarkup } from '@/lib/channelPricing';
 import { buildListingCsv, downloadCsv, type CsvChannel } from '@/lib/listingCsv';
+import { SHOPIFY_MANUAL_FIELDS, shopifyManualStatus, needsShopifyExport, markShopifyListed, unmarkShopifyListed, markShopifyRemoved } from '@/lib/shopifyManual';
 
 interface Bike {
   id: string;
@@ -93,6 +94,21 @@ export default function ListingsPage() {
   const [csvSelected, setCsvSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState<CsvChannel | null>(null);
   const manualAny = channelSettings.manual.ebay || channelSettings.manual.shopify;
+  const manualShopify = channelSettings.manual.shopify && !shopifyStatus?.connected;
+  const [shopifyNeedsOnly, setShopifyNeedsOnly] = useState(false);
+  const [toRemove, setToRemove] = useState<{ id: string; reference: string | null; make: string; model: string }[]>([]);
+  const patchBike = (ids: string[], patch: Record<string, unknown>) =>
+    setBikes((prev) => prev.map((b) => (ids.includes(b.id) ? ({ ...b, ...patch } as any) : b)));
+  const setShopifyTick = async (id: string, on: boolean) => {
+    try {
+      if (on) { await markShopifyListed([id]); patchBike([id], { shopify_manual_listed_at: new Date().toISOString(), shopify_manual_stale: false }); }
+      else { await unmarkShopifyListed(id); patchBike([id], { shopify_manual_listed_at: null, shopify_manual_stale: false }); }
+    } catch (e: any) { toast({ title: 'Could not update', description: e?.message, variant: 'destructive' }); }
+  };
+  const confirmRemoved = async (id: string) => {
+    try { await markShopifyRemoved(id); setToRemove((l) => l.filter((b) => b.id !== id)); toast({ title: 'Marked as removed from Shopify' }); }
+    catch (e: any) { toast({ title: 'Could not update', description: e?.message, variant: 'destructive' }); }
+  };
   const toggleCsv = (id: string, on: boolean) => setCsvSelected((prev) => { const n = new Set(prev); if (on) n.add(id); else n.delete(id); return n; });
   const exportCsv = async (channel: CsvChannel) => {
     const ids = csvSelected.size ? Array.from(csvSelected) : filteredBikes.map((b) => b.id);
@@ -101,6 +117,10 @@ export default function ListingsPage() {
     try {
       const res = await buildListingCsv(channel, ids, channelSettings.markups[channel], channelSettings.affixes[channel], channel === 'shopify' ? shopifyTemplate : null);
       downloadCsv(res.csv, res.filename);
+      if (channel === 'shopify' && manualShopify && window.confirm(`Tick ${ids.length === 1 ? 'this bike' : `all ${ids.length} bikes`} as listed on Shopify? Do this once the import has gone through.`)) {
+        await markShopifyListed(ids);
+        patchBike(ids, { shopify_manual_listed_at: new Date().toISOString(), shopify_manual_stale: false });
+      }
       toast({ title: `${label} CSV downloaded (${ids.length} bike${ids.length === 1 ? '' : 's'})`,
         description: res.warnings.length ? res.warnings.slice(0, 6).join(' · ') + (res.warnings.length > 6 ? ` · +${res.warnings.length - 6} more` : '') : `Upload it in ${channel === 'ebay' ? 'eBay Seller Hub → Reports → Uploads' : 'Shopify Admin → Products → Import'}.` });
     } catch (e: any) {
@@ -128,11 +148,13 @@ export default function ListingsPage() {
       try {
         const { data: bikeRows, error } = await supabase
           .from('bikes')
-          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, listing_photos, storage_bay_id, frame_number, serial_number, bike_type, size, colour, frame_material, condition, condition_notes, mpn')
+          .select('id, reference, make, model, year, status, source, asking_price, sale_price, photos, listing_photos, storage_bay_id, frame_number, serial_number, bike_type, size, colour, frame_material, condition, condition_notes, mpn, ' + SHOPIFY_MANUAL_FIELDS)
           .in('status', ['ready', 'listed'])
           .order('created_at', { ascending: false });
         if (error) throw error;
-        const rows = (bikeRows as Bike[]) || [];
+        const rows = ((bikeRows as unknown) as Bike[]) || [];
+        supabase.from('bikes').select('id, reference, make, model').not('shopify_delist_required_at' as any, 'is', null)
+          .then(({ data }) => { if (!cancelled) setToRemove((data as any) ?? []); });
 
         const ids = rows.map((b) => b.id);
         const [ebayRows, shopifyRows, ebaySt, shopifySt, sqsRows, sqsSt] = await Promise.all([
@@ -214,7 +236,7 @@ export default function ListingsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, shopifyNeedsOnly]);
 
   const filteredBikes = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
@@ -229,9 +251,10 @@ export default function ListingsPage() {
         bike.reference?.toLowerCase().includes(term) ||
         bike.id.toLowerCase().includes(term);
       const matchesStatus = statusFilter === 'all' || bike.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesShopify = !shopifyNeedsOnly || needsShopifyExport(bike as any);
+      return matchesSearch && matchesStatus && matchesShopify;
     });
-  }, [bikes, searchTerm, statusFilter]);
+  }, [bikes, searchTerm, statusFilter, shopifyNeedsOnly]);
 
   const pageCount = Math.max(1, Math.ceil(filteredBikes.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -538,6 +561,24 @@ export default function ListingsPage() {
               <Download className="h-4 w-4 mr-2" />{exporting === 'shopify' ? 'Exporting…' : 'Export Shopify CSV'}
             </Button>
           )}
+          {manualShopify && (
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={shopifyNeedsOnly} onCheckedChange={(v) => setShopifyNeedsOnly(v === true)} />
+              Needs Shopify export ({bikes.filter((b) => needsShopifyExport(b as any)).length})
+            </label>
+          )}
+        </div>
+      )}
+
+      {toRemove.length > 0 && (
+        <div className="mb-4 space-y-2 rounded border border-warning/50 bg-warning/10 p-3 text-sm">
+          <p className="font-medium">Remove from Shopify — {toRemove.length} sold bike{toRemove.length === 1 ? ' is' : 's are'} still ticked as listed on Shopify</p>
+          {toRemove.map((b) => (
+            <div key={b.id} className="flex flex-wrap items-center justify-between gap-2">
+              <span>{[b.reference, b.make, b.model].filter(Boolean).join(' ')}</span>
+              <Button size="sm" variant="outline" onClick={() => confirmRemoved(b.id)}>Removed from Shopify</Button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -654,6 +695,16 @@ export default function ListingsPage() {
                         Add to CSV
                       </label>
                     )}
+                    {manualShopify && (() => {
+                      const st = shopifyManualStatus(bike as any);
+                      return (
+                        <label className="flex flex-wrap items-center gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox checked={st === 'listed'} onCheckedChange={(v) => setShopifyTick(bike.id, v === true)} />
+                          Listed on Shopify
+                          {st === 'changed' && <Badge variant="outline" className="border-warning text-warning">Changed — re-export</Badge>}
+                        </label>
+                      );
+                    })()}
 
                     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                       {!allListed && (

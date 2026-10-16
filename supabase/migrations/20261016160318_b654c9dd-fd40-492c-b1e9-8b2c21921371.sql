@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.flag_shopify_manual_related() FROM PUBLIC, anon, authenticated;
