@@ -30,6 +30,8 @@ export default function PhotoUpload({
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
 
   const uploadFiles = async (list: File[]) => {
@@ -130,11 +132,30 @@ export default function PhotoUpload({
       {photos.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {photos.map((photo, index) => (
-            <div key={`${photo}-${index}`} className="group space-y-2">
-              <div className="relative">
+            <div
+              key={`${photo}-${index}`}
+              className={`group space-y-2 ${dragIndex === index ? 'opacity-40' : ''}`}
+              draggable={allowReorder && photos.length > 1}
+              onDragStart={(e) => { setDragIndex(index); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/x-photo-index', String(index)); }}
+              onDragEnd={() => { setDragIndex(null); setDropIndex(null); }}
+              onDragOver={(e) => { if (dragIndex === null) return; e.preventDefault(); e.stopPropagation(); setDropIndex(index); }}
+              onDrop={(e) => {
+                if (dragIndex === null) return;
+                e.preventDefault(); e.stopPropagation();
+                if (dragIndex !== index) {
+                  const next = [...photos];
+                  const [moved] = next.splice(dragIndex, 1);
+                  next.splice(index, 0, moved);
+                  onChange(next);
+                }
+                setDragIndex(null); setDropIndex(null);
+              }}
+            >
+              <div className={`relative rounded-lg ${allowReorder && photos.length > 1 ? 'cursor-grab active:cursor-grabbing' : ''} ${dropIndex === index && dragIndex !== index ? 'ring-2 ring-primary' : ''}`}>
               <img
                 src={photo}
                 alt={`Photo ${index + 1}`}
+                draggable={false}
                 className="w-full h-32 object-cover rounded-lg border"
               />
               {index === 0 && (
