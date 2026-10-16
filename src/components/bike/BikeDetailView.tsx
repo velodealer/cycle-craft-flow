@@ -116,7 +116,6 @@ export default function BikeDetailView({
       summary: `Listing images updated (${prev.length} → ${next.length})`,
       detail: { before: prev.length, after: next.length },
     } as any);
-    onUpdate?.();
   };
 
   const startEditPrices = () => {
