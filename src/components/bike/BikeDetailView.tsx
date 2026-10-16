@@ -99,6 +99,26 @@ export default function BikeDetailView({
   const [savingPrices, setSavingPrices] = useState(false);
   const [priceDraft, setPriceDraft] = useState({ purchase_price: '', asking_price: '', sale_price: '' });
 
+  const [listingPhotos, setListingPhotos] = useState<string[]>(() => effectiveListingImages(bike));
+  useEffect(() => { setListingPhotos(effectiveListingImages(bike)); }, [bike.id, bike.listing_photos]);
+
+  const saveListingPhotos = async (next: string[]) => {
+    const prev = listingPhotos;
+    setListingPhotos(next);
+    const { error } = await supabase.from('bikes').update({ listing_photos: next } as any).eq('id', bike.id);
+    if (error) {
+      setListingPhotos(prev);
+      toast({ title: 'Could not save listing images', description: error.message, variant: 'destructive' });
+      return;
+    }
+    logActivity(bike.id, {
+      kind: 'listing', action: 'listing_photos_updated',
+      summary: `Listing images updated (${prev.length} → ${next.length})`,
+      detail: { before: prev.length, after: next.length },
+    } as any);
+    onUpdate?.();
+  };
+
   const startEditPrices = () => {
     setPriceDraft({
       purchase_price: bike.purchase_price != null ? String(bike.purchase_price) : '',
