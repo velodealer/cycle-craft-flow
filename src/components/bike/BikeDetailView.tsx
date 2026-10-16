@@ -19,6 +19,7 @@ import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
 import BikePhotoGallery from './BikePhotoGallery';
 import { effectiveListingImages } from '@/lib/listingImages';
+import PhotoUpload from '@/components/PhotoUpload';
 import BikeActivity from './BikeActivity';
 import { logActivity, priceChangeSummaries } from '@/lib/activity';
 import AdminStatusSelect from './AdminStatusSelect';
@@ -97,6 +98,25 @@ export default function BikeDetailView({
   const [editingPrices, setEditingPrices] = useState(false);
   const [savingPrices, setSavingPrices] = useState(false);
   const [priceDraft, setPriceDraft] = useState({ purchase_price: '', asking_price: '', sale_price: '' });
+
+  const [listingPhotos, setListingPhotos] = useState<string[]>(() => effectiveListingImages(bike));
+  useEffect(() => { setListingPhotos(effectiveListingImages(bike)); }, [bike.id, bike.listing_photos]);
+
+  const saveListingPhotos = async (next: string[]) => {
+    const prev = listingPhotos;
+    setListingPhotos(next);
+    const { error } = await supabase.from('bikes').update({ listing_photos: next } as any).eq('id', bike.id);
+    if (error) {
+      setListingPhotos(prev);
+      toast({ title: 'Could not save listing images', description: error.message, variant: 'destructive' });
+      return;
+    }
+    logActivity(bike.id, {
+      kind: 'listing', action: 'listing_photos_updated',
+      summary: `Listing images updated (${prev.length} → ${next.length})`,
+      detail: { before: prev.length, after: next.length },
+    } as any);
+  };
 
   const startEditPrices = () => {
     setPriceDraft({
@@ -498,21 +518,24 @@ export default function BikeDetailView({
           <FixListingProblemsDialog bikeId={bike.id} open={showFixDetails} onOpenChange={setShowFixDetails} saveOnly onDone={onUpdate} />
           {!isMechanic && !inspectionMode && (
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-                <div>
-                  <CardTitle className="text-xl">Listing images</CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {bike.listing_photos?.length
-                      ? `${bike.listing_photos.length} separate image${bike.listing_photos.length === 1 ? '' : 's'} · first image is main`
-                      : 'Using the bike photos until separate listing images are uploaded'}
-                  </p>
-                </div>
-                <Button size="sm" variant="outline" onClick={onEdit}>
-                  <Edit className="mr-2 h-4 w-4" /> Manage
-                </Button>
+              <CardHeader>
+                <CardTitle className="text-xl">Listing images</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {listingPhotos.length
+                    ? `${listingPhotos.length} image${listingPhotos.length === 1 ? '' : 's'} · first image is main`
+                    : 'No listing images yet — marketplaces need at least one'}
+                </p>
               </CardHeader>
               <CardContent>
-                <BikePhotoGallery photos={effectiveListingImages(bike)} alt={`${bike.make} ${bike.model} listing`} framed={false} />
+                <PhotoUpload
+                  bucket="bike-photos"
+                  path={`bike-${bike.id}`}
+                  photos={listingPhotos}
+                  onChange={saveListingPhotos}
+                  maxPhotos={24}
+                  allowReorder
+                  dropzone
+                />
                 <p className="mt-3 text-xs text-muted-foreground">eBay receives up to 24 images. Shopify receives the first 10.</p>
               </CardContent>
             </Card>
