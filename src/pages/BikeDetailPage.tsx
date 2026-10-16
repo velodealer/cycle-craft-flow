@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import BikeDetailView from '@/components/bike/BikeDetailView';
@@ -13,17 +13,22 @@ export default function BikeDetailPage() {
   const [bike, setBike] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
+  // Only the first load shows skeletons; later refreshes (e.g. photo changes)
+  // update the page in place so nothing unmounts, flashes or loses scroll.
+  const hasFetched = useRef(false);
 
   const fetchBike = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
+    const initial = !hasFetched.current;
+    if (initial) setLoading(true);
     const { data, error } = await supabase
       .from('bikes')
       .select('*')
       .eq('id', id)
       .maybeSingle();
     if (!error) setBike(data);
-    setLoading(false);
+    hasFetched.current = true;
+    if (initial) setLoading(false);
   }, [id]);
 
   useEffect(() => {
