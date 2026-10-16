@@ -72,7 +72,7 @@ async function syncBusiness(supabase: Client, businessId: string) {
       if (!bikeId) continue;
 
       const { data: bike, error: bErr } = await supabase
-        .from('bikes').select('id, status, make, model, reference').eq('id', bikeId).maybeSingle();
+        .from('bikes').select('id, status, make, model, reference, shopify_manual_listed_at').eq('id', bikeId).maybeSingle();
       if (bErr) console.error(`SALE NOT APPLIED: eBay order ${orderId} recorded but bike ${bikeId} could not be loaded: ${bErr.message}`);
       if (!bike) continue;
       if ((bike as any).status !== 'sold') {
@@ -85,7 +85,15 @@ async function syncBusiness(supabase: Client, businessId: string) {
       }
       const { error: elErr } = await supabase.from('ebay_listings').update({ status: 'sold', quantity: 0, updated_at: new Date().toISOString() }).eq('bike_id', bikeId);
       if (elErr) console.error(`eBay listing ${bikeId} not marked sold: ${elErr.message}`);
-      try { await markBikeSoldOut(supabase, bikeId); } catch (e) { console.warn('Shopify sold-out failed:', (e as Error).message); }
+      let shopifyDone = false;
+      try { shopifyDone = !!(await markBikeSoldOut(supabase, bikeId)); } catch (e) { console.warn('Shopify sold-out failed:', (e as Error).message); }
+      const manualShopify = !!(bike as any).shopify_manual_listed_at;
+      if (manualShopify) {
+        await supabase.from('bikes').update({ shopify_delist_required_at: new Date().toISOString() }).eq('id', bikeId).is('shopify_delist_required_at', null);
+      }
+      const shopifyLine = manualShopify
+        ? '<p><strong>Action needed: remove this bike from your Shopify store.</strong> It was listed there by CSV, so VeloDealer can\'t take it down for you. Once removed, press "Removed from Shopify" on the Listings page.</p>'
+        : shopifyDone ? '<p>Its Shopify listing has been set to zero stock automatically.</p>' : '';
 
       const name = [(bike as any).reference, (bike as any).make, (bike as any).model].filter(Boolean).join(' ');
       await logBikeActivity(bikeId, {
@@ -101,7 +109,8 @@ async function syncBusiness(supabase: Client, businessId: string) {
         `Sold on eBay: ${name}`,
         `<p><strong>${esc(name)}</strong> has sold on eBay for ${esc(currency)} ${esc(total.toFixed(2))}.</p>
          <p>Order ${esc(orderId)} · buyer ${esc(order.buyer?.username ?? 'unknown')}.</p>
-         <p>The bike is now marked sold in VeloDealer and taken off Shopify. Record the sale invoice and mark the order despatched once it has gone.</p>`,
+         ${shopifyLine}
+         <p>The bike is now marked sold in VeloDealer. Record the sale invoice and mark the order despatched once it has gone.</p>`,
         businessId,
       );
     }
