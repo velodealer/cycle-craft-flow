@@ -1,4 +1,4 @@
-import { metafieldOf, resolveSource, partText, type ShopifyCsvTemplate } from '@/lib/shopifyTemplate';
+import { metafieldOf, isShopifyListField, resolveSource, partText, type ShopifyCsvTemplate } from '@/lib/shopifyTemplate';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchBikeComponents } from '../../supabase/functions/_shared/bike-components';
 import { renderTemplate } from '@/lib/listingTemplate';
@@ -136,7 +136,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
         'included / united kingdom': 'TRUE', 'price / united kingdom': price ?? '', 'status': price ? 'active' : 'draft',
       };
       rows.push(H.map((h) => {
-        if (metafieldOf(h)) { const v = plain(resolveSource(shopifyTemplate.mapping?.[h] ?? '', b, parts)); return v; }
+        if (metafieldOf(h)) { if (isShopifyListField(h)) return ''; const v = plain(resolveSource(shopifyTemplate.mapping?.[h] ?? '', b, parts)); return v; }
         return std[h.toLowerCase()] ?? '';
       }));
       imgs.slice(1).forEach((src, i) => rows.push(H.map((h) => {
