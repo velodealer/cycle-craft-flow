@@ -51,6 +51,25 @@ function gears(bike: any): string {
   return String(speed * cfg);
 }
 
+function gearMechanism(bike: any): string {
+  const txt = `${specValue(bike, 'drivetrain.groupset')} ${specValue(bike, 'drivetrain.rear_derailleur')} ${specValue(bike, 'drivetrain.shifters')}`.toLowerCase();
+  if (/rohloff|alfine|nexus|sturmey|internal hub|igh|enviolo|pinion/.test(txt)) return 'Hub Gears';
+  const n = parseInt(gears(bike), 10);
+  if (n === 1 || ['track', 'bmx'].includes(String(bike?.bike_type))) return 'Single Speed';
+  if (n > 1 || /derailleur|shimano|sram|campagnolo|microshift/.test(txt)) return 'Derailleur Gears';
+  return '';
+}
+
+function shifterStyle(bike: any, type: string): string {
+  if (gearMechanism(bike) === 'Single Speed') return '';
+  const txt = `${specValue(bike, 'drivetrain.shifters')}`.toLowerCase();
+  if (/grip|twist/.test(txt)) return 'Grip Shift';
+  if (/bar.?end|tt shifter/.test(txt) || type === 'tt') return 'Bar End';
+  if (['road', 'gravel', 'cyclocross', 'touring'].includes(type)) return 'Drop Bar Shifter';
+  if (['mtb_hardtail', 'mtb_full_sus', 'hybrid', 'city', 'electric', 'folding', 'cargo'].includes(type)) return 'Trigger Shifter';
+  return '';
+}
+
 function department(bike: any): string {
   const g = String(bike?.gender ?? '').toLowerCase();
   if (bike?.bike_type === 'kids') return 'Kids';
@@ -87,9 +106,11 @@ function candidates(bike: any, brand: string): Array<[RegExp, string | string[]]
     [/^(bike )?type$/, ebayBikeTypeValue(bike) ?? ''],
     [/^frame size/, bike?.size || specValue(bike, 'frame.size')],
     [/^colou?r$/, bike?.colour ?? ''],
-    [/^frame material/, frameMaterial],
+    [/^(frame )?material$/, frameMaterial],
     [/^wheel size/, specValue(bike, 'wheels.wheel_size')],
-    [/^(number of gears|gears)/, gears(bike)],
+    [/^(number of (gears|speeds)|gears|speeds)$/, gears(bike)],
+    [/^gear change mechanism$/, gearMechanism(bike)],
+    [/^shifter style$/, shifterStyle(bike, type)],
     [/^brake type/, specValue(bike, 'brakes.type')],
     [/^suspension( type)?$/, suspension(bike)],
     [/^(gender|department)$/, department(bike)],
