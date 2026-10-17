@@ -133,7 +133,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
-      const html = describe(b, parts);
+      const html = describeShopify(b, parts);
       const isNew = /new/i.test(txt(b.condition)) && !/like/i.test(txt(b.condition));
       const tags = [b.bike_type, b.make, b.frame_material, b.size && `Size ${b.size}`, b.year].map(txt).filter(Boolean).join(', ');
       const std: Record<string, unknown> = {
