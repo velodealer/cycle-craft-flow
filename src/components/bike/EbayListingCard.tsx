@@ -31,6 +31,8 @@ import { effectiveListingImages } from '@/lib/listingImages';
 
 interface Props {
   bikeId: string;
+  /** Changes whenever the bike record changes, so photos/title/checks reload. */
+  refreshKey?: string;
 }
 
 const LABELS: Record<string, string> = {
@@ -55,7 +57,7 @@ const LevelIcon = ({ level }: { level: 'ok' | 'warn' | 'block' }) =>
     : level === 'warn' ? <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
       : <XCircle className="h-4 w-4 shrink-0 text-destructive" />;
 
-export default function EbayListingCard({ bikeId }: Props) {
+export default function EbayListingCard({ bikeId, refreshKey }: Props) {
   const [connected, setConnected] = useState(false);
   const [canManage, setCanManage] = useState(false);
   const [listing, setListing] = useState<EbayListing | null>(null);
@@ -130,7 +132,8 @@ export default function EbayListingCard({ bikeId }: Props) {
     }
   }, [bikeId, runPreview]);
 
-  useEffect(() => { load(); }, [load]);
+  // Reload when the bike changes (photos uploaded, details edited) — quietly, no spinner.
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   const options = () => ({
     condition,

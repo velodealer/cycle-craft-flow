@@ -544,7 +544,7 @@ export default function BikeDetailView({
           {!isMechanic && !inspectionMode && <ShopifyListingCard bikeId={bike.id} />}
           {!isMechanic && !inspectionMode && <SquarespaceListingCard bikeId={bike.id} />}
 
-          {!isMechanic && !inspectionMode && <EbayListingCard bikeId={bike.id} />}
+          {!isMechanic && !inspectionMode && <EbayListingCard bikeId={bike.id} refreshKey={`${bike.updated_at ?? ''}|${JSON.stringify(bike.listing_photos ?? [])}|${bike.make ?? ''}|${bike.model ?? ''}|${bike.year ?? ''}|${bike.asking_price ?? ''}`} />}
 
 
           {bike.source === 'investor' && canSeeCosts && !inspectionMode && (
