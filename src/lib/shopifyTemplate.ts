@@ -70,6 +70,7 @@ export function autoMatch(header: string, specKeys: string[], slots: string[]): 
   const cands = [norm(mf.label), norm(mf.key)];
   for (const c of cands) if (SYNONYMS[c]) {
     const v = SYNONYMS[c];
+    if (v.startsWith('spec:ebike.')) { const want = v.slice(5); if (specKeys.includes(want)) return v; const alt = specKeys.find((k) => k.startsWith('ebike.') && norm(k).includes(norm(want.slice(6)).split(' ')[0])); if (alt) return `spec:${alt}`; continue; }
     if (v.startsWith('part:') && SLOT_GROUPS[v.slice(5)]) return v;
     if (v.startsWith('part:') && !slots.includes(v.slice(5))) { const alt = slots.find((s) => norm(s).includes(norm(v.slice(5)))); if (alt) return `part:${alt}`; continue; }
     return v;
