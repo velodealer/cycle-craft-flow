@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  // Pre-bundle the lazily loaded HEIC converter so the preview never serves a stale copy.
+  optimizeDeps: { include: ["heic-to"] },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
