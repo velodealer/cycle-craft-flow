@@ -3337,6 +3337,10 @@ export type Database = {
         Returns: Json
       }
       next_invoice_number: { Args: never; Returns: string }
+      promote_bike_to_listed: {
+        Args: { _bike_id: string; _channel: string }
+        Returns: undefined
+      }
     }
     Enums: {
       bike_source: "owned" | "customer_consignment" | "investor"
