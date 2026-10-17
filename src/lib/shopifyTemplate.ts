@@ -49,6 +49,9 @@ const SYNONYMS: Record<string, string> = {
   'shifters and calipers': 'part:shifters', 'brake type': 'spec:brake_type',
   groupset: 'part:groupset', wheels: 'part:wheelset', wheelset: 'part:wheelset', tyres: 'part:tyres', tires: 'part:tyres',
   crankset: 'part:crank', crank: 'part:crank',
+  motor: 'spec:ebike.motor', 'motor brand': 'spec:ebike.motor_brand', 'motor model': 'spec:ebike.motor_model',
+  battery: 'spec:ebike.battery', 'battery capacity': 'spec:ebike.battery_capacity_wh', 'battery wh': 'spec:ebike.battery_capacity_wh',
+  torque: 'spec:ebike.torque_nm', 'motor torque': 'spec:ebike.torque_nm', range: 'spec:ebike.range_km', display: 'spec:ebike.display',
 };
 
 const SPEC_SECTION_SLOT: Record<string, string> = { wheels: 'wheelset', tyres: 'tyres', drivetrain: 'groupset', groupset: 'groupset' };
@@ -67,6 +70,7 @@ export function autoMatch(header: string, specKeys: string[], slots: string[]): 
   const cands = [norm(mf.label), norm(mf.key)];
   for (const c of cands) if (SYNONYMS[c]) {
     const v = SYNONYMS[c];
+    if (v.startsWith('spec:ebike.')) { const want = v.slice(5); if (specKeys.includes(want)) return v; const alt = specKeys.find((k) => k.startsWith('ebike.') && norm(k).includes(norm(want.slice(6)).split(' ')[0])); if (alt) return `spec:${alt}`; continue; }
     if (v.startsWith('part:') && SLOT_GROUPS[v.slice(5)]) return v;
     if (v.startsWith('part:') && !slots.includes(v.slice(5))) { const alt = slots.find((s) => norm(s).includes(norm(v.slice(5)))); if (alt) return `part:${alt}`; continue; }
     return v;
