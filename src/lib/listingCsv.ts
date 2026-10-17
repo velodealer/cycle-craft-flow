@@ -107,6 +107,18 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
     const body = (tpl as any)?.body as string | undefined;
     return body ? renderTemplate(body, b, parts, 'html') : fallbackHtml(b, parts, title(b, titleFormat, titleOverrides));
   };
+  // Shopify CSV body: the bike's listing description (same source as the live Shopify listing),
+  // plus fitted parts and condition notes. Falls back to the template/fallback when no listing description.
+  const describeShopify = (b: any, parts: any[]) => {
+    const text = txt(b.listing_description);
+    if (text) {
+      const paras = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
+        .map((p) => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`).join('');
+      const notes = txt(b.condition_notes) ? `<h3>Condition</h3><p>${txt(b.condition_notes)}</p>` : '';
+      return `${paras}${partsHtml(parts)}${notes}`;
+    }
+    return describe(b, parts);
+  };
   for (const { b } of withParts) {
     const miss = [!b.asking_price && 'price', !effectiveListingImages(b).length && 'photos', !txt(b.bike_type) && 'bike type'].filter(Boolean);
     if (miss.length) warnings.push(`${b.reference || `${b.make} ${b.model}`}: no ${miss.join(', ')}`);
