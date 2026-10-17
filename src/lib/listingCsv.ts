@@ -182,7 +182,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
       const tags = [b.bike_type, b.make, b.frame_material, b.size && `Size ${b.size}`, b.year].map(txt).filter(Boolean).join(', ');
-      const html = describe(b, parts);
+      const html = describeShopify(b, parts);
       rows.push([handle, t, html, b.make, 'Sporting Goods > Outdoor Recreation > Cycling > Bicycles', b.bike_type || 'Bicycle', tags, 'TRUE',
         'Size', txt(b.size) || 'Default Title', b.reference || b.id, b.weight_kg ? Math.round(Number(b.weight_kg) * 1000) : '', 'shopify', 1, 'deny', 'manual',
         price ?? '', '', 'TRUE', 'TRUE', imgs[0] ?? '', imgs[0] ? 1 : '', imgs[0] ? t : '',
