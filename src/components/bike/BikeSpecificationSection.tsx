@@ -155,6 +155,20 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
       );
     if (error) { toast({ title: 'Could not link component', description: error.message, variant: 'destructive' }); return; }
     setBikeComponents((m) => ({ ...m, [slot.slot]: componentId }));
+    if (slot.slot === 'wheelset' && isSwap) await clearWheelSubparts();
+  };
+
+  // A complete wheelset replaces the old wheel's hubs and spokes.
+  const WHEEL_SUBSLOTS = ['front_hub', 'rear_hub', 'spokes'];
+  const clearWheelSubparts = async () => {
+    if (!bike?.id) return;
+    const present = WHEEL_SUBSLOTS.filter((s) => componentDetails[s]);
+    if (!present.length) return;
+    const { error } = await supabase.from('bike_components').delete().eq('bike_id', bike.id).in('slot', present);
+    if (error) { toast({ title: 'Old hubs/spokes not cleared', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Old hubs and spokes removed', description: 'They belonged to the previous wheelset.' });
+    await reloadComponents();
+    onUpdate();
   };
 
   const renderField = (sectionPath: string, f: FieldDef) => {
@@ -418,7 +432,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
           onOpenChange={(v) => !v && setFitting(null)}
           bikeId={bike.id}
           slot={fitting}
-          onSaved={() => { reloadComponents(); onUpdate(); }}
+          onSaved={async () => { if (fitting.slot === 'wheelset') await clearWheelSubparts(); reloadComponents(); onUpdate(); }}
         />
       )}
       {removing && (
