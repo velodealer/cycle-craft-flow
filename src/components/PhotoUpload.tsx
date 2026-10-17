@@ -38,7 +38,7 @@ export default function PhotoUpload({
   latest.current = photos;
 
   const uploadFiles = async (list: File[]) => {
-    const images = list.filter((f) => f.type.startsWith('image/'));
+    const images = list.filter((f) => f.type.startsWith('image/') || /\.hei[cf]$/i.test(f.name));
     if (!images.length || photos.length >= maxPhotos) return;
     const room = maxPhotos - photos.length;
     if (images.length > room) toast.info(`Only ${room} more photo${room === 1 ? '' : 's'} allowed — extra files skipped`);
@@ -92,7 +92,7 @@ export default function PhotoUpload({
     <div className="space-y-4">
       <Input
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         multiple
         onChange={handleUpload}
         disabled={uploading || full}
