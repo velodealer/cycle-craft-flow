@@ -107,6 +107,18 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
     const body = (tpl as any)?.body as string | undefined;
     return body ? renderTemplate(body, b, parts, 'html') : fallbackHtml(b, parts, title(b, titleFormat, titleOverrides));
   };
+  // Shopify CSV body: the bike's listing description (same source as the live Shopify listing),
+  // plus fitted parts and condition notes. Falls back to the template/fallback when no listing description.
+  const describeShopify = (b: any, parts: any[]) => {
+    const text = txt(b.listing_description);
+    if (text) {
+      const paras = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
+        .map((p) => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`).join('');
+      const notes = txt(b.condition_notes) ? `<h3>Condition</h3><p>${txt(b.condition_notes)}</p>` : '';
+      return `${paras}${partsHtml(parts)}${notes}`;
+    }
+    return describe(b, parts);
+  };
   for (const { b } of withParts) {
     const miss = [!b.asking_price && 'price', !effectiveListingImages(b).length && 'photos', !txt(b.bike_type) && 'bike type'].filter(Boolean);
     if (miss.length) warnings.push(`${b.reference || `${b.make} ${b.model}`}: no ${miss.join(', ')}`);
@@ -121,7 +133,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       const handle = slug(`${t}-${b.reference || b.id.slice(0, 8)}`);
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
-      const html = describe(b, parts);
+      const html = describeShopify(b, parts);
       const isNew = /new/i.test(txt(b.condition)) && !/like/i.test(txt(b.condition));
       const tags = [b.bike_type, b.make, b.frame_material, b.size && `Size ${b.size}`, b.year].map(txt).filter(Boolean).join(', ');
       const std: Record<string, unknown> = {
@@ -170,7 +182,7 @@ export async function buildListingCsv(channel: CsvChannel, bikeIds: string[], ma
       const imgs = effectiveListingImages(b);
       const price = applyChannelMarkup(b.asking_price, markup);
       const tags = [b.bike_type, b.make, b.frame_material, b.size && `Size ${b.size}`, b.year].map(txt).filter(Boolean).join(', ');
-      const html = describe(b, parts);
+      const html = describeShopify(b, parts);
       rows.push([handle, t, html, b.make, 'Sporting Goods > Outdoor Recreation > Cycling > Bicycles', b.bike_type || 'Bicycle', tags, 'TRUE',
         'Size', txt(b.size) || 'Default Title', b.reference || b.id, b.weight_kg ? Math.round(Number(b.weight_kg) * 1000) : '', 'shopify', 1, 'deny', 'manual',
         price ?? '', '', 'TRUE', 'TRUE', imgs[0] ?? '', imgs[0] ? 1 : '', imgs[0] ? t : '',
