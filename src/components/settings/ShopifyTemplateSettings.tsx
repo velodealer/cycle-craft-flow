@@ -34,7 +34,14 @@ export default function ShopifyTemplateSettings() {
         supabase.from('bike_components').select('slot').limit(1000),
       ]);
       const keys = new Set<string>();
-      for (const b of (bikes as any[]) ?? []) if (b.spec_values && typeof b.spec_values === 'object') Object.keys(b.spec_values).forEach((k) => keys.add(k));
+      for (const b of (bikes as any[]) ?? []) if (b.spec_values && typeof b.spec_values === 'object') {
+        for (const [k, v] of Object.entries(b.spec_values as Record<string, unknown>)) {
+          // Grouped sections (e.g. ebike, drivetrain) expose each inner field as section.field.
+          if (v && typeof v === 'object' && !Array.isArray(v) && !('value' in (v as any)) && !('label' in (v as any))) {
+            Object.keys(v as object).forEach((sub) => keys.add(`${k}.${sub}`));
+          } else keys.add(k);
+        }
+      }
       setSpecKeys([...keys].sort());
       setSlots([...new Set(((comps as any[]) ?? []).map((c) => String(c.slot ?? '')).filter(Boolean))].sort());
     })();

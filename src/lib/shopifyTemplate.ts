@@ -49,6 +49,9 @@ const SYNONYMS: Record<string, string> = {
   'shifters and calipers': 'part:shifters', 'brake type': 'spec:brake_type',
   groupset: 'part:groupset', wheels: 'part:wheelset', wheelset: 'part:wheelset', tyres: 'part:tyres', tires: 'part:tyres',
   crankset: 'part:crank', crank: 'part:crank',
+  motor: 'spec:ebike.motor', 'motor brand': 'spec:ebike.motor_brand', 'motor model': 'spec:ebike.motor_model',
+  battery: 'spec:ebike.battery', 'battery capacity': 'spec:ebike.battery_capacity_wh', 'battery wh': 'spec:ebike.battery_capacity_wh',
+  torque: 'spec:ebike.torque_nm', 'motor torque': 'spec:ebike.torque_nm', range: 'spec:ebike.range_km', display: 'spec:ebike.display',
 };
 
 const SPEC_SECTION_SLOT: Record<string, string> = { wheels: 'wheelset', tyres: 'tyres', drivetrain: 'groupset', groupset: 'groupset' };
