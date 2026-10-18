@@ -73,19 +73,8 @@ export function bikeDescriptionHtml(bike: BikeRow): string {
     .filter(Boolean)
     .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
     .join('');
-  const specs: Array<[string, unknown]> = [
-    ['Frame size', bike.size],
-    ['Colour', bike.colour],
-    ['Type', bike.bike_type],
-    ['Frame material', bike.frame_material],
-    ['Condition', bike.condition],
-    ['Included', bike.accessories_included],
-  ];
-  const rows = specs
-    .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '')
-    .map(([k, v]) => `<li><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</li>`)
-    .join('');
-  return `${paragraphs}${rows ? `<ul>${rows}</ul>` : ''}`;
+  // Shopify body = the bike's listing description only (no spec/condition list).
+  return paragraphs;
 }
 
 export function bikeTags(bike: BikeRow): string[] {
