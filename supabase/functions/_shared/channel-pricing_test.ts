@@ -8,3 +8,7 @@ Deno.test('rounds up to 5/10/.99', () => {
   assertEquals(applyChannelMarkup(1999, { pct: 10, round: '99' }), 2198.99);
 });
 Deno.test('missing price stays missing', () => assertEquals(applyChannelMarkup(null, { pct: 10, round: 'none' }), null));
+Deno.test('ends in 9', () => {
+  assertEquals(applyChannelMarkup(2000, { pct: 17, round: '9' }), 2339);
+  assertEquals(applyChannelMarkup(2341, { pct: 0.0000001, round: '9' }), 2349);
+});

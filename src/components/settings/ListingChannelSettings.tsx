@@ -71,6 +71,7 @@ export default function ListingChannelSettings() {
                     <SelectItem value="5">Round up to £5</SelectItem>
                     <SelectItem value="10">Round up to £10</SelectItem>
                     <SelectItem value="99">End in .99</SelectItem>
+                    <SelectItem value="9">End in 9 (e.g. £2,339)</SelectItem>
                   </SelectContent>
                 </Select>
                 <span className="col-span-3 text-xs text-muted-foreground sm:col-span-1">£2,000 → £{applyChannelMarkup(2000, r)?.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
