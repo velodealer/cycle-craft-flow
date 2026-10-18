@@ -182,7 +182,7 @@ export function generateDescription({ bike, parts = [], seed = 0 }: DescriptionI
   const p4: string[] = [];
   const facts: string[] = [];
   if (weight) facts.push(`at just ${weight}kg`);
-  if (size) facts.push(`in a ${size} frame`);
+  if (size) facts.push(`in a size ${size} frame`);
   if (colour) facts.push(`finished in ${colour}`);
   if (facts.length) p4.push(`${facts.join(', ').replace(/^./, (c) => c.toUpperCase())}, this ${bank.kind} is ready for riders ${bank.pursuits}.`);
   else p4.push(`Whether you're ${bank.pursuits}, this ${bank.kind} delivers.`);
