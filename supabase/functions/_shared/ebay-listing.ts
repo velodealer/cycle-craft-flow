@@ -688,6 +688,12 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
     warnings.push('Used bikes sell better and get fewer disputes with condition notes.');
   } else add('condition_notes', 'ok', 'Condition notes added');
 
+  // Bike description (same text sent as the Shopify Body).
+  const listingDesc = String(bike.listing_description ?? '').trim();
+  if (!listingDesc) add('listing_description', 'warn', 'No bike description', 'This is the description sent to eBay and as the Shopify Body. Add one so buyers see more than the spec.');
+  else if (listingDesc.length < 150) add('listing_description', 'warn', `Bike description is short (${listingDesc.length} characters)`, 'Aim for at least a few sentences.');
+  else add('listing_description', 'ok', `Bike description added (${listingDesc.length} characters)`);
+
   // Item specifics
   const meta = await categoryAspects(supabase, conn, categoryId);
   const brand = normaliseBrand(meta, bike.make);

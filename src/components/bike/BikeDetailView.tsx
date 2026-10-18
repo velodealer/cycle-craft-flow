@@ -521,7 +521,7 @@ export default function BikeDetailView({
           })()}
           <FixListingProblemsDialog bikeId={bike.id} open={showFixDetails} onOpenChange={setShowFixDetails} saveOnly onDone={onUpdate} />
           {!isMechanic && !inspectionMode && (
-            <Card>
+            <Card id="listing-images-section">
               <CardHeader>
                 <CardTitle className="text-xl">Listing images</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
