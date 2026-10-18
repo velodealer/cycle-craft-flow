@@ -158,6 +158,22 @@ export default function PhotoUpload({
       </div>
       )}
 
+      {allowRemoveAll && photos.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploading || removingAll}
+            onClick={handleRemoveAll}
+            className="text-destructive hover:text-destructive"
+          >
+            {removingAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+            {removingAll ? 'Removing…' : `Remove all (${photos.length})`}
+          </Button>
+        </div>
+      )}
+
       {photos.length === 0 && emptyLabel && (
         <p className="text-sm text-muted-foreground">{emptyLabel}</p>
       )}

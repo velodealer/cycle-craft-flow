@@ -539,6 +539,7 @@ export default function BikeDetailView({
                   maxPhotos={24}
                   allowReorder
                   dropzone
+                  allowRemoveAll
                 />
                 <p className="mt-3 text-xs text-muted-foreground">eBay receives up to 24 images. Shopify receives the first 10.</p>
               </CardContent>
