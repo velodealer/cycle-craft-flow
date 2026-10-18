@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Star, X, Upload, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Star, X, Upload, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadPhoto, deletePhoto } from '@/utils/photoUpload';
 
@@ -15,6 +15,7 @@ interface PhotoUploadProps {
   emptyLabel?: string;
   allowReorder?: boolean;
   dropzone?: boolean;
+  allowRemoveAll?: boolean;
 }
 
 export default function PhotoUpload({
@@ -27,11 +28,13 @@ export default function PhotoUpload({
   emptyLabel,
   allowReorder = false,
   dropzone = false,
+  allowRemoveAll = false,
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [removingAll, setRemovingAll] = useState(false);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
   // Always the latest list, so a finished upload never overwrites changes made meanwhile.
   const latest = useRef(photos);
@@ -75,6 +78,29 @@ export default function PhotoUpload({
     const success = await deletePhoto(bucket, filePath);
     if (success) {
       onChange(photos.filter(url => url !== photoUrl));
+    }
+  };
+
+  const handleRemoveAll = async () => {
+    const list = latest.current;
+    if (!list.length || removingAll) return;
+    if (!window.confirm(`Remove all ${list.length} photo${list.length === 1 ? '' : 's'}? They will also be deleted from storage.`)) return;
+    setRemovingAll(true);
+    try {
+      const results = await Promise.all(list.map(async (photoUrl) => {
+        const fileName = photoUrl.split('/').pop();
+        if (!fileName) return false;
+        return deletePhoto(bucket, `${path}/${fileName}`);
+      }));
+      const failed = results.filter((ok) => !ok).length;
+      if (failed) toast.error(`${failed} photo${failed === 1 ? '' : 's'} could not be deleted from storage`);
+      latest.current = [];
+      onChange([]);
+    } catch (error) {
+      console.error('Failed to remove photos:', error);
+      toast.error('Could not remove photos');
+    } finally {
+      setRemovingAll(false);
     }
   };
 
@@ -130,6 +156,22 @@ export default function PhotoUpload({
           {photos.length}/{maxPhotos} photos
         </span>
       </div>
+      )}
+
+      {allowRemoveAll && photos.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploading || removingAll}
+            onClick={handleRemoveAll}
+            className="text-destructive hover:text-destructive"
+          >
+            {removingAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+            {removingAll ? 'Removing…' : `Remove all (${photos.length})`}
+          </Button>
+        </div>
       )}
 
       {photos.length === 0 && emptyLabel && (
