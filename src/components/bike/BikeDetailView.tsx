@@ -426,7 +426,10 @@ export default function BikeDetailView({
         <div className="lg:col-span-2 space-y-6">
           {/* Photos */}
           {showPhotos && (
-            <BikePhotoGallery photos={bike.photos} alt={`${bike.make} ${bike.model}`} />
+            <BikePhotoGallery
+              photos={Array.from(new Set([...(bike.listing_photos ?? []), ...(bike.photos ?? [])]))}
+              alt={`${bike.make} ${bike.model}`}
+            />
           )}
 
 
