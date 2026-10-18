@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Tag, ExternalLink, Search, Save, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Truck } from 'lucide-react';
+import { Loader2, Tag, ExternalLink, Search, Save, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Truck, Pencil } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+
+const EDITABLE = new Set(['price', 'type', 'condition_notes', 'listing_description', 'title', 'category', 'condition', 'photos', 'specifics', 'specifics_required', 'specifics_unmapped', 'policies', 'location']);
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -83,6 +86,8 @@ export default function EbayListingCard({ bikeId, refreshKey }: Props) {
 
   const [orders, setOrders] = useState<EbayOrder[]>([]);
   const [fixOpen, setFixOpen] = useState(false);
+  const [editing, setEditing] = useState<{ key: string; value: string } | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
   const [despatch, setDespatch] = useState<{ id: string; carrier: string; tracking: string } | null>(null);
 
   const runPreview = useCallback(async () => {
@@ -185,6 +190,46 @@ export default function EbayListingCard({ bikeId, refreshKey }: Props) {
     setDespatch({ id: order.id, carrier: tracking ? 'Other' : '', tracking });
   };
 
+  const FIELD: Record<string, string> = { price: 'asking_price', type: 'bike_type', condition_notes: 'condition_notes', listing_description: 'listing_description' };
+
+  const openEdit = async (key: string) => {
+    if (FIELD[key]) {
+      if (editing?.key === key) { setEditing(null); return; }
+      const { data } = await supabase.from('bikes').select(FIELD[key]).eq('id', bikeId).maybeSingle();
+      const v = (data as any)?.[FIELD[key]];
+      setEditing({ key, value: v == null ? '' : String(v) });
+      return;
+    }
+    const scrollTo = (id: string) => {
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el instanceof HTMLInputElement) setTimeout(() => el.focus(), 300);
+    };
+    if (key === 'title') scrollTo(`ebay-title-${bikeId}`);
+    else if (key === 'category' || key === 'condition') scrollTo(`ebay-cat-${bikeId}`);
+    else if (key === 'photos') scrollTo('listing-images-section');
+    else if (key.startsWith('specifics')) setFixOpen(true);
+    else if (key === 'policies' || key === 'location') window.open('/settings', '_blank');
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const col = FIELD[editing.key];
+    let value: unknown = editing.value.trim() || null;
+    if (col === 'asking_price') {
+      const n = Number(editing.value);
+      if (!editing.value.trim() || !Number.isFinite(n) || n <= 0) { toast.error('Enter a price above £0'); return; }
+      value = n;
+    }
+    setSavingEdit(true);
+    const { error, count } = await supabase.from('bikes').update({ [col]: value } as any, { count: 'exact' }).eq('id', bikeId);
+    setSavingEdit(false);
+    if (error || count === 0) { toast.error(error?.message || "Couldn't save — you may not have permission"); return; }
+    toast.success('Saved');
+    setEditing(null);
+    void runPreview();
+  };
+
   if (loading || !connected) return null;
 
   const shownTitle = titleOverride.trim() || preview?.built_title || '';
@@ -217,6 +262,7 @@ export default function EbayListingCard({ bikeId, refreshKey }: Props) {
           </div>
           <p className="rounded border bg-muted/40 px-2 py-1.5 text-sm">{shownTitle || '—'}</p>
           <Input
+            id={`ebay-title-${bikeId}`}
             value={titleOverride}
             maxLength={EBAY_TITLE_MAX}
             onChange={(e) => setTitleOverride(e.target.value)}
@@ -318,18 +364,45 @@ export default function EbayListingCard({ bikeId, refreshKey }: Props) {
             </Button>
           </div>
           {previewError && <p className="text-xs text-destructive">{previewError}</p>}
-          {preview?.checklist.map((c) => (
-            <div key={c.key} className="flex gap-2 text-sm">
-              <LevelIcon level={c.level} />
-              <div className="min-w-0">
-                <p>{c.label}</p>
-                {c.detail && c.key !== 'mobile' && <p className="break-words text-xs text-muted-foreground">{c.detail}</p>}
-                {c.key === 'mobile' && c.detail && (
-                  <p className="mt-1 max-h-24 overflow-auto rounded bg-muted/40 p-2 text-xs text-muted-foreground">{c.detail}</p>
+          {preview?.checklist.map((c) => {
+            const clickable = EDITABLE.has(c.key);
+            return (
+              <div key={c.key} className="space-y-2">
+                <button type="button" disabled={!clickable} onClick={() => openEdit(c.key)}
+                  className={`flex w-full gap-2 rounded text-left text-sm ${clickable ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'}`}>
+                  <LevelIcon level={c.level} />
+                  <div className="min-w-0 flex-1">
+                    <p className={clickable ? 'underline decoration-dotted underline-offset-2' : ''}>{c.label}</p>
+                    {c.detail && c.key !== 'mobile' && <p className="break-words text-xs text-muted-foreground">{c.detail}</p>}
+                    {c.key === 'mobile' && c.detail && (
+                      <p className="mt-1 max-h-24 overflow-auto rounded bg-muted/40 p-2 text-xs text-muted-foreground">{c.detail}</p>
+                    )}
+                  </div>
+                  {clickable && <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                </button>
+                {editing?.key === c.key && (
+                  <div className="ml-6 space-y-2 rounded border bg-muted/30 p-2">
+                    {editing.key === 'price' ? (
+                      <Input type="number" min={0} step="1" autoFocus value={editing.value}
+                        onChange={(e) => setEditing({ ...editing, value: e.target.value })} placeholder="Asking price (£)" />
+                    ) : editing.key === 'type' ? (
+                      <Input autoFocus value={editing.value} onChange={(e) => setEditing({ ...editing, value: e.target.value })} placeholder="e.g. Road, Gravel, Mountain" />
+                    ) : (
+                      <Textarea autoFocus rows={editing.key === 'listing_description' ? 8 : 4} value={editing.value}
+                        onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+                        placeholder={editing.key === 'listing_description' ? 'Bike description (also used as the Shopify Body)' : 'Condition notes'} />
+                    )}
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={saveEdit} disabled={savingEdit}>
+                        {savingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           <p className="text-xs text-muted-foreground">Red items stop the listing. Amber items are advice. Save options, then check again.</p>
         </div>
 
