@@ -81,6 +81,29 @@ export default function PhotoUpload({
     }
   };
 
+  const handleRemoveAll = async () => {
+    const list = latest.current;
+    if (!list.length || removingAll) return;
+    if (!window.confirm(`Remove all ${list.length} photo${list.length === 1 ? '' : 's'}? They will also be deleted from storage.`)) return;
+    setRemovingAll(true);
+    try {
+      const results = await Promise.all(list.map(async (photoUrl) => {
+        const fileName = photoUrl.split('/').pop();
+        if (!fileName) return false;
+        return deletePhoto(bucket, `${path}/${fileName}`);
+      }));
+      const failed = results.filter((ok) => !ok).length;
+      if (failed) toast.error(`${failed} photo${failed === 1 ? '' : 's'} could not be deleted from storage`);
+      latest.current = [];
+      onChange([]);
+    } catch (error) {
+      console.error('Failed to remove photos:', error);
+      toast.error('Could not remove photos');
+    } finally {
+      setRemovingAll(false);
+    }
+  };
+
   const move = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
     if (nextIndex < 0 || nextIndex >= photos.length) return;
