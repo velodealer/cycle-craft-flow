@@ -1,6 +1,6 @@
 // Keep identical to src/lib/channelPricing.ts.
 export type Channel = 'ebay' | 'shopify' | 'squarespace';
-export type Rounding = 'none' | '5' | '10' | '99';
+export type Rounding = 'none' | '5' | '10' | '99' | '9';
 export interface MarkupRule { pct: number; round: Rounding }
 export interface TitleAffix { prefix: string; suffix: string }
 export interface ListingChannelSettings {
@@ -13,7 +13,7 @@ export const listingChannelsKey = (businessId: string) => `listing_channels:${bu
 
 const rule = (r: any): MarkupRule => ({
   pct: Number.isFinite(Number(r?.pct)) ? Math.max(0, Math.min(500, Number(r.pct))) : 0,
-  round: ['none', '5', '10', '99'].includes(r?.round) ? r.round : 'none',
+  round: ['none', '5', '10', '99', '9'].includes(r?.round) ? r.round : 'none',
 });
 
 const affix = (a: any): TitleAffix => ({
@@ -58,5 +58,6 @@ export function applyChannelMarkup(price: number | null | undefined, r?: MarkupR
   if (round === '5') return Math.ceil(raw / 5) * 5;
   if (round === '10') return Math.ceil(raw / 10) * 10;
   if (round === '99') return Math.ceil(raw) - 0.01;
+  if (round === '9') return Math.ceil(raw / 10) * 10 - 1;
   return Math.round(raw * 100) / 100;
 }
