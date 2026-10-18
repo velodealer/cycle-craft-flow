@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Star, X, Upload, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Star, X, Upload, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadPhoto, deletePhoto } from '@/utils/photoUpload';
 
@@ -15,6 +15,7 @@ interface PhotoUploadProps {
   emptyLabel?: string;
   allowReorder?: boolean;
   dropzone?: boolean;
+  allowRemoveAll?: boolean;
 }
 
 export default function PhotoUpload({
@@ -27,6 +28,7 @@ export default function PhotoUpload({
   emptyLabel,
   allowReorder = false,
   dropzone = false,
+  allowRemoveAll = false,
 }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
