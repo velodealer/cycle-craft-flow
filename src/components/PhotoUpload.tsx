@@ -34,6 +34,7 @@ export default function PhotoUpload({
   const [dragOver, setDragOver] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [removingAll, setRemovingAll] = useState(false);
   const uploadId = `photo-upload-${path.replace(/\//g, '-')}`;
   // Always the latest list, so a finished upload never overwrites changes made meanwhile.
   const latest = useRef(photos);
