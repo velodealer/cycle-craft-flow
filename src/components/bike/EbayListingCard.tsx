@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Tag, ExternalLink, Search, Save, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Truck, Pencil } from 'lucide-react';
+import { Loader2, Tag, ExternalLink, Search, Save, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Truck, Pencil, Wand2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 const EDITABLE = new Set(['price', 'type', 'condition_notes', 'listing_description', 'title', 'category', 'condition', 'photos', 'specifics', 'specifics_required', 'specifics_unmapped', 'policies', 'location']);
@@ -31,6 +31,8 @@ import {
 import { EBAY_TITLE_MAX } from '@/lib/ebayTitle';
 import FixListingProblemsDialog from './FixListingProblemsDialog';
 import { effectiveListingImages } from '@/lib/listingImages';
+import { generateDescription } from '@/lib/descriptionGenerator';
+import { fetchBikeComponents } from '../../../supabase/functions/_shared/bike-components';
 
 interface Props {
   bikeId: string;
@@ -210,6 +212,18 @@ export default function EbayListingCard({ bikeId, refreshKey }: Props) {
     else if (key === 'photos') scrollTo('listing-images-section');
     else if (key.startsWith('specifics')) setFixOpen(true);
     else if (key === 'policies' || key === 'location') window.open('/settings', '_blank');
+  };
+
+  const [genSeed, setGenSeed] = useState(0);
+  const writeDescription = async () => {
+    if (!editing) return;
+    if (editing.value.trim() && !window.confirm('Replace the current description with a new draft?')) return;
+    const { data: b } = await supabase.from('bikes').select('*').eq('id', bikeId).maybeSingle();
+    let parts: any[] = [];
+    try { parts = await fetchBikeComponents(supabase, bikeId); } catch { /* write from bike details only */ }
+    const text = generateDescription({ bike: b, parts, seed: genSeed });
+    setGenSeed((n) => n + 1);
+    setEditing({ key: 'listing_description', value: text });
   };
 
   const saveEdit = async () => {
@@ -397,6 +411,11 @@ export default function EbayListingCard({ bikeId, refreshKey }: Props) {
                         {savingEdit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+                      {editing.key === 'listing_description' && (
+                        <Button size="sm" variant="outline" className="ml-auto" onClick={writeDescription} type="button">
+                          <Wand2 className="mr-2 h-4 w-4" />{genSeed ? 'Try another' : 'Write for me'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
