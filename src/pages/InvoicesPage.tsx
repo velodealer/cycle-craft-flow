@@ -195,7 +195,7 @@ export default function InvoicesPage() {
                   <div key={inv.id} className="rounded-[4px] border border-border p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium">{inv.invoice_number}</p>
+                        <Link to={`/invoices/${inv.id}`} className="font-medium hover:underline">{inv.invoice_number}</Link>
                         <p className="text-sm text-muted-foreground">{inv.external_owners?.name ?? '—'}</p>
                       </div>
                       <SyncBadge status={inv.sync_status} />
@@ -272,7 +272,7 @@ export default function InvoicesPage() {
                   <TableBody>
                     {filtered.map((inv) => (
                       <TableRow key={inv.id}>
-                        <TableCell className="font-medium">{inv.invoice_number}</TableCell>
+                        <TableCell className="font-medium"><Link to={`/invoices/${inv.id}`} className="hover:underline">{inv.invoice_number}</Link></TableCell>
                         <TableCell>{inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-GB') : '—'}</TableCell>
                         <TableCell>{inv.external_owners?.name ?? '—'}</TableCell>
                         <TableCell>

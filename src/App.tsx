@@ -23,6 +23,7 @@ import PartsPage from "./pages/PartsPage";
 import ComponentsPage from "./pages/ComponentsPage";
 import JobsPage from "./pages/JobsPage";
 import InvoicesPage from "./pages/InvoicesPage";
+import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import ReportsPage from "./pages/ReportsPage";
 import QuoteBuilderPage from "./pages/QuoteBuilderPage";
 import QuoteListPage from "./pages/QuoteListPage";
@@ -102,6 +103,7 @@ const App = () => (
             <Route path="/jobs" element={guarded(<Layout><JobsPage /></Layout>)} />
 
             <Route path="/invoices" element={guarded(<Layout><InvoicesPage /></Layout>)} />
+            <Route path="/invoices/:id" element={guarded(<Layout><InvoiceDetailPage /></Layout>)} />
             <Route path="/reports" element={guarded(<Layout><ReportsPage /></Layout>)} />
             <Route path="/quote-builder" element={guarded(<Layout><QuoteListPage /></Layout>)} />
             <Route path="/quote-builder/new" element={guarded(<Layout><QuoteBuilderPage /></Layout>)} />
