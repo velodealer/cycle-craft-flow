@@ -24,6 +24,7 @@ import ComponentsPage from "./pages/ComponentsPage";
 import JobsPage from "./pages/JobsPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
+import PublicInvoicePage from "./pages/PublicInvoicePage";
 import ReportsPage from "./pages/ReportsPage";
 import QuoteBuilderPage from "./pages/QuoteBuilderPage";
 import QuoteListPage from "./pages/QuoteListPage";
@@ -74,6 +75,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={guarded(<LandingPage />)} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/i/:token" element={<PublicInvoicePage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

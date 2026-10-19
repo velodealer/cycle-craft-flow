@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.xero-oauth]
 verify_jwt = false
+
+[functions.invoice-view]
+verify_jwt = false

@@ -1780,6 +1780,7 @@ export type Database = {
           part_exchange_bike_id: string | null
           part_exchange_value: number | null
           part_id: string | null
+          public_token: string
           quickbooks_invoice_id: string | null
           quickbooks_journal_id: string | null
           sale_gross: number | null
@@ -1816,6 +1817,7 @@ export type Database = {
           part_exchange_bike_id?: string | null
           part_exchange_value?: number | null
           part_id?: string | null
+          public_token?: string
           quickbooks_invoice_id?: string | null
           quickbooks_journal_id?: string | null
           sale_gross?: number | null
@@ -1852,6 +1854,7 @@ export type Database = {
           part_exchange_bike_id?: string | null
           part_exchange_value?: number | null
           part_id?: string | null
+          public_token?: string
           quickbooks_invoice_id?: string | null
           quickbooks_journal_id?: string | null
           sale_gross?: number | null

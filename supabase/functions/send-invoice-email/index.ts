@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       .from('invoices')
       // No frame/serial numbers: an invoice is a customer document, and the
       // bike's frame number is workshop/audit data, not something a buyer needs.
-      .select('*, bikes:bike_id(reference, make, model, year, size, colour, finance_scheme), external_owners:external_customer_id(name, email, address), parts:part_id(brand, description)')
+      .select('public_token, *, bikes:bike_id(reference, make, model, year, size, colour, finance_scheme), external_owners:external_customer_id(name, email, address), parts:part_id(brand, description)')
       .eq('id', parsed.data.invoice_id)
       .maybeSingle();
     if (ie) return json({ error: ie.message }, 500);
@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
 <h2 style="margin:0 0 16px">${esc(bizName)}</h2>
 <p>Hi ${esc(customer || 'there')},</p>
 <p>Thank you for your purchase${b ? ` of the ${esc(item)}` : ''}. Your invoice ${esc(docNo)}${date ? ` dated ${esc(date)}` : ''} for <strong>${gbp(inv.gross)}</strong> is attached as a PDF.</p>
-${qbo.link ? `<p><a href="${esc(qbo.link)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">View invoice online</a></p>` : ''}
+<p><a href="https://cycle-craft-flow.lovable.app/i/${esc(inv.public_token)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">View invoice</a></p>
+${qbo.link ? `<p><a href="${esc(qbo.link)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">Pay online</a></p>` : ''}
 <p style="font-size:12px;color:#999;margin-top:24px">${esc(bizName)}${biz?.contact_email ? ` · ${esc(biz.contact_email)}` : ''}</p>
 </div></body></html>`;
 
