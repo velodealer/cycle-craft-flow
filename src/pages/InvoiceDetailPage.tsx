@@ -78,7 +78,9 @@ export default function InvoiceDetailPage() {
 
       {doc && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" asChild><a href={doc.appUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-4 w-4" />Open in QuickBooks</a></Button>
+          {doc.customerLink
+            ? <Button size="sm" variant="outline" asChild><a href={doc.customerLink} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-4 w-4" />View invoice online</a></Button>
+            : <Button size="sm" variant="outline" asChild><a href={doc.appUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-4 w-4" />Open in QuickBooks</a></Button>}
           <Button size="sm" variant="outline" asChild><a href={doc.pdfUrl} download={fileName}><Download className="mr-1 h-4 w-4" />Download PDF</a></Button>
           {doc.customerLink && <Button size="sm" variant="outline" asChild><a href={doc.customerLink} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-4 w-4" />Customer link</a></Button>}
           <div className="ml-auto flex flex-wrap items-center gap-2">
