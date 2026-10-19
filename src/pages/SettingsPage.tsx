@@ -14,6 +14,7 @@ import EmailNotifications from '@/components/settings/EmailNotifications';
 import BikeReferenceSettings from '@/components/settings/BikeReferenceSettings';
 import DeliverySettings from '@/components/settings/DeliverySettings';
 import VatSettings from '@/components/settings/VatSettings';
+import InvoiceBrandingSettings from '@/components/settings/InvoiceBrandingSettings';
 import ListingChannelSettings from '@/components/settings/ListingChannelSettings';
 import ShopifyTemplateSettings from '@/components/settings/ShopifyTemplateSettings';
 import DeferralSettings from '@/components/settings/DeferralSettings';
@@ -80,6 +81,7 @@ export default function SettingsPage() {
           <BikeReferenceSettings />
           <DeliverySettings />
           <VatSettings />
+          <InvoiceBrandingSettings />
           <EmailNotifications />
         </TabsContent>
 

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { emailInvoice } from '@/lib/invoiceEmail';
 import { syncInvoice } from '@/lib/quickbooks';
-import { fetchInvoiceView, downloadInvoicePdf, publicInvoiceUrl } from '@/lib/invoiceView';
+import { fetchInvoiceView, publicInvoiceUrl } from '@/lib/invoiceView';
 import { InvoiceDocument, type MirroredInvoice } from '@/components/invoice/InvoiceDocument';
 import { toast } from 'sonner';
 
@@ -54,12 +54,7 @@ export default function InvoiceDetailPage() {
     finally { setBusy(null); }
   };
 
-  const pdf = async () => {
-    setBusy('pdf');
-    try { await downloadInvoicePdf({ invoice_id: inv.id }, `Invoice-${doc?.doc_number || inv.invoice_number}.pdf`); }
-    catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(null); }
-  };
+  const pdf = () => window.print();
 
   const copyLink = async () => {
     if (!doc?.public_token) return;
@@ -84,7 +79,7 @@ export default function InvoiceDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={copyLink}><Copy className="mr-1 h-4 w-4" />Copy customer link</Button>
           {doc.public_token && <Button size="sm" variant="outline" asChild><a href={publicInvoiceUrl(doc.public_token)} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-4 w-4" />Customer view</a></Button>}
-          <Button size="sm" variant="outline" onClick={pdf} disabled={busy !== null}><Download className="mr-1 h-4 w-4" />PDF</Button>
+          <Button size="sm" variant="outline" onClick={pdf}><Download className="mr-1 h-4 w-4" />PDF</Button>
           {doc.app_url && <Button size="sm" variant="ghost" asChild><a href={doc.app_url} target="_blank" rel="noreferrer">Open in QuickBooks</a></Button>}
           <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
             <Input className="h-9 flex-1 sm:w-56" type="email" placeholder="customer@email.com" value={to} onChange={(e) => setTo(e.target.value)} />
