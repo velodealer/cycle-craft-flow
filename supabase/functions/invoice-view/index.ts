@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     if (!data || !profile || data.business_id !== profile.business_id) return NOT_FOUND();
     inv = data;
   } else {
-    const { data } = await supabase.from('invoices').select('quickbooks_invoice_id, status').eq('public_token', input.token!).maybeSingle();
+    const { data } = await supabase.from('invoices').select('business_id, quickbooks_invoice_id, status').eq('public_token', input.token!).maybeSingle();
     if (!data || data.status === 'cancelled') return NOT_FOUND();
     inv = data;
   }
@@ -115,6 +115,18 @@ Deno.serve(async (req) => {
     };
     const link = await qboFetch(accessToken, realmId, `/invoice/${encodeURIComponent(qid)}?include=invoiceLink&minorversion=70`).catch(() => null);
     if (status !== 'paid') body.pay_link = link?.Invoice?.InvoiceLink || null;
+    // Dealer branding: logo, trading name and bank (BACS) details for payment.
+    const [{ data: biz }, { data: brand }] = await Promise.all([
+      supabase.from('businesses').select('name').eq('id', inv.business_id).maybeSingle(),
+      supabase.from('app_settings').select('value').eq('key', `invoice_branding:${inv.business_id}`).maybeSingle(),
+    ]);
+    const bv = (brand?.value ?? {}) as Record<string, string | undefined>;
+    body.branding = {
+      business_name: biz?.name ?? null,
+      logo_url: bv.logo_url || null,
+      footer_note: bv.footer_note || null,
+      bank: bv.account_number ? { account_name: bv.account_name || null, account_number: bv.account_number, sort_code: bv.sort_code || null } : null,
+    };
     if (staff) {
       body.public_token = inv.public_token;
       body.app_url = qboInvoiceAppUrl(qid);
