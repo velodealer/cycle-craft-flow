@@ -11,6 +11,7 @@ import {
   getTypeformAuth,
   typeformFetch,
   redirectUri,
+  functionsBase,
   requireUser,
   requireAdmin,
   setTypeformWebhook,
