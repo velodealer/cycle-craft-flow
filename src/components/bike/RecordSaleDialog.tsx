@@ -40,7 +40,7 @@ const NEW_CUSTOMER = '__new__';
 export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: RecordSaleDialogProps) {
   const [customers, setCustomers] = useState<ExternalOwner[]>([]);
   const [customerId, setCustomerId] = useState<string>(NEW_CUSTOMER);
-  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '', address: '' });
+  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '', address: '', line1: '', line2: '', city: '', postcode: '', country: 'UK' });
   const [salePrice, setSalePrice] = useState<string>(bike?.asking_price ? String(bike.asking_price) : '');
   const [saleDate, setSaleDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
@@ -105,7 +105,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           const d = data?.payload as any;
           if (!d) return;
           if (d.customerId) setCustomerId(d.customerId);
-          if (d.newCustomer) setNewCustomer(d.newCustomer);
+          if (d.newCustomer) setNewCustomer((c) => ({ ...c, ...d.newCustomer }));
           if (d.salePrice !== undefined) setSalePrice(d.salePrice);
           if (d.saleDate) setSaleDate(d.saleDate);
           if (d.notes !== undefined) setNotes(d.notes);
@@ -246,7 +246,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
             name: newCustomer.name.trim(),
             email: newCustomer.email.trim() || null,
             phone: newCustomer.phone.trim() || null,
-            address: newCustomer.address.trim() || null,
+            address: ([newCustomer.line1, newCustomer.line2, newCustomer.city, newCustomer.postcode.toUpperCase(), newCustomer.country].map((v) => v.trim()).filter(Boolean).join('\n') || newCustomer.address.trim()) || null,
           })
           .select('id')
           .single();
@@ -496,8 +496,24 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
                 <Input id="cust-phone" value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="cust-address">Address</Label>
-                <Input id="cust-address" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} />
+                <Label htmlFor="cust-line1">Address line 1</Label>
+                <Input id="cust-line1" value={newCustomer.line1} onChange={(e) => setNewCustomer({ ...newCustomer, line1: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="cust-line2">Address line 2 (optional)</Label>
+                <Input id="cust-line2" value={newCustomer.line2} onChange={(e) => setNewCustomer({ ...newCustomer, line2: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cust-city">Town / city</Label>
+                <Input id="cust-city" value={newCustomer.city} onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cust-postcode">Postcode</Label>
+                <Input id="cust-postcode" value={newCustomer.postcode} onChange={(e) => setNewCustomer({ ...newCustomer, postcode: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="cust-country">Country</Label>
+                <Input id="cust-country" value={newCustomer.country} onChange={(e) => setNewCustomer({ ...newCustomer, country: e.target.value })} />
               </div>
             </div>
           )}
