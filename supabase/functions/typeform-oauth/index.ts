@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
         .eq('form_id', formId)
         .maybeSingle();
       const tag = (stored as any)?.webhook_tag || 'velodealer';
-      const expectedUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/typeform-webhook`;
+      const expectedUrl = `${functionsBase()}/typeform-webhook`;
 
       const { accessToken } = await getTypeformAuth(supabase);
       try {
