@@ -70,7 +70,7 @@ export class NotConnected extends Error {
 
 export function functionsBase() {
   return (
-    Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || `${Deno.env.get('SUPABASE_URL')}/functions/v1`
+    Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || 'https://api.velodealer.com/functions/v1'
   ).trim().replace(/\/+$/, '');
 }
 

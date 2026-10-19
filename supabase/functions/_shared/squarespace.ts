@@ -34,7 +34,7 @@ export function serviceClient() {
 }
 
 export function functionsBase() {
-  return (Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || `${Deno.env.get('SUPABASE_URL')}/functions/v1`).replace(/\/$/, '');
+  return (Deno.env.get('PUBLIC_FUNCTIONS_BASE_URL') || 'https://api.velodealer.com/functions/v1').replace(/\/$/, '');
 }
 export const redirectUri = () => `${functionsBase()}/squarespace-oauth`;
 export const webhookUrl = () => `${functionsBase()}/squarespace-webhook`;
