@@ -2,6 +2,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { emailServiceClient, loadEmailSettings, appUrl, DEFAULT_FROM } from '../_shared/email.ts';
+import { fetchQboInvoicePdf, fetchQboInvoiceLink } from '../_shared/quickbooks-invoice-doc.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -46,32 +47,28 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get('RESEND_API_KEY');
     if (!apiKey) return json({ error: 'RESEND_API_KEY is not configured' }, 500);
 
+    if (!inv.quickbooks_invoice_id) {
+      return json({ error: 'This invoice is not in QuickBooks yet — sync it to QuickBooks first, then email it' }, 409);
+    }
+    let pdf: string;
+    try { pdf = await fetchQboInvoicePdf(supabase as any, inv.quickbooks_invoice_id); }
+    catch (e) { return json({ error: (e as Error).message }, 502); }
+    const qbo = await fetchQboInvoiceLink(supabase as any, inv.quickbooks_invoice_id);
+    const docNo = qbo.docNumber || inv.invoice_number;
     const bizName = biz?.name || 'VeloDealer';
-    const margin = inv.finance_scheme === 'margin_scheme' || inv.bikes?.finance_scheme === 'margin_scheme';
-    const showVat = Number(inv.vat_rate) > 0 && !margin;
-    const vat = Number(inv.gross) - Number(inv.net);
     const b = inv.bikes;
     const item = b
       ? [b.year, b.make, b.model].filter(Boolean).join(' ') + (b.reference ? ` (${b.reference})` : '')
       : inv.parts ? [inv.parts.brand, inv.parts.description].filter(Boolean).join(' — ') : 'Sale';
-    const detail = b ? [b.size && `Size ${b.size}`, b.colour, (b.frame_number || b.serial_number) && `Frame no. ${b.frame_number || b.serial_number}`].filter(Boolean).join(' · ') : '';
-    const saleGross = Number(inv.sale_gross ?? inv.gross);
-    const rows: string[] = [`<tr><td style="padding:8px 0">${esc(item)}${detail ? `<div style="color:#666;font-size:12px">${esc(detail)}</div>` : ''}</td><td style="text-align:right">${gbp(saleGross)}</td></tr>`];
-    if (inv.delivery_charged_to_customer && Number(inv.delivery_charge) > 0) rows.push(`<tr><td style="padding:8px 0">Delivery</td><td style="text-align:right">${gbp(inv.delivery_charge)}</td></tr>`);
-    if (Number(inv.part_exchange_value) > 0) rows.push(`<tr><td style="padding:8px 0">Part exchange</td><td style="text-align:right">−${gbp(inv.part_exchange_value)}</td></tr>`);
     const date = inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-GB') : '';
     const customer = inv.external_owners?.name || inv.customer_name || '';
 
     const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#111;background:#f6f6f6;margin:0;padding:24px">
 <div style="max-width:600px;margin:0 auto;background:#fff;padding:28px;border-radius:6px">
-<h2 style="margin:0 0 4px">${esc(bizName)}</h2>
-<p style="margin:0 0 20px;color:#666">Invoice ${esc(inv.invoice_number)}${date ? ` · ${esc(date)}` : ''}</p>
-${customer ? `<p style="margin:0 0 16px">Hi ${esc(customer)},<br>Thank you for your purchase. Your invoice is below.</p>` : ''}
-${inv.external_owners?.address ? `<p style="color:#666;font-size:13px;white-space:pre-line;margin:0 0 16px">${esc(inv.external_owners.address)}</p>` : ''}
-<table style="width:100%;border-collapse:collapse;font-size:14px;border-top:1px solid #ddd">${rows.join('')}
-${showVat ? `<tr><td style="padding:8px 0;border-top:1px solid #ddd;color:#666">Net</td><td style="text-align:right;border-top:1px solid #ddd">${gbp(inv.net)}</td></tr><tr><td style="padding:4px 0;color:#666">VAT (${esc(inv.vat_rate)}%)</td><td style="text-align:right">${gbp(vat)}</td></tr>` : ''}
-<tr><td style="padding:10px 0;border-top:2px solid #111;font-weight:bold">${Number(inv.part_exchange_value) > 0 ? 'Balance due' : 'Total'}</td><td style="text-align:right;border-top:2px solid #111;font-weight:bold">${gbp(inv.gross)}</td></tr></table>
-${margin ? '<p style="font-size:12px;color:#666;margin-top:16px">Second-hand margin scheme: input tax has not been and will not be claimed. No VAT is shown on this invoice.</p>' : ''}
+<h2 style="margin:0 0 16px">${esc(bizName)}</h2>
+<p>Hi ${esc(customer || 'there')},</p>
+<p>Thank you for your purchase${b ? ` of the ${esc(item)}` : ''}. Your invoice ${esc(docNo)}${date ? ` dated ${esc(date)}` : ''} for <strong>${gbp(inv.gross)}</strong> is attached as a PDF.</p>
+${qbo.link ? `<p><a href="${esc(qbo.link)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">View invoice online</a></p>` : ''}
 <p style="font-size:12px;color:#999;margin-top:24px">${esc(bizName)}${biz?.contact_email ? ` · ${esc(biz.contact_email)}` : ''}</p>
 </div></body></html>`;
 
@@ -82,7 +79,8 @@ ${margin ? '<p style="font-size:12px;color:#666;margin-top:16px">Second-hand mar
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        from, to: [to], subject: `Invoice ${inv.invoice_number} from ${bizName}`, html,
+        from, to: [to], subject: `Invoice ${docNo} from ${bizName}`, html,
+        attachments: [{ filename: `Invoice-${String(docNo).replace(/[^A-Za-z0-9-]/g, '')}.pdf`, content: pdf }],
         ...(biz?.contact_email ? { reply_to: biz.contact_email } : {}),
       }),
     });
