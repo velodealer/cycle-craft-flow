@@ -1758,6 +1758,38 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_counters: {
+        Row: {
+          business_id: string
+          next_number: number
+          pad: number
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          next_number?: number
+          pad?: number
+          prefix?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          next_number?: number
+          pad?: number
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_counters_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           bike_id: string | null
@@ -3339,7 +3371,7 @@ export type Database = {
         Args: { _bike_id: string; _components: Json }
         Returns: Json
       }
-      next_invoice_number: { Args: never; Returns: string }
+      next_invoice_number: { Args: { _business_id?: string }; Returns: string }
       promote_bike_to_listed: {
         Args: { _bike_id: string; _channel: string }
         Returns: undefined
