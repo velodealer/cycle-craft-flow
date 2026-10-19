@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { syncInvoice } from '@/lib/quickbooks';
 import { trySyncXeroInvoice } from '@/lib/xero';
+import { invoicePath } from '@/lib/invoiceEmail';
 import { toast } from 'sonner';
 
 export interface SellablePart {
@@ -85,7 +86,10 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
         .eq('id', part.id);
       if (partError) throw partError;
 
-      toast.success(`Part sold — invoice ${invoice.invoice_number}`);
+      toast.success(`Part sold — invoice ${invoice.invoice_number}`, {
+        duration: 15000,
+        action: { label: 'View invoice', onClick: () => window.open(invoicePath(invoice.id), '_blank') },
+      });
 
       // Same VAT treatment as bike sales: both systems post independently.
       try {

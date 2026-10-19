@@ -14,6 +14,7 @@ import { logActivity, money } from '@/lib/activity';
 import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
 import { trySyncXeroInvoice, tryPostXeroPurchase } from '@/lib/xero';
+import { emailInvoice, invoicePath } from '@/lib/invoiceEmail';
 import { syncShopifyQuietly } from '@/services/shopify';
 import { syncSquarespaceQuietly } from '@/services/squarespace';
 import { syncEbayQuietly } from '@/services/ebay';
@@ -360,7 +361,22 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       void syncEbayQuietly(bike.id, 'end');
 
 
-      toast.success(`Sale recorded — invoice ${invoice.invoice_number}`);
+      toast.success(`Sale recorded — invoice ${invoice.invoice_number}`, {
+        duration: 15000,
+        action: { label: 'View invoice', onClick: () => window.open(invoicePath(invoice.id), '_blank') },
+      });
+
+      {
+        const chosenCustomer = customers.find((c) => c.id === externalCustomerId);
+        const customerEmail = (chosenCustomer?.email ?? newCustomer.email ?? '').trim();
+        if (customerEmail) {
+          const er = await emailInvoice(invoice.id);
+          if (er.ok) toast.success(`Invoice emailed to ${er.to}`);
+          else toast.warning(`Sale saved, but the invoice email failed: ${er.error}`);
+        } else {
+          toast.info('No customer email — open the invoice to email or print it');
+        }
+      }
 
       try {
         await syncInvoice(invoice.id);
