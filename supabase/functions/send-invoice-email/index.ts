@@ -32,7 +32,9 @@ Deno.serve(async (req) => {
 
     const { data: inv, error: ie } = await supabase
       .from('invoices')
-      .select('*, bikes:bike_id(reference, make, model, year, size, colour, frame_number, serial_number, finance_scheme), external_owners:external_customer_id(name, email, address), parts:part_id(brand, description)')
+      // No frame/serial numbers: an invoice is a customer document, and the
+      // bike's frame number is workshop/audit data, not something a buyer needs.
+      .select('*, bikes:bike_id(reference, make, model, year, size, colour, finance_scheme), external_owners:external_customer_id(name, email, address), parts:part_id(brand, description)')
       .eq('id', parsed.data.invoice_id)
       .maybeSingle();
     if (ie) return json({ error: ie.message }, 500);
