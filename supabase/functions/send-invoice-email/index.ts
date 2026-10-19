@@ -2,7 +2,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { emailServiceClient, loadEmailSettings, appUrl, DEFAULT_FROM } from '../_shared/email.ts';
-import { fetchQboInvoicePdf, fetchQboInvoiceLink } from '../_shared/quickbooks-invoice-doc.ts';
+import { fetchQboInvoiceLink } from '../_shared/quickbooks-invoice-doc.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -52,12 +52,11 @@ Deno.serve(async (req) => {
     if (!inv.quickbooks_invoice_id) {
       return json({ error: 'This invoice is not in QuickBooks yet — sync it to QuickBooks first, then email it' }, 409);
     }
-    let pdf: string;
-    try { pdf = await fetchQboInvoicePdf(supabase as any, inv.quickbooks_invoice_id); }
-    catch (e) { return json({ error: (e as Error).message }, 502); }
     const qbo = await fetchQboInvoiceLink(supabase as any, inv.quickbooks_invoice_id);
     const docNo = qbo.docNumber || inv.invoice_number;
     const bizName = biz?.name || 'VeloDealer';
+    const { data: brandRow } = await supabase.from('app_settings').select('value').eq('key', `invoice_branding:${inv.business_id}`).maybeSingle();
+    const bank = (brandRow?.value ?? {}) as { account_name?: string; account_number?: string; sort_code?: string; logo_url?: string };
     const b = inv.bikes;
     const item = b
       ? [b.year, b.make, b.model].filter(Boolean).join(' ') + (b.reference ? ` (${b.reference})` : '')
@@ -67,11 +66,11 @@ Deno.serve(async (req) => {
 
     const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#111;background:#f6f6f6;margin:0;padding:24px">
 <div style="max-width:600px;margin:0 auto;background:#fff;padding:28px;border-radius:6px">
-<h2 style="margin:0 0 16px">${esc(bizName)}</h2>
+${bank.logo_url ? `<img src="${esc(bank.logo_url)}" alt="${esc(bizName)}" style="max-height:60px;max-width:220px;margin-bottom:12px">` : `<h2 style="margin:0 0 16px">${esc(bizName)}</h2>`}
 <p>Hi ${esc(customer || 'there')},</p>
-<p>Thank you for your purchase${b ? ` of the ${esc(item)}` : ''}. Your invoice ${esc(docNo)}${date ? ` dated ${esc(date)}` : ''} for <strong>${gbp(inv.gross)}</strong> is attached as a PDF.</p>
+<p>Thank you for your purchase${b ? ` of the ${esc(item)}` : ''}. Your invoice ${esc(docNo)}${date ? ` dated ${esc(date)}` : ''} for <strong>${gbp(inv.gross)}</strong> is ready to view.</p>
 <p><a href="https://cycle-craft-flow.lovable.app/i/${esc(inv.public_token)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">View invoice</a></p>
-${qbo.link ? `<p><a href="${esc(qbo.link)}" style="display:inline-block;background:#111;color:#fff;padding:10px 16px;border-radius:4px;text-decoration:none">Pay online</a></p>` : ''}
+${bank?.account_number ? `<div style="border:1px solid #cfe3d6;background:#f3faf5;border-radius:6px;padding:14px;margin:16px 0"><p style="margin:0 0 6px;font-weight:bold">Please forward payment to:</p>${bank.account_name ? `<p style="margin:2px 0">Account holder name: ${esc(bank.account_name)}</p>` : ''}<p style="margin:2px 0">Account number: ${esc(bank.account_number)}</p>${bank.sort_code ? `<p style="margin:2px 0">Sort code: ${esc(bank.sort_code)}</p>` : ''}<p style="margin:2px 0">Reference: ${esc(docNo)}</p></div>` : ''}
 <p style="font-size:12px;color:#999;margin-top:24px">${esc(bizName)}${biz?.contact_email ? ` · ${esc(biz.contact_email)}` : ''}</p>
 </div></body></html>`;
 
@@ -83,7 +82,6 @@ ${qbo.link ? `<p><a href="${esc(qbo.link)}" style="display:inline-block;backgrou
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         from, to: [to], subject: `Invoice ${docNo} from ${bizName}`, html,
-        attachments: [{ filename: `Invoice-${String(docNo).replace(/[^A-Za-z0-9-]/g, '')}.pdf`, content: pdf }],
         ...(biz?.contact_email ? { reply_to: biz.contact_email } : {}),
       }),
     });
