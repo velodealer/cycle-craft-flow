@@ -98,7 +98,7 @@ async function handleOrderPaid(supabase: Client, order: any) {
     const net = isMargin ? gross : Number((gross / 1.2).toFixed(2));
 
     try {
-      const { data: numberData, error: numberError } = await supabase.rpc('next_invoice_number');
+      const { data: numberData, error: numberError } = await supabase.rpc('next_invoice_number', { _business_id: bike.business_id ?? null });
       if (numberError) throw new Error(numberError.message);
 
       const { error: invoiceError } = await supabase.from('invoices').insert({
