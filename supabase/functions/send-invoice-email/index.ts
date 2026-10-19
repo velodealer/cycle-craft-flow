@@ -56,18 +56,10 @@ Deno.serve(async (req) => {
     const qbo = await fetchQboInvoiceLink(supabase as any, inv.quickbooks_invoice_id);
     const docNo = qbo.docNumber || inv.invoice_number;
     const bizName = biz?.name || 'VeloDealer';
-    const margin = inv.finance_scheme === 'margin_scheme' || inv.bikes?.finance_scheme === 'margin_scheme';
-    const showVat = Number(inv.vat_rate) > 0 && !margin;
-    const vat = Number(inv.gross) - Number(inv.net);
     const b = inv.bikes;
     const item = b
       ? [b.year, b.make, b.model].filter(Boolean).join(' ') + (b.reference ? ` (${b.reference})` : '')
       : inv.parts ? [inv.parts.brand, inv.parts.description].filter(Boolean).join(' — ') : 'Sale';
-    const detail = b ? [b.size && `Size ${b.size}`, b.colour, (b.frame_number || b.serial_number) && `Frame no. ${b.frame_number || b.serial_number}`].filter(Boolean).join(' · ') : '';
-    const saleGross = Number(inv.sale_gross ?? inv.gross);
-    const rows: string[] = [`<tr><td style="padding:8px 0">${esc(item)}${detail ? `<div style="color:#666;font-size:12px">${esc(detail)}</div>` : ''}</td><td style="text-align:right">${gbp(saleGross)}</td></tr>`];
-    if (inv.delivery_charged_to_customer && Number(inv.delivery_charge) > 0) rows.push(`<tr><td style="padding:8px 0">Delivery</td><td style="text-align:right">${gbp(inv.delivery_charge)}</td></tr>`);
-    if (Number(inv.part_exchange_value) > 0) rows.push(`<tr><td style="padding:8px 0">Part exchange</td><td style="text-align:right">−${gbp(inv.part_exchange_value)}</td></tr>`);
     const date = inv.issued_at ? new Date(inv.issued_at).toLocaleDateString('en-GB') : '';
     const customer = inv.external_owners?.name || inv.customer_name || '';
 
