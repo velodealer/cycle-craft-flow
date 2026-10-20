@@ -17,6 +17,7 @@ const partSchema = z.object({
   brand: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
   part_number: z.string().optional(),
+  ebay_item_id: z.string().trim().regex(/^\d*$/, 'Numbers only').optional().transform((v) => v || null),
   cost_price: z.number().optional(),
   sale_price: z.number().optional(),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
@@ -44,6 +45,7 @@ export default function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
       brand: part?.brand || '',
       description: part?.description || '',
       part_number: part?.part_number || '',
+      ebay_item_id: part?.ebay_item_id || '',
       cost_price: part?.cost_price || undefined,
       sale_price: part?.sale_price || undefined,
       quantity: part?.quantity || 1,
@@ -185,6 +187,20 @@ export default function PartForm({ part, onSuccess, onCancel }: PartFormProps) {
                       <FormControl>
                         <Input placeholder="Manufacturer part number" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ebay_item_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>eBay item number</FormLabel>
+                      <FormControl>
+                        <Input inputMode="numeric" placeholder="e.g. 205123456789" {...field} />
+                      </FormControl>
+                      <FormDescription>When this sells on eBay, it's marked sold and invoiced automatically.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
