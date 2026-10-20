@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Inbox, Bike, Ban, Eye } from 'lucide-react';
+import { Loader2, Inbox, Bike, Ban, Eye, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import {
@@ -138,15 +138,38 @@ export default function SubmissionsPage() {
       const note = rejectCategory === 'Other' ? `Other: ${detail}` : detail ? `${rejectCategory}: ${detail}` : rejectCategory;
       await updateSubmissionStatus(rejectTarget.id, 'rejected', note);
       setSubmissions((prev) => prev.map((s) => (s.id === rejectTarget.id ? { ...s, status: 'rejected', notes: note } : s)));
+      const wasRejected = rejectTarget.status === 'rejected';
       setRejectTarget(null);
       setRejectReason('');
       setRejectCategory('');
-      toast.success('Submission rejected');
+      toast.success(wasRejected ? 'Rejection reason updated' : 'Submission rejected');
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setBusyId(null);
     }
+  };
+
+  const openReject = (sub: TypeformSubmission) => {
+    const saved = sub.status === 'rejected' ? sub.notes ?? '' : '';
+    let category = '';
+    let detail = '';
+    if (saved.startsWith('Other: ')) {
+      category = 'Other';
+      detail = saved.slice('Other: '.length);
+    } else {
+      const idx = saved.indexOf(': ');
+      const head = idx > 0 ? saved.slice(0, idx) : saved;
+      if (REJECT_REASONS.includes(head) && head !== 'Other') {
+        category = head;
+        detail = idx > 0 ? saved.slice(idx + 2) : '';
+      } else if (saved) {
+        category = saved;
+      }
+    }
+    setRejectCategory(category);
+    setRejectReason(detail);
+    setRejectTarget(sub);
   };
 
   const openDetail = (sub: TypeformSubmission) => {
@@ -287,11 +310,17 @@ export default function SubmissionsPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => setRejectTarget(sub)}
+                          onClick={() => openReject(sub)}
                           disabled={sub.status === 'new'}
                           title={sub.status === 'new' ? 'Mark reviewed first' : undefined}
                         >
                           <Ban className="mr-2 h-4 w-4" /> Reject
+                        </Button>
+                      )}
+                      {sub.status === 'rejected' && (
+                        <Button variant="outline" size="sm" onClick={() => openReject(sub)} disabled={busyId === sub.id}>
+                          {busyId === sub.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+                          Edit reason
                         </Button>
                       )}
                       {sub.status === 'new' && (
@@ -376,9 +405,11 @@ export default function SubmissionsPage() {
       <Dialog open={Boolean(rejectTarget)} onOpenChange={(open) => !open && setRejectTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reject submission</DialogTitle>
+            <DialogTitle>{rejectTarget?.status === 'rejected' ? 'Edit rejection reason' : 'Reject submission'}</DialogTitle>
             <DialogDescription>
-              Pick why you're turning this down so you can see trends later.
+              {rejectTarget?.status === 'rejected'
+                ? 'Change the reason — the update is saved straight away.'
+                : "Pick why you're turning this down so you can see trends later."}
             </DialogDescription>
           </DialogHeader>
           <Select value={rejectCategory} onValueChange={setRejectCategory}>
@@ -402,7 +433,7 @@ export default function SubmissionsPage() {
               disabled={busyId === rejectTarget?.id || !rejectCategory || (rejectCategory === 'Other' && !rejectReason.trim())}
             >
               {busyId === rejectTarget?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Reject
+              {rejectTarget?.status === 'rejected' ? 'Save reason' : 'Reject'}
             </Button>
           </DialogFooter>
         </DialogContent>
