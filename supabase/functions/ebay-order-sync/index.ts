@@ -60,7 +60,7 @@ async function recordPartSale(
       customer_name: order.buyer?.username ? `eBay: ${order.buyer.username}` : 'eBay buyer',
       status: 'paid',
       issued_at: order.creationDate ?? new Date().toISOString(),
-      notes: `eBay order ${orderId}`,
+      paid_at: order.creationDate ?? new Date().toISOString(),
     } as any).select('id, invoice_number').single();
     if (iErr) throw new Error(iErr.message);
     await supabase.from('parts').update({ stock_status: 'sold', sale_price: total }).eq('id', part.id);
