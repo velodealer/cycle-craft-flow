@@ -93,6 +93,31 @@ export default function InvoiceDetailPage() {
         </Button>
       </div>
 
+      {inv.type === 'sale' && inv.bike_id && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+          {isSaleSecured(inv) ? (
+            <span className="text-muted-foreground">
+              {inv.paid_at || inv.status === 'paid'
+                ? 'Paid — bike is off sale.'
+                : `Deposit received${inv.deposit_amount ? ` (£${Number(inv.deposit_amount).toFixed(2)})` : ''} — bike is off sale.`}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Still listed for sale until a deposit or payment is received.</span>
+          )}
+          <div className="ml-auto flex gap-2">
+            {!isSaleSecured(inv) && (
+              <Button size="sm" variant="outline" onClick={() => markPayment('deposit')} disabled={busy !== null}>Deposit received</Button>
+            )}
+            {!(inv.paid_at || inv.status === 'paid') && (
+              <Button size="sm" onClick={() => markPayment('paid')} disabled={busy !== null}>
+                {busy === 'pay' && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Payment received
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+
       {doc && (
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={copyLink}><Copy className="mr-1 h-4 w-4" />Copy customer link</Button>
