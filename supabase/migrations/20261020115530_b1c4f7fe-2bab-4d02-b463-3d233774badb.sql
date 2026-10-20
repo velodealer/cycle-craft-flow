@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.flag_delist_on_invoice_payment() FROM PUBLIC, anon, authenticated;

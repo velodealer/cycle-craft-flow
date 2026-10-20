@@ -15,9 +15,6 @@ import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
 import { trySyncXeroInvoice, tryPostXeroPurchase } from '@/lib/xero';
 import { emailInvoice, invoicePath } from '@/lib/invoiceEmail';
-import { syncShopifyQuietly } from '@/services/shopify';
-import { syncSquarespaceQuietly } from '@/services/squarespace';
-import { syncEbayQuietly } from '@/services/ebay';
 import { useVatRegistered } from '@/hooks/useVatRegistered';
 
 interface RecordSaleDialogProps {
@@ -356,9 +353,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
 
       await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
 
-      void syncShopifyQuietly(bike.id, 'sold_out');
-      void syncSquarespaceQuietly(bike.id, 'sold_out');
-      void syncEbayQuietly(bike.id, 'end');
+      // Listings stay live until a deposit or payment is marked on the invoice.
 
 
       toast.success(`Sale recorded — invoice ${invoice.invoice_number}`, {
