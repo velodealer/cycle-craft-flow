@@ -18,12 +18,17 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const supabase = serviceClient();
-  let businessId: string;
-  try {
-    const user = await requireUser(req, supabase);
-    businessId = (await profileFor(supabase, user.id)).business_id;
-  } catch (e) {
-    return json({ error: (e as Error).message }, 401);
+  // Server-to-server calls (eBay order sync) authenticate with the service key.
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const isService = !!serviceKey && req.headers.get('Authorization') === `Bearer ${serviceKey}`;
+  let businessId: string | null = null;
+  if (!isService) {
+    try {
+      const user = await requireUser(req, supabase);
+      businessId = (await profileFor(supabase, user.id)).business_id;
+    } catch (e) {
+      return json({ error: (e as Error).message }, 401);
+    }
   }
 
   let invoiceId: string | undefined;
@@ -36,7 +41,8 @@ Deno.serve(async (req) => {
       .select('*, bikes:bike_id(*), external_owners:external_customer_id(*), parts:part_id(*)').eq('id', invoiceId).maybeSingle();
     if (error) throw new Error(error.message);
     const inv = invoice as any;
-    if (!inv || inv.business_id !== businessId) return json({ error: 'Invoice not found' }, 404);
+    if (!inv || (businessId !== null && inv.business_id !== businessId)) return json({ error: 'Invoice not found' }, 404);
+    if (businessId === null) businessId = inv.business_id as string;
 
     const { data: integ, error: iErr } = await supabase.from('integrations').select('is_active')
       .eq('name', 'xero').eq('business_id', businessId).maybeSingle();

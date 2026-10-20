@@ -35,10 +35,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const supabase = serviceClient();
-  try {
-    await requireUser(req, supabase);
-  } catch (e) {
-    return json({ error: (e as Error).message }, 401);
+  // Server-to-server calls (eBay order sync) authenticate with the service key.
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const isService = !!serviceKey && req.headers.get('Authorization') === `Bearer ${serviceKey}`;
+  if (!isService) {
+    try {
+      await requireUser(req, supabase);
+    } catch (e) {
+      return json({ error: (e as Error).message }, 401);
+    }
   }
 
   let invoiceId: string | undefined;
