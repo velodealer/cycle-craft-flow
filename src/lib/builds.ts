@@ -123,7 +123,7 @@ export async function startBuild(quoteId: string, input: { make: string; model: 
       model: input.model,
       status: "repair",
       purchase_price: cost,
-      listed_price: input.salePrice || null,
+      asking_price: input.salePrice || null,
     })
     .select("id")
     .single();
