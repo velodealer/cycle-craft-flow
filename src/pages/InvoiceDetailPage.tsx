@@ -47,9 +47,9 @@ export default function InvoiceDetailPage() {
     else toast.error(`Could not email the invoice: ${r.error}`);
   };
 
-  const resync = async () => {
+  const resync = async (fresh = false) => {
     setBusy('sync');
-    try { await syncInvoice(inv.id); toast.success('Invoice synced to QuickBooks'); await load(); }
+    try { await syncInvoice(inv.id, fresh); toast.success('Invoice synced to QuickBooks'); await load(); }
     catch (e) { toast.error(`QuickBooks sync failed: ${(e as Error).message}`); }
     finally { setBusy(null); }
   };
@@ -95,11 +95,17 @@ export default function InvoiceDetailPage() {
       ) : docError ? (
         <div className="space-y-3 rounded-md border p-4 text-sm">
           <p>{docError}</p>
-          {!inv.quickbooks_invoice_id && (
-            <Button size="sm" onClick={resync} disabled={busy !== null}>
-              {busy === 'sync' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}Send to QuickBooks
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => resync(false)} disabled={busy !== null}>
+              {busy === 'sync' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}
+              {inv.quickbooks_invoice_id ? 'Re-send to QuickBooks' : 'Send to QuickBooks'}
             </Button>
-          )}
+            {inv.quickbooks_invoice_id && (
+              <Button size="sm" variant="outline" onClick={() => resync(true)} disabled={busy !== null}>
+                Create fresh copy in QuickBooks
+              </Button>
+            )}
+          </div>
         </div>
       ) : doc ? <InvoiceDocument inv={doc} /> : null}
     </div>
