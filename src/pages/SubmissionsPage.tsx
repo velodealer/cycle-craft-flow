@@ -405,9 +405,11 @@ export default function SubmissionsPage() {
       <Dialog open={Boolean(rejectTarget)} onOpenChange={(open) => !open && setRejectTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Reject submission</DialogTitle>
+            <DialogTitle>{rejectTarget?.status === 'rejected' ? 'Edit rejection reason' : 'Reject submission'}</DialogTitle>
             <DialogDescription>
-              Pick why you're turning this down so you can see trends later.
+              {rejectTarget?.status === 'rejected'
+                ? 'Change the reason — the update is saved straight away.'
+                : "Pick why you're turning this down so you can see trends later."}
             </DialogDescription>
           </DialogHeader>
           <Select value={rejectCategory} onValueChange={setRejectCategory}>
