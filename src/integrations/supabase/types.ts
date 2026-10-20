@@ -1892,6 +1892,7 @@ export type Database = {
           gross: number
           id: string
           invoice_number: string
+          is_export: boolean
           issued_at: string | null
           job_id: string | null
           net: number
@@ -1931,6 +1932,7 @@ export type Database = {
           gross: number
           id?: string
           invoice_number: string
+          is_export?: boolean
           issued_at?: string | null
           job_id?: string | null
           net: number
@@ -1970,6 +1972,7 @@ export type Database = {
           gross?: number
           id?: string
           invoice_number?: string
+          is_export?: boolean
           issued_at?: string | null
           job_id?: string | null
           net?: number
