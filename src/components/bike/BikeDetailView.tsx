@@ -14,6 +14,7 @@ import BreakBikeDialog from './BreakBikeDialog';
 import DeleteBikeDialog from './DeleteBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import RecordSaleDialog from './RecordSaleDialog';
+import { useSearchParams } from 'react-router-dom';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
@@ -95,6 +96,25 @@ export default function BikeDetailView({
   const [bikeComponents, setBikeComponents] = useState<any[]>([]);
   const [saleDraft, setSaleDraft] = useState<any | null>(null);
   const [forceSaleDialog, setForceSaleDialog] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [salePrefill] = useState(() => {
+    const px = searchParams.get('pxBike');
+    if (!px) return undefined;
+    return {
+      partExBikeId: px,
+      customerId: searchParams.get('customer'),
+      make: searchParams.get('pxMake') ?? '',
+      model: searchParams.get('pxModel') ?? '',
+      value: Number(searchParams.get('pxValue')) || 0,
+    };
+  });
+  useEffect(() => {
+    if (salePrefill) {
+      setForceSaleDialog(true);
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [editingPrices, setEditingPrices] = useState(false);
   const [savingPrices, setSavingPrices] = useState(false);
   const [priceDraft, setPriceDraft] = useState({ purchase_price: '', asking_price: '', sale_price: '' });
@@ -820,6 +840,7 @@ export default function BikeDetailView({
           isOpen={true}
           onClose={() => { setDialogDirection(null); setForceSaleDialog(false); }}
           bike={bike}
+          prefill={forceSaleDialog ? salePrefill : undefined}
           onSuccess={() => {
             supabase.from('sale_drafts').select('payload, updated_at').eq('bike_id', bike.id).maybeSingle()
               .then(({ data }) => setSaleDraft(data ?? null));
