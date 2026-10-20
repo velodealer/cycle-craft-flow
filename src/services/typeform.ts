@@ -241,7 +241,7 @@ export async function convertSubmissionToPartEx(
   sub: TypeformSubmission,
   stockBike: StockBikeOption,
   allowance: number,
-): Promise<string> {
+): Promise<{ bikeId: string; customerId: string | null }> {
   const bikeId = await convertSubmissionToBike(sub);
   const label = `${stockBike.reference ? stockBike.reference + ' · ' : ''}${stockBike.make} ${stockBike.model}`;
   const { error } = await supabase
@@ -257,5 +257,6 @@ export async function convertSubmissionToPartEx(
     .from('typeform_submissions')
     .update({ notes: `Part exchange against ${label} — allowance £${allowance.toFixed(2)}` })
     .eq('id', sub.id);
-  return bikeId;
+  const { data: px } = await supabase.from('bikes').select('external_owner_id').eq('id', bikeId).maybeSingle();
+  return { bikeId, customerId: (px as { external_owner_id: string | null } | null)?.external_owner_id ?? null };
 }

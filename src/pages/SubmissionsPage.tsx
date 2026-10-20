@@ -117,7 +117,7 @@ export default function SubmissionsPage() {
     const sub = pxTarget;
     setBusyId(sub.id);
     try {
-      const newId = await convertSubmissionToPartEx(sub, stock, allowance);
+      const { bikeId: newId, customerId } = await convertSubmissionToPartEx(sub, stock, allowance);
       const label = `${stock.reference ? stock.reference + ' · ' : ''}${stock.make} ${stock.model}`;
       logActivity(stock.id, {
         kind: 'sale',
@@ -131,10 +131,17 @@ export default function SubmissionsPage() {
         summary: `Taken in part exchange against ${label} at £${allowance.toFixed(2)}`,
         detail: { against_bike_id: stock.id, submission_id: sub.id },
       });
-      toast.success('Part exchange bike created — record the sale on the stock bike when ready');
+      toast.success('Part exchange bike created — now raise the invoice for the stock bike');
       setSubmissions((prev) => prev.map((s) => (s.id === sub.id ? { ...s, status: 'converted', bike_id: newId } : s)));
       setPxTarget(null);
-      navigate(`/bikes/${newId}`);
+      const qs = new URLSearchParams({
+        pxBike: newId,
+        pxMake: sub.bike_make ?? '',
+        pxModel: sub.bike_model ?? '',
+        pxValue: String(allowance),
+        ...(customerId ? { customer: customerId } : {}),
+      });
+      navigate(`/bikes/${stock.id}?${qs.toString()}`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
