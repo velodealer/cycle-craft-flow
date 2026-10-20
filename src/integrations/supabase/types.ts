@@ -651,6 +651,71 @@ export type Database = {
         }
         Relationships: []
       }
+      build_parts: {
+        Row: {
+          business_id: string
+          category: string
+          created_at: string
+          description: string
+          id: string
+          order_ref: string | null
+          ordered_at: string | null
+          qty: number
+          quote_id: string
+          received_at: string | null
+          sort_order: number
+          source: string
+          status: string
+          supplier: string | null
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          business_id?: string
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          order_ref?: string | null
+          ordered_at?: string | null
+          qty?: number
+          quote_id: string
+          received_at?: string | null
+          sort_order?: number
+          source?: string
+          status?: string
+          supplier?: string | null
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          order_ref?: string | null
+          ordered_at?: string | null
+          qty?: number
+          quote_id?: string
+          received_at?: string | null
+          sort_order?: number
+          source?: string
+          status?: string
+          supplier?: string | null
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "build_parts_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_subscriptions: {
         Row: {
           billing_period: string
@@ -2410,10 +2475,15 @@ export type Database = {
       }
       quotes: {
         Row: {
+          accepted_at: string | null
+          bike_id: string | null
+          build_status: string
           business_id: string
           created_at: string
           created_by: string | null
           current_version: number
+          customer_email: string | null
+          customer_name: string | null
           id: string
           name: string
           notes: string | null
@@ -2424,10 +2494,15 @@ export type Database = {
           vat_scheme: string
         }
         Insert: {
+          accepted_at?: string | null
+          bike_id?: string | null
+          build_status?: string
           business_id?: string
           created_at?: string
           created_by?: string | null
           current_version?: number
+          customer_email?: string | null
+          customer_name?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -2438,10 +2513,15 @@ export type Database = {
           vat_scheme?: string
         }
         Update: {
+          accepted_at?: string | null
+          bike_id?: string | null
+          build_status?: string
           business_id?: string
           created_at?: string
           created_by?: string | null
           current_version?: number
+          customer_email?: string | null
+          customer_name?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -2452,6 +2532,13 @@ export type Database = {
           vat_scheme?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_business_id_fkey"
             columns: ["business_id"]
