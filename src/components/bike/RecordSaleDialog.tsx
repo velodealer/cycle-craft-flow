@@ -22,6 +22,8 @@ interface RecordSaleDialogProps {
   onClose: () => void;
   bike: any;
   onSuccess: () => void;
+  /** Part exchange already taken in (e.g. from a submission): reuse that bike instead of creating one. */
+  prefill?: { customerId?: string | null; partExBikeId: string; make: string; model: string; value: number };
 }
 
 interface ExternalOwner {
@@ -34,7 +36,7 @@ interface ExternalOwner {
 
 const NEW_CUSTOMER = '__new__';
 
-export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: RecordSaleDialogProps) {
+export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, prefill }: RecordSaleDialogProps) {
   const [customers, setCustomers] = useState<ExternalOwner[]>([]);
   const [customerId, setCustomerId] = useState<string>(NEW_CUSTOMER);
   const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '', address: '', line1: '', line2: '', city: '', postcode: '', country: 'UK' });
@@ -92,7 +94,11 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
         const value = Number(data?.value as any);
         if (Number.isFinite(value) && value >= 0) setDeliveryCharge(String(value));
       });
-    if (bike?.id) {
+    if (prefill) {
+      if (prefill.customerId) setCustomerId(prefill.customerId);
+      setHasPartEx(true);
+      setPartEx((p) => ({ ...p, make: prefill.make, model: prefill.model, value: String(prefill.value) }));
+    } else if (bike?.id) {
       supabase
         .from('sale_drafts')
         .select('payload')
@@ -261,8 +267,10 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       const issuedAt = new Date(`${saleDate}T12:00:00Z`).toISOString();
 
       // Part exchange bike comes in as a new stock item at the agreed allowance.
-      let partExBikeId: string | null = null;
-      if (hasPartEx) {
+      let partExBikeId: string | null = prefill?.partExBikeId ?? null;
+      if (prefill && hasPartEx) {
+        await supabase.from('bikes').update({ purchase_price: Number(partEx.value) }).eq('id', prefill.partExBikeId);
+      } else if (hasPartEx) {
         const { data: pxBike, error: pxError } = await supabase
           .from('bikes')
           .insert({
@@ -302,7 +310,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
           sale_gross: Number(totals.gross.toFixed(2)),
           delivery_charge: fulfilment === 'delivery' ? Number((Number(deliveryCharge) || 0).toFixed(2)) : 0,
           delivery_charged_to_customer: fulfilment === 'delivery' && chargeDelivery,
-          part_exchange_bike_id: partExBikeId,
+          part_exchange_bike_id: hasPartEx ? partExBikeId : null,
           part_exchange_value: hasPartEx ? Number(totals.pxValue.toFixed(2)) : null,
           vat_rate: totals.vatRate,
 
@@ -527,7 +535,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
               <Label htmlFor="part-ex-toggle">Part exchange</Label>
               <p className="text-xs text-muted-foreground">Take a bike in against this sale</p>
             </div>
-            <Switch id="part-ex-toggle" checked={hasPartEx} onCheckedChange={setHasPartEx} />
+            <Switch id="part-ex-toggle" checked={hasPartEx} onCheckedChange={setHasPartEx} disabled={!!prefill} />
           </div>
 
           {hasPartEx && (
