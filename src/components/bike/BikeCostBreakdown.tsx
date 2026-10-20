@@ -77,6 +77,7 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
         <Row label="Labour / jobs" value={`− ${formatCurrency(jobsCost)}`} muted />
         <Row label="Total costs" value={formatCurrency(totalCost)} bold />
         <Row label="Gross profit" value={formatCurrency(gross)} bold negative={gross < 0} />
+        {isExport && <Row label="VAT (export — zero-rated)" value="£0.00" muted sub="No VAT charged; costs shown ex VAT" />}
         {isMargin && <Row label="VAT (margin scheme)" value={`− ${formatCurrency(vat)}`} muted />}
         <Row label="Net profit" value={formatCurrency(net)} bold negative={net < 0} />
         {investorShare != null && (
