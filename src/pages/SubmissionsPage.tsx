@@ -8,13 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Inbox, Bike, Ban, Eye, Pencil } from 'lucide-react';
+import { Loader2, Inbox, Bike, Ban, Eye, Pencil, ArrowLeftRight } from 'lucide-react';
+import { logActivity } from '@/lib/activity';
 import { toast } from 'sonner';
 import BikeThumbnail from '@/components/bike/BikeThumbnail';
 import {
   listSubmissions,
   updateSubmissionStatus,
   convertSubmissionToBike,
+  convertSubmissionToPartEx,
+  listStockBikesForPartEx,
+  type StockBikeOption,
   type TypeformSubmission,
 } from '@/services/typeform';
 
@@ -85,6 +89,58 @@ export default function SubmissionsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [detail, setDetail] = useState<TypeformSubmission | null>(null);
   const [rejectTarget, setRejectTarget] = useState<TypeformSubmission | null>(null);
+  const [pxTarget, setPxTarget] = useState<TypeformSubmission | null>(null);
+  const [pxStock, setPxStock] = useState<StockBikeOption[]>([]);
+  const [pxStockLoading, setPxStockLoading] = useState(false);
+  const [pxBikeId, setPxBikeId] = useState('');
+  const [pxValue, setPxValue] = useState('');
+
+  const openPartEx = async (sub: TypeformSubmission) => {
+    setPxTarget(sub);
+    setPxBikeId('');
+    setPxValue(sub.asking_price ? String(sub.asking_price) : '');
+    setPxStockLoading(true);
+    try {
+      setPxStock(await listStockBikesForPartEx());
+    } catch (e) {
+      toast.error(`Could not load stock bikes: ${(e as Error).message}`);
+    } finally {
+      setPxStockLoading(false);
+    }
+  };
+
+  const handlePartEx = async () => {
+    if (!pxTarget) return;
+    const stock = pxStock.find((b) => b.id === pxBikeId);
+    const allowance = Number(pxValue);
+    if (!stock || !(allowance > 0)) return;
+    const sub = pxTarget;
+    setBusyId(sub.id);
+    try {
+      const newId = await convertSubmissionToPartEx(sub, stock, allowance);
+      const label = `${stock.reference ? stock.reference + ' · ' : ''}${stock.make} ${stock.model}`;
+      logActivity(stock.id, {
+        kind: 'sale',
+        action: 'part_exchange_agreed',
+        summary: `Part exchange agreed: ${sub.bike_make ?? ''} ${sub.bike_model ?? ''} at £${allowance.toFixed(2)}`.trim(),
+        detail: { part_exchange_bike_id: newId, submission_id: sub.id },
+      });
+      logActivity(newId, {
+        kind: 'bike',
+        action: 'part_exchange_in',
+        summary: `Taken in part exchange against ${label} at £${allowance.toFixed(2)}`,
+        detail: { against_bike_id: stock.id, submission_id: sub.id },
+      });
+      toast.success('Part exchange bike created — record the sale on the stock bike when ready');
+      setSubmissions((prev) => prev.map((s) => (s.id === sub.id ? { ...s, status: 'converted', bike_id: newId } : s)));
+      setPxTarget(null);
+      navigate(`/bikes/${newId}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  };
   const [rejectReason, setRejectReason] = useState('');
   const [rejectCategory, setRejectCategory] = useState('');
 
@@ -308,6 +364,17 @@ export default function SubmissionsPage() {
                       )}
                       {sub.status !== 'converted' && sub.status !== 'rejected' && (
                         <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPartEx(sub)}
+                          disabled={busyId === sub.id || sub.status === 'new'}
+                          title={sub.status === 'new' ? 'Mark reviewed first' : undefined}
+                        >
+                          <ArrowLeftRight className="mr-2 h-4 w-4" /> Part ex
+                        </Button>
+                      )}
+                      {sub.status !== 'converted' && sub.status !== 'rejected' && (
+                        <Button
                           variant="destructive"
                           size="sm"
                           onClick={() => openReject(sub)}
@@ -434,6 +501,49 @@ export default function SubmissionsPage() {
             >
               {busyId === rejectTarget?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {rejectTarget?.status === 'rejected' ? 'Save reason' : 'Reject'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pxTarget} onOpenChange={(o) => !o && setPxTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Part exchange</DialogTitle>
+            <DialogDescription>
+              Take in {pxTarget?.bike_make} {pxTarget?.bike_model} against one of your bikes in stock.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Against bike</label>
+              <Select value={pxBikeId} onValueChange={setPxBikeId} disabled={pxStockLoading}>
+                <SelectTrigger>
+                  <SelectValue placeholder={pxStockLoading ? 'Loading stock…' : 'Choose a bike in stock'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {pxStock.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.reference ? `${b.reference} · ` : ''}{b.make} {b.model}
+                      {b.asking_price ? ` — £${Number(b.asking_price).toLocaleString()}` : ''}
+                    </SelectItem>
+                  ))}
+                  {!pxStockLoading && pxStock.length === 0 && (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No bikes in stock</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Part exchange allowance (£)</label>
+              <Input type="number" inputMode="decimal" min="0" step="0.01" value={pxValue} onChange={(e) => setPxValue(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPxTarget(null)}>Cancel</Button>
+            <Button onClick={handlePartEx} disabled={busyId === pxTarget?.id || !pxBikeId || !(Number(pxValue) > 0)}>
+              {busyId === pxTarget?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create part exchange
             </Button>
           </DialogFooter>
         </DialogContent>
