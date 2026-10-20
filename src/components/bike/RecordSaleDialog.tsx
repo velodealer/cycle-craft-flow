@@ -267,7 +267,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
       const issuedAt = new Date(`${saleDate}T12:00:00Z`).toISOString();
 
       // Part exchange bike comes in as a new stock item at the agreed allowance.
-      let partExBikeId: string | null = prefill?.partExBikeId ?? null;
+      let partExBikeId: string | null = hasPartEx ? prefill?.partExBikeId ?? null : null;
       if (prefill && hasPartEx) {
         await supabase.from('bikes').update({ purchase_price: Number(partEx.value) }).eq('id', prefill.partExBikeId);
       } else if (hasPartEx) {
