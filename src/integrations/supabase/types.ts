@@ -1259,8 +1259,10 @@ export type Database = {
           currency: string | null
           despatched_at: string | null
           id: string
+          invoice_id: string | null
           line_item_id: string | null
           order_id: string
+          part_id: string | null
           raw: Json
           status: string
           total: number | null
@@ -1276,8 +1278,10 @@ export type Database = {
           currency?: string | null
           despatched_at?: string | null
           id?: string
+          invoice_id?: string | null
           line_item_id?: string | null
           order_id: string
+          part_id?: string | null
           raw?: Json
           status?: string
           total?: number | null
@@ -1293,8 +1297,10 @@ export type Database = {
           currency?: string | null
           despatched_at?: string | null
           id?: string
+          invoice_id?: string | null
           line_item_id?: string | null
           order_id?: string
+          part_id?: string | null
           raw?: Json
           status?: string
           total?: number | null
@@ -1314,6 +1320,20 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ebay_orders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ebay_orders_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
             referencedColumns: ["id"]
           },
         ]
@@ -2279,6 +2299,7 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string
+          ebay_item_id: string | null
           fit_qb_posting_id: string | null
           fit_qb_sync_error: string | null
           fit_qb_sync_status: string | null
@@ -2302,6 +2323,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description: string
+          ebay_item_id?: string | null
           fit_qb_posting_id?: string | null
           fit_qb_sync_error?: string | null
           fit_qb_sync_status?: string | null
@@ -2325,6 +2347,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string
+          ebay_item_id?: string | null
           fit_qb_posting_id?: string | null
           fit_qb_sync_error?: string | null
           fit_qb_sync_status?: string | null
