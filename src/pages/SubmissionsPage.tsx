@@ -433,7 +433,7 @@ export default function SubmissionsPage() {
               disabled={busyId === rejectTarget?.id || !rejectCategory || (rejectCategory === 'Other' && !rejectReason.trim())}
             >
               {busyId === rejectTarget?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Reject
+              {rejectTarget?.status === 'rejected' ? 'Save reason' : 'Reject'}
             </Button>
           </DialogFooter>
         </DialogContent>
