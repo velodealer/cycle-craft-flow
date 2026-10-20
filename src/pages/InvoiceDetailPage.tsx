@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { emailInvoice } from '@/lib/invoiceEmail';
 import { syncInvoice } from '@/lib/quickbooks';
 import { fetchInvoiceView, publicInvoiceUrl } from '@/lib/invoiceView';
+import { isSaleSecured, markInvoicePayment } from '@/lib/saleDelisting';
 import { InvoiceDocument, type MirroredInvoice } from '@/components/invoice/InvoiceDocument';
 import { toast } from 'sonner';
 
@@ -17,14 +18,14 @@ export default function InvoiceDetailPage() {
   const [docError, setDocError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [to, setTo] = useState('');
-  const [busy, setBusy] = useState<'send' | 'sync' | 'pdf' | null>(null);
+  const [busy, setBusy] = useState<'send' | 'sync' | 'pdf' | 'pay' | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setDocError(null);
     const { data } = await supabase
       .from('invoices')
-      .select('id, invoice_number, quickbooks_invoice_id, external_owners:external_customer_id(name, email)')
+      .select('id, invoice_number, quickbooks_invoice_id, bike_id, type, status, paid_at, deposit_received_at, deposit_amount, external_owners:external_customer_id(name, email)')
       .eq('id', id!)
       .maybeSingle();
     setInv(data);
@@ -55,6 +56,23 @@ export default function InvoiceDetailPage() {
   };
 
   const pdf = () => window.print();
+
+  const markPayment = async (kind: 'deposit' | 'paid') => {
+    let amount: number | undefined;
+    if (kind === 'deposit') {
+      const raw = window.prompt('Deposit amount received (£) — optional');
+      if (raw === null) return;
+      amount = raw.trim() ? Number(raw) : undefined;
+      if (amount !== undefined && !(amount > 0)) return toast.error('Enter a valid amount');
+    }
+    setBusy('pay');
+    try {
+      await markInvoicePayment(inv, kind, amount);
+      toast.success(kind === 'deposit' ? 'Deposit recorded — bike taken off sale' : 'Marked paid — bike taken off sale');
+      await load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(null); }
+  };
 
   const copyLink = async () => {
     if (!doc?.public_token) return;
