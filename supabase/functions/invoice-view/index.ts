@@ -133,7 +133,11 @@ Deno.serve(async (req) => {
     }
     return json(body);
   } catch (e) {
-    console.error('invoice-view error', (e as Error).message);
-    return json({ error: staff ? (e as Error).message : 'Invoice is temporarily unavailable' }, 502);
+    const msg = (e as Error).message;
+    console.error('invoice-view error', msg);
+    if (staff && (/Object Not Found/i.test(msg) || /"code"\s*:\s*"?610"?/.test(msg))) {
+      return json({ error: 'QuickBooks no longer has this invoice (it was deleted or made inactive there). Re-send it to QuickBooks to create a fresh copy.', qbo_missing: true }, 409);
+    }
+    return json({ error: staff ? msg : 'Invoice is temporarily unavailable' }, 502);
   }
 });

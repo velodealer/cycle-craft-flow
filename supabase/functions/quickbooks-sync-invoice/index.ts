@@ -17,6 +17,11 @@ import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
 import { buildSaleInvoiceLines, buildPartStockOutLines } from '../_shared/quickbooks-lines.ts';
 
+/** QuickBooks 610 "Object Not Found" — deleted, inactive or wrong-type stored ID. */
+function isStaleRefError(e: unknown) {
+  const m = e instanceof Error ? e.message : String(e ?? '');
+  return /Object Not Found/i.test(m) || /"code"\s*:\s*"?610"?/.test(m);
+}
 
 
 const json = (body: unknown, status = 200) =>
@@ -40,6 +45,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     invoiceId = typeof body.invoice_id === 'string' ? body.invoice_id : undefined;
+    const forceFresh = body.force_fresh === true;
     if (!invoiceId) return json({ error: 'invoice_id is required' }, 400);
 
     const { data: invoice, error: invError } = await supabase
@@ -172,9 +178,19 @@ Deno.serve(async (req) => {
 
 
 
-    if (invoice.quickbooks_invoice_id) {
-      const existing = await qboFetch(accessToken, realmId, `/invoice/${invoice.quickbooks_invoice_id}?minorversion=70`);
-      if (existing?.Invoice) {
+    // A stored ID QuickBooks no longer recognises (deleted, inactive, or a
+    // different transaction type) is stale: post a fresh record instead.
+    const readExisting = async (path: string) => {
+      try { return await qboFetch(accessToken, realmId, path); }
+      catch (e) {
+        if (isStaleRefError(e)) { console.warn(`Stale QuickBooks ref ${path}; posting fresh`); return null; }
+        throw e;
+      }
+    };
+
+    if (invoice.quickbooks_invoice_id && !forceFresh) {
+      const existing = await readExisting(`/invoice/${invoice.quickbooks_invoice_id}?minorversion=70`);
+      if (existing?.Invoice && existing.Invoice.status !== 'Deleted') {
         invoicePayload.Id = existing.Invoice.Id;
         invoicePayload.SyncToken = existing.Invoice.SyncToken;
         invoicePayload.sparse = false;
@@ -244,8 +260,8 @@ Deno.serve(async (req) => {
         Line: lines,
       };
 
-      if (journalId) {
-        const existing = await qboFetch(accessToken, realmId, `/journalentry/${journalId}?minorversion=70`);
+      if (journalId && !forceFresh) {
+        const existing = await readExisting(`/journalentry/${journalId}?minorversion=70`);
         if (existing?.JournalEntry) {
           journalPayload.Id = existing.JournalEntry.Id;
           journalPayload.SyncToken = existing.JournalEntry.SyncToken;

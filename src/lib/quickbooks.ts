@@ -106,9 +106,10 @@ export const syncBikePurchase = (bikeId: string) =>
 export const syncBreakToQuickBooks = (bikeId: string) =>
   invoke<{ ok: true; skipped?: string; qb_journal_id?: string }>('quickbooks-break-bike', { bike_id: bikeId });
 
-export const syncInvoice = (invoiceId: string) =>
+export const syncInvoice = (invoiceId: string, forceFresh = false) =>
   invoke<{ ok: true; quickbooks_invoice_id?: string; margin_vat?: number }>('quickbooks-sync-invoice', {
     invoice_id: invoiceId,
+    ...(forceFresh ? { force_fresh: true } : {}),
   });
 
 /** Fire-and-forget purchase posting: never blocks or breaks the calling UI flow. */
