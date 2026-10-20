@@ -24,7 +24,7 @@ const ACCOUNT_FIELDS: { key: keyof XeroAccountMap; label: string; hint: string }
 ];
 const LABELS: Record<string, string> = {
   stock: 'Stock', parts_stock: 'Parts stock', purchase_funding: 'Purchase funding', cogs: 'Cost of goods sold', sales: 'Sales', vat: 'Margin VAT',
-  standard_sales: 'Standard sale VAT rate', margin_sales: 'Margin sale VAT rate',
+  standard_sales: 'Standard sale VAT rate', margin_sales: 'Margin sale VAT rate', export_sales: 'Export sale VAT rate',
 };
 
 export default function XeroIntegration() {
@@ -180,9 +180,9 @@ export default function XeroIntegration() {
                 {vatRegistered ? (
                   <div className="space-y-3">
                     <div className="text-sm font-medium">VAT rates</div>
-                    {(['standard_sales', 'margin_sales'] as const).map((k) => (
+                    {(['standard_sales', 'margin_sales', 'export_sales'] as const).map((k) => (
                       <div key={k} className="space-y-1">
-                        <Label>{k === 'standard_sales' ? 'Standard VAT sale (and delivery)' : 'Margin scheme sale'}</Label>
+                        <Label>{k === 'standard_sales' ? 'Standard VAT sale (and delivery)' : k === 'margin_sales' ? 'Margin scheme sale' : 'Export sale (zero-rated)'}</Label>
                         <Select value={taxMap[k] ?? ''} onValueChange={(v) => setTaxMap((m) => ({ ...m, [k]: v }))}>
                           <SelectTrigger><SelectValue placeholder="Choose a VAT rate" /></SelectTrigger>
                           <SelectContent>

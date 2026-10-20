@@ -295,6 +295,7 @@ export default function QuickBooksIntegration() {
                 {([
                   ['standard_sales', 'Standard VAT sales', 'Choose the active 20% sales VAT code from this QuickBooks company.'],
                   ['margin_sales', 'No VAT / margin scheme', 'Choose the no-VAT sales code; margin VAT is posted separately.'],
+                  ['export_sales', 'Zero-rated export sales', 'Used for sales marked "Going for export" (for example "0.0% Z" or "Zero-rated").'],
                 ] as const).map(([key, label, hint]) => (
                   <div key={key} className="space-y-1.5">
                     <Label>{label}</Label>

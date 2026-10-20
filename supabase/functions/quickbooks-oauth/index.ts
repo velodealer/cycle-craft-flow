@@ -192,6 +192,8 @@ Deno.serve(async (req) => {
       const saved = {
         standard_sales: taxCodes.standard_sales.trim(),
         margin_sales: taxCodes.margin_sales.trim(),
+        ...(typeof taxCodes.export_sales === 'string' && taxCodes.export_sales.trim()
+          ? { export_sales: taxCodes.export_sales.trim() } : {}),
       };
       await saveSettings(supabase, { tax_codes: saved });
       return json({ ok: true, tax_codes: saved });
