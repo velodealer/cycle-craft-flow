@@ -315,9 +315,9 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       const { error: bikeError } = await supabase
         .from('bikes')
         .update({
-          status: 'sold',
+          // Status stays as-is (still for sale) until a deposit or payment is
+          // marked on the invoice — see markInvoicePayment.
           sale_price: totals.gross,
-          sold_at: issuedAt,
           delivery_method: fulfilment === 'delivery' ? 'delivery' : 'collection',
           ...(absorbedDelivery > 0
             ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
