@@ -25,5 +25,13 @@ export async function markInvoicePayment(
     : { paid_at: now, status: 'paid' as const };
   const { error } = await supabase.from('invoices').update(patch as any).eq('id', invoice.id);
   if (error) throw error;
-  if (invoice.bike_id) takeBikeOffSale(invoice.bike_id);
+  if (invoice.bike_id) {
+    // Only now does the bike become Sold (unless it already moved on).
+    const { error: bErr } = await supabase.from('bikes')
+      .update({ status: 'sold', sold_at: now })
+      .eq('id', invoice.bike_id)
+      .not('status', 'in', '(sold,collected,delivered,split_for_parts)');
+    if (bErr) throw bErr;
+    takeBikeOffSale(invoice.bike_id);
+  }
 }
