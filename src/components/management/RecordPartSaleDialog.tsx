@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useVatRegistered } from '@/hooks/useVatRegistered';
 import { syncInvoice } from '@/lib/quickbooks';
@@ -35,6 +36,7 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
   const [customerName, setCustomerName] = useState('');
   const [saleDate, setSaleDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [submitting, setSubmitting] = useState(false);
+  const [isExport, setIsExport] = useState(false);
 
   useEffect(() => {
     if (part && open) {
@@ -42,14 +44,17 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
       setCustomerName('');
       setSaleDate(new Date().toISOString().slice(0, 10));
       setScheme('vat_qualifying');
+      setIsExport(false);
     }
   }, [part, open]);
 
   const gross = Number(price) || 0;
   const cost = Math.abs(Number(part?.cost_price ?? 0));
   const marginVat = vatRegistered && scheme === 'margin_scheme' ? Math.max(0, gross - cost) * 20 / 120 : 0;
-  const net = !vatRegistered ? gross : gross - marginVat;
-  const vatRate = vatRegistered ? 20 : 0;
+  const exportSale = vatRegistered && scheme === 'vat_qualifying' && isExport;
+  const standardVat = vatRegistered && scheme === 'vat_qualifying' && !exportSale ? gross - gross / 1.2 : 0;
+  const net = !vatRegistered || exportSale ? gross : gross - marginVat - standardVat;
+  const vatRate = vatRegistered && !exportSale && scheme === 'vat_qualifying' ? 20 : 0;
 
   const submit = async () => {
     if (!part) return;
@@ -72,6 +77,7 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
           sale_gross: Number(gross.toFixed(2)),
           vat_rate: vatRate,
           finance_scheme: vatRegistered ? scheme : null,
+          is_export: exportSale,
           customer_name: customerName.trim() || null,
           status: 'issued',
           issued_at: issuedAt,
@@ -121,7 +127,7 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
           <div className="rounded-md border p-3 text-sm">
             <div className="font-medium">{[part?.brand, part?.description].filter(Boolean).join(' — ')}</div>
             <div className="mt-1 text-muted-foreground">
-              Cost {money(cost)} · VAT {vatRegistered ? (scheme === 'margin_scheme' ? 'margin scheme' : '20% standard') : 'not registered'}
+              Cost {money(cost)} · VAT {vatRegistered ? (scheme === 'margin_scheme' ? 'margin scheme' : exportSale ? 'export (zero-rated)' : '20% standard') : 'not registered'}
             </div>
           </div>
           <div className="space-y-1.5">
@@ -148,6 +154,15 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
               </Select>
             </div>
           )}
+          {vatRegistered && scheme === 'vat_qualifying' && (
+            <div className="flex items-start justify-between gap-3 rounded-md border p-3">
+              <div>
+                <Label htmlFor="part-sale-export">Going for export</Label>
+                <p className="text-xs text-muted-foreground">Invoice with no VAT (zero-rated).</p>
+              </div>
+              <Switch id="part-sale-export" checked={isExport} onCheckedChange={setIsExport} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="part-sale-customer">Customer name (optional)</Label>
             <Input
@@ -168,7 +183,7 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
           </div>
           <div className="rounded-md border p-3 text-sm space-y-1">
             <div className="flex justify-between"><span>Gross</span><span>{money(gross)}</span></div>
-            <div className="flex justify-between"><span>VAT</span><span>{money(marginVat)}</span></div>
+            <div className="flex justify-between"><span>VAT</span><span>{money(marginVat + standardVat)}</span></div>
             <div className="flex justify-between font-medium"><span>Net</span><span>{money(net)}</span></div>
           </div>
         </div>

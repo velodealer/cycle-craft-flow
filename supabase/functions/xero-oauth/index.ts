@@ -197,6 +197,7 @@ Deno.serve(async (req) => {
       const tax_types: XeroTaxTypes = {};
       const s = code(body.tax_types?.standard_sales); if (s) tax_types.standard_sales = s;
       const m = code(body.tax_types?.margin_sales); if (m) tax_types.margin_sales = m;
+      const x = code(body.tax_types?.export_sales); if (x) tax_types.export_sales = x;
       await saveSettings(supabase, businessId, { tax_types });
       return json({ ok: true, health: await checkHealth(supabase, businessId).catch(() => null) });
     }

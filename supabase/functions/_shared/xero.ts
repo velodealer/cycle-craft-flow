@@ -23,6 +23,7 @@ export interface XeroAccounts {
 export interface XeroTaxTypes {
   standard_sales?: string;
   margin_sales?: string;
+  export_sales?: string;
 }
 export interface XeroSettings {
   tenant_id?: string;

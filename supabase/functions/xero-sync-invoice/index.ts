@@ -8,7 +8,7 @@ import {
   logXeroError, round2, stockInRef, stockOutRef,
 } from '../_shared/xero.ts';
 import {
-  marginVat, taxTypeFor, saleInvoiceLines, saleJournalLines, partSaleJournalLines,
+  marginVat, taxTypeFor, exportTaxType, saleInvoiceLines, saleJournalLines, partSaleJournalLines,
 } from '../_shared/xero-postings.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -103,6 +103,7 @@ Deno.serve(async (req) => {
       xeroReference = `${ref} · ${stockOutRef(ref) ?? ''}`.slice(0, 255);
     }
 
+    const isExport = vatRegistered && !isMargin && inv.is_export === true;
     const contactId = await findOrCreateContact(call, customer);
     const xInvoice: Record<string, unknown> = {
       Type: 'ACCREC',
@@ -117,10 +118,10 @@ Deno.serve(async (req) => {
         gross,
         description,
         salesAccount: accounts.sales,
-        saleTax: taxTypeFor(vatRegistered, isMargin, auth.settings.tax_types),
+        saleTax: isExport ? exportTaxType(auth.settings.tax_types) : taxTypeFor(vatRegistered, isMargin, auth.settings.tax_types),
         delivery,
         // Delivery is standard rated even on a margin scheme bike.
-        deliveryTax: delivery > 0 ? taxTypeFor(vatRegistered, false, auth.settings.tax_types) : undefined,
+        deliveryTax: delivery > 0 ? (isExport ? exportTaxType(auth.settings.tax_types) : taxTypeFor(vatRegistered, false, auth.settings.tax_types)) : undefined,
       }),
     };
     if (inv.xero_invoice_id) xInvoice.InvoiceID = inv.xero_invoice_id;

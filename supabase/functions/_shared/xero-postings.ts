@@ -16,6 +16,12 @@ export function taxTypeFor(vatRegistered: boolean, isMargin: boolean, t: XeroTax
   return v;
 }
 
+/** Zero-rated TaxType for export sales. */
+export function exportTaxType(t: XeroTaxTypes = {}): string {
+  if (!t.export_sales) throw new Error('Choose the Xero zero-rated export VAT rate in Settings → Integrations → Xero.');
+  return t.export_sales;
+}
+
 export interface SaleLinesInput {
   gross: number;
   description: string;

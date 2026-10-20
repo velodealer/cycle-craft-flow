@@ -13,7 +13,7 @@ import {
   qboErrorInfo,
   type QboSettings,
 } from '../_shared/quickbooks.ts';
-import { taxCodeForScheme } from '../_shared/quickbooks-tax.ts';
+import { taxCodeForScheme, exportTaxCode } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
 import { buildSaleInvoiceLines, buildPartStockOutLines } from '../_shared/quickbooks-lines.ts';
 
@@ -131,7 +131,10 @@ Deno.serve(async (req) => {
       stockOutDoc = bikeReference ? `STK-OUT-${bikeReference}`.slice(0, 21) : null;
     }
 
-    const salesTaxCode = vatRegistered ? taxCodeForScheme(isMargin, (settings as QboSettings).tax_codes) : undefined;
+    // Exports zero-rate standard VAT sales (and their delivery); margin sales are unaffected.
+    const isExport = vatRegistered && !isMargin && (invoice as any).is_export === true;
+    const qboTax = (settings as QboSettings).tax_codes;
+    const salesTaxCode = !vatRegistered ? undefined : isExport ? exportTaxCode(qboTax) : taxCodeForScheme(isMargin, qboTax);
     const fetcher = (path: string, init?: RequestInit) => qboFetch(accessToken, realmId, path, init);
     const customerRef = await findOrCreateCustomer(fetcher, customer);
     const itemRef = await findOrCreateItem(fetcher, accounts.sales);
@@ -140,7 +143,7 @@ Deno.serve(async (req) => {
       ? await findOrCreateItem(fetcher, accounts.sales, 'Delivery')
       : undefined;
     const deliveryTaxCode = vatRegistered && deliveryCharge > 0
-      ? taxCodeForScheme(false, (settings as QboSettings).tax_codes)
+      ? (isExport ? exportTaxCode(qboTax) : taxCodeForScheme(false, qboTax))
       : undefined;
 
     // 1. Customer invoice at the FULL sale value. A part exchange is not a
@@ -163,6 +166,8 @@ Deno.serve(async (req) => {
       PrivateNote: [
         !vatRegistered
           ? 'Sale by a business that is not VAT registered — no VAT charged.'
+          : isExport
+          ? 'Export sale — zero-rated, no VAT charged.'
           : isMargin
           ? `Margin scheme sale. VAT of ${marginVat.toFixed(2)} posted to the VAT control account by journal.`
           : 'Standard VAT sale.',

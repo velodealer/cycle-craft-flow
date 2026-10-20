@@ -1,6 +1,7 @@
 export interface QboTaxCodeRef {
   standard_sales?: string;
   margin_sales?: string;
+  export_sales?: string;
 }
 
 export interface QboTaxCode {
@@ -53,4 +54,9 @@ export function taxCodeForScheme(isMargin: boolean, taxCodes?: QboTaxCodeRef): s
       ? 'Select a QuickBooks No VAT / margin-scheme tax code in Settings, then retry this invoice.'
       : 'Select a QuickBooks Standard VAT sales tax code in Settings, then retry this invoice.',
   );
+}
+/** Zero-rated export sales code — required only when an invoice is marked for export. */
+export function exportTaxCode(taxCodes?: QboTaxCodeRef): string {
+  if (taxCodes?.export_sales) return taxCodes.export_sales;
+  throw new Error('Select a QuickBooks zero-rated export sales code in Settings → Integrations → QuickBooks, then retry this invoice.');
 }
