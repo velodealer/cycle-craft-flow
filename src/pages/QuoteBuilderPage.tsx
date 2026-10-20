@@ -27,6 +27,7 @@ import {
   type VatScheme,
 } from "@/lib/quotes";
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
+import { BuildTracker } from "@/components/quotes/BuildTracker";
 import { useVatRegistered } from "@/hooks/useVatRegistered";
 
 const CATEGORIES = [
@@ -551,6 +552,10 @@ export default function QuoteBuilderPage() {
           </CardContent>
         </Card>
       </div>
+
+      {quoteId && (
+        <BuildTracker quoteId={quoteId} rows={rows} salePrice={salePrice} quoteName={name} dirty={dirty} />
+      )}
     </div>
   );
 }
