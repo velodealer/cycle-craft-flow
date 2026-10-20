@@ -209,3 +209,53 @@ export async function convertSubmissionToBike(sub: TypeformSubmission): Promise<
 
   return (bike as { id: string }).id;
 }
+
+export interface StockBikeOption {
+  id: string;
+  make: string;
+  model: string;
+  reference: string | null;
+  asking_price: number | null;
+  status: string;
+}
+
+const NOT_IN_STOCK = ['sold', 'collected', 'delivered', 'split_for_parts', 'pending_intake', 'awaiting_collection', 'collection_in_progress', 'in_transit'];
+
+/** Bikes currently in stock and not sold — the choices for a part exchange. */
+export async function listStockBikesForPartEx(): Promise<StockBikeOption[]> {
+  const { data, error } = await supabase
+    .from('bikes')
+    .select('id, make, model, reference, asking_price, status')
+    .not('status', 'in', `(${NOT_IN_STOCK.join(',')})`)
+    .order('make')
+    .limit(1000);
+  if (error) throw error;
+  return (data ?? []) as StockBikeOption[];
+}
+
+/**
+ * Part exchange: the customer's bike (from the submission) comes in as stock
+ * at the agreed allowance, set against one of our in-stock bikes.
+ */
+export async function convertSubmissionToPartEx(
+  sub: TypeformSubmission,
+  stockBike: StockBikeOption,
+  allowance: number,
+): Promise<string> {
+  const bikeId = await convertSubmissionToBike(sub);
+  const label = `${stockBike.reference ? stockBike.reference + ' · ' : ''}${stockBike.make} ${stockBike.model}`;
+  const { error } = await supabase
+    .from('bikes')
+    .update({
+      acquired_via: 'part_exchange',
+      purchase_price: allowance,
+      description: `Part exchange against ${label} at £${allowance.toFixed(2)} (via Typeform)`,
+    })
+    .eq('id', bikeId);
+  if (error) throw error;
+  await supabase
+    .from('typeform_submissions')
+    .update({ notes: `Part exchange against ${label} — allowance £${allowance.toFixed(2)}` })
+    .eq('id', sub.id);
+  return bikeId;
+}
