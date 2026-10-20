@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type VatScheme = "standard" | "margin" | "none";
+export type VatScheme = "standard" | "margin" | "export" | "none";
 
 export const VAT_RATE = 0.2;
 
@@ -55,7 +55,7 @@ export const lineNet = (r: QuoteRow) => {
 
 /** VAT contained in a single VAT-inclusive line (1/6). Child rows produce negative VAT under standard. */
 export const lineVat = (r: QuoteRow, scheme: VatScheme) =>
-  scheme === "standard" ? lineNet(r) / 6 : 0;
+  scheme === "standard" || scheme === "export" ? lineNet(r) / 6 : 0;
 
 export const computeVat = (
   rows: QuoteRow[],
@@ -64,13 +64,14 @@ export const computeVat = (
 ) => {
   const totalCost = computeTotalCost(rows);
   const lineVatTotal =
-    scheme === "standard" ? rows.reduce((s, r) => s + lineVat(r, scheme), 0) : 0;
+    scheme === "standard" || scheme === "export" ? rows.reduce((s, r) => s + lineVat(r, scheme), 0) : 0;
   const profit = (Number(salePrice) || 0) - totalCost;
   const marginVat = scheme === "margin" && profit > 0 ? profit / 6 : 0;
   return {
     lineVatTotal,
     marginVat,
-    totalVat: lineVatTotal + marginVat,
+    // Export: no VAT charged on the sale; VAT on parts is reclaimed.
+    totalVat: scheme === "export" ? 0 : lineVatTotal + marginVat,
     netCost: totalCost - lineVatTotal,
   };
 };
