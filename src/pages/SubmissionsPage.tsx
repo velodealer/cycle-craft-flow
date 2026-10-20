@@ -25,6 +25,33 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: 'Rejected',
 };
 
+function SubmissionJourney({ status }: { status: string }) {
+  const last = status === 'rejected' ? 'Rejected' : 'Bike created';
+  const steps = ['Received', 'Reviewed', last];
+  const reached = status === 'new' ? 0 : status === 'reviewed' ? 1 : 2;
+  return (
+    <ol className="mt-3 flex items-center gap-1 text-xs" aria-label="Submission progress">
+      {steps.map((label, i) => {
+        const done = i <= reached;
+        const tone = done
+          ? i === 2 && status === 'rejected'
+            ? 'bg-destructive text-destructive-foreground'
+            : 'bg-primary text-primary-foreground'
+          : 'bg-muted text-muted-foreground';
+        return (
+          <li key={label} className="flex items-center gap-1">
+            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${tone}`}>
+              {i + 1}
+            </span>
+            <span className={done ? 'font-medium' : 'text-muted-foreground'}>{label}</span>
+            {i < steps.length - 1 && <span className={`mx-1 h-px w-4 sm:w-8 ${i < reached ? 'bg-primary' : 'bg-border'}`} />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 const REJECT_REASONS = [
   'Asking price too high',
   'Not a brand/model we stock',
@@ -230,29 +257,45 @@ export default function SubmissionsPage() {
                       {sub.bike_id ? ` · Bike created` : ''}
                     </p>
 
+                    <SubmissionJourney status={sub.status} />
+                    {sub.status === 'rejected' && sub.notes && (
+                      <p className="mt-1 text-xs text-muted-foreground">Reason: {sub.notes}</p>
+                    )}
+
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" onClick={() => openDetail(sub)}>
                         <Eye className="mr-2 h-4 w-4" /> View
                       </Button>
+                      {sub.status === 'new' && (
+                        <Button size="sm" onClick={() => handleMarkReviewed(sub)} disabled={busyId === sub.id}>
+                          Mark reviewed
+                        </Button>
+                      )}
                       {sub.status !== 'converted' && sub.status !== 'rejected' && (
                         <Button
                           size="sm"
+                          variant={sub.status === 'new' ? 'outline' : 'default'}
                           onClick={() => handleCreateBike(sub)}
-                          disabled={busyId === sub.id}
+                          disabled={busyId === sub.id || sub.status === 'new'}
+                          title={sub.status === 'new' ? 'Mark reviewed first' : undefined}
                         >
                           {busyId === sub.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bike className="mr-2 h-4 w-4" />}
                           Create bike
                         </Button>
                       )}
-                      {sub.status === 'new' && (
-                        <Button variant="outline" size="sm" onClick={() => handleMarkReviewed(sub)} disabled={busyId === sub.id}>
-                          Mark reviewed
-                        </Button>
-                      )}
                       {sub.status !== 'converted' && sub.status !== 'rejected' && (
-                        <Button variant="destructive" size="sm" onClick={() => setRejectTarget(sub)}>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setRejectTarget(sub)}
+                          disabled={sub.status === 'new'}
+                          title={sub.status === 'new' ? 'Mark reviewed first' : undefined}
+                        >
                           <Ban className="mr-2 h-4 w-4" /> Reject
                         </Button>
+                      )}
+                      {sub.status === 'new' && (
+                        <span className="self-center text-xs text-muted-foreground">Review first to create or reject</span>
                       )}
                       {sub.bike_id && (
                         <Button variant="outline" size="sm" onClick={() => navigate(`/bikes/${sub.bike_id}`)}>
