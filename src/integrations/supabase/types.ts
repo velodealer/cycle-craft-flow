@@ -1799,6 +1799,8 @@ export type Database = {
           customer_name: string | null
           delivery_charge: number
           delivery_charged_to_customer: boolean
+          deposit_amount: number | null
+          deposit_received_at: string | null
           due_date: string | null
           external_customer_id: string | null
           finance_scheme: Database["public"]["Enums"]["finance_scheme"] | null
@@ -1836,6 +1838,8 @@ export type Database = {
           customer_name?: string | null
           delivery_charge?: number
           delivery_charged_to_customer?: boolean
+          deposit_amount?: number | null
+          deposit_received_at?: string | null
           due_date?: string | null
           external_customer_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"] | null
@@ -1873,6 +1877,8 @@ export type Database = {
           customer_name?: string | null
           delivery_charge?: number
           delivery_charged_to_customer?: boolean
+          deposit_amount?: number | null
+          deposit_received_at?: string | null
           due_date?: string | null
           external_customer_id?: string | null
           finance_scheme?: Database["public"]["Enums"]["finance_scheme"] | null
