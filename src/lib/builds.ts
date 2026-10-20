@@ -103,6 +103,16 @@ export async function updateBuildPart(id: string, patch: Partial<BuildPart>) {
   if (error) throw error;
 }
 
+/** Keeps the linked bike's purchase price equal to the current build parts total. */
+export async function syncBikeCost(quoteId: string) {
+  const { data: q } = await db.from("quotes").select("bike_id").eq("id", quoteId).single();
+  if (!q?.bike_id) return;
+  const parts = await listBuildParts(quoteId);
+  const cost = parts.reduce((s: number, p: BuildPart) => s + Number(p.qty) * Number(p.unit_cost), 0);
+  const { error } = await db.from("bikes").update({ purchase_price: Number(cost.toFixed(2)) }).eq("id", q.bike_id);
+  if (error) throw error;
+}
+
 export async function addBuildPart(quoteId: string, sort: number) {
   const { error } = await db.from("build_parts").insert({ quote_id: quoteId, description: "New part", sort_order: sort });
   if (error) throw error;

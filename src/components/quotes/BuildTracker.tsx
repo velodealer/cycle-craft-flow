@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { QuoteRow } from "@/lib/quotes";
 import {
   BUILD_STEPS, PART_STATUS_LABEL, acceptQuote, addBuildPart, deleteBuildPart, getBuild,
-  listBuildParts, startBuild, updateBuildPart, updateQuoteBuild,
+  listBuildParts, startBuild, syncBikeCost, updateBuildPart, updateQuoteBuild,
   type BuildPart, type BuildStatus, type PartStatus,
 } from "@/lib/builds";
 
@@ -112,7 +112,7 @@ export function BuildTracker({ quoteId, rows, salePrice, quoteName, dirty }: {
             <div className="space-y-2">
               {parts.map((p) => (
                 <div key={p.id} className="grid grid-cols-2 md:grid-cols-12 gap-2 items-center border rounded-md p-2">
-                  <Input className="col-span-2 md:col-span-3" value={p.description}
+                  <Input className="col-span-2 md:col-span-2" value={p.description}
                     onChange={(e) => patchLocal(p.id, { description: e.target.value })}
                     onBlur={(e) => updateBuildPart(p.id, { description: e.target.value }).catch((er) => toast.error(er.message))} />
                   <Select value={p.source} onValueChange={(v) => run(() => updateBuildPart(p.id, { source: v as any, status: v === "stock" ? "received" : "to_order" }))}>
@@ -131,8 +131,14 @@ export function BuildTracker({ quoteId, rows, salePrice, quoteName, dirty }: {
                   <Input className="md:col-span-1" placeholder="Order #" value={p.order_ref ?? ""}
                     onChange={(e) => patchLocal(p.id, { order_ref: e.target.value })}
                     onBlur={(e) => updateBuildPart(p.id, { order_ref: e.target.value || null }).catch((er) => toast.error(er.message))} />
+                  <div className="md:col-span-1">
+                    <Input type="number" inputMode="decimal" step="0.01" min="0" aria-label="Unit price" value={p.unit_cost}
+                      onChange={(e) => patchLocal(p.id, { unit_cost: Number(e.target.value) || 0 })}
+                      onBlur={(e) => updateBuildPart(p.id, { unit_cost: Number(e.target.value) || 0 })
+                        .then(() => syncBikeCost(quoteId)).catch((er) => toast.error(er.message))} />
+                  </div>
                   <span className="md:col-span-1 text-right text-sm tabular-nums">{gbp(p.qty * p.unit_cost)}</span>
-                  <Button variant="ghost" size="icon" className="justify-self-end" aria-label="Remove part" onClick={() => run(() => deleteBuildPart(p.id))}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="justify-self-end" aria-label="Remove part" onClick={() => run(async () => { await deleteBuildPart(p.id); await syncBikeCost(quoteId); })}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               ))}
               <Button variant="outline" size="sm" disabled={busy} onClick={() => run(() => addBuildPart(quoteId, parts.length))}><Plus className="h-4 w-4 mr-1" />Add part</Button>
