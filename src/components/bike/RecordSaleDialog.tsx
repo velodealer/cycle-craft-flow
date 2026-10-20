@@ -43,6 +43,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
   const [salePrice, setSalePrice] = useState<string>(bike?.asking_price ? String(bike.asking_price) : '');
   const [saleDate, setSaleDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
+  const [isExport, setIsExport] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
@@ -77,6 +78,9 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
 
   const { vatRegistered } = useVatRegistered();
   const isMargin = vatRegistered && bike?.finance_scheme === 'margin_scheme';
+  // Exports zero-rate standard VAT sales only (margin sales carry no invoice VAT).
+  const canExport = vatRegistered && !isMargin;
+  const exportSale = canExport && isExport;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -165,7 +169,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
     const pxValue = hasPartEx ? Number(partEx.value) || 0 : 0;
     const deliveryFee = fulfilment === 'delivery' && chargeDelivery ? Number(deliveryCharge) || 0 : 0;
     const balance = Math.max(0, gross + deliveryFee - pxValue);
-    if (!vatRegistered) {
+    if (!vatRegistered || exportSale) {
       return {
         gross,
         pxValue,
@@ -204,7 +208,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
       invoiceVat: gross + deliveryFee - net,
       marginVat: 0,
     };
-  }, [salePrice, isMargin, vatRegistered, bike?.purchase_price, hasPartEx, partEx.value, fulfilment, chargeDelivery, deliveryCharge]);
+  }, [salePrice, isMargin, vatRegistered, exportSale, bike?.purchase_price, hasPartEx, partEx.value, fulfilment, chargeDelivery, deliveryCharge]);
 
 
   const handleSubmit = async () => {
@@ -313,6 +317,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
           part_exchange_bike_id: hasPartEx ? partExBikeId : null,
           part_exchange_value: hasPartEx ? Number(totals.pxValue.toFixed(2)) : null,
           vat_rate: totals.vatRate,
+          is_export: exportSale,
 
           status: 'issued',
           issued_at: issuedAt,
@@ -692,11 +697,21 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
 
           <Separator />
 
+          {canExport && (
+            <div className="flex items-start justify-between gap-3 rounded-md border p-3">
+              <div>
+                <Label htmlFor="sale-export">Going for export</Label>
+                <p className="text-xs text-muted-foreground">Invoice with no VAT (zero-rated). Keep proof of export for HMRC.</p>
+              </div>
+              <Switch id="sale-export" checked={isExport} onCheckedChange={setIsExport} />
+            </div>
+          )}
+
           <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm">
             {vatRegistered && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Scheme</span>
-                <span>{isMargin ? 'Margin scheme' : 'Standard VAT'}</span>
+                <span>{isMargin ? 'Margin scheme' : exportSale ? 'Export (zero-rated)' : 'Standard VAT'}</span>
               </div>
             )}
             <div className="flex justify-between">
