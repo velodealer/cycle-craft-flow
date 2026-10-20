@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useVatRegistered } from '@/hooks/useVatRegistered';
 
 interface Props {
@@ -19,6 +21,12 @@ const Row = ({ label, value, negative, bold, muted, sub }: { label: string; valu
 /** Shared cost & profit breakdown for a bike (bike page and repairs approval popup). */
 export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedInventoryValue = 0 }: Props) {
   const { vatRegistered } = useVatRegistered();
+  const [isExport, setIsExport] = useState(false);
+  useEffect(() => {
+    if (!bike?.id) return;
+    supabase.from('invoices').select('is_export').eq('bike_id', bike.id).eq('is_export', true).limit(1)
+      .then(({ data }) => setIsExport(!!data?.length));
+  }, [bike?.id]);
   const isSold = bike.status === 'sold';
   const isSplit = bike.status === 'split_for_parts';
   const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
@@ -28,7 +36,9 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
   const prep = collectionCost + deliveryCost + partsCost + jobsCost;
   const totalCost = acquisition + prep;
   const gross = revenue - totalCost;
-  const isMargin = vatRegistered && bike.finance_scheme === 'margin_scheme';
+  // Export sales are zero-rated: no VAT is charged and input VAT is reclaimed,
+  // so profit is simply the full sale amount minus costs (ex VAT).
+  const isMargin = !isExport && vatRegistered && bike.finance_scheme === 'margin_scheme';
   const vat = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
   const net = gross - vat;
   const margin = revenue > 0 ? (net / revenue) * 100 : null;
@@ -67,6 +77,7 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
         <Row label="Labour / jobs" value={`− ${formatCurrency(jobsCost)}`} muted />
         <Row label="Total costs" value={formatCurrency(totalCost)} bold />
         <Row label="Gross profit" value={formatCurrency(gross)} bold negative={gross < 0} />
+        {isExport && <Row label="VAT (export — zero-rated)" value="£0.00" muted sub="No VAT charged; costs shown ex VAT" />}
         {isMargin && <Row label="VAT (margin scheme)" value={`− ${formatCurrency(vat)}`} muted />}
         <Row label="Net profit" value={formatCurrency(net)} bold negative={net < 0} />
         {investorShare != null && (
