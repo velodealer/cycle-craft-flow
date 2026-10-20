@@ -123,11 +123,14 @@ export default function QuoteBuilderPage() {
     () => computeVat(rows, salePrice, effectiveScheme),
     [rows, salePrice, effectiveScheme]
   );
-  const profit = salePrice - totalCost;
+  // Export: sale is zero-rated and parts VAT is reclaimed, so profit = sale − cost ex VAT.
+  const isExport = effectiveScheme === "export";
+  const profit = salePrice - (isExport ? vat.netCost : totalCost);
   const profitAfterVat = profit - vat.marginVat;
   const margin = salePrice > 0 ? profit / salePrice : NaN;
-  const markup = totalCost > 0 ? profit / totalCost : NaN;
-  const roi = totalCost > 0 ? profit / totalCost : NaN;
+  const costBase = isExport ? vat.netCost : totalCost;
+  const markup = costBase > 0 ? profit / costBase : NaN;
+  const roi = costBase > 0 ? profit / costBase : NaN;
 
   const markDirty = () => setDirty(true);
   const updateRow = (rid: string, patch: Partial<QuoteRow>) => {
@@ -298,11 +301,14 @@ export default function QuoteBuilderPage() {
               <SelectContent>
                 <SelectItem value="standard">Standard VAT (prices inc. 20%)</SelectItem>
                 <SelectItem value="margin">Margin scheme (1/6 of profit)</SelectItem>
+                <SelectItem value="export">Export (no VAT, parts VAT reclaimed)</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
               {vatScheme === "standard"
                 ? "Prices include 20% VAT; VAT is shown per line."
+                : vatScheme === "export"
+                ? "Sale price has no VAT. Parts prices include 20% VAT, which you reclaim — profit is sale minus cost ex VAT."
                 : "No VAT on individual parts. VAT is 1/6 of (sale − cost)."}
             </p>
           </div>
@@ -525,12 +531,14 @@ export default function QuoteBuilderPage() {
             <div className="rounded-lg border p-4 space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  {vatScheme === "standard"
+                  {vatScheme === "export"
+                    ? "VAT reclaimed on parts"
+                    : vatScheme === "standard"
                     ? "VAT on parts (20%)"
                     : "VAT on margin (1/6 of profit)"}
                 </span>
                 <span className="tabular-nums font-medium">
-                  {gbp(vatScheme === "standard" ? vat.lineVatTotal : vat.marginVat)}
+                  {gbp(vatScheme !== "margin" ? vat.lineVatTotal : vat.marginVat)}
                 </span>
               </div>
               {vatScheme === "margin" && (
