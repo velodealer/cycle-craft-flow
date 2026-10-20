@@ -25,6 +25,19 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: 'Rejected',
 };
 
+const REJECT_REASONS = [
+  'Asking price too high',
+  'Not a brand/model we stock',
+  'Condition too poor',
+  'Too old',
+  'Wrong size / low demand',
+  'Customer unresponsive',
+  'Customer declined our offer',
+  'Duplicate submission',
+  'Spam / test',
+  'Other',
+];
+
 function statusVariant(status: string) {
   if (status === 'converted') return 'default';
   if (status === 'rejected') return 'destructive';
@@ -46,6 +59,7 @@ export default function SubmissionsPage() {
   const [detail, setDetail] = useState<TypeformSubmission | null>(null);
   const [rejectTarget, setRejectTarget] = useState<TypeformSubmission | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [rejectCategory, setRejectCategory] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -93,10 +107,13 @@ export default function SubmissionsPage() {
     if (!rejectTarget) return;
     setBusyId(rejectTarget.id);
     try {
-      await updateSubmissionStatus(rejectTarget.id, 'rejected', rejectReason || null);
-      setSubmissions((prev) => prev.map((s) => (s.id === rejectTarget.id ? { ...s, status: 'rejected' } : s)));
+      const detail = rejectReason.trim();
+      const note = rejectCategory === 'Other' ? `Other: ${detail}` : detail ? `${rejectCategory}: ${detail}` : rejectCategory;
+      await updateSubmissionStatus(rejectTarget.id, 'rejected', note);
+      setSubmissions((prev) => prev.map((s) => (s.id === rejectTarget.id ? { ...s, status: 'rejected', notes: note } : s)));
       setRejectTarget(null);
       setRejectReason('');
+      setRejectCategory('');
       toast.success('Submission rejected');
     } catch (e) {
       toast.error((e as Error).message);
@@ -318,17 +335,29 @@ export default function SubmissionsPage() {
           <DialogHeader>
             <DialogTitle>Reject submission</DialogTitle>
             <DialogDescription>
-              Rejecting hides this enquiry from the new list. You can optionally record why.
+              Pick why you're turning this down so you can see trends later.
             </DialogDescription>
           </DialogHeader>
+          <Select value={rejectCategory} onValueChange={setRejectCategory}>
+            <SelectTrigger><SelectValue placeholder="Choose a reason" /></SelectTrigger>
+            <SelectContent>
+              {REJECT_REASONS.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Textarea
-            placeholder="Reason (optional)"
+            placeholder={rejectCategory === 'Other' ? 'Describe the reason (required)' : 'Extra detail (optional)'}
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectTarget(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={busyId === rejectTarget?.id}>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={busyId === rejectTarget?.id || !rejectCategory || (rejectCategory === 'Other' && !rejectReason.trim())}
+            >
               {busyId === rejectTarget?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Reject
             </Button>
