@@ -23,8 +23,20 @@ const STATUS_LABELS: Record<string, string> = {
   reviewed: 'Reviewed',
   converted: 'Converted',
   rejected: 'Rejected',
-  // REJECT_REASONS defined below
 };
+
+const REJECT_REASONS = [
+  'Asking price too high',
+  'Not a brand/model we stock',
+  'Condition too poor',
+  'Too old',
+  'Wrong size / low demand',
+  'Customer unresponsive',
+  'Customer declined our offer',
+  'Duplicate submission',
+  'Spam / test',
+  'Other',
+];
 
 function statusVariant(status: string) {
   if (status === 'converted') return 'default';
