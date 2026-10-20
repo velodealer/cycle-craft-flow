@@ -235,6 +235,13 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
 
     setSubmitting(true);
     try {
+      // The bike stays for sale until a deposit is in, so guard against a
+      // second invoice for the same bike.
+      const { data: pending } = await supabase.from('invoices')
+        .select('invoice_number').eq('bike_id', bike.id).eq('type', 'sale').neq('status', 'cancelled').limit(1);
+      if (pending && pending.length > 0) {
+        throw new Error(`This bike already has sale invoice ${pending[0].invoice_number}. Mark its deposit or payment, or delete it first.`);
+      }
       let externalCustomerId = customerId;
       if (customerId === NEW_CUSTOMER) {
         const { data, error } = await supabase
@@ -315,9 +322,9 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess }: R
       const { error: bikeError } = await supabase
         .from('bikes')
         .update({
-          status: 'sold',
+          // Status stays as-is (still for sale) until a deposit or payment is
+          // marked on the invoice — see markInvoicePayment.
           sale_price: totals.gross,
-          sold_at: issuedAt,
           delivery_method: fulfilment === 'delivery' ? 'delivery' : 'collection',
           ...(absorbedDelivery > 0
             ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
