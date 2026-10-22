@@ -93,10 +93,13 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
         return;
       }
 
-      const { error } = await supabase
-        .from('bikes')
-        .update({ status: pending as any })
-        .eq('id', bike.id);
+      const { error } = await supabase.rpc('change_bike_stage' as any, {
+        _bike_id: bike.id, _status: pending,
+        _summary: `Status changed from ${labelFor(bike.status)} to ${labelFor(pending)}`,
+        _override_reason: needsOverride ? overrideReason.trim() : null,
+        _fulfilment_note: `Manual status change: ${labelFor(bike.status)} → ${labelFor(pending)}`,
+        _action: 'status',
+      });
       if (error) throw error;
 
       if (pending === 'ready' || pending === 'listed') {
@@ -113,23 +116,7 @@ export default function AdminStatusSelect({ bike, onUpdate }: AdminStatusSelectP
       }
 
 
-      logActivity(bike.id, {
-        kind: 'status_change',
-        action: 'status',
-        summary: `Status changed from ${labelFor(bike.status)} to ${labelFor(pending)}`,
-        detail: { from: bike.status, to: pending, deferred_override: needsOverride ? { reason: overrideReason.trim(), jobs: jobs?.deferred.map((j) => j.title) } : undefined },
-        actorId: profile?.id ?? null,
-      });
 
-      if (profile?.id && FULFILMENT_STAGES.includes(pending)) {
-        const { error: eventError } = await supabase.from('fulfilment_events').insert({
-          bike_id: bike.id,
-          stage: pending as any,
-          notes: `Manual status change: ${labelFor(bike.status)} → ${labelFor(pending)}`,
-          performed_by: profile.id,
-        });
-        if (eventError) console.error('Failed to record fulfilment event', eventError);
-      }
 
       toast({
         title: 'Status updated',

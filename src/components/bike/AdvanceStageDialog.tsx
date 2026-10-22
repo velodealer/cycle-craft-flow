@@ -72,68 +72,24 @@ export default function AdvanceStageDialog({
     if (blocked) return;
     setSubmitting(true);
     try {
-      const update: Record<string, any> = { status: nextStage };
-
-      if (photos.length > 0) {
-        const { data: current } = await supabase
-          .from('bikes')
-          .select('photos')
-          .eq('id', bike.id)
-          .maybeSingle();
-        update.photos = [...((current?.photos as string[] | null) || []), ...photos];
-      }
-
-      // Update bike status (and attach any photos taken at this stage)
-      const { error: bikeError } = await supabase
-        .from('bikes')
-        .update(update)
-        .eq('id', bike.id);
-
-      if (bikeError) throw bikeError;
+      // One server step: stage, photos, history and stage note together.
+      const note = values.notes?.trim() || '';
+      const { error: stageError } = await supabase.rpc('change_bike_stage' as any, {
+        _bike_id: bike.id,
+        _status: nextStage,
+        _summary: `Moved to ${nextStageLabel}`,
+        _note: note || null,
+        _photos: photos.length ? photos : null,
+        _fulfilment_note: [note, photos.length ? `${photos.length} photo(s) added at this stage.` : ''].filter(Boolean).join('\n\n') || null,
+      });
+      if (stageError) throw stageError;
 
       if (nextStage === 'ready' || nextStage === 'listed') {
         void syncShopifyQuietly(bike.id, 'list');
         void syncEbayQuietly(bike.id, 'list');
       }
-
       if (nextStage === 'inspection') {
         void ensureInspectionQuietly(bike.id);
-      }
-
-
-      logActivity(bike.id, {
-        kind: 'status_change',
-        action: 'stage',
-        summary: `Moved to ${nextStageLabel}`,
-        detail: { from: bike.status, to: nextStage, note: values.notes?.trim() || undefined, deferred_jobs: gated && jobs?.deferred.length ? jobs.deferred.map((j) => j.title) : undefined },
-        actorId: profile.id,
-      });
-      if (photos.length > 0) {
-        logActivity(bike.id, {
-          kind: 'photo',
-          action: 'added',
-          summary: `${photos.length} photo${photos.length === 1 ? '' : 's'} added at ${nextStageLabel}`,
-          detail: { count: photos.length },
-          actorId: profile.id,
-        });
-      }
-
-      // Record a fulfilment event so notes/photos aren't lost
-      const FULFILMENT_STAGES = ['intake', 'cleaning', 'inspection', 'repair', 'ready'];
-      if (FULFILMENT_STAGES.includes(nextStage)) {
-        const noteParts = [values.notes?.trim() || ''];
-        if (photos.length > 0) {
-          noteParts.push(`${photos.length} photo(s) added at this stage.`);
-        }
-        const notes = noteParts.filter(Boolean).join('\n\n');
-
-        const { error: eventError } = await supabase.from('fulfilment_events').insert({
-          bike_id: bike.id,
-          stage: nextStage as any,
-          notes: notes || null,
-          performed_by: profile.id,
-        });
-        if (eventError) console.error('Failed to record fulfilment event', eventError);
       }
 
       toast({
