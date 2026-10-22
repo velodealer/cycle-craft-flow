@@ -17,6 +17,7 @@ import {
 import { markBikeSoldOut } from '../_shared/shopify-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 import { sendNotification } from '../_shared/email.ts';
+import { logSystemError } from '../_shared/system-error.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

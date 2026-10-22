@@ -266,6 +266,10 @@ export async function logIntegrationError(
   } catch (e) {
     console.error('Failed to write integration error log:', (e as Error).message);
   }
+  await logSystemError(supabase, {
+    source: entry.integration, message: entry.message, entityRef: entry.entity_ref ?? null,
+    detail: { operation: entry.operation, status: entry.status ?? null, intuit_tid: entry.intuit_tid ?? null },
+  });
 }
 
 /** Pull status and intuit_tid off an error thrown by qboFetch, if present. */

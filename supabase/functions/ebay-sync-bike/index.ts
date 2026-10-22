@@ -11,6 +11,7 @@ import {
 } from '../_shared/ebay-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 import { assertTenantRow } from '../_shared/tenant.ts';
+import { logSystemError } from '../_shared/system-error.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -135,6 +136,7 @@ Deno.serve(async (req) => {
     console.error('ebay-sync-bike failed:', message);
     if (action === 'preview') return json({ error: message }, 400);
     await recordListingError(supabase, bikeId, message);
+    await logSystemError(supabase, { source: 'ebay', message, businessId: callerBusinessId, detail: { operation: action, bike_id: bikeId } });
     await logBikeActivity(bikeId, {
       kind: 'listing',
       action: 'failed',
