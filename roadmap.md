@@ -26,8 +26,9 @@
 
 ## Server-side moves (from client-action audit)
 - [x] Block staff changing their own role
-- [ ] Record sale + invoice + part-ex in one server step
-- [ ] Break bike / fit part / remove part / strip part in one server step
-- [ ] Part sale in one server step
-- [ ] Stage changes (advance, handover, admin override) through one server check
-- [ ] Settings saves validated server-side
+- [x] Record sale + invoice + part-ex in one server step
+- [x] Break bike / fit part / remove part / strip part in one server step
+- [x] Part sale in one server step
+- [x] Stage changes (advance, handover, admin override) through one server check
+- [x] Settings saves validated server-side
+- [ ] Live-test sale, part sale, fit/remove/strip, break bike and handover while signed in (couldn't sign in from here)
