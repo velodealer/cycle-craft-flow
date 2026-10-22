@@ -2,7 +2,8 @@
 
 ## Phase 1
 - [ ] Enable leaked-password protection (user must toggle in Supabase dashboard)
-- [ ] Clear real database linter warnings
+- [x] Signed-out access removed from all tables except blog posts and job roles
+- [ ] Review the remaining warnings: 14 admin database functions signed-in users can run, 5 tables with no access rules
 - [ ] Automated dealer-separation test
 - [ ] Live-test every integration (needs dealer test account + real provider logins)
 - [ ] Typeform 15-minute backup fetch
