@@ -19,7 +19,7 @@ export async function reportError(message: string, detail?: unknown, source = "a
       business_id: (bid as string) ?? null,
       source,
       message: msg,
-      detail: detail ? JSON.parse(JSON.stringify(detail, Object.getOwnPropertyNames(detail as object)).slice(0, 8000)) : null,
+      detail: detail ? { text: JSON.stringify(detail).slice(0, 8000) } : null,
       url: window.location.pathname,
     });
   } catch {
