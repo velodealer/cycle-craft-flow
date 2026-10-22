@@ -3468,12 +3468,23 @@ export type Database = {
         }[]
       }
       admin_platform_overview: { Args: never; Returns: Json }
+      bump_catalog_use: { Args: { _id: string }; Returns: undefined }
       current_business_id: { Args: never; Returns: string }
       current_business_status: { Args: never; Returns: string }
-      generate_bike_reference: {
-        Args: { _bike_id: string; _make: string; _serial: string }
-        Returns: string
-      }
+      generate_bike_reference:
+        | {
+            Args: { _bike_id: string; _make: string; _serial: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _bike_id: string
+              _business_id: string
+              _make: string
+              _serial: string
+            }
+            Returns: string
+          }
       get_current_user_role: { Args: never; Returns: string }
       get_integration_settings: { Args: { _name: string }; Returns: Json }
       has_any_role: {
