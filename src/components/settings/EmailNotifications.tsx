@@ -42,6 +42,11 @@ const KINDS: { key: string; label: string; description: string }[] = [
     description: 'Sent when a bike is booked in, collected, delivered or cancelled.',
   },
   {
+    key: 'sync_failed',
+    label: 'Accounting sync failed',
+    description: 'Sent when a sale, stock-in or part doesn’t reach QuickBooks or Xero, plus a daily reminder while it’s still failing.',
+  },
+  {
     key: 'support_ticket',
     label: 'Website enquiries',
     description: 'Sent when someone submits the contact form on the website.',

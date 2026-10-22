@@ -12,6 +12,7 @@ export type NotificationKind =
   | 'support_ticket'
   | 'job_application'
   | 'ebay_sale'
+  | 'sync_failed'
   | 'test';
 
 interface KindSettings {
