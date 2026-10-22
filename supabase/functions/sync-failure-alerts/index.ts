@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       .or('sync_status.eq.failed,xero_sync_status.eq.failed').limit(1000),
     db.from('bikes').select('id, business_id, reference, make, model, purchase_sync_status, purchase_sync_error, xero_purchase_sync_status, xero_purchase_sync_error, break_qb_sync_status, break_qb_sync_error, break_xero_sync_status, break_xero_sync_error')
       .or('purchase_sync_status.eq.failed,xero_purchase_sync_status.eq.failed,break_qb_sync_status.eq.failed,break_xero_sync_status.eq.failed').limit(1000),
-    db.from('parts').select('id, business_id, name, fit_qb_sync_status, fit_qb_sync_error, fit_xero_sync_status, fit_xero_sync_error')
+    db.from('parts').select('id, business_id, description, brand, fit_qb_sync_status, fit_qb_sync_error, fit_xero_sync_status, fit_xero_sync_error')
       .or('fit_qb_sync_status.eq.failed,fit_xero_sync_status.eq.failed').limit(1000),
   ]);
   const err = inv.error || bikes.error || parts.error;
@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
     if (b.break_xero_sync_status === 'failed') add(b.business_id, 'Xero', 'Bike break', b.id, l, b.break_xero_sync_error, k);
   }
   for (const p of (parts.data ?? []) as any[]) {
-    if (p.fit_qb_sync_status === 'failed') add(p.business_id, 'QuickBooks', 'Part fitted', p.id, p.name || 'Part', p.fit_qb_sync_error, '/parts');
-    if (p.fit_xero_sync_status === 'failed') add(p.business_id, 'Xero', 'Part fitted', p.id, p.name || 'Part', p.fit_xero_sync_error, '/parts');
+    if (p.fit_qb_sync_status === 'failed') add(p.business_id, 'QuickBooks', 'Part fitted', p.id, ([p.brand, p.description].filter(Boolean).join(' ') || 'Part'), p.fit_qb_sync_error, '/parts');
+    if (p.fit_xero_sync_status === 'failed') add(p.business_id, 'Xero', 'Part fitted', p.id, ([p.brand, p.description].filter(Boolean).join(' ') || 'Part'), p.fit_xero_sync_error, '/parts');
   }
 
   const { data: alerted } = await db.from('sync_failure_alerts').select('business_id, alert_key, first_alerted_at, last_reminded_at');
