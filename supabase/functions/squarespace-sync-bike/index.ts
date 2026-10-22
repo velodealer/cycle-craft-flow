@@ -3,6 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, requireUser, requireRole, businessIdForUser, businessIdForBike } from '../_shared/squarespace.ts';
 import { pushBikeToSquarespace, markSquarespaceSoldOut, removeSquarespaceProduct } from '../_shared/squarespace-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -16,6 +17,7 @@ Deno.serve(async (req) => {
   let userId: string;
   const body = await req.json().catch(() => ({}));
   const bikeId = String(body.bike_id ?? '');
+  try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
   const action = String(body.action ?? 'list');
   if (!/^[0-9a-f-]{36}$/i.test(bikeId)) return json({ error: 'bike_id is required' }, 400);
 

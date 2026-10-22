@@ -10,6 +10,7 @@ import {
 import {
   marginVat, taxTypeFor, exportTaxType, saleInvoiceLines, saleJournalLines, partSaleJournalLines,
 } from '../_shared/xero-postings.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -35,6 +36,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     invoiceId = typeof body.invoice_id === 'string' && UUID_RE.test(body.invoice_id) ? body.invoice_id : undefined;
+    try { await assertTenantRow(supabase, req, 'invoices', invoiceId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!invoiceId) return json({ error: 'invoice_id is required' }, 400);
 
     const { data: invoice, error } = await supabase.from('invoices')

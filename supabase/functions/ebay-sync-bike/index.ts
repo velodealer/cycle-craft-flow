@@ -10,6 +10,7 @@ import {
   conditionLabel,
 } from '../_shared/ebay-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -35,6 +36,7 @@ Deno.serve(async (req) => {
 
   const body = await req.json().catch(() => ({}));
   const bikeId = String(body.bike_id ?? '');
+  try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
   const action = String(body.action ?? 'list');
   if (!bikeId) return json({ error: 'bike_id is required' }, 400);
 

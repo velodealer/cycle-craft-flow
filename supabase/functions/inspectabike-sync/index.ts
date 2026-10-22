@@ -4,6 +4,7 @@ import {
   serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults, upsertFaults,
 } from '../_shared/inspectabike.ts';
 import { notifyFaultsAwaitingApproval } from '../_shared/email.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const bikeId = typeof body.bike_id === 'string' ? body.bike_id : '';
+    try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!UUID_RE.test(bikeId)) return json({ error: 'Invalid bike_id' }, 400);
 
     const { data: inspection } = await supabase

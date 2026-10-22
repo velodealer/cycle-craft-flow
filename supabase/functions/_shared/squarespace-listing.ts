@@ -34,7 +34,7 @@ async function description(supabase: Client, bike: any, businessId: string) {
     if (isPublishBlockingError(e)) throw e;
     console.error('Squarespace template render failed:', (e as Error).message);
   }
-  const text = bike.listing_description || bike.description || title(bike);
+  const text = bike.listing_description || bike.description || (await title(supabase, bike, businessId));
   return `<p>${String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>`;
 }
 
@@ -130,7 +130,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
     if (productId) {
       const p = await sqsFetch(token, `/1.0/commerce/products/${productId}`, {
         method: 'POST',
-        body: JSON.stringify({ name: title(bike), description: desc, isVisible: true, tags, urlSlug, ...extra }),
+        body: JSON.stringify({ name, description: desc, isVisible: true, tags, urlSlug, ...extra }),
       });
       url = p?.url ?? url;
       if (variantId) {
@@ -145,7 +145,7 @@ export async function pushBikeToSquarespace(supabase: Client, bikeId: string, qu
         body: JSON.stringify({
           type: 'PHYSICAL',
           storePageId: settings.store_page_id,
-          name: title(bike),
+          name,
           description: desc,
           urlSlug,
           isVisible: true,

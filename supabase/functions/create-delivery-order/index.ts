@@ -5,6 +5,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { notifyLogistics } from '../_shared/email.ts';
 import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -32,6 +33,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const bikeId = typeof body.bike_id === 'string' ? body.bike_id.trim() : '';
+    try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!UUID_RE.test(bikeId)) return json({ error: 'A valid bike_id is required' }, 400);
 
     const receiver = {

@@ -1,6 +1,7 @@
 // Creates (idempotently) an InspectABike inspection for a bike and stores the link.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, requireRole, iabFetch, mapBikeType } from '../_shared/inspectabike.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -50,6 +51,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const bikeId = typeof body.bike_id === 'string' ? body.bike_id : '';
+    try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!UUID_RE.test(bikeId)) return json({ error: 'Invalid bike_id' }, 400);
 
     const { data: bike, error: bikeError } = await supabase

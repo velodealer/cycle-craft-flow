@@ -16,6 +16,7 @@ import {
 import { taxCodeForScheme, exportTaxCode } from '../_shared/quickbooks-tax.ts';
 import { findOrCreateCustomer, findOrCreateItem } from '../_shared/quickbooks-names.ts';
 import { buildSaleInvoiceLines, buildPartStockOutLines } from '../_shared/quickbooks-lines.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 /** QuickBooks 610 "Object Not Found" — deleted, inactive or wrong-type stored ID. */
 function isStaleRefError(e: unknown) {
@@ -50,6 +51,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     invoiceId = typeof body.invoice_id === 'string' ? body.invoice_id : undefined;
+    try { await assertTenantRow(supabase, req, 'invoices', invoiceId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     const forceFresh = body.force_fresh === true;
     if (!invoiceId) return json({ error: 'invoice_id is required' }, 400);
 
