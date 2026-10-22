@@ -3261,6 +3261,38 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_failure_alerts: {
+        Row: {
+          alert_key: string
+          business_id: string
+          first_alerted_at: string
+          id: string
+          last_reminded_at: string | null
+        }
+        Insert: {
+          alert_key: string
+          business_id: string
+          first_alerted_at?: string
+          id?: string
+          last_reminded_at?: string | null
+        }
+        Update: {
+          alert_key?: string
+          business_id?: string
+          first_alerted_at?: string
+          id?: string
+          last_reminded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_failure_alerts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       typeform_forms: {
         Row: {
           business_id: string
