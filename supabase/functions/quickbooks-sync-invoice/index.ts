@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         .from('app_settings')
         .select('value')
         .eq('business_id', businessId)
-        .eq('key', 'vat_registered')
+        .eq('key', `vat_registered:${businessId}`)
         .maybeSingle();
       // Guessing VAT status would post the wrong VAT to the ledger.
       if (vatErr) throw new Error(`Could not read VAT registration setting: ${vatErr.message}`);

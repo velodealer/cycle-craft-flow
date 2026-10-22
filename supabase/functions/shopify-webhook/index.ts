@@ -89,7 +89,7 @@ async function handleOrderPaid(supabase: Client, order: any) {
         .from('app_settings')
         .select('value')
         .eq('business_id', bike.business_id)
-        .eq('key', 'vat_registered')
+        .eq('key', `vat_registered:${bike.business_id}`)
         .maybeSingle();
       if (vatSetting && vatSetting.value === false) vatRegistered = false;
     }

@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    if (!API_KEY) return json({ error: '99spokes API key is not configured' }, 500);
+    if (!API_KEY) return json({ error: 'Bike details lookup is not configured' }, 500);
 
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || '');

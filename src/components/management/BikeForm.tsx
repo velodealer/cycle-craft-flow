@@ -400,7 +400,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
                   }
                   setSpokesFill(payload);
                   toast({
-                    title: 'Specification loaded from 99spokes',
+                    title: 'Bike details found',
                     description: `${mapped.components.length} components will be added when you save.`,
                   });
                 }}
@@ -409,7 +409,7 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
               {spokesFill && (
                 <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground flex items-center justify-between gap-2">
                   <span>
-                    99spokes specification attached — {spokesFill.mapped.components.length} components will be linked on save.
+                    Bike details attached — {spokesFill.mapped.components.length} components will be linked on save.
                   </span>
                   <Button type="button" variant="ghost" size="sm" onClick={() => setSpokesFill(null)}>
                     Remove

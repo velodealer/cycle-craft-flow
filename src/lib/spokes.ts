@@ -183,10 +183,8 @@ export async function saveCatalogBike(bike: any, mapped: MappedBike): Promise<vo
   };
 
   if (existing?.id) {
-    await supabase
-      .from('catalog_bikes')
-      .update({ ...row, use_count: (existing as any).use_count + 1 })
-      .eq('id', (existing as any).id);
+    // The shared catalogue is read-only for dealers; only the usage count moves.
+    await supabase.rpc('bump_catalog_use' as never, { _id: (existing as any).id } as never);
   } else {
     const { data: auth } = await supabase.auth.getUser();
     await supabase.from('catalog_bikes').insert({ ...row, use_count: 1, created_by: auth?.user?.id ?? null });
@@ -228,7 +226,7 @@ export interface LinkResult {
 
 /** Short, human summary of a link result for toasts. */
 export function describeLinkResult(r: LinkResult): string {
-  if (r.total === 0) return 'No parts in the 99spokes record.';
+  if (r.total === 0) return 'No parts listed in the bike details.';
   const head = `${r.linked} of ${r.total} parts linked`;
   if (!r.failed.length) return `${head}.`;
   return `${head}. Failed: ${r.failed.map((f) => `${f.slot} (${f.reason})`).join('; ')}`;

@@ -127,7 +127,7 @@ export default function SpokesFullSpec({ bike }: { bike: any }) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2">
             Manufacturer specification
-            <Badge variant="secondary">99spokes</Badge>
+            <Badge variant="secondary">Bike details</Badge>
           </CardTitle>
           {data.url && (
             <a

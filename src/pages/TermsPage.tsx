@@ -479,7 +479,7 @@ export default function TermsPage() {
           VeloDealer's ownership.
         </p>
         <p>
-          4.3 <strong>Bike specification lookups</strong> use 99Spokes and involve make, model and
+          4.3 <strong>Bike specification lookups</strong> use a third-party bike data provider and involve make, model and
           year only — no personal data.
         </p>
 

@@ -224,7 +224,7 @@ export async function findOrCreateContact(
 export async function isVatRegistered(supabase: Client, businessId: string | null): Promise<boolean> {
   if (!businessId) return true;
   const { data, error } = await supabase.from('app_settings').select('value')
-    .eq('business_id', businessId).eq('key', 'vat_registered').maybeSingle();
+    .eq('business_id', businessId).eq('key', `vat_registered:${businessId}`).maybeSingle();
   if (error) throw new Error(`Could not read VAT registration setting: ${error.message}`);
   return !(data && data.value === false);
 }
