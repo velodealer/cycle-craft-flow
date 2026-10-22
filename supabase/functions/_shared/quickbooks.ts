@@ -1,3 +1,4 @@
+import { logSystemError } from './system-error.ts';
 // Shared QuickBooks Online helpers for edge functions.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import type { QboTaxCodeRef } from './quickbooks-tax.ts';

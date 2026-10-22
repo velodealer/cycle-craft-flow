@@ -1,3 +1,4 @@
+import { logSystemError } from './system-error.ts';
 // Shared Xero helpers for edge functions. One Xero organisation per dealership.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 

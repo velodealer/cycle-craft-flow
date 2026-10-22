@@ -80,6 +80,7 @@ async function recordPartSale(
       businessId);
   } catch (e) {
     console.error(`PART SALE NOT RECORDED: eBay order ${orderId} part ${part.id}: ${(e as Error).message}`);
+    await logSystemError(supabase, { source: 'ebay', message: `Part sale not recorded for eBay order ${orderId}: ${(e as Error).message}`, businessId, detail: { operation: 'order_sync_part', part_id: part.id } });
   }
 }
 
@@ -225,6 +226,7 @@ Deno.serve(async (req) => {
       results.push(await syncBusiness(supabase, id));
     } catch (e) {
       console.error(`eBay order sync failed for ${id}:`, (e as Error).message);
+      await logSystemError(supabase, { source: 'ebay', message: `eBay order sync failed: ${(e as Error).message}`, businessId: id, detail: { operation: 'order_sync' } });
       results.push({ businessId: id, error: (e as Error).message });
     }
   }
