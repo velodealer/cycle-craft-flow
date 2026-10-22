@@ -20,9 +20,9 @@
 - [x] Paging long bike/parts lists
 
 ## Phase 3 (started 22 Oct)
-- [ ] Card subscription payments
-- [ ] GDPR export/delete
-- [ ] Status page, Help section
+- [ ] Card subscription payments (skipped for now by owner)
+- [x] GDPR data export + deletion requests (super admin approves; approval locks dealership, full data purge still manual)
+- [x] Status page (/status) and Help section (/help)
 
 ## Server-side moves (from client-action audit)
 - [x] Block staff changing their own role
