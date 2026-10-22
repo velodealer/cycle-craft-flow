@@ -6,8 +6,8 @@
 - [ ] Review the remaining warnings: 14 admin database functions signed-in users can run, 5 tables with no access rules
 - [x] Dealer-separation test run (0 foreign rows across 39 tables); make it a repeatable automated check
 - [x] Failed accounting syncs card with Retry / Retry all on dashboard
-- [ ] Owner email alert for failed syncs
-- [ ] Live-test every integration (needs dealer test account + real provider logins)
+- [x] Owner email alert for failed syncs
+- [ ] Live-test a brand-new dealership connecting each service (Broximo done)
 - [x] Typeform 15-minute backup fetch
 - [x] Mobile pass on main pages (code pass; signed-in phone check still needed)
 
