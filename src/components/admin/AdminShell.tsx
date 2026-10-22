@@ -3,7 +3,7 @@ import { Navigate, NavLink, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { VeloDealerLogo } from '@/components/brand/VeloDealerLogo';
-import { LogOut, LayoutDashboard, Building2, CreditCard, BarChart3, Inbox, Globe, AlertTriangle } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, CreditCard, BarChart3, Inbox, Globe, AlertTriangle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { title: 'Inbox', url: '/admin/inbox', icon: Inbox },
   { title: 'Website', url: '/admin/website', icon: Globe },
   { title: 'Errors', url: '/admin/errors', icon: AlertTriangle },
+  { title: 'Deletions', url: '/admin/deletions', icon: Trash2 },
 ];
 
 export default function AdminShell({ children }: { children: ReactNode }) {

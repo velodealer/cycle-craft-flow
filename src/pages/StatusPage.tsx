@@ -28,7 +28,7 @@ export default function StatusPage() {
 
   const allOk = Object.values(checks).every((s) => s === 'ok');
   return (
-    <PublicLayout>
+    <PublicLayout title="Service status — VeloDealer" description="Live status of the VeloDealer app, database and sign-in.">
       <div className="mx-auto max-w-2xl space-y-6 px-4 py-16">
         <h1 className="font-display text-3xl font-bold">Service status</h1>
         <p className="text-lg">{allOk ? 'All systems working.' : Object.values(checks).includes('down') ? 'Some services have a problem. We are on it.' : 'Checking…'}</p>
