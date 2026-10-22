@@ -278,39 +278,6 @@ export type Database = {
           },
         ]
       }
-      bike_components_backup_20260923: {
-        Row: {
-          bike_id: string | null
-          business_id: string | null
-          component_id: string | null
-          created_at: string | null
-          id: string | null
-          notes: string | null
-          position: string | null
-          slot: string | null
-        }
-        Insert: {
-          bike_id?: string | null
-          business_id?: string | null
-          component_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          notes?: string | null
-          position?: string | null
-          slot?: string | null
-        }
-        Update: {
-          bike_id?: string | null
-          business_id?: string | null
-          component_id?: string | null
-          created_at?: string | null
-          id?: string | null
-          notes?: string | null
-          position?: string | null
-          slot?: string | null
-        }
-        Relationships: []
-      }
       bikes: {
         Row: {
           accessories_included: string | null
@@ -584,24 +551,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      bikes_spec_backup_20260923: {
-        Row: {
-          accessories_included: string | null
-          id: string | null
-          spec_values: Json | null
-        }
-        Insert: {
-          accessories_included?: string | null
-          id?: string | null
-          spec_values?: Json | null
-        }
-        Update: {
-          accessories_included?: string | null
-          id?: string | null
-          spec_values?: Json | null
-        }
-        Relationships: []
       }
       blog_posts: {
         Row: {
@@ -963,48 +912,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      components_backup_20260923: {
-        Row: {
-          attributes: Json | null
-          brand: string | null
-          business_id: string | null
-          category_id: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          model: string | null
-          mpn: string | null
-          updated_at: string | null
-          weight_g: number | null
-        }
-        Insert: {
-          attributes?: Json | null
-          brand?: string | null
-          business_id?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          model?: string | null
-          mpn?: string | null
-          updated_at?: string | null
-          weight_g?: number | null
-        }
-        Update: {
-          attributes?: Json | null
-          brand?: string | null
-          business_id?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          model?: string | null
-          mpn?: string | null
-          updated_at?: string | null
-          weight_g?: number | null
-        }
-        Relationships: []
       }
       cycle_courier_connections: {
         Row: {
@@ -1803,45 +1710,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      integrations_backup_20260925: {
-        Row: {
-          api_key: string | null
-          business_id: string | null
-          created_at: string | null
-          display_name: string | null
-          id: string | null
-          is_active: boolean | null
-          name: string | null
-          settings: Json | null
-          updated_at: string | null
-          webhook_secret: string | null
-        }
-        Insert: {
-          api_key?: string | null
-          business_id?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          name?: string | null
-          settings?: Json | null
-          updated_at?: string | null
-          webhook_secret?: string | null
-        }
-        Update: {
-          api_key?: string | null
-          business_id?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          name?: string | null
-          settings?: Json | null
-          updated_at?: string | null
-          webhook_secret?: string | null
-        }
-        Relationships: []
       }
       invoice_counters: {
         Row: {
@@ -3286,6 +3154,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sync_failure_alerts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_error_logs: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          detail: Json | null
+          id: string
+          message: string
+          severity: string
+          source: string
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          message: string
+          severity?: string
+          source?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          message?: string
+          severity?: string
+          source?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_error_logs_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
