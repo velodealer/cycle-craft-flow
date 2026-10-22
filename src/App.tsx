@@ -61,6 +61,7 @@ import AdminSubscriptionsPage from "./pages/admin/AdminSubscriptionsPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminInboxPage from "./pages/admin/AdminInboxPage";
 import AdminWebsitePage from "./pages/admin/AdminWebsitePage";
+import AdminErrorsPage from "./pages/admin/AdminErrorsPage";
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,7 @@ const App = () => (
             <Route path="/admin/analytics" element={<AdminShell><AdminAnalyticsPage /></AdminShell>} />
             <Route path="/admin/inbox" element={<AdminShell><AdminInboxPage /></AdminShell>} />
             <Route path="/admin/website" element={<AdminShell><AdminWebsitePage /></AdminShell>} />
+            <Route path="/admin/errors" element={<AdminShell><AdminErrorsPage /></AdminShell>} />
             <Route path="/investor" element={<InvestorShell><InvestorDashboardPage /></InvestorShell>} />
             <Route path="/investor/bikes/:id" element={<InvestorShell><InvestorBikePage /></InvestorShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

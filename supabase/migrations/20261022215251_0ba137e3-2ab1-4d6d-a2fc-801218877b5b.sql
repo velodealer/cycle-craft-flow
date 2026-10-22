@@ -1,0 +1,1 @@
+REVOKE ALL ON public.system_error_logs FROM anon;

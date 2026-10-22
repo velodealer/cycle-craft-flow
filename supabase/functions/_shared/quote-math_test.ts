@@ -1,6 +1,6 @@
-// Run with: deno test src/lib/quoteMath_test.ts
+// Run with: deno test supabase/functions/_shared/quote-math_test.ts
 import { assertAlmostEquals, assertEquals } from 'jsr:@std/assert@1';
-import { computeVat, computeTotalCost, type QuoteRow } from './quoteMath.ts';
+import { computeVat, computeTotalCost, type QuoteRow } from '../../../src/lib/quoteMath.ts';
 
 const rows: QuoteRow[] = [{ id: '1', description: 'Frame', category: 'frame', qty: 1, unitCost: 120 }];
 

@@ -12,11 +12,12 @@
 - [x] Mobile pass on main pages (code pass; signed-in phone check still needed)
 
 ## Phase 2
-- [ ] Money-rule tests (VAT, profit, numbering, mark-ups, handover block)
-- [ ] Error tracking log for super admin
-- [ ] Backup check + practice restore
-- [ ] Remove Sept 2026 backup tables
-- [ ] Paging + indexes
+- [x] Money-rule tests (VAT, profit, mark-ups, handover block); invoice numbering is a database rule, still to check live
+- [x] Error tracking log for super admin (app errors; server functions not yet wired)
+- [ ] Backup check + practice restore (needs owner in database dashboard)
+- [x] Remove Sept 2026 backup tables
+- [x] Indexes on dealership + stage
+- [ ] Paging long bike/parts lists
 
 ## Phase 3
 - [ ] Card subscription payments
