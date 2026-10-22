@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { notifyLogistics } from '../_shared/email.ts';
 import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +31,7 @@ serve(async (req) => {
       delivery_instructions
     } = await req.json();
 
+    try { await assertTenantRow(supabase, req, 'bikes', bike_id || '00000000-0000-0000-0000-000000000000'); } catch (e) { return new Response(JSON.stringify({ success: false, error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     console.log('Creating collection order for bike:', bike_id);
 
     // 1. Get bike details

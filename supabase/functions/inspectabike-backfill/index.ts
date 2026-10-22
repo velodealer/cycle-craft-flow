@@ -3,6 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import {
   serviceClient, requireRole, iabFetch, normaliseFault, syncBikeStatusFromFaults,
 } from '../_shared/inspectabike.ts';
+import { callerBusiness } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -50,6 +51,8 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: true })
       .range(offset, offset + limit - 1);
     if (bikeIds?.length) query = query.in('bike_id', bikeIds);
+    const caller = await callerBusiness(supabase, req);
+    if (caller && !caller.superAdmin) query = query.eq('business_id', caller.businessId ?? '00000000-0000-0000-0000-000000000000');
 
     const { data: inspections, count, error } = await query;
     if (error) throw new Error(error.message);
