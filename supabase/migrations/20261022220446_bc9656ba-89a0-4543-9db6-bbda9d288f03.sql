@@ -1,0 +1,2 @@
+REVOKE ALL ON public.shopify_oauth_states, public.ebay_category_cache, public.squarespace_oauth_states, public.xero_oauth_states, public.sync_failure_alerts FROM anon, authenticated;
+GRANT ALL ON public.shopify_oauth_states, public.ebay_category_cache, public.squarespace_oauth_states, public.xero_oauth_states, public.sync_failure_alerts TO service_role;
