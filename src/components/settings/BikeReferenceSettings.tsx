@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Save, RefreshCw, Tag, Repeat } from 'lucide-react';
@@ -26,6 +27,8 @@ const SETTING_KEY = 'bike_reference_prefix';
 const PAGE = 1000;
 
 export default function BikeReferenceSettings() {
+  const { businessId } = useAuth();
+  const settingKey = `${SETTING_KEY}:${businessId}`;
   const [prefix, setPrefix] = useState(DEFAULT_BIKE_REFERENCE_PREFIX);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -37,19 +40,19 @@ export default function BikeReferenceSettings() {
       const { data } = await supabase
         .from('app_settings')
         .select('value')
-        .eq('key', SETTING_KEY)
+        .eq('key', settingKey)
         .maybeSingle();
       if (data?.value) setPrefix(String(data.value).replace(/"/g, ''));
       setLoading(false);
     })();
-  }, []);
+  }, [settingKey]);
 
   const cleanPrefix = () => prefix.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
 
   const savePrefix = async (clean: string) => {
     const { error } = await supabase
       .from('app_settings')
-      .upsert({ key: SETTING_KEY, value: clean as any }, { onConflict: 'key' });
+      .upsert({ key: settingKey, business_id: businessId, value: clean as any }, { onConflict: 'key' });
     if (error) throw error;
     setPrefix(clean);
   };

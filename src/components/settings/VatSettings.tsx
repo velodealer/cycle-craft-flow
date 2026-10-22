@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Receipt } from 'lucide-react';
 import { useVatRegistered, VAT_REGISTERED_KEY } from '@/hooks/useVatRegistered';
 
 export default function VatSettings({ compact = false }: { compact?: boolean }) {
+  const { businessId } = useAuth();
+  const settingKey = `${VAT_REGISTERED_KEY}:${businessId}`;
   const { vatRegistered, loading, setVatRegistered } = useVatRegistered();
   const [saving, setSaving] = useState(false);
 
@@ -17,7 +20,7 @@ export default function VatSettings({ compact = false }: { compact?: boolean }) 
     setVatRegistered(next);
     const { error } = await supabase
       .from('app_settings')
-      .upsert({ key: VAT_REGISTERED_KEY, value: next as never }, { onConflict: 'key' });
+      .upsert({ key: settingKey, business_id: businessId, value: next as never }, { onConflict: 'key' });
     setSaving(false);
     if (error) {
       setVatRegistered(previous);

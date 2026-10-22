@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Save, Truck } from 'lucide-react';
@@ -11,6 +12,8 @@ const SETTING_KEY = 'default_delivery_charge';
 const DEFAULT_CHARGE = 75;
 
 export default function DeliverySettings() {
+  const { businessId } = useAuth();
+  const settingKey = `${SETTING_KEY}:${businessId}`;
   const [charge, setCharge] = useState(String(DEFAULT_CHARGE));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -20,13 +23,13 @@ export default function DeliverySettings() {
       const { data } = await supabase
         .from('app_settings')
         .select('value')
-        .eq('key', SETTING_KEY)
+        .eq('key', settingKey)
         .maybeSingle();
       const value = Number(data?.value as any);
       if (Number.isFinite(value) && value >= 0) setCharge(String(value));
       setLoading(false);
     })();
-  }, []);
+  }, [settingKey]);
 
   const save = async () => {
     const value = Number(charge);
@@ -37,7 +40,7 @@ export default function DeliverySettings() {
     setSaving(true);
     const { error } = await supabase
       .from('app_settings')
-      .upsert({ key: SETTING_KEY, value: value as any }, { onConflict: 'key' });
+      .upsert({ key: settingKey, business_id: businessId, value: value as any }, { onConflict: 'key' });
     setSaving(false);
     if (error) {
       toast({ title: 'Could not save', description: error.message, variant: 'destructive' });
