@@ -1,5 +1,4 @@
-import { jsPDF } from 'jspdf';
-import QRCode from 'qrcode';
+import type { jsPDF } from 'jspdf';
 import { bikeRef } from './bikeReference';
 
 export interface PdfLabelBike {
@@ -40,6 +39,7 @@ function drawField(doc: jsPDF, label: string, value: string, x: number, y: numbe
 
 /** Generates a PDF with one exact 4in x 6in page per bike and triggers a download. */
 export async function downloadBikeLabelsPdf(bikes: PdfLabelBike[], origin: string) {
+  const [{ jsPDF }, { default: QRCode }] = await Promise.all([import('jspdf'), import('qrcode')]);
   const doc = new jsPDF({ unit: 'in', format: [W, H], orientation: 'portrait' });
   const inner = W - PAD * 2;
 
