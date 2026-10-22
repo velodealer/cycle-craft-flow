@@ -38,7 +38,7 @@ export async function listFailedSyncs(): Promise<FailedSync[]> {
       .limit(200),
     supabase
       .from('parts')
-      .select('id, name, fit_qb_sync_status, fit_qb_sync_error, fit_xero_sync_status, fit_xero_sync_error')
+      .select('id, description, brand, fit_qb_sync_status, fit_qb_sync_error, fit_xero_sync_status, fit_xero_sync_error')
       .or('fit_qb_sync_status.eq.failed,fit_xero_sync_status.eq.failed')
       .limit(200),
   ]);
@@ -63,8 +63,8 @@ export async function listFailedSyncs(): Promise<FailedSync[]> {
     if (b.break_xero_sync_status === 'failed') push('Xero', 'break', b.id, label, b.break_xero_sync_error, link);
   }
   for (const p of (parts.data ?? []) as any[]) {
-    if (p.fit_qb_sync_status === 'failed') push('QuickBooks', 'fit_part', p.id, p.name || 'Part', p.fit_qb_sync_error, '/parts');
-    if (p.fit_xero_sync_status === 'failed') push('Xero', 'fit_part', p.id, p.name || 'Part', p.fit_xero_sync_error, '/parts');
+    if (p.fit_qb_sync_status === 'failed') push('QuickBooks', 'fit_part', p.id, ([p.brand, p.description].filter(Boolean).join(' ') || 'Part'), p.fit_qb_sync_error, '/parts');
+    if (p.fit_xero_sync_status === 'failed') push('Xero', 'fit_part', p.id, ([p.brand, p.description].filter(Boolean).join(' ') || 'Part'), p.fit_xero_sync_error, '/parts');
   }
   return out;
 }
