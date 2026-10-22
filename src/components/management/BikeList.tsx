@@ -1,3 +1,4 @@
+import { useDebounce } from '@/hooks/useDebounce';
 import { Checkbox } from '@/components/ui/checkbox';
 import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
@@ -78,7 +79,8 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
   };
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const searchTerm = useDebounce(searchInput, 200);
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
@@ -212,8 +214,8 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search bikes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10"
             />
           </div>
