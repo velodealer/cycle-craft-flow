@@ -8,9 +8,8 @@
 - [x] Failed accounting syncs card with Retry / Retry all on dashboard
 - [ ] Owner email alert for failed syncs
 - [ ] Live-test every integration (needs dealer test account + real provider logins)
-- [ ] Typeform 15-minute backup fetch
-- [ ] Failed syncs list with Retry + owner email
-- [ ] Mobile pass on main pages
+- [x] Typeform 15-minute backup fetch
+- [x] Mobile pass on main pages (code pass; signed-in phone check still needed)
 
 ## Phase 2
 - [ ] Money-rule tests (VAT, profit, numbering, mark-ups, handover block)

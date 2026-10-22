@@ -98,7 +98,7 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-4">
+      <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
         <div>
           <label className="text-xs font-medium text-muted-foreground">Margin</label>
           <p className="text-base font-semibold">{pct(margin)}</p>

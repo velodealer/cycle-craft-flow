@@ -195,7 +195,7 @@ export default function ListingFormats() {
       </CardHeader>
       <CardContent>
         <Tabs value={platform} onValueChange={(v) => setPlatform(v as ListingPlatform)}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
             {PLATFORMS.map((p) => (
               <TabsTrigger key={p.value} value={p.value}>{p.label}</TabsTrigger>
             ))}
