@@ -226,7 +226,7 @@ export interface LinkResult {
 
 /** Short, human summary of a link result for toasts. */
 export function describeLinkResult(r: LinkResult): string {
-  if (r.total === 0) return 'No parts in the 99spokes record.';
+  if (r.total === 0) return 'No parts listed in the bike details.';
   const head = `${r.linked} of ${r.total} parts linked`;
   if (!r.failed.length) return `${head}.`;
   return `${head}. Failed: ${r.failed.map((f) => `${f.slot} (${f.reason})`).join('; ')}`;
