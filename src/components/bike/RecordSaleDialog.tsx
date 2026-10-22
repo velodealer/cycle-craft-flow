@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { logActivity, money } from '@/lib/activity';
 import { toast } from 'sonner';
 import { syncInvoice, tryPostPurchase } from '@/lib/quickbooks';
@@ -37,6 +38,7 @@ interface ExternalOwner {
 const NEW_CUSTOMER = '__new__';
 
 export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, prefill }: RecordSaleDialogProps) {
+  const { businessId } = useAuth();
   const [customers, setCustomers] = useState<ExternalOwner[]>([]);
   const [customerId, setCustomerId] = useState<string>(NEW_CUSTOMER);
   const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '', address: '', line1: '', line2: '', city: '', postcode: '', country: 'UK' });
@@ -92,7 +94,7 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
     supabase
       .from('app_settings')
       .select('value')
-      .eq('key', 'default_delivery_charge')
+      .eq('key', `default_delivery_charge:${businessId}`)
       .maybeSingle()
       .then(({ data }) => {
         const value = Number(data?.value as any);
