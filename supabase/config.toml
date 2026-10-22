@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.typeform-webhook]
 verify_jwt = false
 
+[functions.typeform-poll]
+verify_jwt = false
+
 [functions.send-password-reset]
 verify_jwt = false
 
