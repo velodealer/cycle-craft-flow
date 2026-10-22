@@ -19,7 +19,7 @@
 - [x] Indexes on dealership + stage
 - [x] Paging long bike/parts lists
 
-## Phase 3
+## Phase 3 (started 22 Oct)
 - [ ] Card subscription payments
 - [ ] GDPR export/delete
 - [ ] Status page, Help section
