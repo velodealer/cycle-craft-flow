@@ -23,3 +23,11 @@
 - [ ] Card subscription payments
 - [ ] GDPR export/delete
 - [ ] Status page, Help section
+
+## Server-side moves (from client-action audit)
+- [x] Block staff changing their own role
+- [ ] Record sale + invoice + part-ex in one server step
+- [ ] Break bike / fit part / remove part / strip part in one server step
+- [ ] Part sale in one server step
+- [ ] Stage changes (advance, handover, admin override) through one server check
+- [ ] Settings saves validated server-side
