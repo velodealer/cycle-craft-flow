@@ -279,92 +279,30 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
     }
     setSaving(true);
     try {
-      for (const r of selected) {
+      const items = selected.map((r) => {
         const value = Number(keep[`${r.kind}:${r.id}`].value);
-        if (r.kind === 'part') {
-          const { error } = await supabase
-            .from('parts')
-            .update({
-              bike_id: null,
-              stripped_from_bike_id: bike.id,
-              stock_status: 'in_stock' as any,
-              type: 'secondhand_stripped' as any,
-              cost_price: value,
-              quantity: 1,
-            } as any)
-            .eq('id', r.id);
-          if (error) throw error;
-        } else if (r.kind === 'component') {
-          const { error: creditErr } = await supabase.from('parts').insert({
-            bike_id: bike.id,
-            description: `Stripped: ${r.label} — ${r.description}`,
-            brand: r.brand || null,
-            cost_price: -Math.abs(value),
-            quantity: 1,
-            stock_status: 'sold' as any,
-            type: 'secondhand_stripped' as any,
-          } as any);
-          if (creditErr) throw creditErr;
-          const { error: insErr } = await supabase.from('parts').insert({
-            description: `${r.label}: ${r.description}`,
-            brand: r.brand || null,
-            cost_price: value,
-            quantity: 1,
-            stripped_from_bike_id: bike.id,
-            stock_status: 'in_stock' as any,
-            type: 'secondhand_stripped' as any,
-          } as any);
-          if (insErr) throw insErr;
-          const { error: delErr } = await supabase.from('bike_components').delete().eq('id', r.id);
-          if (delErr) throw delErr;
-        } else {
-          // group rows: frame / cockpit / drivetrain
-          const isFrame = r.id === 'frame';
-          const isCockpit = r.id === 'cockpit';
-          const isWheels = r.id === 'wheels';
-          const slotList = r.slotLabels.join(', ');
-          const inventoryDesc = isFrame
-            ? `${frameInventoryDesc}${slotList ? ` (${slotList})` : ''}`
-            : isWheels
-              ? `${r.label.replace(' — ', ': ')}${slotList ? ` (${slotList})` : ''}`
+        if (r.kind === 'part') return { kind: 'part', id: r.id, value };
+        if (r.kind === 'component') {
+          return { kind: 'component', value, brand: r.brand || null, component_ids: [r.id],
+            credit_desc: `Stripped: ${r.label} — ${r.description}`, inventory_desc: `${r.label}: ${r.description}` };
+        }
+        const isFrame = r.id === 'frame';
+        const isCockpit = r.id === 'cockpit';
+        const isWheels = r.id === 'wheels';
+        const slotList = r.slotLabels.join(', ');
+        const inventoryDesc = isFrame
+          ? `${frameInventoryDesc}${slotList ? ` (${slotList})` : ''}`
+          : isWheels
+            ? `${r.label.replace(' — ', ': ')}${slotList ? ` (${slotList})` : ''}`
             : isCockpit
               ? `Cockpit: ${cockpitName}${slotList ? ` (${slotList})` : ''}`
               : `Drivetrain: ${groupsetName}${slotList ? ` (${slotList})` : ''}`;
-          const creditDesc = `Stripped: ${r.label}${slotList ? ` (${slotList})` : ''}`;
-          const { error: creditErr } = await supabase.from('parts').insert({
-            bike_id: bike.id,
-            description: creditDesc,
-            brand: r.brand || null,
-            cost_price: -Math.abs(value),
-            quantity: 1,
-            stock_status: 'sold' as any,
-            type: 'secondhand_stripped' as any,
-          } as any);
-          if (creditErr) throw creditErr;
-          const { error: insErr } = await supabase.from('parts').insert({
-            description: inventoryDesc,
-            brand: r.brand || null,
-            cost_price: value,
-            quantity: 1,
-            stripped_from_bike_id: bike.id,
-            stock_status: 'in_stock' as any,
-            type: 'secondhand_stripped' as any,
-          } as any);
-          if (insErr) throw insErr;
-          if (r.componentIds.length > 0) {
-            const { error: delErr } = await supabase
-              .from('bike_components')
-              .delete()
-              .in('id', r.componentIds);
-            if (delErr) throw delErr;
-          }
-        }
-      }
-      const { error: bikeErr } = await supabase
-        .from('bikes')
-        .update({ status: 'split_for_parts' as any })
-        .eq('id', bike.id);
-      if (bikeErr) throw bikeErr;
+        return { kind: 'group', value, brand: r.brand || null, component_ids: r.componentIds,
+          credit_desc: `Stripped: ${r.label}${slotList ? ` (${slotList})` : ''}`, inventory_desc: inventoryDesc };
+      });
+      // One server step: every kept part moves to stock and the bike is split, or nothing changes.
+      const { error: breakErr } = await supabase.rpc('break_bike' as any, { _bike_id: bike.id, _items: items });
+      if (breakErr) throw breakErr;
       void syncShopifyQuietly(bike.id, 'sold_out');
       void syncSquarespaceQuietly(bike.id, 'sold_out');
       void syncEbayQuietly(bike.id, 'end');
@@ -385,12 +323,6 @@ export default function BreakBikeDialog({ open, onOpenChange, bike, onDone }: Pr
           }
         }
       })();
-      logActivity(bike.id, {
-        kind: 'status_change',
-        action: 'split_for_parts',
-        summary: 'Bike split for parts',
-        detail: {},
-      });
       toast({ title: 'Bike broken for parts' });
       onOpenChange(false);
       onDone();

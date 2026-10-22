@@ -76,61 +76,20 @@ export default function AddPartFromInventoryDialog({ open, onOpenChange, bikeId,
     setSaving(true);
     try {
       const cost = Number(value);
-      // 1. Old part in this slot goes back to stock (same as stripping it).
-      if (slot && current && returnOld) {
-        const v = Math.abs(Number(oldValue));
-        const { error: cErr } = await supabase.from('parts').insert({
-          bike_id: bikeId, description: `Stripped: ${slot.label} — ${currentLabel}`, brand: current.brand || null,
-          cost_price: -v, quantity: 1, stock_status: 'sold' as any, type: 'secondhand_stripped' as any,
-        } as any);
-        if (cErr) throw cErr;
-        const { error: iErr } = await supabase.from('parts').insert({
-          description: `${slot.label}: ${currentLabel}`, brand: current.brand || null, part_number: current.mpn || null,
-          cost_price: v, quantity: 1, stripped_from_bike_id: bikeId, stock_status: 'in_stock' as any, type: 'secondhand_stripped' as any,
-        } as any);
-        if (iErr) throw iErr;
-      }
-
-      // 2. Part leaves stock and its cost lands on the bike.
-      const { data: moved, error } = await supabase.from('parts')
-        .update({ bike_id: bikeId, stock_status: 'sold' as any, cost_price: cost } as any)
-        .eq('id', selected.id).is('bike_id', null).eq('stock_status', 'in_stock' as any)
-        .select('id');
-      if (error) throw error;
-      if (!moved?.length) throw new Error('That part is no longer in stock');
-
-      // 3. Put it into the spec slot.
-      if (slot) {
-        const brand = (selected.brand || '').trim() || 'Unbranded';
-        const model = (selected.description || '').replace(/^[^:]+:\s*/, '').trim() || slot.label;
-        const mpn = (selected.part_number || '').trim() || null;
-        const { data: cat } = await supabase.from('component_categories').select('id')
-          .in('slug', [slot.categorySlug || 'accessories', 'accessories']);
-        const catId = cat?.[0]?.id;
-        if (!catId) throw new Error('Component category not found');
-        let q = supabase.from('components').select('id').eq('category_id', catId).eq('brand', brand).eq('model', model);
-        q = mpn ? q.eq('mpn', mpn) : q.is('mpn', null);
-        const { data: existing, error: fErr } = await q.limit(1);
-        if (fErr) throw fErr;
-        let componentId = existing?.[0]?.id as string | undefined;
-        if (!componentId) {
-          const { data: created, error: nErr } = await supabase.from('components')
-            .insert({ category_id: catId, brand, model, mpn, source: 'manual' } as any).select('id').single();
-          if (nErr) throw nErr;
-          componentId = created.id;
-        }
-        const { error: lErr } = await supabase.from('bike_components').upsert({
-          bike_id: bikeId, slot: slot.slot, component_id: componentId, position: slot.position || null,
-          brand: null, model: null, mpn: null, attributes: null, spec_overrides: null, notes: null,
-        } as any, { onConflict: 'bike_id,slot' });
-        if (lErr) throw lErr;
-      }
-
-      logActivity(bikeId, {
-        kind: 'cost' as any, action: 'part_fitted',
-        summary: `Fitted from stock: ${[selected.brand, selected.description].filter(Boolean).join(' ')}${slot ? ` (${slot.label})` : ''}`,
-        detail: { part_id: selected.id, cost, slot: slot?.slot ?? null, returned_old: !!(current && returnOld) },
+      // One server step: old part back to stock, new part onto the bike, spec slot and history.
+      const { error } = await supabase.rpc('fit_stock_part' as any, {
+        p: {
+          bike_id: bikeId, part_id: selected.id, cost,
+          slot: slot?.slot ?? null, slot_label: slot?.label ?? null, position: slot?.position ?? null,
+          category_slug: slot?.categorySlug ?? null,
+          return_old: !!(slot && current && returnOld),
+          old_value: current && returnOld ? Math.abs(Number(oldValue)) : null,
+          old_credit_desc: slot && current ? `Stripped: ${slot.label} — ${currentLabel}` : null,
+          old_inventory_desc: slot && current ? `${slot.label}: ${currentLabel}` : null,
+          old_brand: current?.brand ?? null, old_mpn: current?.mpn ?? null,
+        },
       });
+      if (error) throw error;
 
       toast({ title: 'Part fitted to bike' });
       onOpenChange(false);

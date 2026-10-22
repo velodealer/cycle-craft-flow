@@ -66,44 +66,14 @@ export default function RemoveSlotPartDialog({ open, onOpenChange, bikeId, slot,
     setSaving(true);
     try {
       const v = Number(value || 0);
-      if (mode === 'stock' && fitted) {
-        const original = Number(fitted.cost_price || 0);
-        const { data: moved, error } = await supabase.from('parts')
-          .update({ bike_id: null, stock_status: 'in_stock' as any, cost_price: v } as any)
-          .eq('id', fitted.id).eq('bike_id', bikeId).select('id');
-        if (error) throw error;
-        if (!moved?.length) throw new Error('That part is no longer on this bike');
-        // Any value lost (wear) stays as a cost on the bike.
-        if (original - v > 0.005) {
-          const { error: rErr } = await supabase.from('parts').insert({
-            bike_id: bikeId, description: `Value lost on removed ${slotLabel.toLowerCase()} — ${label}`,
-            brand: fitted.brand || null, cost_price: Math.round((original - v) * 100) / 100, quantity: 1,
-            stock_status: 'sold' as any, type: 'secondhand_stripped' as any,
-          } as any);
-          if (rErr) throw rErr;
-        }
-      } else if (mode === 'stock') {
-        const { error: cErr } = await supabase.from('parts').insert({
-          bike_id: bikeId, description: `Stripped: ${slotLabel} — ${label}`, brand: component?.brand || null,
-          cost_price: -Math.abs(v), quantity: 1, stock_status: 'sold' as any, type: 'secondhand_stripped' as any,
-        } as any);
-        if (cErr) throw cErr;
-        const { error: iErr } = await supabase.from('parts').insert({
-          description: `${slotLabel}: ${label}`, brand: component?.brand || null, part_number: component?.mpn || null,
-          cost_price: v, quantity: 1, stripped_from_bike_id: bikeId, stock_status: 'in_stock' as any,
-          type: 'secondhand_stripped' as any,
-        } as any);
-        if (iErr) throw iErr;
-      }
-
-      const { error: dErr } = await supabase.from('bike_components').delete().eq('bike_id', bikeId).eq('slot', slot);
-      if (dErr) throw dErr;
-
-      logActivity(bikeId, {
-        kind: 'cost' as any, action: mode === 'stock' ? 'part_removed_to_stock' : 'part_removed',
-        summary: mode === 'stock' ? `Returned to stock: ${label} (${slotLabel})` : `Removed from spec: ${label} (${slotLabel})`,
-        detail: { slot, part_id: fitted?.id ?? null, value: mode === 'stock' ? v : null },
+      const { error } = await supabase.rpc('remove_slot_part' as any, {
+        p: {
+          bike_id: bikeId, slot, slot_label: slotLabel, label, mode, value: v,
+          part_id: mode === 'stock' && fitted ? fitted.id : null,
+          brand: component?.brand ?? null, mpn: component?.mpn ?? null,
+        },
       });
+      if (error) throw error;
       toast({ title: mode === 'stock' ? 'Part returned to stock' : 'Part removed' });
       onOpenChange(false);
       onDone();
