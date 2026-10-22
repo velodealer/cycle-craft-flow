@@ -17,7 +17,7 @@ const groups: FeatureGroup[] = [
       'Guided intake capturing make, model, year, size, colour, frame and serial numbers',
       'Photos taken at intake and kept with the bike for its whole life',
       'Automatic bike reference (your prefix, brand and serial) printed on a 4x6 label with a QR code',
-      'Specification lookup from the 99Spokes catalogue fills in the spec, groupset and wheels for you',
+      'Fill in bike details automatically — the spec, in the spec, groupset and wheels for you',
       'Your own catalogue builds itself from every bike you look up',
       'Record how the bike arrived: bought, taken on consignment, funded by an investor or part exchanged',
     ],

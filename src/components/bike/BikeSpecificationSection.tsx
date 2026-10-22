@@ -222,7 +222,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
         <CardTitle>Specification</CardTitle>
         <Button variant="outline" size="sm" onClick={() => setSpokesOpen(true)}>
           <Sparkles className="h-4 w-4 mr-2" />
-          Fill from 99spokes
+          Fill in bike details
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -236,7 +236,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
         {missingParts > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
             <span>
-              Parts not saved — the 99spokes record lists {spokesParts.length} parts but only{' '}
+              Parts not saved — the bike details list {spokesParts.length} parts but only{' '}
               {Object.keys(componentDetails).length} are on this bike.
             </span>
             <Button size="sm" variant="outline" disabled={retrying} onClick={retryParts}>

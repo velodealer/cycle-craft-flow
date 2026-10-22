@@ -54,7 +54,7 @@ const releases: Release[] = [
     period: 'May 2026',
     title: 'Specification, catalogue and identity',
     items: [
-      '99Spokes lookup filling in the specification when you add a bike, or retrospectively',
+      'Bike details lookup filling in the specification when you add a bike, or retrospectively',
       'Your own bike catalogue building itself from every lookup',
       'Component library growing automatically with each bike',
       'Meaningful bike references and printable 4x6 QR labels, singly or in batches',

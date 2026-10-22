@@ -234,11 +234,11 @@ export default function BikeCatalogLookup({ onApply, onSpokesSelect }: Props) {
       {onSpokesSelect ? (
         <Tabs defaultValue="spokes">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="spokes">99spokes</TabsTrigger>
+            <TabsTrigger value="spokes">Fill in bike details</TabsTrigger>
             <TabsTrigger value="open">Open catalog</TabsTrigger>
           </TabsList>
           <TabsContent value="spokes" className="pt-3">
-            <SpokesLookup onSelect={onSpokesSelect} confirmLabel="Fill bike from 99spokes" />
+            <SpokesLookup onSelect={onSpokesSelect} confirmLabel="Fill in bike details" />
           </TabsContent>
           <TabsContent value="open" className="pt-3">{openCatalog}</TabsContent>
         </Tabs>

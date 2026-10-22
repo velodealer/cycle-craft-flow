@@ -131,7 +131,7 @@ export default function SpokesApplyDialog({ bike, open, onOpenChange, onApplied 
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4" /> Fill specification from 99spokes
+            <Sparkles className="h-4 w-4" /> Fill in bike details
           </DialogTitle>
           <DialogDescription>
             Search for the matching bike, then choose which values to apply. Fields that are already filled in stay
@@ -187,7 +187,7 @@ export default function SpokesApplyDialog({ bike, open, onOpenChange, onApplied 
             <ScrollArea className="h-[280px] rounded-md border">
               <div className="divide-y">
                 {payload.mapped.components.length === 0 ? (
-                  <p className="p-3 text-sm text-muted-foreground">No component details were supplied by 99Spokes.</p>
+                  <p className="p-3 text-sm text-muted-foreground">No component details were found for this bike.</p>
                 ) : payload.mapped.components.map((part) => (
                   <label key={part.slot} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted/50">
                     <Checkbox

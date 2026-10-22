@@ -108,7 +108,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
       const [local, remote] = await Promise.all([
         searchLocalCatalog(term),
         searchSpokesDetailed(term).catch((e): SpokesSearchResult => {
-          toast({ title: '99spokes search failed', description: e.message, variant: 'destructive' });
+          toast({ title: 'Bike search failed', description: e.message, variant: 'destructive' });
           return { items: [], relaxed: false, droppedTerms: [] };
         }),
       ]);
@@ -182,7 +182,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
                 void runSearch(query);
               }
             }}
-            placeholder="Search 99spokes or paste a 99spokes link"
+            placeholder="Search by make, model and year"
             className="pl-9"
           />
         </div>
@@ -311,7 +311,7 @@ export default function SpokesLookup({ onSelect, confirmLabel = 'Use this bike',
 
               <div className="max-h-[320px] space-y-4 overflow-y-auto rounded-md border p-3">
                 {mapped.components.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No component details were supplied by 99Spokes.</p>
+                  <p className="text-sm text-muted-foreground">No component details were found for this bike.</p>
                 ) : (
                   [...PART_GROUPS, { label: 'Other supplied parts', slots: mapped.components.filter((part) => !GROUPED_SLOTS.has(part.slot)).map((part) => part.slot) }].map((group) => {
                     const parts = mapped.components.filter((part) => group.slots.includes(part.slot));
