@@ -3,7 +3,7 @@
  * Format: PREFIX-BRA-1234 (account prefix, 3 letters of brand, last 4 of serial).
  */
 
-export const DEFAULT_BIKE_REFERENCE_PREFIX = 'BWC';
+export const DEFAULT_BIKE_REFERENCE_PREFIX = 'VD';
 
 export function buildBikeReference(
   prefix: string,

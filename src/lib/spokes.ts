@@ -183,10 +183,8 @@ export async function saveCatalogBike(bike: any, mapped: MappedBike): Promise<vo
   };
 
   if (existing?.id) {
-    await supabase
-      .from('catalog_bikes')
-      .update({ ...row, use_count: (existing as any).use_count + 1 })
-      .eq('id', (existing as any).id);
+    // The shared catalogue is read-only for dealers; only the usage count moves.
+    await supabase.rpc('bump_catalog_use' as never, { _id: (existing as any).id } as never);
   } else {
     const { data: auth } = await supabase.auth.getUser();
     await supabase.from('catalog_bikes').insert({ ...row, use_count: 1, created_by: auth?.user?.id ?? null });
