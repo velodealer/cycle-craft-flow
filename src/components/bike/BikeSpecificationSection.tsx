@@ -218,7 +218,7 @@ export default function BikeSpecificationSection({ bike, onUpdate }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
         <CardTitle>Specification</CardTitle>
         <Button variant="outline" size="sm" onClick={() => setSpokesOpen(true)}>
           <Sparkles className="h-4 w-4 mr-2" />

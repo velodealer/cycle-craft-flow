@@ -120,7 +120,7 @@ export default function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <main className="flex-1 min-w-0 p-4 md:p-6 overflow-x-hidden overflow-y-auto">
             {children}
           </main>
 
