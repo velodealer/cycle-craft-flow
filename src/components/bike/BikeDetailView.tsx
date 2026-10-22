@@ -645,7 +645,7 @@ export default function BikeDetailView({
                 )}
                 {editingPrices ? (
                   <div className="mt-4 space-y-3">
-                    <div className={`grid gap-3 ${canSeeCosts ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                    <div className={`grid gap-3 ${canSeeCosts ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
                       {canSeeCosts && (
                       <div className="space-y-1">
                         <Label htmlFor="price-purchase" className="label-text">Purchase</Label>
@@ -693,7 +693,7 @@ export default function BikeDetailView({
                     </div>
                   </div>
                 ) : (
-                <div className={`mt-4 grid gap-4 ${canSeeCosts ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <div className={`mt-4 grid gap-4 ${canSeeCosts ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
                   {canSeeCosts && (
                   <div>
                     <p className="label-text">Purchase</p>

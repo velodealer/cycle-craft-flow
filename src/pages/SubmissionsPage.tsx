@@ -34,7 +34,7 @@ function SubmissionJourney({ status }: { status: string }) {
   const steps = ['Received', 'Reviewed', last];
   const reached = status === 'new' ? 0 : status === 'reviewed' ? 1 : 2;
   return (
-    <ol className="mt-3 flex items-center gap-1 text-xs" aria-label="Submission progress">
+    <ol className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-2 text-xs" aria-label="Submission progress">
       {steps.map((label, i) => {
         const done = i <= reached;
         const tone = done
