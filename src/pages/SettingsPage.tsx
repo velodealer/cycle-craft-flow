@@ -18,6 +18,7 @@ import InvoiceBrandingSettings from '@/components/settings/InvoiceBrandingSettin
 import ListingChannelSettings from '@/components/settings/ListingChannelSettings';
 import ShopifyTemplateSettings from '@/components/settings/ShopifyTemplateSettings';
 import DeferralSettings from '@/components/settings/DeferralSettings';
+import DataPrivacySettings from '@/components/settings/DataPrivacySettings';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Settings } from 'lucide-react';
@@ -59,7 +60,7 @@ export default function SettingsPage() {
       <Tabs
         defaultValue={(() => {
           const requested = new URLSearchParams(window.location.search).get('tab') ?? 'users';
-          const allowed = ['users', 'system', 'integrations', 'listings', 'bays'];
+          const allowed = ['users', 'system', 'integrations', 'listings', 'bays', 'privacy'];
           return allowed.includes(requested) ? requested : 'users';
         })()}
         className="w-full md:flex md:items-start md:gap-6"
@@ -70,6 +71,7 @@ export default function SettingsPage() {
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="integrations">Integrations</TabsTrigger>
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="listings">Listing Formats</TabsTrigger>
           <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="bays">Storage Bays</TabsTrigger>
+          <TabsTrigger className="justify-start data-[state=active]:bg-secondary" value="privacy">Data &amp; privacy</TabsTrigger>
         </TabsList>
 
 
@@ -107,6 +109,10 @@ export default function SettingsPage() {
 
         <TabsContent className="min-w-0 flex-1 space-y-4" value="bays">
           <StorageBays />
+        </TabsContent>
+
+        <TabsContent className="min-w-0 flex-1 space-y-4" value="privacy">
+          <DataPrivacySettings />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,0 +1,1 @@
+REVOKE ALL ON public.data_deletion_requests FROM anon;

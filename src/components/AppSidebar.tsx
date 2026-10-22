@@ -19,6 +19,7 @@ import {
   Cog,
   Calculator,
   Globe,
+  LifeBuoy,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -94,6 +95,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "Staff Activity", url: "/staff-activity", icon: Users, roles: ['admin', 'owner', 'mechanic', 'detailer', 'accountant', 'customer_service'] },
       { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
+      { title: "Help", url: "/help", icon: LifeBuoy, roles: allRoles },
     ],
   },
 ];
