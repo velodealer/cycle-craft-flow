@@ -5,6 +5,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, getQboAuth, qboFetch, requireUser } from '../_shared/quickbooks.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 import { getXeroAuth, xeroFetch } from '../_shared/xero.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -64,6 +65,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const invoiceId: string | undefined = typeof body.invoice_id === 'string' ? body.invoice_id : undefined;
     const bikeIdInput: string | undefined = typeof body.bike_id === 'string' ? body.bike_id : undefined;
+    try { await assertTenantRow(supabase, req, 'invoices', invoiceId); await assertTenantRow(supabase, req, 'bikes', bikeIdInput); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     const newStatus: string = typeof body.new_status === 'string' && BIKE_STATUSES.has(body.new_status)
       ? body.new_status
       : 'ready';

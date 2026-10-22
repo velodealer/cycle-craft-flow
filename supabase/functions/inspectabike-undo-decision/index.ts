@@ -1,6 +1,7 @@
 // Reverts a local approve/decline on an InspectABike fault back to awaiting approval.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, requireRole, syncBikeStatusFromFaults } from '../_shared/inspectabike.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -23,6 +24,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const faultRowId = typeof body.fault_row_id === 'string' ? body.fault_row_id : '';
+    try { await assertTenantRow(supabase, req, 'inspection_faults', faultRowId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!UUID_RE.test(faultRowId)) return json({ error: 'Invalid fault_row_id' }, 400);
 
     const { data: fault, error: faultError } = await supabase

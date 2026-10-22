@@ -6,6 +6,7 @@ import {
   serviceClient, requireUser, profileFor, getXeroAuth, xeroFetch, logXeroError, stockInRef,
 } from '../_shared/xero.ts';
 import { breakJournalLines } from '../_shared/xero-postings.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -28,6 +29,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     bikeId = typeof body.bike_id === 'string' && UUID_RE.test(body.bike_id) ? body.bike_id : undefined;
+    try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!bikeId) return json({ error: 'bike_id is required' }, 400);
 
     const { data: bike, error } = await supabase.from('bikes')

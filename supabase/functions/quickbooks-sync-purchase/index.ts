@@ -16,6 +16,7 @@ import {
 
 import { purchaseFundingAccount } from '../_shared/quickbooks-lines.ts';
 import { findAccountsReceivableAccount, findOrCreateCustomer } from '../_shared/quickbooks-names.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -37,6 +38,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     bikeId = typeof body.bike_id === 'string' ? body.bike_id : undefined;
+    try { await assertTenantRow(supabase, req, 'bikes', bikeId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!bikeId) return json({ error: 'bike_id is required' }, 400);
 
     const { data: bike, error: bikeError } = await supabase

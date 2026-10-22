@@ -6,6 +6,7 @@ import {
 } from '../_shared/quickbooks.ts';
 import { profileFor } from '../_shared/xero.ts';
 import { buildFitPartLines } from '../_shared/quickbooks-lines.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -20,6 +21,7 @@ Deno.serve(async (req) => {
     const profile = await profileFor(supabase, user.id);
     const body = await req.json().catch(() => ({}));
     partId = typeof body.part_id === 'string' && UUID_RE.test(body.part_id) ? body.part_id : undefined;
+    try { await assertTenantRow(supabase, req, 'parts', partId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     if (!partId) return json({ error: 'part_id is required' }, 400);
     const reverse = body.reverse === true;
 

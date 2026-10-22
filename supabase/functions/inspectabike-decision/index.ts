@@ -2,6 +2,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, requireRole, iabFetch, syncBikeStatusFromFaults } from '../_shared/inspectabike.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { assertTenantRow } from '../_shared/tenant.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -25,6 +26,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const faultRowId = typeof body.fault_row_id === 'string' ? body.fault_row_id : '';
+    try { await assertTenantRow(supabase, req, 'inspection_faults', faultRowId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
     const decision = body.decision === 'approved' || body.decision === 'declined' ? body.decision : null;
     const note = typeof body.note === 'string' && body.note.trim() ? body.note.trim().slice(0, 1000) : undefined;
 
