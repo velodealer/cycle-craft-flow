@@ -17,6 +17,7 @@ import {
 import { markBikeSoldOut } from '../_shared/shopify-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 import { sendNotification } from '../_shared/email.ts';
+import { logSystemError } from '../_shared/system-error.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -79,6 +80,7 @@ async function recordPartSale(
       businessId);
   } catch (e) {
     console.error(`PART SALE NOT RECORDED: eBay order ${orderId} part ${part.id}: ${(e as Error).message}`);
+    await logSystemError(supabase, { source: 'ebay', message: `Part sale not recorded for eBay order ${orderId}: ${(e as Error).message}`, businessId, detail: { operation: 'order_sync_part', part_id: part.id } });
   }
 }
 
@@ -224,6 +226,7 @@ Deno.serve(async (req) => {
       results.push(await syncBusiness(supabase, id));
     } catch (e) {
       console.error(`eBay order sync failed for ${id}:`, (e as Error).message);
+      await logSystemError(supabase, { source: 'ebay', message: `eBay order sync failed: ${(e as Error).message}`, businessId: id, detail: { operation: 'order_sync' } });
       results.push({ businessId: id, error: (e as Error).message });
     }
   }

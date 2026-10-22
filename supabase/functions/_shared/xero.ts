@@ -1,3 +1,4 @@
+import { logSystemError } from './system-error.ts';
 // Shared Xero helpers for edge functions. One Xero organisation per dealership.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -241,4 +242,5 @@ export async function logXeroError(supabase: Client, operation: string, entity: 
   } catch (e) {
     console.error('Failed to write integration error log:', (e as Error).message);
   }
+  await logSystemError(supabase, { source: 'xero', message, entityRef: entity, detail: { operation, status } });
 }

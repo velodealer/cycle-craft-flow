@@ -3,6 +3,7 @@ import PrintLabelsButton from '@/components/bike/PrintLabelsButton';
 import { useLabelSelection } from '@/hooks/useLabelSelection';
 import { bikeRef } from '@/lib/bikeReference';
 import { useState, useEffect, useMemo } from 'react';
+import { fetchAllRows } from '@/lib/fetchAll';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,22 +88,17 @@ export default function BikeList({ onEdit, onAdd }: BikeListProps) {
 
   const loadBikes = async () => {
     try {
-      let query = supabase
-        .from('bikes')
-        .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number, serial_number, size')
-        .order('created_at', { ascending: false });
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter as any);
-      }
-      if (sourceFilter !== 'all') {
-        query = query.eq('source', sourceFilter as any);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setBikes((data as Bike[]) || []);
+      const data = await fetchAllRows<Bike>((from, to) => {
+        let query = supabase
+          .from('bikes')
+          .select('id, reference, make, model, year, status, source, asking_price, sale_price, created_at, photos, storage_bay_id, frame_number, serial_number, size')
+          .order('created_at', { ascending: false })
+          .order('id');
+        if (statusFilter !== 'all') query = query.eq('status', statusFilter as any);
+        if (sourceFilter !== 'all') query = query.eq('source', sourceFilter as any);
+        return query.range(from, to) as any;
+      });
+      setBikes(data);
     } catch (error: any) {
       toast({
         title: 'Error loading bikes',

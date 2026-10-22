@@ -13,11 +13,11 @@
 
 ## Phase 2
 - [x] Money-rule tests (VAT, profit, mark-ups, handover block); invoice numbering is a database rule, still to check live
-- [x] Error tracking log for super admin (app errors; server functions not yet wired)
+- [x] Error tracking log for super admin (app errors + eBay/QuickBooks/Xero background failures)
 - [ ] Backup check + practice restore (needs owner in database dashboard)
 - [x] Remove Sept 2026 backup tables
 - [x] Indexes on dealership + stage
-- [ ] Paging long bike/parts lists
+- [x] Paging long bike/parts lists
 
 ## Phase 3
 - [ ] Card subscription payments

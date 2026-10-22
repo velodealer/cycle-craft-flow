@@ -6,7 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, Banknote } from 'lucide-react';
+import { Search, Plus, Edit, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
+import { fetchAllRows } from '@/lib/fetchAll';
+
+const PAGE_SIZE = 25;
 import { toast } from '@/hooks/use-toast';
 import { ListCard, ListCardRow, ListCardActions, ListEmpty } from '@/components/ui/list-card';
 import { useStorageBays } from '@/hooks/useStorageBays';
@@ -41,6 +44,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
   const [locationFilter, setLocationFilter] = useState('all');
   const [sellingPart, setSellingPart] = useState<SellablePart | null>(null);
   const [sellOpen, setSellOpen] = useState(false);
+  const [page, setPage] = useState(1);
   const { bays } = useStorageBays();
 
   const openSell = (part: Part) => {
@@ -56,23 +60,18 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
 
   const loadParts = async () => {
     try {
-      let query = supabase
-        .from('parts')
-        .select('*')
-        .is('bike_id', null)
-        .order('created_at', { ascending: false });
-
-      if (typeFilter !== 'all') {
-        query = query.eq('type', typeFilter as any);
-      }
-      if (statusFilter !== 'all') {
-        query = query.eq('stock_status', statusFilter as any);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setParts(data || []);
+      const data = await fetchAllRows<Part>((from, to) => {
+        let query = supabase
+          .from('parts')
+          .select('*')
+          .is('bike_id', null)
+          .order('created_at', { ascending: false })
+          .order('id');
+        if (typeFilter !== 'all') query = query.eq('type', typeFilter as any);
+        if (statusFilter !== 'all') query = query.eq('stock_status', statusFilter as any);
+        return query.range(from, to) as any;
+      });
+      setParts(data);
     } catch (error: any) {
       toast({
         title: 'Error loading parts',
@@ -95,6 +94,11 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
     (part.brand && part.brand.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (part.part_number && part.part_number.toLowerCase().includes(searchTerm.toLowerCase())))
   );
+
+  useEffect(() => { setPage(1); }, [searchTerm, typeFilter, statusFilter, locationFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredParts.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visibleParts = filteredParts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const locationName = (id: string | null) => {
     const bay = bays.find((item) => item.id === id);
@@ -210,7 +214,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
           {filteredParts.length === 0 ? (
             <ListEmpty message="No parts found" />
           ) : (
-            filteredParts.map((part) => (
+            visibleParts.map((part) => (
               <ListCard key={part.id}>
                 <div className="space-y-1">
                   <div className="font-semibold leading-tight break-words">{part.description}</div>
@@ -277,7 +281,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredParts.map((part) => (
+                visibleParts.map((part) => (
                   <TableRow key={part.id}>
                     <TableCell>
                       <div>
@@ -321,6 +325,22 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
             </TableBody>
           </Table>
         </div>
+        {filteredParts.length > 0 && (
+          <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredParts.length)} of {filteredParts.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>
+                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+              </Button>
+              <span className="text-sm tabular">Page {currentPage} of {pageCount}</span>
+              <Button variant="outline" size="sm" disabled={currentPage === pageCount} onClick={() => setPage((v) => Math.min(pageCount, v + 1))}>
+                Next <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
       <RecordPartSaleDialog
         part={sellingPart}
