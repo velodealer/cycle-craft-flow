@@ -247,133 +247,46 @@ export default function RecordSaleDialog({ isOpen, onClose, bike, onSuccess, pre
 
     setSubmitting(true);
     try {
-      // The bike stays for sale until a deposit is in, so guard against a
-      // second invoice for the same bike.
-      const { data: pending } = await supabase.from('invoices')
-        .select('invoice_number').eq('bike_id', bike.id).eq('type', 'sale').neq('status', 'cancelled').limit(1);
-      if (pending && pending.length > 0) {
-        throw new Error(`This bike already has sale invoice ${pending[0].invoice_number}. Mark its deposit or payment, or delete it first.`);
-      }
-      let externalCustomerId = customerId;
-      if (customerId === NEW_CUSTOMER) {
-        const { data, error } = await supabase
-          .from('external_owners')
-          .insert({
-            name: newCustomer.name.trim(),
-            email: newCustomer.email.trim() || null,
-            phone: newCustomer.phone.trim() || null,
-            address: ([newCustomer.line1, newCustomer.line2, newCustomer.city, newCustomer.postcode.toUpperCase(), newCustomer.country].map((v) => v.trim()).filter(Boolean).join('\n') || newCustomer.address.trim()) || null,
-          })
-          .select('id')
-          .single();
-        if (error) throw error;
-        externalCustomerId = data.id;
-      }
-
+      // One server step: customer, part-ex bike, invoice number, invoice, bike
+      // update, activity and draft clean-up all succeed together or not at all.
+      // The bike stays for sale until a deposit or payment is marked.
       const issuedAt = new Date(`${saleDate}T12:00:00Z`).toISOString();
-
-      // Part exchange bike comes in as a new stock item at the agreed allowance.
-      let partExBikeId: string | null = hasPartEx ? prefill?.partExBikeId ?? null : null;
-      if (prefill && hasPartEx) {
-        await supabase.from('bikes').update({ purchase_price: Number(partEx.value) }).eq('id', prefill.partExBikeId);
-      } else if (hasPartEx) {
-        const { data: pxBike, error: pxError } = await supabase
-          .from('bikes')
-          .insert({
-            make: partEx.make.trim(),
-            model: partEx.model.trim(),
-            frame_number: partEx.frame_number.trim() || null,
-            size: partEx.size.trim() || null,
-            colour: partEx.colour.trim() || null,
-            source: 'owned',
-            status: 'intake',
-            finance_scheme: partEx.finance_scheme,
-            purchase_price: Number(partEx.value),
-            purchase_date: issuedAt,
-            intake_date: issuedAt,
-            acquired_via: 'part_exchange',
-            external_owner_id: externalCustomerId,
-          })
-          .select('id')
-          .single();
-        if (pxError) throw pxError;
-        partExBikeId = pxBike.id;
-      }
-
-      const { data: numberData, error: numberError } = await supabase.rpc('next_invoice_number');
-      if (numberError) throw numberError;
-
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .insert({
-          invoice_number: numberData as string,
+      const absorbedDelivery = fulfilment === 'delivery' && !chargeDelivery ? Number(deliveryCharge) || 0 : 0;
+      const isNewCustomer = customerId === NEW_CUSTOMER;
+      const { data: result, error: saleError } = await supabase.rpc('record_bike_sale' as any, {
+        p: {
           bike_id: bike.id,
-          external_customer_id: externalCustomerId,
-          type: 'sale',
-          total: Number(totals.balance.toFixed(2)),
-          net: Number(totals.net.toFixed(2)),
-          gross: Number(totals.balance.toFixed(2)),
+          customer_id: isNewCustomer ? null : customerId || null,
+          new_customer: isNewCustomer ? {
+            name: newCustomer.name.trim(),
+            email: newCustomer.email.trim(),
+            phone: newCustomer.phone.trim(),
+            address: ([newCustomer.line1, newCustomer.line2, newCustomer.city, newCustomer.postcode.toUpperCase(), newCustomer.country].map((v) => v.trim()).filter(Boolean).join('\n') || newCustomer.address.trim()),
+          } : null,
+          issued_at: issuedAt,
           sale_gross: Number(totals.gross.toFixed(2)),
-          delivery_charge: fulfilment === 'delivery' ? Number((Number(deliveryCharge) || 0).toFixed(2)) : 0,
-          delivery_charged_to_customer: fulfilment === 'delivery' && chargeDelivery,
-          part_exchange_bike_id: hasPartEx ? partExBikeId : null,
-          part_exchange_value: hasPartEx ? Number(totals.pxValue.toFixed(2)) : null,
+          balance: Number(totals.balance.toFixed(2)),
+          net: Number(totals.net.toFixed(2)),
           vat_rate: totals.vatRate,
           is_export: exportSale,
-
-          status: 'issued',
-          issued_at: issuedAt,
-        })
-        .select('id, invoice_number')
-        .single();
-      if (invoiceError) throw invoiceError;
-
-      if (partExBikeId) {
-        const { error: pxLinkErr } = await supabase.from('bikes').update({ part_exchange_invoice_id: invoice.id }).eq('id', partExBikeId);
-        if (pxLinkErr) throw pxLinkErr;
-      }
-
-      const absorbedDelivery = fulfilment === 'delivery' && !chargeDelivery ? Number(deliveryCharge) || 0 : 0;
-      const { error: bikeError } = await supabase
-        .from('bikes')
-        .update({
-          // Status stays as-is (still for sale) until a deposit or payment is
-          // marked on the invoice — see markInvoicePayment.
-          sale_price: totals.gross,
           delivery_method: fulfilment === 'delivery' ? 'delivery' : 'collection',
-          ...(absorbedDelivery > 0
-            ? { delivery_cost: Number(bike.delivery_cost || 0) + absorbedDelivery }
-            : {}),
-          condition_notes: notes.trim()
-            ? `${bike.condition_notes ? `${bike.condition_notes}\n\n` : ''}Sale note: ${notes.trim()}`
-            : bike.condition_notes,
-        })
-        .eq('id', bike.id);
-      if (bikeError) throw bikeError;
-
-      logActivity(bike.id, {
-        kind: 'sale',
-        action: 'sold',
-        summary: `Sold for ${money(totals.gross)} — invoice ${invoice.invoice_number}${hasPartEx ? `, part exchange taken at ${money(totals.pxValue)}` : ''}`,
-        detail: {
-          invoice_id: invoice.id,
-          invoice_number: invoice.invoice_number,
-          sale_gross: totals.gross,
-          balance: totals.balance,
-          part_exchange_bike_id: partExBikeId,
-          note: notes.trim() || undefined,
+          delivery_charge: fulfilment === 'delivery' ? Number((Number(deliveryCharge) || 0).toFixed(2)) : 0,
+          delivery_charged_to_customer: fulfilment === 'delivery' && chargeDelivery,
+          absorbed_delivery: absorbedDelivery,
+          note: notes.trim(),
+          part_exchange_value: hasPartEx ? Number(totals.pxValue.toFixed(2)) : null,
+          part_exchange_bike_id: hasPartEx ? prefill?.partExBikeId ?? null : null,
+          part_exchange: hasPartEx && !prefill ? {
+            make: partEx.make, model: partEx.model, frame_number: partEx.frame_number,
+            size: partEx.size, colour: partEx.colour, finance_scheme: partEx.finance_scheme,
+          } : null,
         },
       });
-      if (partExBikeId) {
-        logActivity(partExBikeId, {
-          kind: 'bike',
-          action: 'created',
-          summary: `Taken in part exchange against invoice ${invoice.invoice_number} at ${money(totals.pxValue)}`,
-          detail: { invoice_id: invoice.id },
-        });
-      }
-
-      await supabase.from('sale_drafts').delete().eq('bike_id', bike.id);
+      if (saleError) throw saleError;
+      const r = result as any;
+      const invoice = { id: r.invoice_id as string, invoice_number: r.invoice_number as string };
+      const partExBikeId: string | null = r.part_exchange_bike_id ?? null;
+      const externalCustomerId: string | null = r.customer_id ?? null;
 
       // Listings stay live until a deposit or payment is marked on the invoice.
 

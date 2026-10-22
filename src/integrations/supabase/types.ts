@@ -3378,6 +3378,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _log_bike: {
+        Args: {
+          _action: string
+          _bike: string
+          _detail: Json
+          _kind: string
+          _summary: string
+        }
+        Returns: undefined
+      }
+      _strip_to_stock: {
+        Args: {
+          _bike: string
+          _brand: string
+          _credit_desc: string
+          _inv_desc: string
+          _mpn: string
+          _value: number
+        }
+        Returns: string
+      }
       admin_dealership_stats: {
         Args: { _from?: string; _to?: string }
         Returns: {
@@ -3412,9 +3433,25 @@ export type Database = {
         }[]
       }
       admin_platform_overview: { Args: never; Returns: Json }
+      break_bike: { Args: { _bike_id: string; _items: Json }; Returns: Json }
       bump_catalog_use: { Args: { _id: string }; Returns: undefined }
+      change_bike_stage: {
+        Args: {
+          _action?: string
+          _bike_id: string
+          _fulfilment_note?: string
+          _note?: string
+          _override_reason?: string
+          _photos?: string[]
+          _status: string
+          _summary?: string
+        }
+        Returns: Json
+      }
       current_business_id: { Args: never; Returns: string }
       current_business_status: { Args: never; Returns: string }
+      current_profile_id: { Args: never; Returns: string }
+      fit_stock_part: { Args: { p: Json }; Returns: Json }
       generate_bike_reference:
         | {
             Args: { _bike_id: string; _make: string; _serial: string }
@@ -3450,6 +3487,20 @@ export type Database = {
         Args: { _bike_id: string; _channel: string }
         Returns: undefined
       }
+      record_bike_sale: { Args: { p: Json }; Returns: Json }
+      record_part_sale: {
+        Args: {
+          _customer_name: string
+          _gross: number
+          _is_export: boolean
+          _part_id: string
+          _sale_date: string
+          _scheme: string
+        }
+        Returns: Json
+      }
+      remove_slot_part: { Args: { p: Json }; Returns: Json }
+      strip_component: { Args: { p: Json }; Returns: Json }
     }
     Enums: {
       bike_source: "owned" | "customer_consignment" | "investor"

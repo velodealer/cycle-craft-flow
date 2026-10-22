@@ -42,18 +42,11 @@ export default function HandoverButton({ bike, onUpdate }: Props) {
   const confirm = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase.from('bikes').update({ status: target as any }).eq('id', bike.id);
-      if (error) throw error;
-      logActivity(bike.id, {
-        kind: 'status_change',
-        action: 'status',
-        summary: `Handed over: ${label.toLowerCase()}`,
-        detail: {
-          from: 'sold', to: target,
-          deferred_override: needsReason ? { reason: reason.trim(), jobs: jobs!.map((j) => j.title) } : undefined,
-        },
-        actorId: profile?.id ?? null,
+      const { error } = await supabase.rpc('change_bike_stage' as any, {
+        _bike_id: bike.id, _status: target, _summary: `Handed over: ${label.toLowerCase()}`,
+        _override_reason: needsReason ? reason.trim() : null, _action: 'status',
       });
+      if (error) throw error;
       toast({ title: `Marked as ${label.toLowerCase()}` });
       setOpen(false);
       onUpdate();

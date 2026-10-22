@@ -61,36 +61,19 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
     if (!(gross > 0)) return toast.error('Enter a sale price above zero');
     setSubmitting(true);
     try {
-      const { data: numberData, error: numberError } = await supabase.rpc('next_invoice_number');
-      if (numberError) throw numberError;
-
-      const issuedAt = new Date(`${saleDate}T12:00:00Z`).toISOString();
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .insert({
-          invoice_number: numberData as string,
-          part_id: part.id,
-          type: 'part_sale',
-          total: Number(gross.toFixed(2)),
-          net: Number(net.toFixed(2)),
-          gross: Number(gross.toFixed(2)),
-          sale_gross: Number(gross.toFixed(2)),
-          vat_rate: vatRate,
-          finance_scheme: vatRegistered ? scheme : null,
-          is_export: exportSale,
-          customer_name: customerName.trim() || null,
-          status: 'issued',
-          issued_at: issuedAt,
-        })
-        .select('id, invoice_number')
-        .single();
-      if (invoiceError) throw invoiceError;
-
-      const { error: partError } = await supabase
-        .from('parts')
-        .update({ stock_status: 'sold', sale_price: gross })
-        .eq('id', part.id);
-      if (partError) throw partError;
+      // Server works out VAT from the dealership's own setting, creates the
+      // invoice and marks the part sold in one step.
+      const { data: result, error: saleError } = await supabase.rpc('record_part_sale' as any, {
+        _part_id: part.id,
+        _gross: Number(gross.toFixed(2)),
+        _scheme: scheme,
+        _is_export: isExport,
+        _customer_name: customerName.trim() || null,
+        _sale_date: saleDate,
+      });
+      if (saleError) throw saleError;
+      const invoice = result as { invoice_id: string; invoice_number: string } as any;
+      invoice.id = invoice.invoice_id;
 
       toast.success(`Part sold — invoice ${invoice.invoice_number}`, {
         duration: 15000,
