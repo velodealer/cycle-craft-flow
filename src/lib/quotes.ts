@@ -1,17 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type VatScheme = "standard" | "margin" | "export" | "none";
-
-export const VAT_RATE = 0.2;
-
-export type QuoteRow = {
-  id: string;
-  description: string;
-  category: string;
-  qty: number;
-  unitCost: number;
-  parentId?: string | null;
-};
+import type { VatScheme, QuoteRow } from "./quoteMath";
+export * from "./quoteMath";
 
 export type Quote = {
   id: string;

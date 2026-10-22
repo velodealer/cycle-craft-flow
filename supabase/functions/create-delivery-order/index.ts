@@ -6,6 +6,7 @@ import { notifyLogistics } from '../_shared/email.ts';
 import { cycleCourierFetch, extractTrackingNumber, extractParty, friendlyCourierError } from '../_shared/cycle-courier.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 import { assertTenantRow } from '../_shared/tenant.ts';
+import { handoverAllowed } from '../_shared/handover.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -67,8 +68,7 @@ Deno.serve(async (req) => {
     if (deferredJobs?.length) {
       const overrideReason = String(body.override_reason ?? '').trim();
       const { data: prof } = await supabase.from('profiles').select('role').eq('id', userData.user.id).maybeSingle();
-      const canOverride = ['admin', 'owner'].includes((prof as any)?.role);
-      if (!overrideReason || !canOverride) {
+      if (!handoverAllowed(deferredJobs.length, (prof as any)?.role, overrideReason)) {
         return json({
           error: `Finish ${deferredJobs.length} deferred job(s) before booking delivery: ${deferredJobs.map((j: any) => j.title).join(', ')}`,
           deferred_jobs: deferredJobs,
