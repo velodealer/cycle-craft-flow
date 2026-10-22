@@ -52,6 +52,7 @@ import CareersPage from "./pages/CareersPage";
 import CareerDetailPage from "./pages/CareerDetailPage";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
+import OnboardingPage from "./pages/OnboardingPage";
 import AdminShell from "@/components/admin/AdminShell";
 import AdminOverviewPage from "./pages/admin/AdminOverviewPage";
 import AdminDealershipsPage from "./pages/admin/AdminDealershipsPage";
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/careers" element={<CareersPage />} />
             <Route path="/careers/:slug" element={<CareerDetailPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/dashboard" element={guarded(<Layout><BPSDashboard /></Layout>)} />
             <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
             <Route path="/listings" element={guarded(<Layout><ListingsPage /></Layout>)} />
