@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Navigate, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -17,6 +19,20 @@ export default function Layout({ children }: LayoutProps) {
   const { user, profile, signOut, loading, businessStatus, isSuperAdmin } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!profile?.business_id || isSuperAdmin) { setOnboarded(true); return; }
+    supabase.from('app_settings').select('value').eq('key', `onboarding:${profile.business_id}`).maybeSingle()
+      .then(({ data }) => setOnboarded(!!(data?.value as { completed?: boolean } | null)?.completed));
+  }, [profile?.business_id, isSuperAdmin]);
+
+  if (
+    !loading && user && profile && businessStatus === 'active' && onboarded === false &&
+    ['admin', 'owner'].includes(profile.role)
+  ) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   if (loading) {
     return (
