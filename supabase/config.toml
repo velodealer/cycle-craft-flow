@@ -78,3 +78,6 @@ verify_jwt = false
 
 [functions.sync-failure-alerts]
 verify_jwt = false
+
+[functions.platform-alerts]
+verify_jwt = false

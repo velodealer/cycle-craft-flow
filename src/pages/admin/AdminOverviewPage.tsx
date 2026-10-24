@@ -3,6 +3,7 @@ import { PageHeader, Panel, EmptyState } from '@/components/velo/PageShell';
 import { StatBlock } from '@/components/velo/StatBlock';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PlatformAlertSettings } from '@/components/admin/PlatformAlertSettings';
 import { usePlatformOverview, useDealershipStats, useIntegrationHealth, money } from '@/hooks/useAdminData';
 
 export default function AdminOverviewPage() {
@@ -102,6 +103,7 @@ export default function AdminOverviewPage() {
           </div>
         )}
       </Panel>
+      <PlatformAlertSettings />
     </div>
   );
 }
