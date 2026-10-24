@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InvoiceDocument, type MirroredInvoice } from '@/components/invoice/InvoiceDocument';
+import { downloadGeneratedInvoicePdf } from '@/lib/invoicePdf';
 import { fetchInvoiceView } from '@/lib/invoiceView';
 
 export default function PublicInvoicePage() {
@@ -21,7 +22,7 @@ export default function PublicInvoicePage() {
     return () => { meta.remove(); };
   }, [token]);
 
-  const pdf = () => window.print();
+  const pdf = () => { if (inv) downloadGeneratedInvoicePdf(inv).catch(() => window.print()); };
 
   return (
     <main className="min-h-screen bg-background p-4">

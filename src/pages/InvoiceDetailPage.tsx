@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { emailInvoice } from '@/lib/invoiceEmail';
 import { syncInvoice } from '@/lib/quickbooks';
+import { downloadGeneratedInvoicePdf } from '@/lib/invoicePdf';
 import { fetchInvoiceView, publicInvoiceUrl } from '@/lib/invoiceView';
 import { isSaleSecured, markInvoicePayment } from '@/lib/saleDelisting';
 import { InvoiceDocument, type MirroredInvoice } from '@/components/invoice/InvoiceDocument';
@@ -55,7 +56,13 @@ export default function InvoiceDetailPage() {
     finally { setBusy(null); }
   };
 
-  const pdf = () => window.print();
+  const pdf = async () => {
+    if (!doc) return;
+    setBusy('pdf');
+    try { await downloadGeneratedInvoicePdf(doc); }
+    catch (e) { toast.error(`Could not create the PDF: ${(e as Error).message}`); }
+    finally { setBusy(null); }
+  };
 
   const markPayment = async (kind: 'deposit' | 'paid') => {
     let amount: number | undefined;
