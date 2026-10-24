@@ -6,6 +6,7 @@ import { Truck, RefreshCw, MapPin, Phone, Mail, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import LinkCourierOrderDialog from '@/components/logistics/LinkCourierOrderDialog';
+import BookDeliveryDialog from './BookDeliveryDialog';
 
 interface CollectionStatusProps {
   bikeId: string;
@@ -99,12 +100,15 @@ export function CollectionStatus({ bikeId, direction = 'inbound', onUpdate, embe
           <p className="font-medium">{isOutbound ? 'Delivery' : 'Collection'}</p>
           <p className="text-sm text-muted-foreground">No {isOutbound ? 'delivery' : 'collection'} linked</p>
         </div>
-        <LinkCourierOrderDialog
-          bikeId={bikeId}
-          direction={direction}
-          triggerLabel={isOutbound ? 'Link existing delivery' : 'Link existing collection'}
-          onLinked={() => { loadCollection(); onUpdate?.(); }}
-        />
+        <div className="flex flex-wrap gap-2">
+          {isOutbound && <BookDeliveryDialog bikeId={bikeId} onBooked={() => { loadCollection(); onUpdate?.(); }} />}
+          <LinkCourierOrderDialog
+            bikeId={bikeId}
+            direction={direction}
+            triggerLabel={isOutbound ? 'Link existing delivery' : 'Link existing collection'}
+            onLinked={() => { loadCollection(); onUpdate?.(); }}
+          />
+        </div>
       </div>
     );
 
