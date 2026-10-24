@@ -2316,6 +2316,45 @@ export type Database = {
           },
         ]
       }
+      platform_alert_log: {
+        Row: {
+          alert_key: string
+          sent_at: string
+        }
+        Insert: {
+          alert_key: string
+          sent_at?: string
+        }
+        Update: {
+          alert_key?: string
+          sent_at?: string
+        }
+        Relationships: []
+      }
+      platform_alert_settings: {
+        Row: {
+          dealer_signup: boolean
+          deletion_request: boolean
+          id: boolean
+          system_errors: boolean
+          updated_at: string
+        }
+        Insert: {
+          dealer_signup?: boolean
+          deletion_request?: boolean
+          id?: boolean
+          system_errors?: boolean
+          updated_at?: string
+        }
+        Update: {
+          dealer_signup?: boolean
+          deletion_request?: boolean
+          id?: boolean
+          system_errors?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_id: string
