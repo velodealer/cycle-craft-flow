@@ -13,7 +13,15 @@ export type NotificationKind =
   | 'job_application'
   | 'ebay_sale'
   | 'sync_failed'
+  | 'dealer_signup'
+  | 'system_errors'
+  | 'deletion_request'
   | 'test';
+
+/** Platform events: emailed only to super admins, never dealership staff. */
+export const PLATFORM_KINDS: NotificationKind[] = [
+  'support_ticket', 'job_application', 'dealer_signup', 'system_errors', 'deletion_request',
+];
 
 interface KindSettings {
   enabled?: boolean;
@@ -75,7 +83,7 @@ async function resolveRecipients(
   }
   // Website enquiries and job applications are VeloDealer-platform events:
   // only the super admin(s) receive them, never dealership staff.
-  if (kind === 'support_ticket' || kind === 'job_application') {
+  if (PLATFORM_KINDS.includes(kind)) {
     const { data: admins, error: adminError } = await supabase
       .from('super_admins')
       .select('user_id');
