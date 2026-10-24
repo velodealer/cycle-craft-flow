@@ -1,17 +1,16 @@
-# Finish Phase 1 and 2
+# Email the super admin about new dealers and errors
 
-Mostly built, but not fully done. What's left:
+## Today
+The super admin is only emailed about website enquiries and job applications. New dealer sign-ups waiting for approval and errors in Admin → Errors send no email; you only see them by opening the admin console.
 
-## Needs you (I can't do these from here)
-1. Turn on leaked-password protection: database dashboard > Authentication > Providers > Email.
-2. Practice backup restore: confirm daily backups are on in the database dashboard and restore one to a test project.
-3. Live test while signed in: one bike sale, one part sale, fit/remove a stock part, break a bike, a handover with a postponed job, and check the invoice number goes up by one.
-4. Set up a brand-new test dealership and connect each service (only Broximo done so far).
-5. Quick check of bikes, parts and dashboard on your phone.
+## What changes
+1. **New dealer waiting for approval** — one email per new dealership: name, contact email, sign-up time, and a link to Admin → Dealerships to approve it.
+2. **Errors** — a summary email at most once an hour listing new errors (dealership, where it happened, message), grouped so the same error repeated 50 times shows once with a count. A link goes to Admin → Errors. No email if there's nothing new.
+3. **Deletion requests** — one email when a dealer asks for their dealership to be deleted, with a link to Admin → Deletions.
 
-## I can do next
-1. Add Shopify, Squarespace and Cycle Courier failures to Admin > Errors.
-2. Make the dealer-separation test a repeatable automated check.
-3. Re-review the 14 admin functions and 5 locked tables, and write down why each is safe.
+All three go only to super admins, never to dealership staff, and each can be switched off in the admin console.
 
-Once your five checks pass, Phase 1 and 2 are complete and we move to Phase 3.
+## Technical details
+- Add notification kinds `dealer_signup`, `system_errors`, `deletion_request` to `_shared/email.ts`, routed to super admins like `support_ticket`.
+- New scheduled edge function `platform-alerts` (every 10 minutes, cron + pg_net, like `sync-failure-alerts`): finds pending businesses and deletion requests not yet alerted, and new `system_error_logs` rows since the last error digest (sent at most hourly). Tracks what was sent in a service-role-only `platform_alert_log` table so nothing is emailed twice.
+- Switches stored in the super admin's platform settings in `app_settings`; small toggle card on the admin overview page.
