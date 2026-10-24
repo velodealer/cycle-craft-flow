@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
     let user;
     try { user = await requireUser(req, supabase); } catch { return json({ error: 'Unauthorized' }, 401); }
     const { data: profile } = await supabase.from('profiles').select('business_id').eq('user_id', user.id).maybeSingle();
-    const { data } = await supabase.from('invoices').select('business_id, quickbooks_invoice_id, public_token, sync_error, invoice_number').eq('id', input.invoice_id!).maybeSingle();
+    const { data } = await supabase.from('invoices').select('business_id, quickbooks_invoice_id, public_token, sync_error, invoice_number, status, paid_at').eq('id', input.invoice_id!).maybeSingle();
     if (!data || !profile || data.business_id !== profile.business_id) return NOT_FOUND();
     inv = data;
   } else {
-    const { data } = await supabase.from('invoices').select('business_id, quickbooks_invoice_id, status').eq('public_token', input.token!).maybeSingle();
+    const { data } = await supabase.from('invoices').select('business_id, quickbooks_invoice_id, status, paid_at').eq('public_token', input.token!).maybeSingle();
     if (!data || data.status === 'cancelled') return NOT_FOUND();
     inv = data;
   }
@@ -73,7 +73,9 @@ Deno.serve(async (req) => {
     payments.sort((a, b) => a.date.localeCompare(b.date));
 
     const total = num(q.TotalAmt);
-    const balance = num(q.Balance);
+    // Payment marked in VeloDealer counts even before it's recorded in QuickBooks.
+    const markedPaid = inv.status === 'paid' || !!inv.paid_at;
+    const balance = markedPaid ? 0 : num(q.Balance);
     const today = new Date().toISOString().slice(0, 10);
     const status = balance <= 0 ? 'paid' : balance < total ? (q.DueDate && q.DueDate < today ? 'overdue' : 'partial') : (q.DueDate && q.DueDate < today ? 'overdue' : 'unpaid');
 
@@ -104,7 +106,7 @@ Deno.serve(async (req) => {
       amount_paid: num(total - balance),
       status,
       payments,
-      paid_at: status === 'paid' ? (payments.at(-1)?.date ?? null) : null,
+      paid_at: status === 'paid' ? (payments.at(-1)?.date ?? (inv.paid_at ? String(inv.paid_at).slice(0, 10) : null)) : null,
       seller: ci ? {
         name: ci.CompanyName || ci.LegalName || null,
         address: addr(ci.CompanyAddr),
