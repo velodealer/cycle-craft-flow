@@ -87,18 +87,18 @@ serve(async (req) => {
 
     // Match by order ID, then by tracking number (most recent row wins)
     const tracking = extractTrackingNumber(order);
-    let collection: any = null;
+    let collections: any[] = [];
     {
       const { data } = await supabase.from('bike_collections').select('*')
-        .eq('order_id', String(orderId)).order('created_at', { ascending: false }).limit(1);
-      collection = data?.[0] ?? null;
+        .eq('order_id', String(orderId)).order('created_at', { ascending: false });
+      collections = data ?? [];
     }
-    if (!collection && tracking) {
+    if (!collections.length && tracking) {
       const { data } = await supabase.from('bike_collections').select('*')
-        .eq('tracking_number', String(tracking)).order('created_at', { ascending: false }).limit(1);
-      collection = data?.[0] ?? null;
+        .eq('tracking_number', String(tracking)).order('created_at', { ascending: false });
+      collections = data ?? [];
     }
-    if (!collection) {
+    if (!collections.length) {
       console.error('Collection not found for order:', orderId, 'tracking:', tracking);
       await supabase.from('integration_error_log').insert({ integration: 'cycle_courier_co', operation: 'webhook', entity_ref: String(orderId), message: `Collection not found (order ${orderId}, tracking ${tracking ?? '-'})` } as any).then(() => {}, () => {});
       return new Response(
@@ -107,6 +107,7 @@ serve(async (req) => {
       );
     }
 
+    for (const collection of collections) {
     console.log('Processing event for collection:', collection.id);
 
     const trackingNumber = extractTrackingNumber(order);
@@ -302,6 +303,7 @@ serve(async (req) => {
         trackingNumber: collection.tracking_number,
         orderId: collection.order_id,
       });
+    }
     }
 
     // Log webhook event (optional - create webhook_logs table if needed)

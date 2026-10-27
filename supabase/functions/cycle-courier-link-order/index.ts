@@ -71,10 +71,11 @@ Deno.serve(async (req) => {
       .select('id, bike_id, bikes(reference)')
       .eq('business_id', businessId)
       .eq('order_id', orderId)
+      .eq('bike_id', bike_id)
       .maybeSingle();
     if (existing) {
       const r = (existing as any).bikes?.reference ?? 'another bike';
-      return json({ error: `This order is already linked to ${r}.` }, 409);
+      return json({ error: `This order is already linked to this bike (${r}).` }, 409);
     }
 
     const status = extractCourierStatus(order) || 'scheduled';
