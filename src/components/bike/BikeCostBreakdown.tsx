@@ -39,7 +39,9 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
   // Export sales are zero-rated: no VAT is charged and input VAT is reclaimed,
   // so profit is simply the full sale amount minus costs (ex VAT).
   const isMargin = !isExport && vatRegistered && bike.finance_scheme === 'margin_scheme';
-  const vat = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
+  // VAT qualifying / commercial VAT: 20% VAT is charged on the full sale price.
+  const isStandardVat = !isExport && vatRegistered && (bike.finance_scheme === 'vat_qualifying' || bike.finance_scheme === 'commercial_vat');
+  const vat = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : isStandardVat ? revenue * 20 / 120 : 0;
   const net = gross - vat;
   const margin = revenue > 0 ? (net / revenue) * 100 : null;
   const markupRoi = totalCost > 0 ? (net / totalCost) * 100 : null;
@@ -79,6 +81,7 @@ export default function BikeCostBreakdown({ bike, partsCost, jobsCost, strippedI
         <Row label="Gross profit" value={formatCurrency(gross)} bold negative={gross < 0} />
         {isExport && <Row label="VAT (export — zero-rated)" value="£0.00" muted sub="No VAT charged; costs shown ex VAT" />}
         {isMargin && <Row label="VAT (margin scheme)" value={`− ${formatCurrency(vat)}`} muted />}
+        {isStandardVat && <Row label="VAT (20% on sale price)" value={`− ${formatCurrency(vat)}`} muted />}
         <Row label="Net profit" value={formatCurrency(net)} bold negative={net < 0} />
         {investorShare != null && (
           <Row label={`Investor share (${bike.profit_share_pct}%)`} value={formatCurrency(investorShare)} bold />
