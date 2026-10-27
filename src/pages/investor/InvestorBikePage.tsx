@@ -1,3 +1,4 @@
+import { bikeVat } from '@/lib/bikeVat';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,10 +68,8 @@ export default function InvestorBikePage() {
   const isSold = bike.status === 'sold';
   const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
   const grossProfit = revenue - totalCosts;
-  const isMargin = bike.finance_scheme === 'margin_scheme';
-  const isStandardVat = bike.finance_scheme === 'vat_qualifying' || bike.finance_scheme === 'commercial_vat';
-  const vatOnMargin = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : isStandardVat ? revenue * 20 / 120 : 0;
-  const netProfit = grossProfit - vatOnMargin;
+  const { isMargin, isStandardVat, outputVat: vatOnMargin, inputVat, netVat } = bikeVat({ scheme: bike.finance_scheme, revenue, acquisition, vatRegistered: true, isExport: false });
+  const netProfit = grossProfit - netVat;
   const sharePct = Number(bike.profit_share_pct || 0);
   const myReturn = Math.max(0, netProfit) * (sharePct / 100);
   const siv = totalCosts;
@@ -125,6 +124,9 @@ export default function InvestorBikePage() {
             )}
             {isStandardVat && (
               <Row label="VAT (20% on sale price)" value={`− ${fmt(vatOnMargin)}`} muted />
+            )}
+            {isStandardVat && (
+              <Row label="VAT reclaimed on purchase" value={`+ ${fmt(inputVat)}`} muted />
             )}
             <Row label="Net profit" value={fmt(netProfit)} bold negative={netProfit < 0} />
             <Row label={`Your share (${sharePct}%)`} value={fmt(myReturn)} bold />
