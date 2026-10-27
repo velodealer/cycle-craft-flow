@@ -68,7 +68,8 @@ export default function InvestorBikePage() {
   const revenue = Number((isSold ? bike.sale_price : bike.asking_price) || 0);
   const grossProfit = revenue - totalCosts;
   const isMargin = bike.finance_scheme === 'margin_scheme';
-  const vatOnMargin = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : 0;
+  const isStandardVat = bike.finance_scheme === 'vat_qualifying' || bike.finance_scheme === 'commercial_vat';
+  const vatOnMargin = isMargin ? Math.max(0, revenue - acquisition) * 20 / 120 : isStandardVat ? revenue * 20 / 120 : 0;
   const netProfit = grossProfit - vatOnMargin;
   const sharePct = Number(bike.profit_share_pct || 0);
   const myReturn = Math.max(0, netProfit) * (sharePct / 100);
@@ -121,6 +122,9 @@ export default function InvestorBikePage() {
             <Row label="Gross profit" value={fmt(grossProfit)} bold negative={grossProfit < 0} />
             {isMargin && (
               <Row label="VAT (margin scheme)" value={`− ${fmt(vatOnMargin)}`} muted />
+            )}
+            {isStandardVat && (
+              <Row label="VAT (20% on sale price)" value={`− ${fmt(vatOnMargin)}`} muted />
             )}
             <Row label="Net profit" value={fmt(netProfit)} bold negative={netProfit < 0} />
             <Row label={`Your share (${sharePct}%)`} value={fmt(myReturn)} bold />
