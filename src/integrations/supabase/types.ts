@@ -2576,6 +2576,21 @@ export type Database = {
           },
         ]
       }
+      scheduler_token: {
+        Row: {
+          id: number
+          token: string
+        }
+        Insert: {
+          id?: number
+          token: string
+        }
+        Update: {
+          id?: number
+          token?: string
+        }
+        Relationships: []
+      }
       shopify_compliance_events: {
         Row: {
           created_at: string
