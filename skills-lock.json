@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "supabase-pentest-skills": {
+      "source": "Aradotso/security-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-pentest-skills/SKILL.md",
+      "computedHash": "93eb71e5082a642b2d94729d1e5603799c91f0b47809e4b76e49eea2b027806b"
+    }
+  }
+}
