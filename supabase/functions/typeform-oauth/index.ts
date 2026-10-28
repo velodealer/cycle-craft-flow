@@ -437,6 +437,7 @@ Deno.serve(async (req) => {
       const { data: rows, error: loadError } = await supabase
         .from('typeform_submissions')
         .select('id, response_id, photo_urls')
+        .eq('business_id', callerBusinessId)
         .limit(500);
       if (loadError) throw new Error(loadError.message);
 

@@ -1,6 +1,7 @@
 // Emails super admins about new dealers awaiting approval, deletion requests and new errors.
 // Runs hourly; platform_alert_log records what was sent so nothing is emailed twice.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { isScheduledCall } from '../_shared/scheduled.ts';
 import { emailServiceClient, DEFAULT_APP_URL, sendNotification } from '../_shared/email.ts';
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -10,6 +11,7 @@ const json = (b: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const db = emailServiceClient();
+  if (!(await isScheduledCall(req, db))) return json({ error: 'Unauthorized' }, 401);
   const base = DEFAULT_APP_URL;
   const { data: cfg } = await db.from('platform_alert_settings').select('*').eq('id', true).maybeSingle();
   const on = (k: string) => (cfg as any)?.[k] !== false;

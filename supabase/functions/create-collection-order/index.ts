@@ -166,7 +166,7 @@ serve(async (req) => {
     const responseData = responsePayload?.order ?? responsePayload?.data ?? responsePayload;
     const orderId = responseData?.id ?? responseData?.orderId ?? responseData?.order_id;
     const trackingNumber = extractTrackingNumber(responseData);
-    console.log('Collection order created:', responseData);
+    console.log('Collection order created:', orderId);
 
     // 6. Update collection record with API response, including the dealer's own
     // delivery address as Cycle Courier filled it in.
