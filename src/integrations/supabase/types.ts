@@ -2316,6 +2316,24 @@ export type Database = {
           },
         ]
       }
+      password_reset_attempts: {
+        Row: {
+          created_at: string
+          email_hash: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          email_hash: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          email_hash?: string
+          id?: number
+        }
+        Relationships: []
+      }
       platform_alert_log: {
         Row: {
           alert_key: string
