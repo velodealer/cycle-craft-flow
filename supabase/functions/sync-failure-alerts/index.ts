@@ -12,6 +12,9 @@ const DAY = 24 * 3600 * 1000;
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const db = emailServiceClient();
+  if (!(await isScheduledCall(req, db))) {
+    return new Response(JSON.stringify({ error: 'Not authorised' }), { status: 401, headers: corsHeaders });
+  }
   const items: Item[] = [];
   const add = (business_id: string, system: string, what: string, id: string, label: string, error: string | null, link: string) =>
     items.push({ key: `${system}:${what}:${id}`, business_id, system, what, label, error, link });
