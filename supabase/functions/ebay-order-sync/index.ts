@@ -2,6 +2,7 @@
 // marks the bike sold, ends the Shopify listing and tells the dealer.
 // A signed-in admin/owner can also call it to sync just their own dealership.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { isScheduledCall } from '../_shared/scheduled.ts';
 import {
   serviceClient,
   requireConnection,
