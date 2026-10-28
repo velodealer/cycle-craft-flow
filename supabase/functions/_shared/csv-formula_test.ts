@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { neutraliseFormula } from '../../../src/lib/reports.ts';
+import { neutraliseFormula } from '../../../src/lib/csvSafe.ts';
 
 Deno.test('formula-like text gets an apostrophe', () => {
   assertEquals(neutraliseFormula('=HYPERLINK("x")'), `'=HYPERLINK("x")`);

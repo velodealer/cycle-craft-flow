@@ -5,7 +5,7 @@ import { renderTemplate } from '@/lib/listingTemplate';
 import { effectiveListingImages } from '@/lib/listingImages';
 import { applyChannelMarkup, applyTitleAffixes, type MarkupRule, type TitleAffix } from '@/lib/channelPricing';
 import { finalEbayTitle } from '@/lib/ebayTitle';
-import { neutraliseFormula } from '@/lib/reports';
+import { neutraliseFormula } from '@/lib/csvSafe';
 
 export type CsvChannel = 'ebay' | 'shopify';
 
