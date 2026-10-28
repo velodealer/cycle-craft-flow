@@ -657,6 +657,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "build_parts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "build_parts_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
@@ -3092,6 +3099,13 @@ export type Database = {
             referencedRelation: "bikes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "squarespace_listings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       squarespace_oauth_states: {
@@ -3116,7 +3130,15 @@ export type Database = {
           state?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "squarespace_oauth_states_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storage_bays: {
         Row: {
@@ -3493,7 +3515,15 @@ export type Database = {
           state?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "xero_oauth_states_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
