@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
       if (!response.ok) throw new Error(`Cycle Courier returned ${response.status}`);
       const payload = await response.json();
       const order = payload?.order ?? payload?.data ?? payload;
-      console.log('cycle-courier-order-sync raw order:', JSON.stringify(order).slice(0, 4000));
+      console.log('cycle-courier-order-sync order:', collection.order_id);
       const remoteStatus = extractCourierStatus(order);
       const tracking = extractTrackingNumber(order) ?? collection.tracking_number;
       const update: Record<string, unknown> = { updated_at: new Date().toISOString() };

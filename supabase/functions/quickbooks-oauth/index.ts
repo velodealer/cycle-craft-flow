@@ -97,8 +97,11 @@ Deno.serve(async (req) => {
   }
 
   // ---- Authenticated JSON API ----
+  let callerRole = '';
   try {
-    await requireUser(req, supabase);
+    const u = await requireUser(req, supabase);
+    const { data: p } = await supabase.from('profiles').select('role').eq('user_id', u.id).maybeSingle();
+    callerRole = String((p as any)?.role ?? '');
   } catch (e) {
     return json({ error: (e as Error).message }, 401);
   }
@@ -106,6 +109,9 @@ Deno.serve(async (req) => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
     const action = body.action || url.searchParams.get('action') || 'status';
+    if (['auth_url', 'save_accounts', 'save_tax_codes', 'disconnect'].includes(action) && !['admin', 'owner'].includes(callerRole)) {
+      return json({ error: 'Only admins and owners can change QuickBooks settings' }, 403);
+    }
 
     if (action === 'status') {
       const integration = await loadIntegration(supabase);

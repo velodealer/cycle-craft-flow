@@ -2,6 +2,7 @@
 // Typeform form and file any the notification missed. Idempotent — responses
 // already stored are skipped, so running it extra times is harmless.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { isScheduledCall } from '../_shared/scheduled.ts';
 import { sendNotification, loadEmailSettings, appUrl } from '../_shared/email.ts';
 import { submissionEmail } from '../_shared/email-templates.ts';
 import { serviceClient, getTypeformAuth, typeformFetch } from '../_shared/typeform.ts';
@@ -17,6 +18,7 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const supabase = serviceClient();
+  if (!(await isScheduledCall(req, supabase))) return json({ error: 'Unauthorized' }, 401);
 
   let accessToken: string;
   try {

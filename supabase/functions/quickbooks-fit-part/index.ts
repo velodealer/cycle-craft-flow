@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
   try {
     const user = await requireUser(req, supabase);
     const profile = await profileFor(supabase, user.id);
+    if (!['admin', 'owner', 'mechanic'].includes(String(profile.role))) return json({ error: 'You do not have permission to post parts to QuickBooks' }, 403);
     const body = await req.json().catch(() => ({}));
     partId = typeof body.part_id === 'string' && UUID_RE.test(body.part_id) ? body.part_id : undefined;
     try { await assertTenantRow(supabase, req, 'parts', partId); } catch (e) { return new Response(JSON.stringify({ error: (e as Error).message }), { status: (e as { status?: number }).status ?? 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }

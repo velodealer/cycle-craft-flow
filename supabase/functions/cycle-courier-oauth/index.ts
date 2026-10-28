@@ -2,6 +2,7 @@
 // GET  ?code=&state=  → approval callback (browser redirect, no JWT)
 // POST { action }     → authenticated JSON API (status / auth_url / disconnect)
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { allowedOrigin } from '../_shared/ebay-oauth-origin.ts';
 import {
   serviceClient,
   loadConnection,
@@ -32,12 +33,7 @@ async function pkce() {
 }
 
 function safeOrigin(value: unknown): string {
-  if (typeof value !== 'string') return FALLBACK_APP_ORIGIN;
-  try {
-    const u = new URL(value);
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
-  } catch { /* ignore */ }
-  return FALLBACK_APP_ORIGIN;
+  return allowedOrigin(value, FALLBACK_APP_ORIGIN);
 }
 
 const backToApp = (origin: string, params: Record<string, string>) => {

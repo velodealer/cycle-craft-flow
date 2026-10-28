@@ -70,7 +70,7 @@ serve(async (req) => {
 
     // Parse webhook payload (after signature verification)
     const payload = JSON.parse(rawBody);
-    console.log('Received webhook payload:', JSON.stringify(payload));
+    console.log('Received webhook event:', payload?.event, payload?.data?.id);
 
     // Extract event type and order data from payload
     const eventType = payload.event;

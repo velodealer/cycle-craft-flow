@@ -40,9 +40,8 @@ Deno.serve(async (req) => {
     if (ie) return json({ error: ie.message }, 500);
     if (!inv || inv.business_id !== profile.business_id) return json({ error: 'Invoice not found' }, 404);
 
-    // Only owners/admins may send to an address other than the customer's saved email.
-    const canOverride = ['admin', 'owner'].includes(String(profile.role));
-    const to = (canOverride && parsed.data.to) || inv.external_owners?.email;
+    // Invoices only ever go to the customer's saved email address.
+    const to = inv.external_owners?.email;
     if (!to) return json({ error: 'This customer has no email address' }, 400);
 
     const { data: biz } = await supabase.from('businesses').select('name, contact_email').eq('id', inv.business_id).maybeSingle();
