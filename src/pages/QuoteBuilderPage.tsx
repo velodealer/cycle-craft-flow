@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, Trash2, Calculator, Save, ArrowLeft, Minus } from "lucide-react";
+import { Plus, Trash2, Calculator, Save, ArrowLeft, Minus, Copy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -317,9 +317,44 @@ export default function QuoteBuilderPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Components</CardTitle>
-          <CardDescription>Add each part with its cost.</CardDescription>
+        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>Components</CardTitle>
+            <CardDescription>Add each part with its cost.</CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const lines = rows
+                .filter((r) => r.description.trim())
+                .map((r) => {
+                  const lineTotal = (r.qty || 0) * (r.unitCost || 0);
+                  const prefix = r.parentId ? "− " : "";
+                  return `${prefix}${r.description.trim()} — ${r.category} — ${r.qty || 0} × ${gbp(r.unitCost || 0)} = ${r.parentId ? "− " : ""}${gbp(lineTotal)}`;
+                });
+              if (!lines.length) {
+                toast.error("No parts to copy — add a description first");
+                return;
+              }
+              const text = lines.join("\n");
+              try {
+                await navigator.clipboard.writeText(text);
+                toast.success(`Copied ${lines.length} part${lines.length === 1 ? "" : "s"} to clipboard`);
+              } catch {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                toast.success(`Copied ${lines.length} part${lines.length === 1 ? "" : "s"} to clipboard`);
+              }
+            }}
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copy parts list
+          </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="hidden md:grid grid-cols-12 gap-2 text-xs uppercase tracking-wide text-muted-foreground px-1">
