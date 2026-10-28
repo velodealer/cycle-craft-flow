@@ -28,3 +28,8 @@ Deno.test('isInvalidGrant', () => {
   assertEquals(isInvalidGrant(500, 'invalid_grant'), false);
   assertEquals(isInvalidGrant(400, 'invalid_scope'), false);
 });
+
+Deno.test('allowedOrigin uses the given fallback for foreign sites', () => {
+  assertEquals(allowedOrigin('https://evil.com', 'https://fallback.velodealer.com'), 'https://fallback.velodealer.com');
+  assertEquals(allowedOrigin('https://velodealer.com', 'https://fallback.velodealer.com'), 'https://velodealer.com');
+});

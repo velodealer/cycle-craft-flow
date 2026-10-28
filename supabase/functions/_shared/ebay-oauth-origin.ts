@@ -3,8 +3,8 @@
 export const DEFAULT_APP_ORIGIN = 'https://velodealer.com';
 
 /** Only VeloDealer's own addresses may receive the post-sign-in redirect (prevents open redirects). */
-export function allowedOrigin(input: unknown): string {
-  if (typeof input !== 'string') return DEFAULT_APP_ORIGIN;
+export function allowedOrigin(input: unknown, fallback: string = DEFAULT_APP_ORIGIN): string {
+  if (typeof input !== 'string') return fallback;
   try {
     const u = new URL(input);
     const host = u.hostname.toLowerCase();
@@ -13,9 +13,9 @@ export function allowedOrigin(input: unknown): string {
       (u.protocol === 'https:' && /^[a-z0-9-]+(--[a-z0-9-]+)*\.lovable\.app$/.test(host)) ||
       (u.protocol === 'https:' && host.endsWith('.lovableproject.com')) ||
       (u.protocol === 'http:' && (host === 'localhost' || host === '127.0.0.1'));
-    return ok ? u.origin : DEFAULT_APP_ORIGIN;
+    return ok ? u.origin : fallback;
   } catch {
-    return DEFAULT_APP_ORIGIN;
+    return fallback;
   }
 }
 

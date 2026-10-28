@@ -2,6 +2,7 @@
 // GET ?code=&state=  → OAuth callback (browser redirect, no JWT)
 // POST { action }    → authenticated JSON API (admin/owner)
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { allowedOrigin } from '../_shared/ebay-oauth-origin.ts';
 import {
   serviceClient, SQS_LOGIN, SQS_SCOPES, redirectUri, webhookUrl, tokenRequest, revokeToken,
   loadIntegration, saveSettings, accessToken, sqsFetch, requireUser, requireRole, businessIdForUser,
@@ -19,11 +20,7 @@ const back = (origin: string, params: Record<string, string>) =>
   });
 
 function safeOrigin(o: unknown): string {
-  try {
-    const u = new URL(String(o));
-    if (u.protocol === 'https:' || u.protocol === 'http:') return u.origin;
-  } catch { /* ignore */ }
-  return FALLBACK_ORIGIN;
+  return allowedOrigin(o, FALLBACK_ORIGIN);
 }
 
 async function ensureWebhook(supabase: ReturnType<typeof serviceClient>, businessId: string) {

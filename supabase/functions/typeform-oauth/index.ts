@@ -2,6 +2,7 @@
 // GET  with ?code=...  → OAuth callback from Typeform (browser redirect, no JWT)
 // POST { action }      → authenticated JSON API
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { allowedOrigin } from '../_shared/ebay-oauth-origin.ts';
 import { sendNotification, loadEmailSettings, appUrl } from '../_shared/email.ts';
 import { submissionEmail } from '../_shared/email-templates.ts';
 import {
@@ -55,8 +56,7 @@ async function verifyState(state: string | null): Promise<string | null> {
   try {
     const p = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
     if (typeof p.e !== 'number' || p.e < Date.now()) return null;
-    const u = new URL(String(p.o));
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
+    return allowedOrigin(String(p.o), FALLBACK_APP_ORIGIN);
   } catch { /* ignore */ }
   return null;
 }

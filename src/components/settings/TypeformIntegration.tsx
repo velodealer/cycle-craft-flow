@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Loader2, Link2, Unlink, AlertCircle, ChevronDown, Map, RefreshCw, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { isTrustedOrigin } from '@/lib/trustedOrigin';
 import {
   getTypeformStatus,
   getTypeformAuthUrl,
@@ -91,7 +92,7 @@ export default function TypeformIntegration() {
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'typeform-connected') {
+      if (isTrustedOrigin(event.origin) && event.data?.type === 'typeform-connected') {
         toast.success('Typeform connected');
         loadStatus().then((s) => {
           if (s?.connected) loadForms();

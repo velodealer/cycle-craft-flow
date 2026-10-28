@@ -1,3 +1,4 @@
+import { neutraliseFormula } from '@/lib/csvSafe';
 import {
   differenceInCalendarDays,
   format,
@@ -251,7 +252,7 @@ export function titleCase(s: string | null | undefined) {
 
 export function toCsv(headers: string[], rows: (string | number)[][]) {
   const esc = (v: string | number) => {
-    const s = String(v ?? '');
+    const s = typeof v === 'number' ? String(v) : neutraliseFormula(String(v ?? ''));
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\n');
