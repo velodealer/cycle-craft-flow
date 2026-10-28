@@ -28,14 +28,37 @@ const json = (body: unknown, status = 200) =>
 
 const FALLBACK_APP_ORIGIN = 'https://id-preview--ccc5c487-99e6-4e3f-8a56-0755e4113f30.lovable.app';
 
-/** Only allow http(s) origins we received from the app itself. */
-function safeOrigin(state: string | null): string {
-  if (!state) return FALLBACK_APP_ORIGIN;
+// OAuth state is signed by us when a signed-in admin starts the connection,
+// so only connections our admins start are accepted and redirected.
+const STATE_TTL_MS = 30 * 60 * 1000;
+const b64u = (buf: ArrayBuffer | Uint8Array) =>
+  btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function hmac(data: string): Promise<string> {
+  const secret = Deno.env.get('TYPEFORM_CLIENT_SECRET') || '';
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64u(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)));
+}
+async function signState(origin: string): Promise<string> {
+  const payload = b64u(new TextEncoder().encode(JSON.stringify({ o: origin, e: Date.now() + STATE_TTL_MS, n: crypto.randomUUID() })));
+  return `${payload}.${await hmac(payload)}`;
+}
+/** Returns the admin-chosen origin if the state is genuine and unexpired, else null. */
+async function verifyState(state: string | null): Promise<string | null> {
+  if (!state || !Deno.env.get('TYPEFORM_CLIENT_SECRET')) return null;
+  const [payload, sig] = state.split('.');
+  if (!payload || !sig) return null;
+  const expected = await hmac(payload);
+  if (expected.length !== sig.length) return null;
+  let diff = 0;
+  for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
+  if (diff !== 0) return null;
   try {
-    const u = new URL(decodeURIComponent(state));
+    const p = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    if (typeof p.e !== 'number' || p.e < Date.now()) return null;
+    const u = new URL(String(p.o));
     if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
   } catch { /* ignore */ }
-  return FALLBACK_APP_ORIGIN;
+  return null;
 }
 
 const backToApp = (origin: string, params: Record<string, string>) => {
@@ -54,6 +77,10 @@ Deno.serve(async (req) => {
 
   // ---- OAuth callback from Typeform (browser redirect, no JWT) ----
   if (req.method === 'GET' && url.searchParams.get('code')) {
+    const stateOrigin = await verifyState(url.searchParams.get('state'));
+    if (!stateOrigin) {
+      return backToApp(FALLBACK_APP_ORIGIN, { typeform: 'error', message: 'This connection link is invalid or has expired. Please press Connect again.' });
+    }
     try {
       const code = url.searchParams.get('code')!;
       const clientId = Deno.env.get('TYPEFORM_CLIENT_ID');
@@ -99,10 +126,10 @@ Deno.serve(async (req) => {
         connected_at: new Date().toISOString(),
       });
 
-      return backToApp(safeOrigin(url.searchParams.get('state')), { typeform: 'connected' });
+      return backToApp(stateOrigin, { typeform: 'connected' });
     } catch (e) {
       console.error('Typeform callback error', e);
-      return backToApp(safeOrigin(url.searchParams.get('state')), {
+      return backToApp(stateOrigin, {
         typeform: 'error',
         message: String((e as Error).message).slice(0, 300),
       });
@@ -150,7 +177,7 @@ Deno.serve(async (req) => {
         response_type: 'code',
         scope: 'forms:read responses:read webhooks:read webhooks:write offline',
         redirect_uri: redirectUri(),
-        state: encodeURIComponent(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
+        state: await signState(String(body.app_origin ?? '') || FALLBACK_APP_ORIGIN),
       });
       return json({ url: `https://api.typeform.com/oauth/authorize?${params}` });
     }
