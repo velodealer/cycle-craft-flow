@@ -5,13 +5,14 @@ import { renderTemplate } from '@/lib/listingTemplate';
 import { effectiveListingImages } from '@/lib/listingImages';
 import { applyChannelMarkup, applyTitleAffixes, type MarkupRule, type TitleAffix } from '@/lib/channelPricing';
 import { finalEbayTitle } from '@/lib/ebayTitle';
+import { neutraliseFormula } from '@/lib/reports';
 
 export type CsvChannel = 'ebay' | 'shopify';
 
 /** Quotes a value for CSV (commas, quotes and line breaks are safe). */
 export function csvCell(v: unknown): string {
   if (v == null) return '';
-  const s = String(v);
+  const s = typeof v === 'number' ? String(v) : neutraliseFormula(String(v));
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 export function toCsv(rows: unknown[][]): string {

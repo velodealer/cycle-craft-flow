@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useVatRegistered } from '@/hooks/useVatRegistered';
 import VatSettings from '@/components/settings/VatSettings';
+import { isTrustedOrigin } from '@/lib/trustedOrigin';
 import {
   getQuickBooksStatus,
   getQuickBooksAuthUrl,
@@ -149,7 +150,7 @@ export default function QuickBooksIntegration() {
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'quickbooks-connected') {
+      if (isTrustedOrigin(event.origin) && event.data?.type === 'quickbooks-connected') {
         toast.success('QuickBooks connected');
         loadStatus().then((s) => { if (s?.connected) { loadAccounts(); loadTaxCodes(); } });
       }
