@@ -1,4 +1,5 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const API_BASE = 'https://api.99spokes.com/v1';
 const API_KEY = Deno.env.get('NINETYNINE_SPOKES_API_KEY');
@@ -113,6 +114,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    // Paid API: signed-in staff only.
+    const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+    if (!token) return json({ error: 'Not authorised' }, 401);
+    const authClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!);
+    const { data: who, error: whoErr } = await authClient.auth.getUser(token);
+    if (whoErr || !who?.user) return json({ error: 'Not authorised' }, 401);
+
     if (!API_KEY) return json({ error: 'Bike details lookup is not configured' }, 500);
 
     const body = await req.json().catch(() => ({}));

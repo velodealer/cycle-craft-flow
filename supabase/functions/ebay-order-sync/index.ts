@@ -2,6 +2,7 @@
 // marks the bike sold, ends the Shopify listing and tells the dealer.
 // A signed-in admin/owner can also call it to sync just their own dealership.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { isScheduledCall } from '../_shared/scheduled.ts';
 import {
   serviceClient,
   requireConnection,
@@ -200,15 +201,18 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   const supabase = serviceClient();
 
-  // Signed-in manager: sync only their dealership.
-  const auth = req.headers.get('Authorization') || '';
+  // Our own schedule syncs every dealership; a signed-in manager syncs only theirs.
+  const scheduled = await isScheduledCall(req, supabase);
   let only: string | null = null;
-  if (/^Bearer\s+ey/i.test(auth)) {
+  if (!scheduled) {
     try {
       const user = await requireUser(req, supabase);
       await requireRole(supabase, user.id, ['admin', 'owner']);
       only = await businessIdForUser(supabase, user.id);
-    } catch { /* treat as scheduled call */ }
+    } catch {
+      return json({ error: 'Not authorised' }, 401);
+    }
+    if (!only) return json({ error: 'Not authorised' }, 401);
   }
 
   let ids: string[] = [];
