@@ -1,5 +1,6 @@
 // Sends a branded password reset email via Resend. Public endpoint (verify_jwt = false).
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { allowedOrigin } from '../_shared/ebay-oauth-origin.ts';
 import { emailServiceClient, loadEmailSettings, appUrl, sendDirect } from '../_shared/email.ts';
 import { passwordResetEmail } from '../_shared/email-templates.ts';
 
@@ -25,7 +26,8 @@ Deno.serve(async (req) => {
 
     const supabase = emailServiceClient();
     const settings = await loadEmailSettings(supabase);
-    const base = /^https?:\/\//.test(origin) ? origin.replace(/\/+$/, '') : appUrl(settings);
+    const fallbackBase = appUrl(settings).replace(/\/+$/, '');
+    const base = origin ? allowedOrigin(origin, fallbackBase) : fallbackBase;
 
     const { data, error } = await supabase.auth.admin.generateLink({
       type: 'recovery',

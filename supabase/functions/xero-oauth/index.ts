@@ -2,6 +2,7 @@
 // GET ?code=  → OAuth callback from Xero (browser redirect, no JWT)
 // POST { action } → authenticated JSON API
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { allowedOrigin } from '../_shared/ebay-oauth-origin.ts';
 import {
   serviceClient, requireUser, profileFor, loadIntegration, saveSettings, tokenRequest, getXeroAuth,
   xeroFetch, xeroCredentials, redirectUri, XERO_SCOPES, type XeroSettings, type XeroAccounts, type XeroTaxTypes,
@@ -59,7 +60,7 @@ Deno.serve(async (req) => {
       if (!row) throw new Error('This Xero connection link has expired — please try connecting again.');
       await supabase.from('xero_oauth_states').delete().eq('state', state);
       const rec = row as { business_id: string; origin: string | null; created_at: string };
-      if (rec.origin) origin = rec.origin;
+      if (rec.origin) origin = allowedOrigin(rec.origin, FALLBACK_APP_ORIGIN);
       if (Date.now() - Date.parse(rec.created_at) > 15 * 60_000) throw new Error('This Xero connection link has expired — please try connecting again.');
       const err = url.searchParams.get('error');
       if (err) throw new Error(url.searchParams.get('error_description') || err);
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
 
     if (action === 'auth_url') {
       const { id } = xeroCredentials();
-      const origin = typeof body.origin === 'string' && /^https?:\/\//.test(body.origin) ? body.origin.replace(/\/+$/, '') : FALLBACK_APP_ORIGIN;
+      const origin = allowedOrigin(body.origin, FALLBACK_APP_ORIGIN);
       const state = crypto.randomUUID();
       await supabase.from('xero_oauth_states').delete().eq('business_id', businessId);
       const { error } = await supabase.from('xero_oauth_states').insert({ state, business_id: businessId, user_id: userId, origin });

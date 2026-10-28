@@ -2,6 +2,7 @@
 // GET  with ?code=&shop=  → OAuth callback from Shopify (browser redirect, no JWT)
 // POST { action }         → authenticated JSON API
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { allowedOrigin } from '../_shared/ebay-oauth-origin.ts';
 import {
   serviceClient,
   loadIntegration,
@@ -44,8 +45,7 @@ function safeOrigin(state: string | null): string {
   try {
     const decoded = decodeURIComponent(state);
     const origin = decoded.split('|')[0];
-    const u = new URL(origin);
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.origin;
+    return allowedOrigin(origin, FALLBACK_APP_ORIGIN);
   } catch { /* ignore */ }
   return FALLBACK_APP_ORIGIN;
 }

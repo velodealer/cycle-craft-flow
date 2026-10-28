@@ -19,6 +19,10 @@ function safeName(url: string, index: number) {
  * public bike-photos bucket. Returns public URLs; falls back to the original
  * URL for any file that could not be copied.
  */
+// Only photos (and PDFs) up to 15MB are copied into storage; anything else keeps its Typeform link.
+const MAX_BYTES = 15 * 1024 * 1024;
+const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'application/pdf']);
+
 export async function rehostTypeformFiles(
   supabase: ReturnType<typeof serviceClient>,
   accessToken: string,
@@ -38,8 +42,12 @@ export async function rehostTypeformFiles(
     try {
       const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
       if (!res.ok) throw new Error(`download failed [${res.status}]`);
-      const contentType = res.headers.get('content-type') || 'application/octet-stream';
+      const contentType = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+      if (!ALLOWED_TYPES.has(contentType)) throw new Error(`file type not allowed (${contentType || 'unknown'})`);
+      const declared = Number(res.headers.get('content-length') || 0);
+      if (declared > MAX_BYTES) throw new Error('file too large');
       const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.byteLength > MAX_BYTES) throw new Error('file too large');
       const path = `typeform/${responseId}/${i}-${safeName(url, i)}`;
 
       const { error } = await supabase.storage
