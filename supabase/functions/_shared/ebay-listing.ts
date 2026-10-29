@@ -236,7 +236,7 @@ async function cachedCategoryData<T>(
 }
 
 /** The category's item specifics metadata (cached). Empty when the lookup fails. */
-async function categoryAspects(supabase: Client, conn: Connection, categoryId: string): Promise<any[]> {
+export async function categoryAspects(supabase: Client, conn: Connection, categoryId: string): Promise<any[]> {
   const treeId = CATEGORY_TREE_ID[conn.settings.marketplace_id || 'EBAY_GB'] || '3';
   try {
     return await cachedCategoryData(supabase, conn, categoryId, 'aspects', async () => {
@@ -325,7 +325,7 @@ export function mapCondition(wanted: string, allowed: Set<string> | null): { con
 }
 
 /** Condition ids a category accepts (cached). Null when the lookup fails (then we don't second-guess). */
-async function allowedConditionIds(supabase: Client, conn: Connection, categoryId: string): Promise<Set<string> | null> {
+export async function allowedConditionIds(supabase: Client, conn: Connection, categoryId: string): Promise<Set<string> | null> {
   const marketplace = conn.settings.marketplace_id || 'EBAY_GB';
   try {
     const ids = await cachedCategoryData<string[] | null>(supabase, conn, categoryId, 'conditions', async () => {
@@ -486,7 +486,7 @@ export async function heldLocation(conn: Connection): Promise<{ city: string | n
   }
 }
 
-async function findOfferId(conn: Connection, sku: string): Promise<string | null> {
+export async function findOfferId(conn: Connection, sku: string): Promise<string | null> {
   try {
     const data = await ebayFetch<any>(
       conn,

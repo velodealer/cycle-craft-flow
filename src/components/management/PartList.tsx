@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, Banknote, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit, Banknote, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
+import PartListingDialog from './PartListingDialog';
 import { fetchAllRows } from '@/lib/fetchAll';
 
 const PAGE_SIZE = 25;
@@ -29,6 +30,10 @@ interface Part {
   stock_status: string;
   created_at: string;
   storage_bay_id: string | null;
+  for_sale?: boolean;
+  ebay_listing_status?: string | null;
+  shopify_listing_status?: string | null;
+  listing_photos?: string[] | null;
 }
 
 interface PartListProps {
@@ -36,7 +41,15 @@ interface PartListProps {
   onAdd: () => void;
 }
 
+function listedBadge(part: Part) {
+  const n = [part.ebay_listing_status, part.shopify_listing_status].filter((x) => x === 'listed').length;
+  if (n) return <span className="ml-1 text-xs text-primary">· live {n}</span>;
+  if (part.for_sale) return <span className="ml-1 text-xs text-muted-foreground">· for sale</span>;
+  return null;
+}
+
 export default function PartList({ onEdit, onAdd }: PartListProps) {
+  const [listingId, setListingId] = useState<string | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
@@ -244,6 +257,12 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                 <ListCardRow label="Added" value={new Date(part.created_at).toLocaleDateString()} />
                 <ListCardActions>
                   {part.stock_status === 'in_stock' && (
+                    <Button variant="outline" className="w-full" onClick={() => setListingId(part.id)}>
+                      <Camera className="h-4 w-4 mr-2" />
+                      Photos & listing{listedBadge(part)}
+                    </Button>
+                  )}
+                  {part.stock_status === 'in_stock' && (
                     <Button variant="outline" className="w-full" onClick={() => openSell(part)}>
                       <Banknote className="h-4 w-4 mr-2" />
                       Record sale
@@ -312,6 +331,11 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
                     <TableCell>
                       <div className="flex gap-2">
                         {part.stock_status === 'in_stock' && (
+                          <Button variant="outline" size="sm" title="Photos & listing" onClick={() => setListingId(part.id)}>
+                            <Camera className="h-4 w-4" />{listedBadge(part)}
+                          </Button>
+                        )}
+                        {part.stock_status === 'in_stock' && (
                           <Button variant="outline" size="sm" onClick={() => openSell(part)}>
                             <Banknote className="h-4 w-4" />
                           </Button>
@@ -350,6 +374,7 @@ export default function PartList({ onEdit, onAdd }: PartListProps) {
         onOpenChange={setSellOpen}
         onDone={loadParts}
       />
+      <PartListingDialog partId={listingId} open={!!listingId} onOpenChange={(v) => !v && setListingId(null)} onChanged={loadParts} />
     </Card>
   );
 }

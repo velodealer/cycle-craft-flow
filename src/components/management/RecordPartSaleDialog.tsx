@@ -91,6 +91,14 @@ export default function RecordPartSaleDialog({ part, open, onOpenChange, onDone 
       if (!xr.ok) toast.warning(`Saved, but Xero sync failed: ${xr.error}`);
       else if (!xr.skipped) toast.success('Invoice synced to Xero');
 
+      // Take it off eBay/Shopify if it was listed there.
+      const { data: dl } = await supabase.functions.invoke('sync-part-listing', {
+        body: { part_id: part.id, channel: 'all', action: 'delist_sold' },
+      });
+      for (const n of ((dl as any)?.notes ?? []) as string[]) {
+        (/NOT/.test(n) ? toast.warning : toast.success)(n);
+      }
+
       onOpenChange(false);
       onDone();
     } catch (e: any) {

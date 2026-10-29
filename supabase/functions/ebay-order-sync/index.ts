@@ -19,71 +19,12 @@ import { markBikeSoldOut } from '../_shared/shopify-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
 import { sendNotification } from '../_shared/email.ts';
 import { logSystemError } from '../_shared/system-error.ts';
+import { recordPartSale } from '../_shared/part-sale.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
-
-async function callSync(fn: string, invoiceId: string) {
-  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/${fn}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, apikey: key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ invoice_id: invoiceId }),
-  });
-  if (!res.ok) throw new Error(`${fn} ${res.status}: ${(await res.text()).slice(0, 300)}`);
-}
-
-/** Marks a hand-listed part sold, raises its invoice and posts it to QuickBooks/Xero. */
-async function recordPartSale(
-  supabase: Client, businessId: string, part: any, order: any, orderId: string,
-  total: number, currency: string, orderRowId: string,
-) {
-  const label = [part.brand, part.description].filter(Boolean).join(' ');
-  try {
-    const { data: num, error: nErr } = await supabase.rpc('next_invoice_number', { _business_id: businessId });
-    if (nErr) throw new Error(nErr.message);
-    const secondhand = String(part.type ?? '').startsWith('secondhand');
-    const scheme = secondhand ? 'margin_scheme' : 'vat_qualifying';
-    const cost = Math.abs(Number(part.cost_price ?? 0));
-    const vat = secondhand ? Math.max(0, total - cost) * 20 / 120 : total * 20 / 120;
-    const { data: inv, error: iErr } = await supabase.from('invoices').insert({
-      business_id: businessId,
-      invoice_number: num as string,
-      part_id: part.id,
-      type: 'part_sale',
-      total: Number(total.toFixed(2)),
-      gross: Number(total.toFixed(2)),
-      sale_gross: Number(total.toFixed(2)),
-      net: Number((total - vat).toFixed(2)),
-      vat_rate: 20,
-      finance_scheme: scheme,
-      customer_name: order.buyer?.username ? `eBay: ${order.buyer.username}` : 'eBay buyer',
-      status: 'paid',
-      issued_at: order.creationDate ?? new Date().toISOString(),
-      paid_at: order.creationDate ?? new Date().toISOString(),
-    } as any).select('id, invoice_number').single();
-    if (iErr) throw new Error(iErr.message);
-    await supabase.from('parts').update({ stock_status: 'sold', sale_price: total }).eq('id', part.id);
-    await supabase.from('ebay_orders').update({ invoice_id: (inv as any).id }).eq('id', orderRowId);
-
-    const syncNotes: string[] = [];
-    try { await callSync('quickbooks-sync-invoice', (inv as any).id); syncNotes.push('Posted to QuickBooks.'); }
-    catch (e) { syncNotes.push(`QuickBooks not updated: ${esc((e as Error).message)}`); }
-    try { await callSync('xero-sync-invoice', (inv as any).id); }
-    catch (e) { syncNotes.push(`Xero not updated: ${esc((e as Error).message)}`); }
-
-    await sendNotification(supabase, 'ebay_sale', `Part sold on eBay: ${label}`,
-      `<p><strong>${esc(label)}</strong> sold on eBay for ${esc(currency)} ${esc(total.toFixed(2))}.</p>
-       <p>Order ${esc(orderId)} · buyer ${esc(order.buyer?.username ?? 'unknown')}.</p>
-       <p>Invoice ${esc((inv as any).invoice_number)} raised and the part marked sold. ${syncNotes.join(' ')}</p>`,
-      businessId);
-  } catch (e) {
-    console.error(`PART SALE NOT RECORDED: eBay order ${orderId} part ${part.id}: ${(e as Error).message}`);
-    await logSystemError(supabase, { source: 'ebay', message: `Part sale not recorded for eBay order ${orderId}: ${(e as Error).message}`, businessId, detail: { operation: 'order_sync_part', part_id: part.id } });
-  }
-}
 
 async function syncBusiness(supabase: Client, businessId: string) {
   const conn = await requireConnection(supabase, businessId);
@@ -144,7 +85,11 @@ async function syncBusiness(supabase: Client, businessId: string) {
       if (!inserted) continue;
       processed++;
       if (part) {
-        await recordPartSale(supabase, businessId, part, order, orderId, total, currency, (inserted as any).id);
+        await recordPartSale(supabase, businessId, part, {
+          channel: 'ebay', orderId, total, currency,
+          buyer: order.buyer?.username ? `eBay: ${order.buyer.username}` : 'eBay buyer',
+          date: order.creationDate, ebayOrderRowId: (inserted as any).id,
+        });
         continue;
       }
       if (!bikeId) continue;

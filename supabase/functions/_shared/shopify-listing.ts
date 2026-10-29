@@ -112,7 +112,7 @@ async function upsertListing(supabase: Client, bikeId: string, patch: Record<str
   if (error) throw new Error(`Shopify accepted the change, but VeloDealer could not save the listing record: ${error.message}`);
 }
 
-async function setInventory(
+export async function setInventory(
   settings: ShopifySettings & { shop_domain: string; access_token: string },
   inventoryItemId: string,
   quantity: number,
