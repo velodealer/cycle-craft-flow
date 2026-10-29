@@ -288,7 +288,7 @@ export default function BikeDetailView({
     return [
       'awaiting_collection', 'in_transit', 'pending_intake',
       'intake', 'cleaning', 'inspection', 'pending_approval',
-      'repair', 'ready', 'listed', 'sold',
+      'repair', 'photos', 'ready', 'listed', 'sold',
     ];
   };
 
@@ -316,6 +316,7 @@ export default function BikeDetailView({
       'inspection': 'Inspection',
       'pending_approval': 'Awaiting Owner Approval',
       'repair': 'Repair',
+      'photos': 'Photos',
       'ready': 'Ready for Sale',
       'listed': 'Listed',
       'sold': 'Sold',

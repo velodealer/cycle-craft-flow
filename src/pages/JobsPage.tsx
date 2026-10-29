@@ -161,13 +161,13 @@ export default function JobsPage() {
   const moveBikesToReady = async (list: ReadyBike[]) => {
     if (!list.length) return 0;
     const ids = list.map((b) => b.id);
-    const { error } = await supabase.from('bikes').update({ status: 'ready' } as any).in('id', ids);
+    const { error } = await supabase.from('bikes').update({ status: 'photos' } as any).in('id', ids);
     if (error) { toast.error(`Could not move the bikes: ${error.message}`); return -1; }
     for (const b of list) {
       logActivity(b.id, {
-        kind: 'status_change', action: 'ready',
-        summary: `Moved to Ready for Sale with ${b.deferredCount} deferred job${b.deferredCount === 1 ? '' : 's'} (bulk move from Jobs page)`,
-        detail: { from: 'repair', to: 'ready', deferred_jobs: b.deferredCount, bulk: true },
+        kind: 'status_change', action: 'photos',
+        summary: `Moved to Photos with ${b.deferredCount} deferred job${b.deferredCount === 1 ? '' : 's'} (bulk move from Jobs page)`,
+        detail: { from: 'repair', to: 'photos', deferred_jobs: b.deferredCount, bulk: true },
       });
     }
     return ids.length;

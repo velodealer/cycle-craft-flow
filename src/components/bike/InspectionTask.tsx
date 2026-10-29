@@ -173,7 +173,7 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
     }
     setSaving(true);
     try {
-      const nextStatus = hasIssues ? 'pending_approval' : 'ready';
+      const nextStatus = hasIssues ? 'pending_approval' : 'photos';
 
       const { data, error } = await supabase
         .from('inspections')
@@ -203,7 +203,7 @@ export default function InspectionTask({ bike, onUpdate }: InspectionTaskProps) 
         title: 'Inspection complete',
         description: hasIssues
           ? 'Issues flagged — bike moved to Awaiting Approval'
-          : 'No issues — bike moved to Ready for Sale',
+          : 'No issues — bike moved to Photos',
       });
       onUpdate();
     } catch (error: any) {
