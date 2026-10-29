@@ -20,6 +20,7 @@ import {
   Calculator,
   Globe,
   LifeBuoy,
+  Camera,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
