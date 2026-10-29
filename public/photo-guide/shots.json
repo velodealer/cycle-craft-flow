@@ -1,0 +1,423 @@
+{
+  "version": 1,
+  "aspect_ratio": "1:1",
+  "overlay_viewbox": [
+    0,
+    0,
+    1000,
+    1000
+  ],
+  "map_pin_space": "Side-view coordinates of diagram.side_view(): 1000-unit frame, bike drawn drive side facing right.",
+  "sections": [
+    {
+      "id": "full",
+      "title": "Full bike",
+      "hint": "Step back \u2014 whole bike in frame"
+    },
+    {
+      "id": "front",
+      "title": "Front end",
+      "hint": "Bars, head tube and fork"
+    },
+    {
+      "id": "frame",
+      "title": "Frame",
+      "hint": "Tubes, decals and junctions"
+    },
+    {
+      "id": "drive",
+      "title": "Drivetrain",
+      "hint": "Gears, chain and cranks"
+    },
+    {
+      "id": "contact",
+      "title": "Contact points",
+      "hint": "Where the rider touches the bike"
+    },
+    {
+      "id": "brakes",
+      "title": "Brakes",
+      "hint": "Non-drive side, rotors and calipers"
+    }
+  ],
+  "shots": [
+    {
+      "n": 1,
+      "id": "side-profile",
+      "section": "full",
+      "title": "Side profile",
+      "side": "Drive side",
+      "prompt": "Line both wheels up with the circles",
+      "instruction": "Stand square to the drive side with the camera at hub height. Both tyres should touch the ground line.",
+      "check": "Whole bike in frame, chain on the big ring, cranks level.",
+      "overlay": "overlays/01-side-profile.png",
+      "overlay_png": "overlays/png/01-side-profile.png",
+      "example": null,
+      "map_pin": null
+    },
+    {
+      "n": 2,
+      "id": "front-three-quarter",
+      "section": "full",
+      "title": "Front three-quarter",
+      "side": "Drive side",
+      "prompt": "Fit the front wheel in the large oval",
+      "instruction": "Stand ahead of the front wheel, about 45\u00b0 off the drive side, at chest height.",
+      "check": "Bars, fork and front wheel clearly visible.",
+      "overlay": "overlays/02-front-three-quarter.png",
+      "overlay_png": "overlays/png/02-front-three-quarter.png",
+      "example": null,
+      "map_pin": null
+    },
+    {
+      "n": 3,
+      "id": "rear-three-quarter",
+      "section": "full",
+      "title": "Rear three-quarter",
+      "side": "Drive side",
+      "prompt": "Fit the rear wheel in the large oval",
+      "instruction": "Stand behind the rear wheel, about 45\u00b0 off the drive side, at chest height.",
+      "check": "Rear mech, cassette and saddle visible.",
+      "overlay": "overlays/03-rear-three-quarter.png",
+      "overlay_png": "overlays/png/03-rear-three-quarter.png",
+      "example": null,
+      "map_pin": null
+    },
+    {
+      "n": 4,
+      "id": "top-down",
+      "section": "full",
+      "title": "Frame from above",
+      "side": "From above",
+      "prompt": "Saddle nose bottom-left, bars across the top",
+      "instruction": "Stand behind the saddle and shoot down along the top tube towards the bars.",
+      "check": "Top tube surface and both bar ends in frame.",
+      "overlay": "overlays/04-top-down.png",
+      "overlay_png": "overlays/png/04-top-down.png",
+      "example": null,
+      "map_pin": null
+    },
+    {
+      "n": 5,
+      "id": "shifter-hood",
+      "section": "front",
+      "title": "Shifter & brake lever",
+      "side": "Drive side",
+      "prompt": "Hood fills the top, lever down the middle",
+      "instruction": "Close up on the right-hand hood and lever from the side.",
+      "check": "Brand and model on the lever blade are readable; show any hood wear.",
+      "overlay": "overlays/05-shifter-hood.png",
+      "overlay_png": "overlays/png/05-shifter-hood.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          814,
+          234
+        ],
+        "label": [
+          868,
+          150
+        ]
+      }
+    },
+    {
+      "n": 6,
+      "id": "head-tube",
+      "section": "front",
+      "title": "Head tube & brand",
+      "side": "Drive side",
+      "prompt": "Brand logo inside the box",
+      "instruction": "Close up on the head tube where the top and down tubes meet.",
+      "check": "Logo sharp, headset and fork crown visible.",
+      "overlay": "overlays/06-head-tube.png",
+      "overlay_png": "overlays/png/06-head-tube.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          674,
+          352
+        ],
+        "label": [
+          592,
+          402
+        ]
+      }
+    },
+    {
+      "n": 7,
+      "id": "fork-front-tyre",
+      "section": "front",
+      "title": "Fork & front tyre",
+      "side": "Drive side",
+      "prompt": "Fork leg on the diagonal, tyre label in the box",
+      "instruction": "Shoot down the fork leg to the axle with the tyre arc behind.",
+      "check": "Tyre make and size readable; rim decal visible.",
+      "overlay": "overlays/07-fork-front-tyre.png",
+      "overlay_png": "overlays/png/07-fork-front-tyre.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          740,
+          478
+        ],
+        "label": [
+          1012,
+          430
+        ]
+      }
+    },
+    {
+      "n": 8,
+      "id": "top-tube-stem",
+      "section": "front",
+      "title": "Top tube & stem",
+      "side": "Drive side",
+      "prompt": "Top tube across the middle, stem top right",
+      "instruction": "Side-on to the top tube with the stem and spacers in the top right.",
+      "check": "Top tube surface free of glare; stem bolts visible.",
+      "overlay": "overlays/08-top-tube-stem.svg",
+      "overlay_png": "overlays/png/08-top-tube-stem.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          604,
+          332
+        ],
+        "label": [
+          596,
+          168
+        ]
+      }
+    },
+    {
+      "n": 9,
+      "id": "down-tube",
+      "section": "frame",
+      "title": "Down tube",
+      "side": "Drive side",
+      "prompt": "Down tube level across the middle",
+      "instruction": "Shoot the down tube side-on so it runs level across the frame.",
+      "check": "Decals readable; show any chips on the underside.",
+      "overlay": "overlays/09-down-tube.png",
+      "overlay_png": "overlays/png/09-down-tube.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          566,
+          534
+        ],
+        "label": [
+          592,
+          852
+        ]
+      }
+    },
+    {
+      "n": 10,
+      "id": "seat-cluster",
+      "section": "frame",
+      "title": "Seat cluster",
+      "side": "Drive side",
+      "prompt": "Seatpost down from the top, clamp in the box",
+      "instruction": "Close up where the seatpost, top tube and seat stays meet.",
+      "check": "Clamp area sharp \u2014 this is where cracks show first.",
+      "overlay": "overlays/10-seat-cluster.png",
+      "overlay_png": "overlays/png/10-seat-cluster.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          382,
+          388
+        ],
+        "label": [
+          478,
+          172
+        ]
+      }
+    },
+    {
+      "n": 11,
+      "id": "seat-tube-model",
+      "section": "frame",
+      "title": "Seat tube & model name",
+      "side": "Drive side",
+      "prompt": "Model name inside the box",
+      "instruction": "From behind and slightly to the side, shoot the seat tube with the top tube running up to the bars.",
+      "check": "Model name readable.",
+      "overlay": "overlays/11-seat-tube-model.png",
+      "overlay_png": "overlays/png/11-seat-tube-model.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          410,
+          482
+        ],
+        "label": [
+          484,
+          456
+        ]
+      }
+    },
+    {
+      "n": 12,
+      "id": "drivetrain",
+      "section": "drive",
+      "title": "Drivetrain overview",
+      "side": "Drive side",
+      "prompt": "Cassette left circle, chainring right circle",
+      "instruction": "Side-on at crank height with the rear wheel on the left.",
+      "check": "Both derailleurs, chain and chainring in frame.",
+      "overlay": "overlays/12-drivetrain.png",
+      "overlay_png": "overlays/png/12-drivetrain.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          322,
+          604
+        ],
+        "label": [
+          328,
+          852
+        ]
+      }
+    },
+    {
+      "n": 13,
+      "id": "rear-mech-cassette",
+      "section": "drive",
+      "title": "Rear mech & cassette",
+      "side": "Drive side",
+      "prompt": "Cassette in the circle, mech below",
+      "instruction": "Close up on the rear derailleur and cassette at axle height.",
+      "check": "Cassette teeth and mech cage in focus; show any scuffs.",
+      "overlay": "overlays/13-rear-mech-cassette.png",
+      "overlay_png": "overlays/png/13-rear-mech-cassette.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          178,
+          640
+        ],
+        "label": [
+          196,
+          852
+        ]
+      }
+    },
+    {
+      "n": 14,
+      "id": "chainset-front-mech",
+      "section": "drive",
+      "title": "Chainset & front mech",
+      "side": "Drive side",
+      "prompt": "Chainring in the oval, crank to the right",
+      "instruction": "Close up on the chainset with the crank arm pointing forward.",
+      "check": "Chainring teeth and crank branding readable.",
+      "overlay": "overlays/14-chainset-front-mech.png",
+      "overlay_png": "overlays/png/14-chainset-front-mech.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          447,
+          640
+        ],
+        "label": [
+          460,
+          852
+        ]
+      }
+    },
+    {
+      "n": 15,
+      "id": "cockpit",
+      "section": "contact",
+      "title": "Cockpit",
+      "side": "From above",
+      "prompt": "Bars across the middle, stem straight down",
+      "instruction": "Stand over the top tube and shoot straight down at the bars and stem.",
+      "check": "Both hoods and bar tape visible; bars straight.",
+      "overlay": "overlays/15-cockpit.png",
+      "overlay_png": "overlays/png/15-cockpit.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          674,
+          276
+        ],
+        "label": [
+          712,
+          160
+        ]
+      }
+    },
+    {
+      "n": 16,
+      "id": "saddle",
+      "section": "contact",
+      "title": "Saddle & seatpost",
+      "side": "Drive side",
+      "prompt": "Saddle on the diagonal, post down the middle",
+      "instruction": "Shoot the saddle from the side and slightly above.",
+      "check": "Show the saddle cover and any tears or scuffs.",
+      "overlay": "overlays/16-saddle.png",
+      "overlay_png": "overlays/png/16-saddle.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          350,
+          262
+        ],
+        "label": [
+          322,
+          168
+        ]
+      }
+    },
+    {
+      "n": 17,
+      "id": "front-brake",
+      "section": "brakes",
+      "title": "Front disc brake",
+      "side": "Non-drive side",
+      "prompt": "Rotor in the circle, fork from the left",
+      "instruction": "Go to the non-drive side and shoot straight at the front rotor.",
+      "check": "Rotor surface and caliper in focus.",
+      "overlay": "overlays/17-front-brake.png",
+      "overlay_png": "overlays/png/17-front-brake.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          776,
+          577
+        ],
+        "label": [
+          1012,
+          560
+        ]
+      }
+    },
+    {
+      "n": 18,
+      "id": "rear-brake",
+      "section": "brakes",
+      "title": "Rear disc brake",
+      "side": "Non-drive side",
+      "prompt": "Rotor in the circle, stays below",
+      "instruction": "Non-drive side, shoot straight at the rear rotor and caliper.",
+      "check": "Rotor surface and caliper in focus.",
+      "overlay": "overlays/18-rear-brake.svg",
+      "overlay_png": "overlays/png/18-rear-brake.png",
+      "example": null,
+      "map_pin": {
+        "target": [
+          205,
+          580
+        ],
+        "label": [
+          70,
+          852
+        ]
+      }
+    }
+  ]
+}
