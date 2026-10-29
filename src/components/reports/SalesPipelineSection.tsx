@@ -12,7 +12,7 @@ const STATUS_LABELS: Record<string, string> = {
   cleaning: 'Cleaning',
   inspection: 'Inspection',
   repair: 'Repair',
-  ready: 'Ready',
+  ready: 'Awaiting listing',
   listed: 'Listed',
   sold: 'Sold',
 };
