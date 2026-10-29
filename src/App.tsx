@@ -32,6 +32,7 @@ const QuoteBuilderPage = lazy(() => import("./pages/QuoteBuilderPage"));
 const QuoteListPage = lazy(() => import("./pages/QuoteListPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const LogisticsPage = lazy(() => import("./pages/LogisticsPage"));
+const AwaitingPhotosPage = lazy(() => import("./pages/AwaitingPhotosPage"));
 const SocialDashboardPage = lazy(() => import("./pages/social/SocialDashboardPage"));
 const SocialCalendarPage = lazy(() => import("./pages/social/SocialCalendarPage"));
 const SocialPostsPage = lazy(() => import("./pages/social/SocialPostsPage"));
@@ -109,6 +110,7 @@ const App = () => (
             <Route path="/listings" element={guarded(<Layout><ListingsPage /></Layout>)} />
             <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />
             <Route path="/bikes/:id/photos" element={guarded(<Layout><BikePhotosPage /></Layout>)} />
+            <Route path="/photos" element={guarded(<Layout><AwaitingPhotosPage /></Layout>)} />
             <Route path="/intake" element={guarded(<Layout><IntakePage /></Layout>)} />
             <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
             <Route path="/inspection" element={guarded(<Layout><InspectionPage /></Layout>)} />
