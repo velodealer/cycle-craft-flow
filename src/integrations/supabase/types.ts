@@ -278,6 +278,69 @@ export type Database = {
           },
         ]
       }
+      bike_photos: {
+        Row: {
+          bike_id: string
+          business_id: string | null
+          created_at: string
+          created_by: string | null
+          height: number | null
+          id: string
+          shot_id: string
+          shot_number: number
+          skip_reason: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          bike_id: string
+          business_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          height?: number | null
+          id?: string
+          shot_id: string
+          shot_number: number
+          skip_reason?: string | null
+          status: string
+          storage_path?: string | null
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          bike_id?: string
+          business_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          height?: number | null
+          id?: string
+          shot_id?: string
+          shot_number?: number
+          skip_reason?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bike_photos_bike_id_fkey"
+            columns: ["bike_id"]
+            isOneToOne: false
+            referencedRelation: "bikes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bike_photos_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bikes: {
         Row: {
           accessories_included: string | null
@@ -3662,6 +3725,7 @@ export type Database = {
         | "inspection"
         | "pending_approval"
         | "repair"
+        | "photos"
         | "ready"
         | "listed"
         | "sold"
@@ -3832,6 +3896,7 @@ export const Constants = {
         "inspection",
         "pending_approval",
         "repair",
+        "photos",
         "ready",
         "listed",
         "sold",
