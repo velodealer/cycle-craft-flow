@@ -77,3 +77,16 @@ export async function skipShot(bikeId: string, shot: GuideShot, reason: string) 
   if (error) throw error;
   return data as unknown as BikePhotoRow;
 }
+
+/** Extra (misc) photos: accessories, chips etc. Numbered 101+ so they sort after the 18 guided shots. */
+export const MISC_SECTION = 'misc';
+export const isMiscRow = (r: Pick<BikePhotoRow, 'shot_number'>) => r.shot_number > 100;
+export function nextMiscShot(rows: Pick<BikePhotoRow, 'shot_number'>[]): GuideShot {
+  const n = Math.max(100, ...rows.map((r) => r.shot_number)) + 1;
+  return { n, id: `misc-${n}-${Date.now().toString(36)}`, section: MISC_SECTION, title: `Extra ${n - 100}`, side: '', prompt: '', instruction: '', check: '', overlay: '', example: null };
+}
+export async function deletePhotoRow(row: BikePhotoRow) {
+  if (row.storage_path) await supabase.storage.from('bike-photos').remove([row.storage_path]);
+  const { error } = await supabase.from('bike_photos' as any).delete().eq('bike_id', row.bike_id).eq('shot_id', row.shot_id);
+  if (error) throw error;
+}

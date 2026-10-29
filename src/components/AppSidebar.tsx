@@ -20,6 +20,7 @@ import {
   Calculator,
   Globe,
   LifeBuoy,
+  Camera,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +71,7 @@ const navGroups: NavGroup[] = [
       { title: "Inspection", url: "/inspection", icon: ClipboardCheck, roles: ['admin', 'mechanic'] },
       { title: "Repairs", url: "/repairs", icon: Wrench, roles: ['admin', 'owner'] },
       { title: "Jobs", url: "/jobs", icon: Wrench, roles: ['admin', 'mechanic'] },
+      { title: "Photos", url: "/photos", icon: Camera, roles: ['admin', 'owner', 'mechanic', 'detailer'] },
     ],
   },
   {

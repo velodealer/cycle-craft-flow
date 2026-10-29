@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, ChevronLeft, Loader2, RotateCw, Upload, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Loader2, RotateCw, Upload, CheckCircle2, Plus, Trash2, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { bikeRef } from '@/lib/bikeReference';
 import GuidedCamera from '@/components/photos/GuidedCamera';
 import {
-  assetUrl, cropFileToSquare, loadPhotoGuide, publicPhotoUrl, saveShot, skipShot,
+  assetUrl, cropFileToSquare, deletePhotoRow, isMiscRow, nextMiscShot, loadPhotoGuide, publicPhotoUrl, saveShot, skipShot,
   type BikePhotoRow, type GuideShot, type PhotoGuide,
 } from '@/lib/photoGuide';
 import { canContinueToListing, firstMissingIndex, isSkippable, orderedCaptured } from '@/lib/photoGuideRules';
@@ -34,6 +34,9 @@ export default function BikePhotosPage() {
   const [howtoOpen, setHowtoOpen] = useState(() => !localStorage.getItem(HOWTO_KEY));
   const [drops, setDrops] = useState<{ file: File; shotId: string }[]>([]);
   const [busy, setBusy] = useState(false);
+  const slotInput = useRef<HTMLInputElement>(null);
+  const miscInput = useRef<HTMLInputElement>(null);
+  const [slotTarget, setSlotTarget] = useState<GuideShot | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -50,8 +53,8 @@ export default function BikePhotosPage() {
   const shots = guide?.shots ?? [];
   // A shot counts as done once captured locally, even while it is still uploading.
   const records = useMemo(() => {
-    const m = new Map(rows.map((r) => [r.shot_id, { shot_id: r.shot_id, status: r.status }]));
-    for (const k of Object.keys(pending)) if (uploads[k] !== 'failed') m.set(k, { shot_id: k, status: 'captured' });
+    const m = new Map(rows.filter((r) => !isMiscRow(r)).map((r) => [r.shot_id, { shot_id: r.shot_id, status: r.status }]));
+    for (const k of Object.keys(pending)) if (!k.startsWith('misc-') && uploads[k] !== 'failed') m.set(k, { shot_id: k, status: 'captured' });
     return [...m.values()];
   }, [rows, pending, uploads]);
   const doneCount = records.length;
@@ -126,6 +129,30 @@ export default function BikePhotosPage() {
       }
       setDrops([]);
     } finally { setBusy(false); }
+  };
+
+  // Upload a file straight into one guided slot (works on phones too).
+  const pickForSlot = (shot: GuideShot) => { setSlotTarget(shot); slotInput.current?.click(); };
+  const onSlotFile = async (file?: File) => {
+    if (!file || !slotTarget) return;
+    try { const r = await cropFileToSquare(file); capture(slotTarget, r.blob, r.width, r.height); }
+    catch { toast({ title: 'Could not read that photo', description: 'Try a JPG or PNG file.', variant: 'destructive' }); }
+  };
+  const miscRows = rows.filter(isMiscRow).sort((a, b) => a.shot_number - b.shot_number);
+  const miscPending = Object.keys(pending).filter((k) => k.startsWith('misc-') && !rows.some((r) => r.shot_id === k));
+  const addMisc = async (files: FileList | null) => {
+    if (!files?.length) return;
+    let base = [...rows];
+    for (const file of Array.from(files)) {
+      const shot = nextMiscShot(base);
+      base = [...base, { shot_number: shot.n } as BikePhotoRow];
+      try { const r = await cropFileToSquare(file); capture(shot, r.blob, r.width, r.height); }
+      catch { toast({ title: `Could not read ${file.name}`, variant: 'destructive' }); }
+    }
+  };
+  const removeMisc = async (row: BikePhotoRow) => {
+    try { await deletePhotoRow(row); setRows((rs) => rs.filter((x) => x.shot_id !== row.shot_id)); }
+    catch (e: any) { toast({ title: 'Could not remove', description: e.message, variant: 'destructive' }); }
   };
 
   const continueToListing = async () => {
@@ -211,6 +238,9 @@ export default function BikePhotosPage() {
                       <span className="truncate">{s.title}</span>
                       {/non-drive/i.test(s.side) && <Badge variant="secondary" className="text-[10px]">Non-drive side</Badge>}
                       {!isSkippable(s) && <span className="text-xs text-muted-foreground">required</span>}
+                      <button type="button" onClick={() => pickForSlot(s)} className="ml-auto flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline">
+                        <ImagePlus className="h-3.5 w-3.5" />Upload
+                      </button>
                     </div>
                   </div>
                 );
@@ -219,6 +249,33 @@ export default function BikePhotosPage() {
           </section>
         );
       })}
+
+      <section className="space-y-2">
+        <h2 className="label-text">Extras</h2>
+        <p className="text-sm text-muted-foreground">Optional extra photos — accessories, chips, scratches, receipts. Added after the guided shots on listings.</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {miscRows.map((r) => (
+            <div key={r.shot_id} className="relative aspect-square overflow-hidden rounded-md border border-border">
+              <img src={pending[r.shot_id]?.url ?? publicPhotoUrl(r) ?? ''} alt="Extra photo" className="h-full w-full object-cover" loading="lazy" />
+              <Button size="icon" variant="secondary" className="absolute right-1.5 top-1.5 h-7 w-7" onClick={() => removeMisc(r)} aria-label="Remove photo"><Trash2 className="h-3.5 w-3.5" /></Button>
+            </div>
+          ))}
+          {miscPending.map((k) => (
+            <div key={k} className="relative aspect-square overflow-hidden rounded-md border border-border">
+              <img src={pending[k].url} alt="Extra photo" className="h-full w-full object-cover" />
+              <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded bg-background/90 px-1.5 text-xs text-foreground">
+                {uploads[k] === 'failed' ? 'Failed' : <><Loader2 className="h-3 w-3 animate-spin" />Uploading</>}
+              </span>
+            </div>
+          ))}
+          <button type="button" onClick={() => miscInput.current?.click()}
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-sm text-muted-foreground">
+            <Plus className="h-5 w-5" />Add extra photos
+          </button>
+        </div>
+        <input ref={miscInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void addMisc(e.target.files); e.target.value = ''; }} />
+        <input ref={slotInput} type="file" accept="image/*" className="hidden" onChange={(e) => { void onSlotFile(e.target.files?.[0]); e.target.value = ''; }} />
+      </section>
 
       {/* Desktop upload */}
       <Card className="hidden md:block">
