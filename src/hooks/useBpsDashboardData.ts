@@ -105,7 +105,7 @@ export function useBpsDashboardData() {
         // Headline cards represent the bike's current stage. Fault/job counts
         // remain operational detail and must not change the stage totals.
         awaitingApproval: statusCounts.pending_approval || 0,
-        awaitingPhotos: (statusCounts.photos || 0) + bikes.filter((b) => { if (b.status !== 'repair') return false; const m = openJobs.filter((j) => j.bike_id === b.id); return m.length > 0 && m.every((j) => j.deferred); }).length,
+        awaitingPhotos: readyNoPhotos + (statusCounts.photos || 0) + bikes.filter((b) => { if (b.status !== 'repair') return false; const m = openJobs.filter((j) => j.bike_id === b.id); return m.length > 0 && m.every((j) => j.deferred); }).length,
         readyNoPhotos,
         stuckApproval: bikes.filter((b) => b.status === 'pending_approval' && !faultBikes.has(b.id)).length,
         soldLast7,
