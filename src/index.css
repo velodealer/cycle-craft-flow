@@ -189,3 +189,12 @@
   #invoice-document { position: absolute; left: 0; top: 0; width: 100%; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Guided camera: always a dark surface regardless of theme */
+:root {
+  --camera-bg: 0 0% 0%;
+  --camera-fg: 0 0% 100%;
+  --camera-muted: 0 0% 14%;
+  --camera-accent: 38 92% 50%;
+}
+.camera-surface { background: hsl(var(--camera-bg)); color: hsl(var(--camera-fg)); }
