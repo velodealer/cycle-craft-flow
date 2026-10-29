@@ -75,7 +75,7 @@ export default function AwaitingPhotosPage() {
             : <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No bikes are waiting for photos.</CardContent></Card>}
           {readyNoPhotos.length > 0 && (
             <section className="space-y-2 pt-4">
-              <h2 className="label-text">Ready for sale, no guided photos yet ({readyNoPhotos.length})</h2>
+              <h2 className="label-text">Awaiting listing, no guided photos yet ({readyNoPhotos.length})</h2>
               <div className="space-y-2">{readyNoPhotos.map(row)}</div>
             </section>
           )}

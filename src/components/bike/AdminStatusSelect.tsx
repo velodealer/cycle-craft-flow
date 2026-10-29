@@ -38,7 +38,7 @@ const STATUSES: { value: string; label: string }[] = [
   { value: 'pending_approval', label: 'Awaiting owner approval' },
   { value: 'repair', label: 'Repair' },
   { value: 'photos', label: 'Photos' },
-  { value: 'ready', label: 'Ready for sale' },
+  { value: 'ready', label: 'Awaiting listing' },
   { value: 'listed', label: 'Listed' },
   { value: 'in_stock', label: 'In stock' },
   { value: 'sold', label: 'Sold' },

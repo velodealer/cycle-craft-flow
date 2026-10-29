@@ -317,7 +317,7 @@ export default function BikeDetailView({
       'pending_approval': 'Awaiting Owner Approval',
       'repair': 'Repair',
       'photos': 'Photos',
-      'ready': 'Ready for Sale',
+      'ready': 'Awaiting listing',
       'listed': 'Listed',
       'sold': 'Sold',
       'split_for_parts': 'Split for parts'

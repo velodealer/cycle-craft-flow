@@ -138,7 +138,7 @@ export default function InvoicesPage() {
       const result = await reverseSale({ invoiceId: toDelete.id, newStatus: 'ready' });
       toast.success(
         `Invoice deleted${result.part_exchange_bikes_deleted ? ` and ${result.part_exchange_bikes_deleted} part-exchange bike(s) removed` : ''}${
-          result.bike_id ? '. The bike is back in stock as Ready for sale.' : '.'
+          result.bike_id ? '. The bike is back in stock as Awaiting listing.' : '.'
         }`,
       );
       setToDelete(null);
@@ -360,7 +360,7 @@ export default function InvoicesPage() {
                 <p>This reverses the whole sale:</p>
                 <ul className="list-disc space-y-1 pl-5">
                   <li>The QuickBooks invoice is voided and the stock-out journal deleted.</li>
-                  <li>The bike goes back into stock as Ready for sale, with its sale price cleared.</li>
+                  <li>The bike goes back into stock as Awaiting listing, with its sale price cleared.</li>
                   {Number(toDelete?.part_exchange_value || 0) > 0 && (
                     <li>The part-exchange bike taken in on this sale is deleted along with its stock posting.</li>
                   )}

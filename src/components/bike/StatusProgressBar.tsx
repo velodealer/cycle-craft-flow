@@ -53,7 +53,7 @@ export default function StatusProgressBar({ currentStatus, className, bikeId, de
     { key: 'pending_approval', label: 'Awaiting Owner Approval' },
     { key: 'repair', label: 'Repair' },
     { key: 'photos', label: 'Photos' },
-    { key: 'ready', label: 'Ready for Sale' },
+    { key: 'ready', label: 'Awaiting listing' },
     { key: 'listed', label: 'Listed' },
     { key: 'sold', label: 'Sold' },
     ...(afterSale ? [{ key: `handover_${handoverKey}`, label: handoverKey === 'delivered' ? 'Delivered' : 'Collected', aliases: [handoverKey] }] : []),
