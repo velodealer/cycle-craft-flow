@@ -4,6 +4,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serviceClient, hmacBase64, timingSafeEqual, type Client } from '../_shared/shopify.ts';
 import { markBikeSoldOut, pushBikeToShopify, recordListingError } from '../_shared/shopify-listing.ts';
 import { logBikeActivity } from '../_shared/activity.ts';
+import { recordPartSale } from '../_shared/part-sale.ts';
 
 const ok = (body: unknown = { ok: true }) =>
   new Response(JSON.stringify(body), {
@@ -68,7 +69,27 @@ async function findOrCreateCustomer(supabase: Client, order: any, businessId: st
   return data.id;
 }
 
+/** Parts listed on Shopify by VeloDealer, matched by variant id. */
+async function handlePartsPaid(supabase: Client, order: any) {
+  for (const li of (order?.line_items ?? []) as any[]) {
+    if (!li?.variant_id) continue;
+    const gid = `gid://shopify/ProductVariant/${li.variant_id}`;
+    const { data: part, error } = await supabase.from('parts')
+      .select('id, business_id, brand, description, type, cost_price, stock_status')
+      .eq('shopify_variant_id', gid).maybeSingle();
+    if (error) { console.error('Part lookup failed:', error.message); continue; }
+    if (!part || (part as any).stock_status === 'sold') continue;
+    const name = [order?.customer?.first_name, order?.customer?.last_name].filter(Boolean).join(' ');
+    await recordPartSale(supabase, (part as any).business_id, part, {
+      channel: 'shopify', orderId: String(order?.name ?? order?.id ?? ''),
+      total: Number(li.price ?? 0) * Number(li.quantity ?? 1), currency: order?.currency ?? 'GBP',
+      buyer: name ? `Shopify: ${name}` : 'Shopify buyer', date: order?.processed_at ?? order?.created_at,
+    });
+  }
+}
+
 async function handleOrderPaid(supabase: Client, order: any) {
+  await handlePartsPaid(supabase, order);
   const matches = await bikesFromLineItems(supabase, order);
   if (!matches.length) {
     console.log('Shopify order has no matching VeloDealer bikes:', order?.name);
