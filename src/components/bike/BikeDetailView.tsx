@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2, Truck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2, Truck, Camera } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { MarginTriple } from '@/components/velo/MarginTriple';
@@ -14,7 +14,7 @@ import BreakBikeDialog from './BreakBikeDialog';
 import DeleteBikeDialog from './DeleteBikeDialog';
 import AdvanceStageDialog from './AdvanceStageDialog';
 import RecordSaleDialog from './RecordSaleDialog';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import CleaningTask from './CleaningTask';
 import InspectionTask from './InspectionTask';
 import IntakeTask from './IntakeTask';
@@ -419,7 +419,17 @@ export default function BikeDetailView({
                 Move back to {getStageLabel(previousStage)}
               </Button>
             )}
-            {nextStage && (
+            {bike.status === 'photos' && (
+              <Button asChild className="w-full sm:w-auto">
+                <Link to={`/bikes/${bike.id}/photos`}><Camera className="h-4 w-4 mr-2" />Take guided photos</Link>
+              </Button>
+            )}
+            {['ready', 'listed'].includes(bike.status) && (
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link to={`/bikes/${bike.id}/photos`}><Camera className="h-4 w-4 mr-2" />Guided photos</Link>
+              </Button>
+            )}
+            {nextStage && bike.status !== 'photos' && (
               <Button onClick={() => setDialogDirection('forward')} className="w-full sm:w-auto">
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Move to {getStageLabel(nextStage)}
