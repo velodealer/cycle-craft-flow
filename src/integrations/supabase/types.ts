@@ -2290,17 +2290,35 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string
+          ebay_category_id: string | null
+          ebay_environment: string | null
           ebay_item_id: string | null
+          ebay_last_error: string | null
+          ebay_listing_status: string | null
+          ebay_listing_url: string | null
+          ebay_offer_id: string | null
+          ebay_sku: string | null
           fit_qb_posting_id: string | null
           fit_qb_sync_error: string | null
           fit_qb_sync_status: string | null
           fit_xero_posting_id: string | null
           fit_xero_sync_error: string | null
           fit_xero_sync_status: string | null
+          for_sale: boolean
           id: string
+          listing_condition: string
+          listing_description: string | null
+          listing_photos: string[]
+          listing_title: string | null
           part_number: string | null
           quantity: number
           sale_price: number | null
+          shopify_inventory_item_id: string | null
+          shopify_last_error: string | null
+          shopify_listing_status: string | null
+          shopify_product_id: string | null
+          shopify_product_url: string | null
+          shopify_variant_id: string | null
           stock_status: Database["public"]["Enums"]["stock_status"]
           storage_bay_id: string | null
           stripped_from_bike_id: string | null
@@ -2314,17 +2332,35 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description: string
+          ebay_category_id?: string | null
+          ebay_environment?: string | null
           ebay_item_id?: string | null
+          ebay_last_error?: string | null
+          ebay_listing_status?: string | null
+          ebay_listing_url?: string | null
+          ebay_offer_id?: string | null
+          ebay_sku?: string | null
           fit_qb_posting_id?: string | null
           fit_qb_sync_error?: string | null
           fit_qb_sync_status?: string | null
           fit_xero_posting_id?: string | null
           fit_xero_sync_error?: string | null
           fit_xero_sync_status?: string | null
+          for_sale?: boolean
           id?: string
+          listing_condition?: string
+          listing_description?: string | null
+          listing_photos?: string[]
+          listing_title?: string | null
           part_number?: string | null
           quantity?: number
           sale_price?: number | null
+          shopify_inventory_item_id?: string | null
+          shopify_last_error?: string | null
+          shopify_listing_status?: string | null
+          shopify_product_id?: string | null
+          shopify_product_url?: string | null
+          shopify_variant_id?: string | null
           stock_status?: Database["public"]["Enums"]["stock_status"]
           storage_bay_id?: string | null
           stripped_from_bike_id?: string | null
@@ -2338,17 +2374,35 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string
+          ebay_category_id?: string | null
+          ebay_environment?: string | null
           ebay_item_id?: string | null
+          ebay_last_error?: string | null
+          ebay_listing_status?: string | null
+          ebay_listing_url?: string | null
+          ebay_offer_id?: string | null
+          ebay_sku?: string | null
           fit_qb_posting_id?: string | null
           fit_qb_sync_error?: string | null
           fit_qb_sync_status?: string | null
           fit_xero_posting_id?: string | null
           fit_xero_sync_error?: string | null
           fit_xero_sync_status?: string | null
+          for_sale?: boolean
           id?: string
+          listing_condition?: string
+          listing_description?: string | null
+          listing_photos?: string[]
+          listing_title?: string | null
           part_number?: string | null
           quantity?: number
           sale_price?: number | null
+          shopify_inventory_item_id?: string | null
+          shopify_last_error?: string | null
+          shopify_listing_status?: string | null
+          shopify_product_id?: string | null
+          shopify_product_url?: string | null
+          shopify_variant_id?: string | null
           stock_status?: Database["public"]["Enums"]["stock_status"]
           storage_bay_id?: string | null
           stripped_from_bike_id?: string | null
