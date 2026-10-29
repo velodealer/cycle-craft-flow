@@ -41,7 +41,7 @@ export default function AdvanceStageDialog({
   const [photos, setPhotos] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const { profile } = useAuth();
-  const gated = nextStage === 'ready' || nextStage === 'listed';
+  const gated = nextStage === 'photos' || nextStage === 'ready' || nextStage === 'listed';
   const [jobs, setJobs] = useState<{ blocking: OpenJob[]; deferred: OpenJob[] } | null>(null);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [ackDeferred, setAckDeferred] = useState(false);

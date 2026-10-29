@@ -52,6 +52,7 @@ export default function StatusProgressBar({ currentStatus, className, bikeId, de
     { key: 'inspection', label: 'Inspection' },
     { key: 'pending_approval', label: 'Awaiting Owner Approval' },
     { key: 'repair', label: 'Repair' },
+    { key: 'photos', label: 'Photos' },
     { key: 'ready', label: 'Ready for Sale' },
     { key: 'listed', label: 'Listed' },
     { key: 'sold', label: 'Sold' },
@@ -92,7 +93,7 @@ export default function StatusProgressBar({ currentStatus, className, bikeId, de
   return (
     <div className={`space-y-3 ${className}`}>
       <h3 className="label-text">Stage</h3>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 xl:grid-cols-9">
         {stages.map((stage, index) => {
           const status = getStageStatus(index);
           return (

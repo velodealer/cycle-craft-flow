@@ -14,6 +14,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const BikesPage = lazy(() => import("./pages/BikesPage"));
 const ListingsPage = lazy(() => import("./pages/ListingsPage"));
 const BikeDetailPage = lazy(() => import("./pages/BikeDetailPage"));
+const BikePhotosPage = lazy(() => import("./pages/BikePhotosPage"));
 const IntakePage = lazy(() => import("./pages/IntakePage"));
 const CleaningPage = lazy(() => import("./pages/CleaningPage"));
 const InspectionPage = lazy(() => import("./pages/InspectionPage"));
@@ -107,6 +108,7 @@ const App = () => (
             <Route path="/bikes" element={guarded(<Layout><BikesPage /></Layout>)} />
             <Route path="/listings" element={guarded(<Layout><ListingsPage /></Layout>)} />
             <Route path="/bikes/:id" element={guarded(<Layout><BikeDetailPage /></Layout>)} />
+            <Route path="/bikes/:id/photos" element={guarded(<Layout><BikePhotosPage /></Layout>)} />
             <Route path="/intake" element={guarded(<Layout><IntakePage /></Layout>)} />
             <Route path="/cleaning" element={guarded(<Layout><CleaningPage /></Layout>)} />
             <Route path="/inspection" element={guarded(<Layout><InspectionPage /></Layout>)} />
