@@ -23,7 +23,7 @@ export type BpsDashboardData = {
 
 const ACTIVE_STATUSES = [
   'pending_intake', 'intake', 'cleaning', 'inspection',
-  'pending_approval', 'repair', 'ready', 'listed',
+  'pending_approval', 'repair', 'photos', 'ready', 'listed',
   'awaiting_collection', 'collection_in_progress', 'in_transit', 'in_stock',
 ];
 
