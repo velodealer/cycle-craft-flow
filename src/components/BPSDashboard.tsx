@@ -35,7 +35,7 @@ export default function BPSDashboard() {
       hint: data?.stuckApproval ? `${data.stuckApproval} stuck, nothing to approve` : undefined,
     },
     { title: 'Repair', count: data?.repairBikes ?? 0, today: 0, to: '/jobs', hint: `${data?.jobsWorkshop ?? 0} open repair jobs` },
-    { title: 'Awaiting photos', count: data?.awaitingPhotos ?? 0, today: today('photos'), to: '/photos' },
+    { title: 'Awaiting photos', count: data?.awaitingPhotos ?? 0, today: today('photos'), to: '/photos', hint: data?.readyNoPhotos ? `+ ${data.readyNoPhotos} ready bikes without guided photos` : undefined },
     { title: 'Ready', count: s('ready'), today: today('ready'), to: '/listings?status=ready' },
     { title: 'Listed', count: s('listed') + s('in_stock'), today: 0, to: '/listings?status=listed', hint: `${s('listed')} listed · ${s('in_stock')} in stock` },
     {

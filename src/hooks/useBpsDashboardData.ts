@@ -8,6 +8,7 @@ export type BpsDashboardData = {
   soldThisMonth: number;
   awaitingApproval: number;
   awaitingPhotos: number;
+  readyNoPhotos: number;
   stuckApproval: number;
   soldLast7: number;
   jobsOpen: number;
@@ -55,6 +56,14 @@ export function useBpsDashboardData() {
         supabase.from('typeform_submissions').select('id', { count: 'exact', head: true }).in('status', ['new', 'reviewed']),
       ]);
 
+      const readyIds = ((bikesRes.data || []) as any[]).filter((b) => b.status === 'ready').map((b) => b.id);
+      let photoBikes = new Set<string>();
+      if (readyIds.length) {
+        const { data: ph } = await supabase.from('bike_photos' as any).select('bike_id').in('bike_id', readyIds);
+        photoBikes = new Set(((ph || []) as any[]).map((p) => p.bike_id));
+      }
+      const readyNoPhotos = readyIds.filter((id) => !photoBikes.has(id)).length;
+
       const firstError = bikesRes.error || jobsRes.error || eventsRes.error || invoicesRes.error || faultsRes.error || submissionsRes.error;
       if (firstError) throw firstError;
 
@@ -97,6 +106,7 @@ export function useBpsDashboardData() {
         // remain operational detail and must not change the stage totals.
         awaitingApproval: statusCounts.pending_approval || 0,
         awaitingPhotos: (statusCounts.photos || 0) + bikes.filter((b) => { if (b.status !== 'repair') return false; const m = openJobs.filter((j) => j.bike_id === b.id); return m.length > 0 && m.every((j) => j.deferred); }).length,
+        readyNoPhotos,
         stuckApproval: bikes.filter((b) => b.status === 'pending_approval' && !faultBikes.has(b.id)).length,
         soldLast7,
         jobsOpen: openJobs.length,
