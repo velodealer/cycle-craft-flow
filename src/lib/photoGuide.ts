@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { toWebSafeImage } from '@/utils/photoUpload';
 import { photoPath, squareCrop } from './photoGuideRules';
 
 export interface GuideSection { id: string; title: string; hint: string }
@@ -36,7 +37,9 @@ export async function cropToSquareJpeg(source: CanvasImageSource, width: number,
   return { blob, width: out, height: out };
 }
 
-export async function cropFileToSquare(file: File) {
+export async function cropFileToSquare(original: File) {
+  // HEIC (iPhone) photos are converted to JPEG first so every browser can read them.
+  const file = await toWebSafeImage(original);
   const bmp = await createImageBitmap(file);
   try { return await cropToSquareJpeg(bmp, bmp.width, bmp.height); } finally { bmp.close?.(); }
 }

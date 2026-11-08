@@ -273,8 +273,8 @@ export default function BikePhotosPage() {
             <Plus className="h-5 w-5" />Add extra photos
           </button>
         </div>
-        <input ref={miscInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void addMisc(e.target.files); e.target.value = ''; }} />
-        <input ref={slotInput} type="file" accept="image/*" className="hidden" onChange={(e) => { void onSlotFile(e.target.files?.[0]); e.target.value = ''; }} />
+        <input ref={miscInput} type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={(e) => { void addMisc(e.target.files); e.target.value = ''; }} />
+        <input ref={slotInput} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { void onSlotFile(e.target.files?.[0]); e.target.value = ''; }} />
       </section>
 
       {/* Desktop upload */}
@@ -285,7 +285,7 @@ export default function BikePhotosPage() {
             onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
             className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-border p-6 text-sm text-muted-foreground">
             <Upload className="h-5 w-5" />Upload photos — drop images here or click to choose. Each is cropped to a centred square.
-            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+            <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
           </label>
           {drops.length > 0 && (
             <div className="space-y-2">

@@ -147,7 +147,7 @@ export default function GuidedCamera({ shots, index: startIndex, lastThumb, onUs
             </div>
           </>
         )}
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden"
+        <input ref={fileRef} type="file" accept="image/*,.heic,.heif" capture="environment" className="hidden"
           onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ''; }} />
       </div>
 
