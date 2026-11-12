@@ -3702,6 +3702,10 @@ export type Database = {
         }[]
       }
       admin_platform_overview: { Args: never; Returns: Json }
+      bike_reference_lock_reason: {
+        Args: { _bike_id: string; _manual: string; _status: string }
+        Returns: string
+      }
       break_bike: { Args: { _bike_id: string; _items: Json }; Returns: Json }
       bump_catalog_use: { Args: { _id: string }; Returns: undefined }
       change_bike_stage: {
@@ -3768,6 +3772,7 @@ export type Database = {
         }
         Returns: Json
       }
+      regenerate_bike_reference: { Args: { _bike_id: string }; Returns: string }
       remove_slot_part: { Args: { p: Json }; Returns: Json }
       strip_component: { Args: { p: Json }; Returns: Json }
     }
