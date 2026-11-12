@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2, Truck, Camera } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Edit, ChevronLeft, Wrench, Copy, Printer, Loader2, Trash2, Truck, Camera, RefreshCw } from 'lucide-react';
 import StatusProgressBar from './StatusProgressBar';
 import { StageFlap } from '@/components/velo/StageFlap';
 import { MarginTriple } from '@/components/velo/MarginTriple';
@@ -82,6 +82,21 @@ export default function BikeDetailView({
   const [showFixDetails, setShowFixDetails] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [labelBusy, setLabelBusy] = useState(false);
+  const [regenBusy, setRegenBusy] = useState(false);
+  const handleRegenerateId = async () => {
+    setRegenBusy(true);
+    const { data, error } = await (supabase.rpc as any)('regenerate_bike_reference', { _bike_id: bike.id });
+    setRegenBusy(false);
+    if (error) {
+      toast({ title: 'Bike ID not changed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: data === bike.reference ? 'Bike ID already up to date' : 'Bike ID updated',
+      description: data === bike.reference ? `${data} already matches the frame number.` : `Now ${data}. Reprint the label if one is on the bike.`,
+    });
+    onUpdate();
+  };
   const { profile } = useAuth();
   const { vatRegistered } = useVatRegistered();
   const isMechanic = profile?.role === 'mechanic';
@@ -353,6 +368,19 @@ export default function BikeDetailView({
             </h1>
             <div className="flex flex-wrap items-center gap-2">
               <span className="id-text">{bikeRef(bike as any)}</span>
+              {!inspectionMode && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={handleRegenerateId}
+                  disabled={regenBusy}
+                  title="Rebuild the bike ID from the frame number"
+                >
+                  {regenBusy ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
+                  Regenerate ID
+                </Button>
+              )}
               <StageFlap stage={bike.status} />
             </div>
           </div>

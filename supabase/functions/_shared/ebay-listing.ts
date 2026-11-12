@@ -749,7 +749,7 @@ export async function prepareListing(supabase: Client, bike: BikeRow): Promise<P
   add('mobile', mobilePreview.length >= 200 ? 'ok' : 'warn', 'Mobile description preview', mobilePreview || 'Empty — buyers on the eBay app see nothing.');
 
   return {
-    conn, businessId, existing, sku: skuFor(bike), title, builtTitle, titleFormat, categoryId, categorySource,
+    conn, businessId, existing, sku: (existing?.sku as string | undefined) || skuFor(bike), title, builtTitle, titleFormat, categoryId, categorySource,
     wantedCondition, condition, substituted, conditionError, conditionDescription: condDesc, brand, aspectResult,
     images, photoSizes: sizes, descriptionHtml, mobilePreview, bestOffer, promotion, checklist, warnings,
   };
