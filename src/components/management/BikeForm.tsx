@@ -253,11 +253,15 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
       let bikeId = bike?.id;
 
       if (bike) {
-        const { error } = await supabase
+        const { data: saved, error } = await supabase
           .from('bikes')
           .update(bikeData as any)
-          .eq('id', bike.id);
+          .eq('id', bike.id)
+          .select('reference')
+          .maybeSingle();
         if (error) throw error;
+        const newRef = (saved as any)?.reference as string | undefined;
+        const refChanged = !!newRef && newRef !== bike.reference;
         const changed = Object.keys(bikeData).filter((key) => {
           const before = (bike as any)[key];
           const after = (bikeData as any)[key];
@@ -271,7 +275,9 @@ export default function BikeForm({ bike, onSuccess, onCancel }: BikeFormProps) {
             detail: { fields: changed },
           });
         }
-        toast({ title: 'Bike updated successfully' });
+        toast(refChanged
+          ? { title: 'Bike updated successfully', description: `Bike ID updated to ${newRef} from the frame number. Reprint the label if one is on the bike.` }
+          : { title: 'Bike updated successfully' });
       } else {
         const { data, error } = await supabase
           .from('bikes')
